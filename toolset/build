@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+import os
+import sys
+import argparse
+
+D = os.path.dirname(os.path.realpath(__file__))
+
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    python = sys.executable
+    pypath = os.path.realpath(os.path.join(D, "../"))
+    pyfile = os.path.join(pypath, "main.py")
+
+    write_gmd_exe(python, pypath, pyfile)
+
+    return
+
+
+def write_gmd_exe(python, pypath, pyfile):
+    gmd_exe = os.path.join(D, "gmd")
+    with open(gmd_exe, "w") as fobj:
+        fobj.write("""\
+#!/bin/bash
+PYTHON={0}
+PYTHONPATH={1}
+PYFILE={2}
+$PYTHON $PYFILE "$@"
+""".format(python, pypath, pyfile))
+    os.chmod(gmd_exe, 0750)
+    return
+
+
+if __name__ == "__main__":
+    main()

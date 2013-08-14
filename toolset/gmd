@@ -1,0 +1,5 @@
+#!/bin/bash
+PYTHON=/opt/epd/bin/python
+PYTHONPATH=/Users/tjfulle/Developer/Applications/gmd
+PYFILE=/Users/tjfulle/Developer/Applications/gmd/main.py
+$PYTHON $PYFILE "$@"

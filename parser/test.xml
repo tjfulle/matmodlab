@@ -1,0 +1,22 @@
+<Model>
+
+  <Legs kappa="0" tstar="1" estar="1" amplitude="1" efstar="2" nfac="3"
+	ratfac="2" fstar="1.5">
+    <!-- termination time, number of steps, control, Cij -->
+    0 0 222222666 0 0 0 0 0 0 1 2 3
+    1 1 222222666 1 0 0 0 0 0 0 3 2
+    2 2 555555555 1 0 0 0 1 0 0 0 1
+    3 2 111111    1 0 0 0 1 0
+  </Legs>
+
+  <Material model="elastic">
+    <E>  6.8000000E+10 </E>
+    <Nu> 3.3333333E-01 </Nu>
+  </Material>
+
+  <Output>
+    <Variables>
+    </Variables>
+  </Output>
+
+</Model>

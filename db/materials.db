@@ -1,0 +1,7 @@
+<Materials>
+  <Material name="elastic" id="0">
+    <Module filepath="../materials/elastic.py" class="Elastic"/>
+    <Parameter name="e" idx="0"/>
+    <Parameter name="nu" idx="1"/>
+  </Material>
+</Materials>
