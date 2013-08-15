@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import numpy as np
 
 from __config__ import cfg
@@ -35,6 +36,10 @@ class ModelDriver(object):
 
         self.legs = legs
         self.opts = opts
+
+        # set up timing
+        self.timing = {}
+        self.timing["initial"] = time.time()
 
     def setup(self):
 
@@ -103,6 +108,9 @@ class ModelDriver(object):
 
     def finish(self):
         # udpate and close the file
+        self.timing["final"] = time.time()
+        print "Finished calculations for simulation {0} in {1:.4f}s".format(
+            self.runid, self.timing["final"] - self.timing["initial"])
         self.io.finish()
         return
 
