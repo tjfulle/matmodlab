@@ -4,7 +4,6 @@ import time
 import numpy as np
 
 from __config__ import cfg
-import core.parser as parser
 import utils.io as io
 from utils.errors import Error1
 from drivers.drivers import create_driver
@@ -27,13 +26,13 @@ class ModelDriver(object):
 
         """
         self.runid = runid
+
         self.driver = create_driver(driver)
         if self.driver is None:
             raise Error1("{0}: unknown driver type".format(driver))
 
-        # setup the driver
-        self.driver.setup(mtlmdl, mtlprops)
-
+        self.mtlmdl = mtlmdl
+        self.mtlprops = mtlprops
         self.legs = legs
         self.opts = opts
 
@@ -42,6 +41,9 @@ class ModelDriver(object):
         self.timing["initial"] = time.time()
 
     def setup(self):
+
+        # set up the driver
+        self.driver.setup(self.mtlmdl, self.mtlprops, *self.opts)
 
         # Set up the "mesh"
         self.num_dim = 3
@@ -80,7 +82,7 @@ class ModelDriver(object):
             if time_beg == time_end:
                 continue
 
-            self.driver.process_leg(self, time_beg, ileg, leg, *self.opts)
+            self.driver.process_leg(self, time_beg, ileg, leg)
 
             dt = time_end - time_beg
             time_beg = time_end
@@ -113,14 +115,3 @@ class ModelDriver(object):
             self.runid, self.timing["final"] - self.timing["initial"])
         self.io.finish()
         return
-
-    @classmethod
-    def from_input_file(cls, filepath):
-        try:
-            lines = open(filepath, "r").read()
-        except OSError:
-            raise errors.Error1("{0}: no such file".format(filepath))
-        runid = os.path.splitext(os.path.basename(filepath))[0]
-        mm_input = parser.parse_input(lines)
-        return cls(runid, mm_input.driver, mm_input.mtlmdl, mm_input.mtlprops,
-                   mm_input.legs, mm_input.kappa)

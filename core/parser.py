@@ -16,9 +16,6 @@ from utils.namespace import Namespace
 from materials.material import get_material_from_db
 
 
-MODULE = sys.modules[__name__]
-
-
 class OptionHolder(object):
     def __init__(self):
         pass
@@ -74,10 +71,12 @@ def parse_input(user_input):
 
     # ------------------------------------------ get and parse blocks --- #
     blocks = {}
-    recognized_blocks = ("Material", "Legs")
+    recognized_blocks = ("Material", "Legs", "Optimize", "Permutate")
     for block in recognized_blocks:
         elements = model_input.getElementsByTagName(block)
-        parse_function = getattr(MODULE, "p{0}".format(block))
+        if not elements:
+            continue
+        parse_function = getattr(sys.modules[__name__], "p{0}".format(block))
         blocks[block] = parse_function(elements)
 
         for element in elements:
@@ -86,12 +85,19 @@ def parse_input(user_input):
 
     # set up the namespace to return
     ns = Namespace()
+
     ns.mtlmdl = blocks["Material"][0]
     ns.mtlprops = blocks["Material"][1]
     ns.driver = blocks["Material"][2]
+    ns.density = blocks["Material"][3]
+
     ns.legs = blocks["Legs"][0]
     ns.kappa = blocks["Legs"][1]
-    ns.density = blocks["Material"][3]
+
+    if "Optimize" in blocks:
+        ns.stype = "optimize"
+    else:
+        ns.stype = "simulation"
 
     return ns
 
@@ -494,6 +500,14 @@ def format_legs(legs, options):
     return legs
 
 
+def pOptimize(element_list):
+    raise Error1("Optimization coding not done")
+
+
+def pPermutate(element_list):
+    raise Error1("Permutation coding not done")
+
+
 def pMaterial(element_list):
     """Parse the material block
 
@@ -594,12 +608,3 @@ def get_name_value(item):
 
 def fmt_str(item):
     return " ".join(item.encode("utf-8").split())
-
-
-if __name__ == "__main__":
-    f = os.path.join(D, "test.xml")
-    parser = parse_input(open(f).read())
-    print parser
-    print parser.mtlid
-    print parser.mtlprops
-    print parser.legs

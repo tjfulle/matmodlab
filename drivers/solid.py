@@ -19,7 +19,7 @@ class SolidDriver(object):
         self.data = np.zeros(self.ndata)
         self.data_map = {}
 
-    def setup(self, material, mtlprops):
+    def setup(self, material, mtlprops, *opts):
         """Setup the driver object
 
         """
@@ -32,6 +32,8 @@ class SolidDriver(object):
         # Setup and initialize material model
         self.mtlmdl.setup(mtlprops)
         self.mtlmdl.initialize()
+
+        self.kappa, self.density = opts[:2]
 
         # Material data is stored in an array with the following shape:
         #     MTLDAT = (2, NDAT)
@@ -66,6 +68,11 @@ class SolidDriver(object):
 
         # allocate storage
         self.allocd()
+
+        # initialize nonzero data
+        self.data[:, self.defgrad_slice] = I9
+        self.data[:, self.xtra_slice] = self.mtlmdl.initial_state()
+        self.data[0, self.density_slice] = self.density
 
         return
 
@@ -125,11 +132,6 @@ class SolidDriver(object):
         # Model data array.  See comments above.
         self.data = np.zeros((3, self.ndata))
 
-        # initialize nonzero data
-        start, end = self.data_map["DEFGRAD"]
-        self.data[:, start:end] = I9
-        self.data[:, self.xtra_start:self.xtra_end] = self.mtlmdl.initial_state()
-
     def register_variable(self, var, vtype="SCALAR"):
         """Register material variable
 
@@ -167,7 +169,7 @@ class SolidDriver(object):
         return self._variables
 
 
-    def process_leg(self, gmd, t_beg, leg_num, leg, *opts):
+    def process_leg(self, gmd, t_beg, leg_num, leg):
         """Process the current leg
 
         Parameters
@@ -178,7 +180,6 @@ class SolidDriver(object):
 
         """
         t_end, nsteps, ltype, Cij, Rij, EFf = leg
-        kappa = opts[0]
         dR = np.zeros(9)
 
         # --- console message to write to screen
@@ -277,13 +278,13 @@ class SolidDriver(object):
                                                trg_stress, v)
             else:
                 # strain or strain rate prescribed
-                d, w = kin.velgrad_from_strain(dt, kappa, strain[2],
+                d, w = kin.velgrad_from_strain(dt, self.kappa, strain[2],
                                                Rij, dR, trg_strain)
 
             # compute the current deformation gradient and strain from
             # previous values and the deformation rate
-            defgrad[2], strain[2] = kin.update_deformation(dt, kappa, defgrad[2],
-                                                           d, w)
+            defgrad[2], strain[2] = kin.update_deformation(dt, self.kappa,
+                                                           defgrad[2], d, w)
             # quantities derived from strain
             eqstrain[2, 0] = np.sqrt(2. / 3. * (np.sum(strain[2, :3] ** 2)
                                                 + 2. * np.sum(strain[2, 3:] ** 2)))
