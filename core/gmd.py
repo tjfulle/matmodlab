@@ -2,15 +2,15 @@ import os
 import sys
 import numpy as np
 
-import parser.parser as parser
-import utils.io as io
 from __config__ import cfg
+import core.parser as parser
+import utils.io as io
 from utils.errors import Error1
 from drivers.drivers import create_driver
 
 class ModelDriver(object):
 
-    def __init__(self, runid, driver, mtlmdl, mtlprops, legs):
+    def __init__(self, runid, driver, mtlmdl, mtlprops, legs, *opts):
         """Initialize the ModelDriver object
 
         Parameters
@@ -26,18 +26,21 @@ class ModelDriver(object):
 
         """
         self.runid = runid
-
         self.driver = create_driver(driver)
+        if self.driver is None:
+            raise Error1("{0}: unknown driver type".format(driver))
 
         # setup the driver
         self.driver.setup(mtlmdl, mtlprops)
 
         self.legs = legs
+        self.opts = opts
 
     def setup(self):
 
         # Set up the "mesh"
-        num_dim = 3
+        self.num_dim = 3
+        self.num_nodes = 8
         self.coords = np.array([[-1, -1, -1], [ 1, -1, -1],
                                 [ 1,  1, -1], [-1,  1, -1],
                                 [-1, -1,  1], [ 1, -1,  1],
@@ -57,7 +60,7 @@ class ModelDriver(object):
         all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
         title = "gmd {0} simulation".format(self.driver.name)
 
-        self.io = io.IOManager(self.runid, num_dim, self.coords, connect,
+        self.io = io.IOManager(self.runid, self.num_dim, self.coords, connect,
                                elem_blks, all_element_data, title)
 
     def run(self):
@@ -69,28 +72,31 @@ class ModelDriver(object):
         for ileg, leg in enumerate(self.legs):
 
             time_end = leg[0]
-            if time_end == time_beg:
+            if time_beg == time_end:
                 continue
 
-            self.driver.process_leg(time_beg, ileg, leg)
-
-            elem_blk_id = 1
-            num_elem_this_blk = 1
-            elem_blk_data = self.driver.get_data()
-            all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
-
-            # determine displacement
-            F = np.reshape(self.driver.get_data("DEFGRAD"), (3, 3))
-            u = np.zeros(self.num_nodes * self.num_dim)
-            for i, X in enumerate(self.coords):
-                k = i * self.num_dim
-                u[k:k+self.num_dim] = np.dot(F, X) - X
+            self.driver.process_leg(self, time_beg, ileg, leg, *self.opts)
 
             dt = time_end - time_beg
             time_beg = time_end
-            self.io.write_data(time_end, dt, all_element_data, u)
+            self.dump_state(dt, time_end)
 
         return 0
+
+    def dump_state(self, dt, time_end):
+        elem_blk_id = 1
+        num_elem_this_blk = 1
+        elem_blk_data = self.driver.get_data()
+        all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
+
+        # determine displacement
+        F = np.reshape(self.driver.get_data("DEFGRAD"), (3, 3))
+        u = np.zeros(self.num_nodes * self.num_dim)
+        for i, X in enumerate(self.coords):
+            k = i * self.num_dim
+            u[k:k+self.num_dim] = np.dot(F, X) - X
+
+        self.io.write_data(time_end, dt, all_element_data, u)
 
     def variables(self):
         return self.driver.variables()
@@ -109,4 +115,4 @@ class ModelDriver(object):
         runid = os.path.splitext(os.path.basename(filepath))[0]
         mm_input = parser.parse_input(lines)
         return cls(runid, mm_input.driver, mm_input.mtlmdl, mm_input.mtlprops,
-                   mm_input.legs)
+                   mm_input.legs, mm_input.kappa)

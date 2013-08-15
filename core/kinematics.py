@@ -62,10 +62,10 @@ def velgrad_from_strain(dt, K, E0, R, dR, Et):
                  w = skew(L)
     """
     # strain and rotation
-    Et = tensor.to_matrix(Et)
-    E0 = tensor.to_matrix(E0)
-    R = tensor.to_matrix(R)
-    dR = tensor.to_matrix(dR)
+    Et = tensor.asmatrix(Et)
+    E0 = tensor.asmatrix(E0)
+    R = tensor.asmatrix(R)
+    dR = tensor.asmatrix(dR)
 
     # rate of strain
     dE = (Et - E0) / dt
@@ -74,15 +74,15 @@ def velgrad_from_strain(dt, K, E0, R, dR, Et):
     U = right_stretch(K, Et)
 
     # center X on half step
-    X = 0.5 * (la.inv(K * Et + tensor.I3X3) + la.inv(K * E0 + tensor.I3X3))
-    dU = U * X * dE
+    X = 0.5 * (la.inv(K * Et + tensor.I3x3) + la.inv(K * E0 + tensor.I3x3))
+    dU = np.dot(np.dot(U, X), dE)
 
     # velocity gradient, sym, and skew parts
-    L = (dR * R.T + R * dU * la.inv(U) * R.T)
+    L = np.dot(dR, R.T) + np.dot(np.dot(R, dU), np.dot(la.inv(U), R.T))
     D = .5 * (L + L.T)
     W = L - D
 
-    return tensor.to_array(D), tensor.to_array(W, sym=False)
+    return tensor.asarray(D), tensor.asarray(W, symm=False)
 
 
 def velgrad_from_defgrad(dt, F0, Ft):
@@ -118,13 +118,13 @@ def velgrad_from_defgrad(dt, F0, Ft):
     """
 
     # get data from containers
-    F0 = tensor.to_matrix(F0)
-    Ft = tensor.to_matrix(Ft)
+    F0 = tensor.asmatrix(F0)
+    Ft = tensor.asmatrix(Ft)
     dF = (Ft - F0) / dt
     L = .5 * dF * (la.inv(Ft) + la.inv(F0))
     D = .5 * (L + L.T)
     W = L - D
-    return tensor.to_array(D), tensor.to_array(W, sym=False)
+    return tensor.asarray(D), tensor.asarray(W, symm=False)
 
 
 def velgrad_from_stress(material, simdat, matdat, dt, Ec, Et, Pc, Pt, V):
@@ -256,19 +256,19 @@ def update_deformation(dt, K, F0, D, W):
     """
 
     # convert arrays to matrices for upcoming operations
-    F0 = tensor.to_matrix(F0)
-    D = tensor.to_matrix(D)
-    W = tensor.to_matrix(W)
+    F0 = tensor.asmatrix(F0)
+    D = tensor.asmatrix(D)
+    W = tensor.asmatrix(W)
 
-    Ff = tensor.expm((D + W) * dt) * F0
-    U = tensor.sqrtm((Ff.T) * Ff)
+    Ff = np.dot(tensor.expm((D + W) * dt), F0)
+    U = tensor.sqrtm(np.dot(Ff.T, Ff))
     if K == 0:
         Ef = tensor.logm(U)
     else:
-        Ef = 1. / K * (tensor.powm(U, K) - tensor.I3X3)
+        Ef = 1. / K * (tensor.powm(U, K) - tensor.I3x3)
     if np.linalg.det(Ff) <= 0.:
         raise Error1("negative Jacobian encountered")
-    return tensor.to_array(Ff, sym=False), tensor.to_array(Ef)
+    return tensor.asarray(Ff, symm=False), tensor.asarray(Ef)
 
 
 def right_stretch(K, E):
@@ -297,9 +297,9 @@ def right_stretch(K, E):
 
     """
     if K == 0.:
-        return tensor.expm(np.matrix(E))
+        return tensor.expm(E)
     else:
-        return tensor.powm(K * np.matrix(E) + tensor.I3X3, 1. / K)
+        return tensor.powm(K * E + tensor.I3x3, 1. / K)
 
 
 def left_stretch(K, E):
@@ -330,4 +330,4 @@ def left_stretch(K, E):
     if K == 0.:
         return tensor.expm(np.matrix(E))
     else:
-        return tensor.powm(K * np.matrix(E) + tensor.I3X3, 1. / K)
+        return tensor.powm(K * np.matrix(E) + tensor.I3x3, 1. / K)

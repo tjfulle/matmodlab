@@ -11,6 +11,7 @@ class Elastic(Material):
 
         """
         super(Elastic, self).__init__()
+        self.driver = "solid"
         self.register_parameters("E", "NU")
 
     def setup(self, params):

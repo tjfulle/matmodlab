@@ -1,4 +1,4 @@
 <Materials>
   <Material name="elastic" filepath="elastic.py" class="Elastic"
-	    parameters="e, nu" driver="constitutive model"/>
+	    parameters="e, nu" driver="solid"/>
 </Materials>

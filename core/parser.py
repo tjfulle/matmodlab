@@ -89,7 +89,9 @@ def parse_input(user_input):
     ns.mtlmdl = blocks["Material"][0]
     ns.mtlprops = blocks["Material"][1]
     ns.driver = blocks["Material"][2]
-    ns.legs = blocks["Legs"]
+    ns.legs = blocks["Legs"][0]
+    ns.kappa = blocks["Legs"][1]
+    ns.density = blocks["Material"][3]
 
     return ns
 
@@ -153,7 +155,7 @@ def pLegs(element_list):
 
     legs = format_legs(legs, options)
 
-    return legs
+    return legs, options.getopt("kappa")
 
 
 def parse_legs_default(lines):
@@ -506,6 +508,12 @@ def pMaterial(element_list):
         raise Error1("Material: model not found")
     model = str(model.value.lower())
 
+    density = material.attributes.get("density")
+    if density is None:
+        density = 1.
+    else:
+        density = float(density.value)
+
     mtlmdl = get_material_from_db(model)
     if mtlmdl is None:
         raise Error1("{0}: material not in database".format(material))
@@ -525,7 +533,7 @@ def pMaterial(element_list):
                          "{1}".format(name, node.firstChild))
         params[idx] = val
 
-    return model, params, mtlmdl.driver
+    return model, params, mtlmdl.driver, density
 
 
 def fill_in_includes(lines):

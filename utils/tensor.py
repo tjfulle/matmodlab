@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg
 
 NSYMM = 6
 NSKEW = 3
@@ -8,6 +9,7 @@ I6 = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
 Z6 = np.zeros(6)
 I9 = np.eye(3).flatten()
 I3x3 = np.eye(3)
+DI3 = [[0, 1, 2], [0, 1, 2]]
 
 EPSILON = np.array([[[ 0.,  0.,  0.],
                      [ 0.,  0.,  1.],
@@ -125,7 +127,10 @@ def asarray(a, symm=True, skew=False):
         b = np.zeros((3, 3))
         b[:2, :2], a = a, b
     if symm:
-        return .5 * (a + a.T)[[[0, 1, 2, 0, 1, 0], [0, 1, 2, 1, 2, 2]]]
+        a = .5 * (a + a.T)
+        a = a[[[0, 1, 2, 0, 1, 0], [0, 1, 2, 1, 2, 2]]]
+        return a
+
     if skew:
         return -np.array([
                 (a[7] - a[5]) / 2., (a[2] - a[6]) / 2., (a[3] - a[1]) / 2.])
@@ -406,3 +411,51 @@ def u2e(Uij, kappa):
     else:
         eij[:3] = np.log(Uij[:3])
     return eij
+
+
+def expm(a, strict=False):
+    """return the matrix exponential of a"""
+    if isdiag(a):
+        a[DI3] = np.exp(np.diag(a))
+    elif strict:
+        a = np.real(scipy.linalg.expm(a))
+    else:
+        a = I3x3 + a + np.dot(a, a) / 2.
+    return a
+
+
+def powm(a, m):
+    """return the matrix power of a"""
+    if isdiag(a):
+        a[DI3] = np.diag(a) ** m
+    else:
+        eig_val, eig_vec = np.linalg.eigh(a)
+        a = np.dot(np.dot(eig_vec, np.diag(eig_val ** m)), eig_vec.T)
+
+    return a
+
+
+def sqrtm(a, strict=False):
+    """return the matrix square root of a"""
+    if np.isnan(a).any() or np.isinf(a).any():
+        raise Error1("Probably reaching the numerical limits for the "
+                     "magnitude of the deformation.")
+    if isdiag(a) and not strict:
+        a[DI3] = np.sqrt(np.diag(a))
+    elif strict:
+        a = np.real(scipy.linalg.sqrtm(a))
+    else:
+        a = powm(a, 0.5)
+    return a
+
+
+def logm(a, strict=False):
+    """return the matrix log of a"""
+    if isdiag(a) and not strict:
+        a[DI3] = np.log(np.diag(a))
+    elif strict:
+        a = np.real(scipy.linalg.logm(a))
+    else:
+        a = ((a - I3x3) - np.dot(a - I3x3, a - I3x3) / 2. +
+             np.dot(a - I3x3, np.dot(a - I3x3, a - I3x3)) / 3.)
+    return a

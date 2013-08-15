@@ -1,6 +1,3 @@
 <Drivers>
-  <Driver
-      type="constitutive model"
-      filepath="cmod.py"
-      class="ConstitutiveModelDriver"/>
+  <Driver type="solid" filepath="solid.py" class="SolidDriver"/>
 </Drivers>

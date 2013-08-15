@@ -8,11 +8,11 @@ from utils.tensor import NSYMM, NTENS, NVEC, I9
 from utils.errors import Error1
 from materials.material import create_material
 
-np.set_printoptions(precision=4)
+np.set_printoptions(precision=2)
 
 
-class ConstitutiveModelDriver(object):
-    name = "constitutive model"
+class SolidDriver(object):
+    name = "solid"
     def __init__(self):
         self._variables = []
         self.ndata = 0
@@ -51,12 +51,18 @@ class ConstitutiveModelDriver(object):
         self.register_variable("SYMM-L", vtype="SYMTENS")
         self.register_variable("SKEW-L", vtype="SKEWTENS")
         self.register_variable("EFIELD", vtype="VECTOR")
+        self.register_variable("EQSTRAIN", vtype="SCALAR")
+        self.register_variable("VSTRAIN", vtype="SCALAR")
+        self.register_variable("DENSITY", vtype="SCALAR")
+        self.register_variable("PRESSURE", vtype="SCALAR")
+        self.register_variable("DSTRESS", vtype="SYMTENS")
 
         # register material variables
         self.xtra_start = self.ndata
         self.xtra_end = self.xtra_start + self.mtlmdl.nxtra
         for var in self.mtlmdl.variables():
             self.register_variable(var, vtype="SCALAR")
+        setattr(self, "xtra_slice", slice(self.xtra_start, self.xtra_end))
 
         # allocate storage
         self.allocd()
@@ -78,7 +84,7 @@ class ConstitutiveModelDriver(object):
             end = self.ndata
         return start, end
 
-    def get_data(self, var=None):
+    def get_data(self, var=None, rows=0):
         """Return the current material data
 
         Returns
@@ -90,19 +96,22 @@ class ConstitutiveModelDriver(object):
         start, end = 0, self.ndata
         if var is not None:
             start, end = self.var_index(var)
-        return self.data[0, start:end]
+        return self.data[rows, start:end]
 
-    def set_data(self, data, var=None, spot=1):
+    def setopt(self, opt, val):
+        setattr(self, opt, val)
+
+    def set_data(self, data, var=None):
         start, end = 0, self.ndata
         if var is not None:
             start, end = self.var_index(var)
-        self.data[spot, start:end] = data
+        self.data[0, start:end] = data
 
-    def advance_state(self):
+    def advance_data(self):
         """Advance the material state
 
         """
-        self.data[0] = self.data[1]
+        self.data[0] = self.data[2]
 
     def allocd(self):
         """Allocate space for material data
@@ -114,7 +123,7 @@ class ConstitutiveModelDriver(object):
 
         """
         # Model data array.  See comments above.
-        self.data = np.zeros((2, self.ndata))
+        self.data = np.zeros((3, self.ndata))
 
         # initialize nonzero data
         start, end = self.data_map["DEFGRAD"]
@@ -152,12 +161,13 @@ class ConstitutiveModelDriver(object):
         end = self.ndata
         self.data_map[name] = (start, end)
         self._variables.extend(var)
+        setattr(self, "{0}_slice".format(name.lower()), slice(start, end))
 
     def variables(self):
         return self._variables
 
 
-    def process_leg(self, t_beg, leg_num, leg):
+    def process_leg(self, gmd, t_beg, leg_num, leg, *opts):
         """Process the current leg
 
         Parameters
@@ -167,78 +177,79 @@ class ConstitutiveModelDriver(object):
         -------
 
         """
+        t_end, nsteps, ltype, Cij, Rij, EFf = leg
+        kappa = opts[0]
+        dR = np.zeros(9)
 
-        cons_msg = "leg {0:{1}d}, step {2:{3}d}, time {4:.4E}, dt {5:.4E}"
+        # --- console message to write to screen
+        consfmt = ("leg {{0:{0}d}}, step {{1:{1}d}}, time {{2:.4E}}, dt "
+                   "{{3:.4E}}".format(len(str(leg_num)), len(str(nsteps))))
 
-        # -------------------------------------------------------- initialize model
-
-        # ----------------------------------------------------------------------- #
-        # V is an array of integers that contains the columns of prescribed stress
-        V = []
-
-        Pc = self.get_data("STRESS")
-        Ec = self.get_data("STRAIN")
+        # v is an array of integers that contains the columns of prescribed stress
+        nv = 0
+        v = np.zeros(NSYMM, dtype=np.int)
 
         # --------------------------------------------------- begin{processing leg}
+        # --- data from end of the last leg -> beginning of this leg
+        # row 0 -> beginning of leg
+        #     1 ->       end of leg
+        #     2 ->          current
+        strain = self.data[:, self.strain_slice]
+        stress = self.data[:, self.stress_slice]
+        dstress = self.data[:, self.dstress_slice]
+        efield = self.data[:, self.efield_slice]
+        defgrad = self.data[:, self.defgrad_slice]
+        xtra = self.data[:, self.xtra_slice]
+        for item in (strain, stress, efield, defgrad, xtra, dstress):
+            item[2] = item[0]
+        efield[1] = EFf
 
-        # pass values from the end of the last leg to beginning of this leg
-        E0 = self.get_data("STRAIN")
-        P0 = self.get_data("STRESS")
-        F0 = self.get_data("DEFGRAD")
-        EF0 = self.get_data("EFIELD")
+        density = self.data[:, self.density_slice]
+        eqstrain = self.data[:, self.eqstrain_slice]
+        vstrain = self.data[:, self.vstrain_slice]
+        pres = self.data[:, self.pressure_slice]
 
-        # read inputs and initialize for this leg
-        t_end, nsteps, ltype, Cij, Rij, EFf = leg
-        lns = len(str(nsteps))
+        # holder for computing the stress rate
+        old_stress = np.zeros(NSYMM)
+
+        # read inputs and initialize this leg
         delt = t_end - t_beg
         if delt == 0.:
             return
-        nv, dflg = 0, list(set(ltype))
 
         nprints = 10
         print_interval = max(1, int(nsteps / nprints))
 
-        print cons_msg.format(leg_num, len(str(leg_num)), 1, lns, t_beg, delt)
-
         # --- loop through components of Cij and compute the values at the end
         #     of this leg:
-        #       for ltype = 1: Ef at t_end -> E0 + Cij*delt
-        #       for ltype = 2: Ef at t_end -> Cij
-        #       for ltype = 3: Pf at t_end -> P0 + Cij*delt
-        #       for ltype = 4: Pf at t_end -> Cij
-        #       for ltype = 6: EFf at t_end-> Cij
-        Ef = tensor.Z6
-        Ph = tensor.Z6
-
-        # if stress is prescribed, we don't compute Pf just yet, but Ph
-        # which holds just those values of stress that are actually prescribed.
-        for i, c in enumerate(Cij):
+        #       for ltype = 1: strain at t_end -> strain[0] + Cij*delt
+        #       for ltype = 2: strain at t_end -> Cij
+        #       for ltype = 3: stress at t_end -> stress[0] + Cij*delt
+        #       for ltype = 4: stress at t_end -> Cij
+        for i, Ci in enumerate(Cij):
 
             # -- strain rate
             if ltype[i] == 1:
-                Ef[i] = E0[i] + c * delt
+                strain[1, i] = strain[0, i] + Ci * delt
 
             # -- strain
             elif ltype[i] == 2:
-                Ef[i] = c
+                strain[1, i] = Ci
 
             # stress rate
             elif ltype[i] == 3:
-                Ph[i] = P0[i] + c * delt
-                Vhld[nv] = i
+                stress[1, i] = stress[0, i] + Ci * delt
+                v[nv] = i
                 nv += 1
 
             # stress
             elif ltype[i] == 4:
-                Ph[i] = c
-                Vhld[nv] = i
+                stress[1, i] = Ci
+                v[nv] = i
                 nv += 1
 
             continue
-
-        V = Vhld[0:nv]
-        if len(V):
-            PS0, PSf = P0[V], Ph[V]
+        v = v[0:nv]
 
         t = t_beg
         dt = delt / nsteps
@@ -246,83 +257,57 @@ class ConstitutiveModelDriver(object):
         # ---------------------------------------------- begin{processing step}
         for n in range(nsteps):
 
-            # advance data from end of last step to this step
-            matdat.advance()
-            simdat.advance()
-
             # increment time
             t += dt
 
-            # interpolate values of E, F, EF, and P for the target values for
-            # this step
+            # interpolate values of strain, stress, and electric field to the
+            # target values for this step
             a1 = float(nsteps - (n + 1)) / nsteps
             a2 = float(n + 1) / nsteps
-            Et = a1 * E0 + a2 * Ef
-            Ft = a1 * F0 + a2 * Ff
-            EFt = a1 * EF0 + a2 * EFf
-
-            if len(V):
-                # prescribed stress components given
-                Pt = a1 * PS0 + a2 * PSf  # target stress
-
-            # advance known values to end of step
-            simdat.store("time", t)
-            simdat.store("time step", dt)
-            matdat.store("electric field", EFt)
+            trg_strain = a1 * strain[0] + a2 * strain[1]
+            trg_efield = a1 * efield[0] + a2 * efield[1]
 
             # --- find current value of d: sym(velocity gradient)
-            if not len(V):
-
-                if dflg[0] == 5:
-                    # --- deformation gradient prescribed
-                    Dc, Wc = kin.velgrad_from_defgrad(dt, Fc, Ft)
-
-                else:
-                    # --- strain or strain rate prescribed
-                    Dc, Wc = kin.velgrad_from_strain(dt, K, Ec, Rij, dR, Et)
-
+            if nv:
+                # One or more stresses prescribed
+                # get just the prescribed stress components
+                trg_stress = a1 * stress[0, v] + a2 * stress[1, v]  # target stress
+                d, w = kin.velgrad_from_stress(material, simdat, matdat, dt,
+                                               eps, strain[2], stress[2],
+                                               trg_stress, v)
             else:
-                # --- One or more stresses prescribed
-                Dc, Wc = kin.velgrad_from_stress(
-                    material, simdat, matdat, dt, Ec, Et, Pc, Pt, V)
+                # strain or strain rate prescribed
+                d, w = kin.velgrad_from_strain(dt, kappa, strain[2],
+                                               Rij, dR, trg_strain)
 
             # compute the current deformation gradient and strain from
             # previous values and the deformation rate
-            Fc, Ec = kin.update_deformation(dt, K, Fc, Dc, Wc)
-
-            # --- update the deformation to the end of the step at this point,
-            #     the rate of deformation and vorticity to the end of the step
-            #     are known, advance them.
-            matdat.store("rate of deformation", Dc)
-            matdat.store("vorticity", Wc)
-            matdat.store("deformation gradient", Fc)
-            matdat.store("strain", Ec)
-            matdat.store("vstrain", np.sum(Ec[:3]))
-            # compute the equivalent strain
-            matdat.store(
-                "equivalent strain",
-                np.sqrt(2. / 3. * (np.sum(Ec[:3] ** 2) + 2. * np.sum(Ec[3:] ** 2))))
-
-            # udpate density
-            dev = tensor.trace(matdat.get("rate of deformation")) * dt
-            rho_old = simdat.get("payette density")
-            simdat.store("payette density", rho_old * math.exp(-dev))
+            defgrad[2], strain[2] = kin.update_deformation(dt, kappa, defgrad[2],
+                                                           d, w)
+            # quantities derived from strain
+            eqstrain[2, 0] = np.sqrt(2. / 3. * (np.sum(strain[2, :3] ** 2)
+                                                + 2. * np.sum(strain[2, 3:] ** 2)))
+            vstrain[2, 0] = tensor.trace(strain[2, :3])
+            density[2, 0] = density[2, 0] * np.exp(-tensor.trace(d) * dt)
 
             # update material state
-            material.update_state(simdat, matdat)
+            old_stress[:] = stress[2]
+            stress[2], xtra[2] = self.mtlmdl.update_state(dt, d,
+                                                          stress[2], xtra[2])
 
             # advance all data after updating state
-            Pc = matdat.get("stress")
-            matdat.store("stress rate", (Pc - matdat.get("stress", "-")) / dt)
-            matdat.store("pressure", -np.sum(Pc[:3]) / 3.)
+            pres[2, 0] = -tensor.trace(stress[2, :3]) / 3.
+            dstress[2] = (stress[2] - old_stress) / dt
+
+            self.advance_data()
 
             # --- write state to file
-            endstep =  abs(t - t_end) / t_end < 1.E-12
-            if (nsteps - n) % print_interval == 0 or endstep:
-                model.write_state()
+            endstep = abs(t - t_end) / t_end < 1.E-12
+            if (nsteps - n) % print_interval == 0 and not endstep:
+                gmd.dump_state(dt, t_end)
 
-            if simdat.SCREENOUT or (2 * n - nsteps) == 0:
-                print cons_msg.format(leg_num, len(str(leg_num)), n, lns, t, dt)
+            if n == 0 or round(nsteps / 2.) == n or endstep:
+                print consfmt.format(leg_num, n + 1, t, dt)
 
             # -------------------------------------------- end{end of step SQA}
 
