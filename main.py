@@ -18,6 +18,8 @@ def main(argv=None):
 
     # Instantiate MMD object
     model = gmd.ModelDriver.from_input_file(args.source)
+    model.setup()
+    model.run()
 
 
 if __name__ == "__main__":

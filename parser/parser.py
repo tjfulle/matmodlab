@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import numpy as np
-import cPickle as pickle
 import xml.dom as xmldom
 import xml.dom.minidom as xdom
 
@@ -10,10 +9,11 @@ if __name__ == "__main__":
     D = os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.join(D, "../"))
 
-from utils.errors import Error1
+from __config__ import cfg
 import utils.tensor as tensor
+from utils.errors import Error1
 from utils.namespace import Namespace
-import db.mtldb as mtldb
+from materials.material import get_material_from_db
 
 
 MODULE = sys.modules[__name__]
@@ -86,8 +86,9 @@ def parse_input(user_input):
 
     # set up the namespace to return
     ns = Namespace()
-    ns.mtlid = blocks["Material"][0]
+    ns.mtlmdl = blocks["Material"][0]
     ns.mtlprops = blocks["Material"][1]
+    ns.driver = blocks["Material"][2]
     ns.legs = blocks["Legs"]
 
     return ns
@@ -505,25 +506,26 @@ def pMaterial(element_list):
         raise Error1("Material: model not found")
     model = str(model.value.lower())
 
-    model = mtldb.mtlmodel(model)
-    if model is None:
+    mtlmdl = get_material_from_db(model)
+    if mtlmdl is None:
         raise Error1("{0}: material not in database".format(material))
 
-    params = np.zeros(len(model.parameters))
+    params = np.zeros(mtlmdl.nparam)
     for node in material.childNodes:
         if node.nodeType != material.ELEMENT_NODE:
             continue
         name = node.nodeName
-        if name.lower() not in model.parameters:
+        idx = mtlmdl.mtlparams.get(name.lower())
+        if idx is None:
             raise Error1("Material: {0}: invalid parameter".format(name))
         try:
             val = float(node.firstChild.data)
         except ValueError:
             raise Error1("Material: {0}: invalid value "
                          "{1}".format(name, node.firstChild))
-        params[model.paramidx(name)] = val
+        params[idx] = val
 
-    return (model.id, params)
+    return model, params, mtlmdl.driver
 
 
 def fill_in_includes(lines):

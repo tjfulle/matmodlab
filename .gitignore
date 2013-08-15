@@ -1,3 +1,4 @@
 *.pyc
+*.exo
 toolset/gmd
 toolset/wpython

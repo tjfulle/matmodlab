@@ -3,7 +3,9 @@ import numpy as np
 NSYMM = 6
 NSKEW = 3
 NTENS = 9
+NVEC = 3
 I6 = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
+Z6 = np.zeros(6)
 I9 = np.eye(3).flatten()
 I3x3 = np.eye(3)
 
