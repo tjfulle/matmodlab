@@ -2,3 +2,4 @@
 *.exo
 toolset/gmd
 toolset/wpython
+*.so

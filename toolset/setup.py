@@ -146,7 +146,10 @@ def main(argv=None):
                 pypath.append(info.get("PYTHONPATH"))
 
     logmes("setup: looking for makemf files")
-    for (d, dirs, files) in os.walk(core):
+    for (d, dirs, files) in os.walk(root):
+        if "tpl" in d:
+            del dirs[:]
+            continue
         if "makemf.py" in files:
             f = os.path.join(d, "makemf.py")
             dd = d.replace(root, ".")

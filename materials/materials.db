@@ -1,4 +1,4 @@
 <Materials>
-  <Material name="elastic" filepath="elastic.py" class="Elastic"
-	    parameters="e, nu" driver="solid"/>
+  <Material name="elastic" filepath="elastic_interface.py" class="Elastic"
+	    parameters="k, g" driver="solid"/>
 </Materials>

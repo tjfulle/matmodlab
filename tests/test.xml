@@ -10,8 +10,8 @@
   </Legs>
 
   <Material density="5" model="elastic">
-    <E>  6.8000000E+10 </E>
-    <Nu> 3.3333333E-01 </Nu>
+    <K> 9.980040E+09 </K>
+    <G> 3.750938E+09 </G>
   </Material>
 
 </Model>
