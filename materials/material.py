@@ -30,8 +30,8 @@ def create_material(matname):
     if model is None:
         return None
     mtlmod = load_file(model.filepath)
-    mtlcls = getattr(mtlmod, model.mtlcls)
-    return mtlcls()
+    mclass = getattr(mtlmod, model.mclass)
+    return mclass()
 
 
 def read_mtldb():
@@ -58,6 +58,7 @@ def read_mtldb():
             raise Error1("{0}: no such file".format(filepath))
         p = mtl.attributes.getNamedItem("parameters").value.split(",")
 
+        ns.nparam = len(p)
         ns.filepath = filepath
         ns.mclass = str(mtl.attributes.getNamedItem("mclass").value)
         ns.parameters = ", ".join(str(x.strip().lower()) for x in p)

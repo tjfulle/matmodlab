@@ -532,12 +532,16 @@ def pMaterial(element_list):
     if mtlmdl is None:
         raise Error1("{0}: material not in database".format(model))
 
-    params = np.zeros(mtlmdl.nparam)
+    # mtlmdl.parameters is a comma separated list of parameters
+    strip = lambda s: str(s.strip().lower())
+    pdict = dict([(strip(n), i)
+                  for i, n in enumerate(mtlmdl.parameters.split(","))])
+    params = np.zeros(len(pdict))
     for node in material.childNodes:
         if node.nodeType != material.ELEMENT_NODE:
             continue
         name = node.nodeName
-        idx = mtlmdl.mtlparams.get(name.lower())
+        idx = pdict.get(name.lower())
         if idx is None:
             raise Error1("Material: {0}: invalid parameter".format(name))
         try:
