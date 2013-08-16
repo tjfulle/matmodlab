@@ -2,32 +2,36 @@
 
 import sys
 import numpy as np
-import numpy.linalg as la
+from numpy.linalg import inv as inv
 
 import utils.tensor as tensor
+from utils.tensor import expm, powm, logm, sqrtm
 import core.solvers as solvers
 from utils.errors import Error1
 
-def velgrad_from_strain(dt, K, E0, R, dR, Et):
-    """From the value of the Seth-Hill parameter kappa, current strain E, and
-    strain rate dEdt, return the symmetric and skew parts of the velocity
-    gradient
+I = np.eye(3)
+
+def deps2d(dt, k, eps, depsdt):
+    """Compute symmetric part of velocity gradient given depsdt
 
     Parameters
     ----------
-    simdat : data container object
-       simulation data container
-    matdat : data container object
-       material data container
+    dt : float
+       time step
+
+    k : float
+        Seth-Hill parameter
+
+    eps : ndarray
+        Strain
+
+    depsdt : ndarray
+        Strain rate
 
     Returns
     -------
-    None
-
-    Updates
-    -------
-    matdat "rate of deformation"
-    matdat "vorticity"
+    d : ndarray
+        Symmetric part of velocity gradient
 
     Theory
     ------
@@ -60,74 +64,33 @@ def velgrad_from_strain(dt, K, E0, R, dR, Et):
 
                  d = sym(L)
                  w = skew(L)
-    """
-    # strain and rotation
-    Et = tensor.asmatrix(Et)
-    E0 = tensor.asmatrix(E0)
-    R = tensor.asmatrix(R)
-    dR = tensor.asmatrix(dR)
 
-    # rate of strain
-    dE = (Et - E0) / dt
+    """
+    # convert 1x6 arrays to 3x3 matrices for easier processing
+
+    # strain
+    eps = as3x3(eps)
+    depsdt = as3x3(depsdt)
+    epsf = eps + depsdt * dt
 
     # stretch and its rate
-    U = right_stretch(K, Et)
+    if k == 0.:
+        u = expm(epsf)
+    else:
+        u = powm(k * epsf + I, 1. / k)
 
     # center X on half step
-    X = 0.5 * (la.inv(K * Et + tensor.I3x3) + la.inv(K * E0 + tensor.I3x3))
-    dU = np.dot(np.dot(U, X), dE)
+    x = 0.5 * (inv(k * epsf + I) + inv(k * eps + I))
+    du = np.dot(np.dot(u, x), depsdt)
 
-    # velocity gradient, sym, and skew parts
-    L = np.dot(dR, R.T) + np.dot(np.dot(R, dU), np.dot(la.inv(U), R.T))
-    D = .5 * (L + L.T)
-    W = L - D
+    # velocity gradient
+    L = np.dot(du, inv(u))
+    d = .5 * (L + L.T)
 
-    return tensor.asarray(D), tensor.asarray(W, symm=False)
-
-
-def velgrad_from_defgrad(dt, F0, Ft):
-    """From the value of the deformation gradient F, return the symmetric and
-    skew parts of the velocity gradient
-
-    Parameters
-    ----------
-    simdat : data container object
-       simulation data container
-    matdat : data container object
-       material data container
-
-    Returns
-    -------
-    None
-
-    Updates
-    -------
-    matdat "rate of deformation"
-    matdat "vorticity"
-
-    Theory
-    ------
-    Velocity gradient L is given by
-
-                 L = dFdt * Finv
-
-    Then
-
-                 d = sym(L)
-                 w = skew(L)
-    """
-
-    # get data from containers
-    F0 = tensor.asmatrix(F0)
-    Ft = tensor.asmatrix(Ft)
-    dF = (Ft - F0) / dt
-    L = .5 * dF * (la.inv(Ft) + la.inv(F0))
-    D = .5 * (L + L.T)
-    W = L - D
-    return tensor.asarray(D), tensor.asarray(W, symm=False)
+    return as6x1(d)
 
 
-def velgrad_from_stress(material, simdat, matdat, dt, Ec, Et, Pc, Pt, V):
+def sig2d(material, dt, J0, Ec, Et, Pc, Pt, V):
     """Seek to determine the unknown components of the symmetric part of
     velocity gradient d[v] satisfying
 
@@ -150,11 +113,6 @@ def velgrad_from_stress(material, simdat, matdat, dt, Ec, Et, Pc, Pt, V):
     -------
     None
 
-    Updates
-    -------
-    matdat "rate of deformation"
-    matdat "vorticity"
-
     Approach
     --------
     Solution is found iteratively in (up to) 3 steps
@@ -163,15 +121,9 @@ def velgrad_from_stress(material, simdat, matdat, dt, Ec, Et, Pc, Pt, V):
          if converged
       3) Call simplex with d[v] = 0. to solve 1, return stress, xtra, d
 
-    History
-    -------
-    This is a python implementation of a fortran subroutine of the same name
-    written by Tom Pucick for his MMD material model driver.
-
     """
 
     # Jacobian
-    J0 = matdat.get("jacobian")
     Js = J0[[[x] for x in V], V]
 
     Pd = Pt - Pc[V]
@@ -184,47 +136,47 @@ def velgrad_from_stress(material, simdat, matdat, dt, Ec, Et, Pc, Pt, V):
 
     nV = len(V)
     W = np.zeros(9)
-    if proportional:
-        converged, dEdt = solvers.newton(
-            material, simdat, matdat, dt, Pt, V, dEdt)
+    if not proportional:
+        converged, dEdt = solvers.newton(material, dt, Pt, V, dEdt)
         if converged:
             return dEdt, W
 
         # --- didn't converge, try Newton's method with initial
         # --- d[V]=0.
         dEdt[V] = np.zeros(nV)
-        converged, dEdt = solvers.newton(
-            material, simdat, matdat, dt, Pt, V, dEdt)
+        converged, dEdt = solvers.newton(material, dt, Pt, V, dEdt)
         if converged:
             return dEdt, W
 
     # --- Still didn't converge. Try downhill simplex method and accept
     #     whatever answer it returns:
-    dEdt = solvers.simplex(material, simdat, matdat, dt, dEdt0, Pt, V)
+    dEdt = solvers.simplex(material, dt, dEdt0, Pt, V)
     return dEdt, W
 
 
-def update_deformation(dt, K, F0, D, W):
+def update_deformation(dt, k, f0, d):
     """From the value of the Seth-Hill parameter kappa, current strain E,
     deformation gradient F, and symmetric part of the velocit gradient d,
     update the strain and deformation gradient.
 
     Parameters
     ----------
-    simdat : data container object
-       simulation data container
-    matdat : data container object
-       material data container
+    dt : float
+        Time step
+
+    k : float
+        Seth-Hill parameter
+
+    f0 : ndarray
+        Deformation gradient
+
+    d : ndarray
+        Symmetric part of velocity gradient
 
     Returns
     -------
-    None
-
-    Updates
-    -------
-    matdat "strain"
-    matdat "deformation gradient"
-    matdat "equivalent strain"
+    f, eps : ndarray
+        Deformation gradient and strain
 
     Theory
     ------
@@ -254,80 +206,24 @@ def update_deformation(dt, K, F0, D, W):
     where k is the Seth-Hill strain parameter.
 
     """
-
     # convert arrays to matrices for upcoming operations
-    F0 = tensor.asmatrix(F0)
-    D = tensor.asmatrix(D)
-    W = tensor.asmatrix(W)
+    f0 = np.reshape(f0, (3, 3))
+    d = as3x3(d)
 
-    Ff = np.dot(tensor.expm((D + W) * dt), F0)
-    U = tensor.sqrtm(np.dot(Ff.T, Ff))
-    if K == 0:
-        Ef = tensor.logm(U)
+    ff = np.dot(expm(d * dt), f0)
+    u = sqrtm(np.dot(ff.T, ff))
+    if k == 0:
+        eps = logm(u)
     else:
-        Ef = 1. / K * (tensor.powm(U, K) - tensor.I3x3)
-    if np.linalg.det(Ff) <= 0.:
+        Ef = 1. / k * (powm(u, k) - I)
+    if np.linalg.det(ff) <= 0.:
         raise Error1("negative Jacobian encountered")
-    return tensor.asarray(Ff, symm=False), tensor.asarray(Ef)
+    return np.reshape(ff, (9,)), as6x1(eps)
 
 
-def right_stretch(K, E):
-    """Compute the symmtetric part U (right stretch) of the polar
-    decomposition of the deformation gradient F = RU.
-
-    Parameters
-    ----------
-    K : float
-      Seth-Hill strain parameter
-    E : array_like
-      current strain tensor
-
-    Returns
-    -------
-    stretch : array_like
-      the right stretch tensor
-
-    Theory
-    ------
-    The right stretch tensor U, in terms of the strain tensor E is given by
-
-                     U = (k*E + I)**(1/k)
-
-    where k is the Seth-Hill parameter and I is the identity tensor.
-
-    """
-    if K == 0.:
-        return tensor.expm(E)
-    else:
-        return tensor.powm(K * E + tensor.I3x3, 1. / K)
+def as3x3(a):
+    return np.array([[a[0],a[3],a[5]], [a[3],a[1],a[4]], [a[5],a[4],a[2]]])
 
 
-def left_stretch(K, E):
-    """Compute the symmtetric part V (left stretch) of the polar decomposition
-    of the deformation gradient F = VR.
-
-    Parameters
-    ----------
-    K : float
-      Seth-Hill strain parameter
-    E : array_like
-      current spatial strain tensor
-
-    Returns
-    -------
-    stretch : array_like
-      the left stretch tensor
-
-    Theory
-    ------
-    The left stretch tensor V, in terms of the strain tensor e is given by
-
-                     V = (k*e + I)**(1/k)
-
-    where k is the Seth-Hill parameter and I is the identity tensor.
-
-    """
-    if K == 0.:
-        return tensor.expm(np.matrix(E))
-    else:
-        return tensor.powm(K * np.matrix(E) + tensor.I3x3, 1. / K)
+def as6x1(a):
+    return .5*(a+a.T)[[[0,1,2,0,1,0],[0,1,2,1,2,2]]]

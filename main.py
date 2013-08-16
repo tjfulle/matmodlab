@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 
-import __config__ as cfg
+from __config__ import cfg
 import core.gmd as gmd
 import core.parser as parser
 from utils.errors import Error1

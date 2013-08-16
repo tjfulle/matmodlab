@@ -492,7 +492,7 @@ def format_legs(legs, options):
         legs[ileg][1] = num_steps
         legs[ileg][2] = control
         legs[ileg][3] = Cij
-        legs[ileg].append(Rij)
+        # legs[ileg].append(Rij)
         legs[ileg].append(efcomp)
 
         continue

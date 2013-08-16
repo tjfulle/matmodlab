@@ -43,7 +43,7 @@ class ModelDriver(object):
     def setup(self):
 
         # set up the driver
-        self.driver.setup(self.mtlmdl, self.mtlprops, *self.opts)
+        self.driver.setup(self.runid, self.mtlmdl, self.mtlprops, *self.opts)
 
         # Set up the "mesh"
         self.num_dim = 3
@@ -61,7 +61,7 @@ class ModelDriver(object):
         elem_type = "HEX"
         num_nodes_per_elem = 8
         ele_var_names = self.variables()
-        elem_blk_data = self.driver.get_data()
+        elem_blk_data = self.driver.data()
         elem_blks = [[elem_blk_id, elem_blk_els, elem_type,
                       num_nodes_per_elem, ele_var_names]]
         all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
@@ -70,34 +70,14 @@ class ModelDriver(object):
         self.io = io.IOManager(self.runid, self.num_dim, self.coords, connect,
                                elem_blks, all_element_data, title)
 
-    def run(self):
-        """Run the problem
-
-        """
-        print "Starting calculations for simulation {0}".format(self.runid)
-        time_beg = 0.
-        for ileg, leg in enumerate(self.legs):
-
-            time_end = leg[0]
-            if time_beg == time_end:
-                continue
-
-            self.driver.process_leg(self, time_beg, ileg, leg)
-
-            dt = time_end - time_beg
-            time_beg = time_end
-            self.dump_state(dt, time_end)
-
-        return 0
-
     def dump_state(self, dt, time_end):
         elem_blk_id = 1
         num_elem_this_blk = 1
-        elem_blk_data = self.driver.get_data()
+        elem_blk_data = self.driver.data()
         all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
 
         # determine displacement
-        F = np.reshape(self.driver.get_data("DEFGRAD"), (3, 3))
+        F = np.reshape(self.driver.data("DEFGRAD"), (3, 3))
         u = np.zeros(self.num_nodes * self.num_dim)
         for i, X in enumerate(self.coords):
             k = i * self.num_dim
@@ -115,3 +95,10 @@ class ModelDriver(object):
             self.runid, self.timing["final"] - self.timing["initial"])
         self.io.finish()
         return
+
+    def run(self):
+        """Run the problem
+
+        """
+        retcode = self.driver.process_legs(self.legs, self.dump_state)
+        return retcode

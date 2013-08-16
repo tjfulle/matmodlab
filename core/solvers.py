@@ -9,7 +9,7 @@ import utils.tensor as tensor
 EPSILON = np.finfo(np.float).eps
 
 
-def newton(material, simdat, matdat, dt, Pt, V, dEdt):
+def newton(material, dt, Pt, V, dEdt):
     '''
     NAME
        newton
@@ -76,9 +76,6 @@ def newton(material, simdat, matdat, dt, Pt, V, dEdt):
     '''
 
     # --- Local variables
-    F0 = matdat.get("deformation gradient", copy=True)
-    D0 = matdat.get("rate of deformation", copy=True)
-
     nV = len(V)
     Pd = np.zeros(nV)
     tol1, tol2 = EPSILON, math.sqrt(EPSILON)
@@ -88,18 +85,10 @@ def newton(material, simdat, matdat, dt, Pt, V, dEdt):
     if (depsmag(dEdt, dt) > depsmax):
         return converged, dEdt
 
-    # --- Initialize
-    Ff = F0 + tensor.dot(dEdt, F0) * dt
-
-    # replace deformation rate and gradient with current best guesses
-    matdat.store("deformation gradient", Ff)
-    matdat.store("rate of deformation", dEdt)
-
     # update the material state to get the first guess at the new stress
     material.update_state(simdat, matdat)
-    P = matdat.get("stress")
+    P, dum = material.update_state(dt, dEdt, Pc, xtra)
     Pd = P[V] - Pt
-    matdat.restore()
 
     # --- Perform Newton iteration
     for i in range(maxit2):
@@ -110,44 +99,30 @@ def newton(material, simdat, matdat, dt, Pt, V, dEdt):
         except:
             dEdt[V] -= np.linalg.lstsq(Js, Pd)[0] / dt
             print "Using least squares approximation to matrix inverse"
-            # pu.log_warning(msg, limit=True)
 
         if (depsmag(dEdt, dt) > depsmax):
             # increment too large, restore changed data and exit
-            matdat.restore("rate of deformation")
-            matdat.restore("deformation gradient")
             return converged, D0
 
-        Ff = F0 + tensor.dot(dEdt, F0) * dt
-        matdat.store("rate of deformation", dEdt)
-        matdat.store("deformation gradient", Ff)
-        material.update_state(simdat, matdat)
-        P = matdat.get("stress")
+        P, dum = material.update_state(dt, dEdt, Pc, xtra)
         Pd = P[V] - Pt
         dnom = np.amax(np.abs(Pt)) if np.amax(np.abs(Pt)) > 2.e-16 else 1.
         relerr = np.amax(np.abs(Pd)) / dnom
-        matdat.restore()
 
         if i <= maxit1:
             if relerr < tol1:
                 converged = 1
-                matdat.restore("rate of deformation")
-                matdat.restore("deformation gradient")
                 return converged, dEdt
 
         else:
             if relerr < tol2:
                 converged = 2
                 # restore changed data and store the newly found strain rate
-                matdat.restore("rate of deformation")
-                matdat.restore("deformation gradient")
                 return converged, dEdt
 
         continue
 
     # didn't converge, restore restore data and exit
-    matdat.restore("rate of deformation")
-    matdat.restore("deformation gradient")
     return converged, dEdt
 
 
@@ -173,7 +148,7 @@ def depsmag(sym_velgrad, dt):
                      2. * sum(sym_velgrad[3:] ** 2)) * dt
 
 
-def simplex(material, simdat, matdat, dt, dEdt, Pt, V):
+def simplex(material, dt, dEdt, Pt, V):
     '''
     NAME
        simplex
