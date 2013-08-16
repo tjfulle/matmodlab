@@ -5,6 +5,7 @@ import argparse
 import __config__ as cfg
 import core.gmd as gmd
 import core.parser as parser
+from utils.errors import Error1
 
 
 def main(argv=None):
@@ -20,8 +21,8 @@ def main(argv=None):
     # parse the user input
     try:
         lines = open(args.source, "r").read()
-    except OSError:
-        raise errors.Error1("{0}: no such file".format(args.source))
+    except IOError:
+        raise Error1("{0}: no such file".format(args.source))
     runid = os.path.splitext(os.path.basename(args.source))[0]
     mm_input = parser.parse_input(lines)
 
