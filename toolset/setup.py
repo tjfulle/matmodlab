@@ -135,53 +135,53 @@ def main(argv=None):
         stop("Resolve before continuing")
 
     # build TPLs
-    # logmes("setup: looking for tpl.py files")
-    # for (d, dirs, files) in os.walk(tpl):
-    #     if "tpl.py" in files:
-    #         f = os.path.join(d, "tpl.py")
-    #         dd = d.replace(root, ".")
-    #         logmes("building tpl in {0}".format(dd), end="... ")
-    #         tplpy = imp.load_source("tpl", os.path.join(d, "tpl.py"))
-    #         info = tplpy.build_tpl(ROOT=root, SKIPTPL=args.Ntpl)
-    #         if info is None:
-    #             logerr("tpl failed to build")
-    #         else:
-    #             logmes("yes")
-    #             pypath.append(info.get("PYTHONPATH"))
+    logmes("setup: looking for tpl.py files")
+    for (d, dirs, files) in os.walk(tpl):
+        if "tpl.py" in files:
+            f = os.path.join(d, "tpl.py")
+            dd = d.replace(root, ".")
+            logmes("building tpl in {0}".format(dd), end="... ")
+            tplpy = imp.load_source("tpl", os.path.join(d, "tpl.py"))
+            info = tplpy.build_tpl(ROOT=root, SKIPTPL=args.Ntpl)
+            if info is None:
+                logerr("tpl failed to build")
+            else:
+                logmes("yes")
+                pypath.append(info.get("PYTHONPATH"))
 
-    # pypath = os.pathsep.join(x for x in pypath if x)
-    # for path in pypath:
-    #     if path not in sys.path:
-    #         sys.path.insert(0, path)
+    pypath = os.pathsep.join(x for x in pypath if x)
+    for path in pypath:
+        if path not in sys.path:
+            sys.path.insert(0, path)
 
-    # # --- executables
-    # logmes("setup: writing executable scripts")
-    # name = "gmd"
-    # gmd = os.path.join(tools, name)
-    # pyfile = os.path.join(root, "main.py")
+    # --- executables
+    logmes("setup: writing executable scripts")
+    name = "gmd"
+    gmd = os.path.join(tools, name)
+    pyfile = os.path.join(root, "main.py")
 
-    # # remove the executable first
-    # remove(gmd)
-    # pyopts = "" if not sys.dont_write_bytecode else "-B"
-    # logmes("writing {0}".format(os.path.basename(gmd)), end="...  ")
-    # with open(gmd, "w") as fobj:
-    #     fobj.write("#!/bin/sh -f\n")
-    #     fobj.write("export PYTHONPATH={0}\n".format(pypath))
-    #     fobj.write("PYTHON={0}\n".format(py_exe))
-    #     fobj.write("PYFILE={0}\n".format(pyfile))
-    #     fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
-    # os.chmod(gmd, 0o750)
-    # logmes("done")
+    # remove the executable first
+    remove(gmd)
+    pyopts = "" if not sys.dont_write_bytecode else "-B"
+    logmes("writing {0}".format(os.path.basename(gmd)), end="...  ")
+    with open(gmd, "w") as fobj:
+        fobj.write("#!/bin/sh -f\n")
+        fobj.write("export PYTHONPATH={0}\n".format(pypath))
+        fobj.write("PYTHON={0}\n".format(py_exe))
+        fobj.write("PYFILE={0}\n".format(pyfile))
+        fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
+    os.chmod(gmd, 0o750)
+    logmes("done")
 
-    # py = os.path.join(tools, "wpython")
-    # remove(py)
-    # logmes("writing {0}".format(os.path.basename(py)), end="...  ")
-    # with open(py, "w") as fobj:
-    #     fobj.write("#!/bin/sh -f\n")
-    #     fobj.write("PYTHONPATH={0}\n".format(pypath))
-    #     fobj.write("{0} {1} $*".format(py_exe, pyopts))
-    # os.chmod(py, 0o750)
-    # logmes("done")
+    py = os.path.join(tools, "wpython")
+    remove(py)
+    logmes("writing {0}".format(os.path.basename(py)), end="...  ")
+    with open(py, "w") as fobj:
+        fobj.write("#!/bin/sh -f\n")
+        fobj.write("PYTHONPATH={0}\n".format(pypath))
+        fobj.write("{0} {1} $*".format(py_exe, pyopts))
+    os.chmod(py, 0o750)
+    logmes("done")
 
     bld = os.path.join(tools, "build-mtls")
     remove(bld)
