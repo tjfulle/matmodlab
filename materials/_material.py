@@ -5,7 +5,6 @@ from utils.errors import Error1
 class Material(object):
 
     def __init__(self):
-        self.driver = "constitutive model"
         self.ndata = 0
         self.nxtra = 0
         self.xtra_var_keys = []
@@ -30,6 +29,9 @@ class Material(object):
 
     def isparam(self, param_name):
         return param_name.upper() in self.param_map
+
+    def parameters(self):
+        return sorted(self.param_map, key=lambda x: self.param_map[x])
 
     def parameter_index(self, param_name):
         return self.param_map.get(param_name.upper())

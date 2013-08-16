@@ -11,6 +11,8 @@ import argparse
 import subprocess
 from distutils import sysconfig
 
+version = "gmd 0.0.0"
+
 def logmes(message, end="\n"):
     sys.stdout.write("{0}{1}".format(message, end))
     sys.stdout.flush()
@@ -54,13 +56,15 @@ def main(argv=None):
     fdir, fnam = os.path.split(fpath)
     root = os.path.dirname(fdir)
     tpl = os.path.join(root, "tpl")
+    libd = os.path.join(root, "lib")
+    mtld = os.path.join(root, "materials")
     pypath = [root]
 
     tools = os.path.join(root, "toolset")
     core = os.path.join(root, "core")
 
     path = os.getenv("PATH", "").split(os.pathsep)
-    logmes("setup: gmd 0.0.0")
+    logmes("setup: {0}".format(version))
 
     # --- system
     logmes("checking host platform", end="... ")
@@ -131,66 +135,61 @@ def main(argv=None):
         stop("Resolve before continuing")
 
     # build TPLs
-    logmes("setup: looking for tpl.py files")
-    for (d, dirs, files) in os.walk(tpl):
-        if "tpl.py" in files:
-            f = os.path.join(d, "tpl.py")
-            dd = d.replace(root, ".")
-            logmes("building tpl in {0}".format(dd), end="... ")
-            tplpy = imp.load_source("tpl", os.path.join(d, "tpl.py"))
-            info = tplpy.build_tpl(ROOT=root, SKIPTPL=args.Ntpl)
-            if info is None:
-                logerr("tpl failed to build")
-            else:
-                logmes("yes")
-                pypath.append(info.get("PYTHONPATH"))
+    # logmes("setup: looking for tpl.py files")
+    # for (d, dirs, files) in os.walk(tpl):
+    #     if "tpl.py" in files:
+    #         f = os.path.join(d, "tpl.py")
+    #         dd = d.replace(root, ".")
+    #         logmes("building tpl in {0}".format(dd), end="... ")
+    #         tplpy = imp.load_source("tpl", os.path.join(d, "tpl.py"))
+    #         info = tplpy.build_tpl(ROOT=root, SKIPTPL=args.Ntpl)
+    #         if info is None:
+    #             logerr("tpl failed to build")
+    #         else:
+    #             logmes("yes")
+    #             pypath.append(info.get("PYTHONPATH"))
 
-    logmes("setup: looking for makemf files")
-    for (d, dirs, files) in os.walk(root):
-        if "tpl" in d:
-            del dirs[:]
-            continue
-        if "makemf.py" in files:
-            f = os.path.join(d, "makemf.py")
-            dd = d.replace(root, ".")
-            logmes("building makefile in {0}".format(dd), end="... ")
-            makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
-            made = makemf.makemf(F2PY=f2py)
-            if made == 0: logmes("yes")
-            else: logmes("no")
+    # pypath = os.pathsep.join(x for x in pypath if x)
+    # for path in pypath:
+    #     if path not in sys.path:
+    #         sys.path.insert(0, path)
 
-    pypath = os.pathsep.join(x for x in pypath if x)
-    for path in pypath:
-        if path not in sys.path:
-            sys.path.insert(0, path)
+    # # --- executables
+    # logmes("setup: writing executable scripts")
+    # name = "gmd"
+    # gmd = os.path.join(tools, name)
+    # pyfile = os.path.join(root, "main.py")
 
-    # --- executables
-    logmes("setup: writing executable scripts")
-    name = "gmd"
-    gmd = os.path.join(tools, name)
-    pyfile = os.path.join(root, "main.py")
+    # # remove the executable first
+    # remove(gmd)
+    # pyopts = "" if not sys.dont_write_bytecode else "-B"
+    # logmes("writing {0}".format(os.path.basename(gmd)), end="...  ")
+    # with open(gmd, "w") as fobj:
+    #     fobj.write("#!/bin/sh -f\n")
+    #     fobj.write("export PYTHONPATH={0}\n".format(pypath))
+    #     fobj.write("PYTHON={0}\n".format(py_exe))
+    #     fobj.write("PYFILE={0}\n".format(pyfile))
+    #     fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
+    # os.chmod(gmd, 0o750)
+    # logmes("done")
 
-    # remove the executable first
-    remove(gmd)
-    pyopts = "" if not sys.dont_write_bytecode else "-B"
-    logmes("writing {0}".format(os.path.basename(gmd)), end="...  ")
-    with open(gmd, "w") as fobj:
-        fobj.write("#!/bin/sh -f\n")
-        fobj.write("export PYTHONPATH={0}\n".format(pypath))
-        fobj.write("PYTHON={0}\n".format(py_exe))
-        fobj.write("PYFILE={0}\n".format(pyfile))
-        fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
-    os.chmod(gmd, 0o750)
-    logmes("done")
+    # py = os.path.join(tools, "wpython")
+    # remove(py)
+    # logmes("writing {0}".format(os.path.basename(py)), end="...  ")
+    # with open(py, "w") as fobj:
+    #     fobj.write("#!/bin/sh -f\n")
+    #     fobj.write("PYTHONPATH={0}\n".format(pypath))
+    #     fobj.write("{0} {1} $*".format(py_exe, pyopts))
+    # os.chmod(py, 0o750)
+    # logmes("done")
 
-    py = os.path.join(tools, "wpython")
-    remove(py)
-    logmes("writing {0}".format(os.path.basename(py)), end="...  ")
-    with open(py, "w") as fobj:
-        fobj.write("#!/bin/sh -f\n")
-        fobj.write("PYTHONPATH={0}\n".format(pypath))
-        fobj.write("{0} {1} $*".format(py_exe, pyopts))
-    os.chmod(py, 0o750)
+    bld = os.path.join(tools, "build-mtls")
+    remove(bld)
+    logmes("writing {0}".format(os.path.basename(bld)), end="...  ")
+    content = build_mtls(py_exe, fdir, root, mtld, gfortran, libd)
+    with open(bld, "w") as fobj:
+        fobj.write(content)
+    os.chmod(bld, 0o750)
     logmes("done")
 
     logmes("setup: Setup complete")
@@ -198,7 +197,6 @@ def main(argv=None):
         logmes("setup: To finish installation, "
                "add: \n          {0}\n"
                "       to your PATH environment variable".format(tools))
-
     return
 
 
@@ -218,8 +216,68 @@ def remove(paths):
     return
 
 
+def build_mtls(py_exe, this_dir, root_dir, mtl_dir, fc, lib_dir):
+    content = """\
+#!{0}
+import os
+import sys
+import imp
+import argparse
+D = {1}
+R = {2}
+M = {3}
+sys.path.insert(0, R)
+from materials.material import write_mtldb
+def logmes(message, end="\\n"):
+    sys.stdout.write("{{0}}{{1}}".format(message, end))
+    sys.stdout.flush()
+def logerr(message, end="\\n", errors=[0]):
+    if message == "_inquire_":
+        return errors[0]
+    sys.stdout.write("*** setup: error: {{0}}{{1}}".format(message, end))
+    errors[0] += 1
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", action="append",
+        help="Material to build [default: all]")
+    parser.add_argument("-d", default=[], action="append",
+        help="Additional directories to find makemf.py files")
+    args = parser.parse_args(argv)
+    logmes("build-mtl: {4}")
+    logmes("build-mtl: looking for makemf files")
+    dirs = [M]
+    for d in args.d:
+        if not os.path.isdir(d):
+            logerr("{{0}}: no such directory")
+            continue
+        dirs.append(d)
+    if logerr("_inquire_"): sys.exit()
+    kwargs = {{"FC": {5},
+              "DESTD": {6},
+              "MATERIALS": args.m}}
+    mtldict = {{}}
+    for dirpath in dirs:
+        for (d, dirs, files) in os.walk(dirpath):
+            if "makemf.py" in files:
+                f = os.path.join(d, "makemf.py")
+                logmes("building makefile in {{0}}".format(d), end="... ")
+                makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
+                made = makemf.makemf(**kwargs)
+                if made != None:
+                    logmes("yes")
+                    mtldict.update(made)
+                else:
+                    logmes("no")
+    write_mtldb(mtldict)
+    return
 if __name__ == "__main__":
-#    if sys.argv[0] != FNAM:
-#        raise SystemExit(
-#            "configure.py must be executed from {0}".format(fdir))
+    main()
+    """.format(py_exe, repr(this_dir), repr(root_dir),
+               repr(mtl_dir), version, repr(fc), repr(lib_dir))
+    return content
+
+
+if __name__ == "__main__":
     main()

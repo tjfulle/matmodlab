@@ -2,4 +2,6 @@
 *.exo
 toolset/gmd
 toolset/wpython
+toolset/build-mtls
+materials/materials.db
 *.so

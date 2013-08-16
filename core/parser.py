@@ -530,7 +530,7 @@ def pMaterial(element_list):
 
     mtlmdl = get_material_from_db(model)
     if mtlmdl is None:
-        raise Error1("{0}: material not in database".format(material))
+        raise Error1("{0}: material not in database".format(model))
 
     params = np.zeros(mtlmdl.nparam)
     for node in material.childNodes:
