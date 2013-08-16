@@ -2,6 +2,7 @@ import os
 import sys
 import xml.dom as xmldom
 import xml.dom.minidom as xdom
+from xml.parsers.expat import ExpatError
 
 from utils.errors import Error1
 from utils.impmod import load_file
@@ -40,10 +41,14 @@ def read_mtldb():
     if not os.path.isfile(MTLDB_FILE):
         return None
 
-    mtldb = {}
-    doc = xdom.parse(MTLDB_FILE)
-    materials = doc.getElementsByTagName("Materials")[0]
+    try:
+        doc = xdom.parse(MTLDB_FILE)
+    except ExpatError:
+        os.remove(MTLDB_FILE)
+        return None
 
+    mtldb = {}
+    materials = doc.getElementsByTagName("Materials")[0]
     for mtl in materials.getElementsByTagName("Material"):
         ns = Namespace()
         name = str(mtl.attributes.getNamedItem("name").value).lower()
@@ -51,12 +56,11 @@ def read_mtldb():
         filepath = os.path.realpath(os.path.join(D, filepath))
         if not os.path.isfile(filepath):
             raise Error1("{0}: no such file".format(filepath))
+        p = mtl.attributes.getNamedItem("parameters").value.split(",")
+
         ns.filepath = filepath
-        ns.mtlcls = str(mtl.attributes.getNamedItem("mclass").value)
-        params = mtl.attributes.getNamedItem("parameters").value.split(",")
-        ns.mtlparams = dict([(str(param).strip().lower(), i)
-                             for (i, param) in enumerate(params)])
-        ns.nparam = len(ns.mtlparams)
+        ns.mclass = str(mtl.attributes.getNamedItem("mclass").value)
+        ns.parameters = ", ".join(str(x.strip().lower()) for x in p)
         ns.driver = str(mtl.attributes.getNamedItem("driver").value)
         mtldb[name] = ns
     return mtldb
@@ -82,5 +86,5 @@ def write_mtldb(mtldict):
         for (aname, aval) in ns.items():
             child.setAttribute(aname, aval)
         root.appendChild(child)
-    doc.writexml(open(MTLDB_FILE, "w"), indent="  ", addindent="  ", newl="\n")
+    doc.writexml(open(MTLDB_FILE, "w"), addindent="  ", newl="\n")
     doc.unlink()

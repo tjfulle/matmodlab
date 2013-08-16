@@ -20,7 +20,7 @@ def makemf(*args, **kwargs):
     destd = kwargs.get("DESTD", D)
     materials = kwargs.get("MATERIALS")
 
-    mtldict = {}
+    mtldict = {"BUILT": {}, "FAILED": []}
 
     if materials is None:
         materials = F90_MODELS.keys()
@@ -54,7 +54,7 @@ def makemf(*args, **kwargs):
                     msg = re.sub(r"error: ", "", e.message)
                     built = None
                 except:
-                    msg = "failed to build kayenta with f2py"
+                    msg = "failed to build {0} with f2py".format(name)
                     built = None
 
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
@@ -62,7 +62,7 @@ def makemf(*args, **kwargs):
         sys.stderr.flush()
 
         if built is None:
-            print msg
+            mtldict["FAILED"].append(name)
             continue
 
         interface = items["interface"]
@@ -77,7 +77,7 @@ def makemf(*args, **kwargs):
         ns.parameters = ", ".join(material.parameters()).lower()
         ns.driver = material.driver
 
-        mtldict[material.name] = ns
+        mtldict["BUILT"][material.name] = ns
 
         if destd != D:
             shutil.move(name + ".so", os.path.join(destd, name + ".so"))

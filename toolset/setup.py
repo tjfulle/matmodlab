@@ -258,19 +258,33 @@ def main(argv=None):
               "DESTD": {6},
               "MATERIALS": args.m}}
     mtldict = {{}}
+    allfailed = []
+    allbuilt = []
     for dirpath in dirs:
         for (d, dirs, files) in os.walk(dirpath):
             if "makemf.py" in files:
                 f = os.path.join(d, "makemf.py")
-                logmes("building makefile in {{0}}".format(d), end="... ")
+                logmes("building makemf in {{0}}".format(d), end="... ")
                 makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
                 made = makemf.makemf(**kwargs)
-                if made != None:
-                    logmes("yes")
-                    mtldict.update(made)
-                else:
+                failed = made.get("FAILED")
+                built = made.get("BUILT")
+                if failed:
                     logmes("no")
-    write_mtldb(mtldict)
+                    allfailed.extend(failed)
+                else:
+                    logmes("yes")
+                    if built:
+                        mtldict.update(built)
+                        allbuilt.extend(built.keys())
+    if allfailed:
+        logmes("the following materials failed to build: "
+               "{{0}}".format(", ".join(allfailed)))
+    if allbuilt:
+        logmes("the following materials were built: "
+               "{{0}}".format(", ".join(allbuilt)))
+    if mtldict:
+        write_mtldb(mtldict)
     return
 if __name__ == "__main__":
     main()
