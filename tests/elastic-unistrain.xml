@@ -21,10 +21,9 @@
       <G> {G} </G>
     </Material>
 
-    <Extract>
+    <Extract type="ascii" step="1" ffmt="12.6E">
       <Variables>
-	stress
-	strain
+	stress strain
       </Variables>
     </Extract>
 

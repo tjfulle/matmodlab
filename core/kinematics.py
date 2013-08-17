@@ -128,7 +128,7 @@ def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional):
         # --- didn't converge, try Newton's method with initial
         # --- d[v]=0.
         d = dsave.copy()
-        d[v] = np.zeros(len(nv))
+        d[v] = np.zeros(len(v))
         d = solvers.newton(material, dt, d, sig, xtra, v, sigspec)
         if d is not None:
             return d

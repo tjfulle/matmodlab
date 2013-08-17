@@ -555,13 +555,16 @@ def pPermutation(permlmn):
 
 
 def pExtract(extlmn):
-    otype = extlmn.attributes.get("type")
-    if otype is None:
-        otype = "ascii"
-    else:
-        otype = otype.value.lower()
-        if otype not in ("ascii",):
-            raise Error1("Extract: {0}: unrecognized type".format(otype))
+
+    options = OptionHolder()
+    options.addopt("type", "ascii", dtype=str, choices=("ascii", ))
+    options.addopt("step", 1, dtype=int)
+    options.addopt("ffmt", ".18f", dtype=str)
+
+    # Get control terms
+    for i in range(extlmn.attributes.length):
+        options.setopt(*get_name_value(extlmn.attributes.item(i)))
+
     variables = []
     for item in extlmn.getElementsByTagName("Variables"):
         data = item.firstChild.data.split("\n")
@@ -570,7 +573,8 @@ def pExtract(extlmn):
             variables = "ALL"
             break
         variables.extend(data)
-    return otype, variables
+    return (options.getopt("type"), options.getopt("step"),
+            options.getopt("ffmt"), variables)
 
 
 def simulation_namespace(simlmn):

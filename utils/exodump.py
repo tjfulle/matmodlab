@@ -18,7 +18,7 @@ def main(argv=None):
     exodump(args.source, outfile=args.outfile, variables=args.variables)
 
 
-def exodump(filepath, outfile=None, variables="ALL"):
+def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=".18f"):
     """Read the exodus file in filepath and dump the contents to a columnar data
     file
 
@@ -28,6 +28,8 @@ def exodump(filepath, outfile=None, variables="ALL"):
 
     if outfile is None:
         outfile = os.path.splitext(filepath)[0] + ".out"
+
+    ffmt = lambda a, fmt="{0: "+ffmt+"} ": fmt.format(float(a))
 
     exof = ExodusIIReader.new_from_exofile(filepath)
     glob_var_names = exof.glob_var_names()
@@ -41,20 +43,25 @@ def exodump(filepath, outfile=None, variables="ALL"):
             raise Error1("{0}: variables not in "
                          "{1}".format(", ".join(bad), filepath))
 
-    ffmt = "{0: .18f} "
+    def myrange(start, end, step):
+        r = [i for i in range(start, end, step)]
+        if end - 1 not in r:
+            r.append(end - 1)
+        return r
+
     with open(outfile, "w") as fobj:
         fobj.write("TIME {0} {1}\n".format(" ".join(glob_var_names).upper(),
                                              " ".join(elem_var_names).upper()))
-        for i in range(exof.num_time_steps):
+        for i in myrange(0, exof.num_time_steps, step):
             time = exof.get_time(i)
-            fobj.write("{0:.18f} ".format(time))
+            fobj.write(ffmt(time) + " ")
             glob_vars_vals = exof.get_glob_vars(i, disp=1)
             for var in glob_var_names:
-                try: fobj.write(ffmt.format(glob_vars_vals[var]))
+                try: fobj.write(ffmt(glob_vars_vals[var]))
                 except KeyError: continue
             for var in elem_var_names:
                 val = exof.get_elem_var(i, var)[0]
-                fobj.write(ffmt.format(val))
+                fobj.write(ffmt(val))
             fobj.write("\n")
 
 
@@ -77,7 +84,7 @@ def find_matches(master, slave):
             slave[i] = None
             continue
         vt = []
-        for match in re.findall(r"(?i)\W{0}-[XYZ]+".format(name), mstring):
+        for match in re.findall(r"(?i)\b{0}-[XYZ]+".format(name), mstring):
             vt.append(match.strip())
             slave[i] = None
             continue
