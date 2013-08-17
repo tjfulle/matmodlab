@@ -5,7 +5,18 @@ import datetime
 import exowriter as exo
 
 
-class IOManager(object):
+def logmes(message):
+    sys.stdout.write("gmd: {0}\n".format(message))
+
+
+def logwrn(message=None, warnings=[0]):
+    if message is None:
+        return warnings[0]
+    sys.stderr.write("*** gmd: warning: {0}\n".format(message))
+    warnings[0] += 1
+
+
+class ExoManager(object):
     """The main IO manager
 
     """

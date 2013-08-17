@@ -5,6 +5,7 @@ from numpy.linalg import solve, lstsq
 
 from __config__ import cfg
 import core.kinematics as kin
+import utils.io as io
 import utils.tensor as tensor
 from utils.tensor import NSYMM, NTENS, NVEC, I9
 from utils.errors import Error1
@@ -73,7 +74,7 @@ class SolidDriver(Driver):
         -------
 
         """
-        print "Starting calculations for simulation {0}".format(self.runid)
+        io.logmes("Starting calculations for simulation {0}".format(self.runid))
 
         kappa = self.kappa
 
@@ -208,7 +209,7 @@ class SolidDriver(Driver):
                     iomgr(dt, t)
 
                 if cfg.verbosity and (n == 0 or round(nsteps / 2.) == n or endstep):
-                    print consfmt.format(leg_num, n + 1, t, dt)
+                    io.logmes(consfmt.format(leg_num, n + 1, t, dt))
 
                 continue  # continue to next step
 

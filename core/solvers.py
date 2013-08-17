@@ -5,6 +5,8 @@ import numpy as np
 import scipy.optimize
 import sys
 
+import utils.io as io
+
 EPS = np.finfo(np.float).eps
 
 
@@ -94,7 +96,7 @@ def newton(material, dt, darg, sigarg, xtraarg, v, sigspec):
 
         except:
             d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
-            print "Using least squares approximation to matrix inverse"
+            io.logwrn("Using least squares approximation to matrix inverse")
 
         if (depsmag(d) > depsmax):
             # increment too large

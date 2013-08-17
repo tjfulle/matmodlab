@@ -69,8 +69,8 @@ class ModelDriver(object):
         all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
         title = "gmd {0} simulation".format(self.driver.name)
 
-        self.io = io.IOManager(self.runid, self.num_dim, self.coords, connect,
-                               elem_blks, all_element_data, title)
+        self.exo = io.ExoManager(self.runid, self.num_dim, self.coords, connect,
+                                 elem_blks, all_element_data, title)
 
     def dump_state(self, dt, time_end):
         elem_blk_id = 1
@@ -85,7 +85,7 @@ class ModelDriver(object):
             k = i * self.num_dim
             u[k:k+self.num_dim] = np.dot(F, X) - X
 
-        self.io.write_data(time_end, dt, all_element_data, u)
+        self.exo.write_data(time_end, dt, all_element_data, u)
 
     def variables(self):
         return self.driver.variables()
@@ -93,9 +93,9 @@ class ModelDriver(object):
     def finish(self):
         # udpate and close the file
         self.timing["final"] = time.time()
-        print "Finished calculations for simulation {0} in {1:.4f}s".format(
-            self.runid, self.timing["final"] - self.timing["initial"])
-        self.io.finish()
+        io.logmes("Finished calculations for simulation {0} in {1:.4f}s".format(
+            self.runid, self.timing["final"] - self.timing["initial"]))
+        self.exo.finish()
 
         if self.extract:
             otype, step, ffmt, variables = self.extract

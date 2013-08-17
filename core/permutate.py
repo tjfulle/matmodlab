@@ -7,6 +7,7 @@ import xml.dom.minidom as xdom
 import multiprocessing as mp
 from itertools import izip, product
 
+import utils.io as io
 from utils.errors import Error1
 from utils.pprepro import find_and_make_subs
 
@@ -46,7 +47,7 @@ class PermutationDriver(object):
 
         os.chdir(self.rootd)
         cwd = os.getcwd()
-        print "Starting permutation jobs"
+        io.logmes("Starting permutation jobs")
 
         job_inp = ((i, self.exe, self.runid, self.names, self.basexml,
                     params, self.rootd)
@@ -62,7 +63,7 @@ class PermutationDriver(object):
             pool.close()
             pool.join()
 
-        print "Finished permutation jobs"
+        io.logmes("Finished permutation jobs")
         return
 
     def finish(self):
@@ -115,13 +116,13 @@ def run_single_job(args):
 
     cmd = "{0} {1}".format(exe, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
-    print "Starting job {0}".format(job_num)
+    io.logmes("Starting job {0}".format(job_num))
     job = subprocess.Popen(cmd.split(), stdout=out,
                            stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
-        print "Job {0} failed".format(job_num)
+        io.logmes("Job {0} failed".format(job_num))
     else:
-        print "Finished with job {0}".format(job_num)
+        io.logmes("Finished with job {0}".format(job_num))
 
     return job.returncode

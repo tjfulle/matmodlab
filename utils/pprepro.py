@@ -3,12 +3,9 @@ import sys
 import math
 import numpy as np
 
+import utils.io as io
 from utils.errors import Error1
 from __config__ import cfg
-
-
-def warning(message):
-    print "*** warning: {0}".format(message)
 
 
 # safe values to be used in eval
@@ -115,7 +112,7 @@ def make_var_subs(lines, vdict):
         # jobs to make sure that all permutated and optimized variables are
         # used properly in the file before the job actually begins.
         if not re.search(pregex.format(pat), lines):
-            warning("{0}: not found in input".format(pat))
+            io.logwrn("{0}: not found in input".format(pat))
         continue
 
     # Print out preprocessed values for debugging
