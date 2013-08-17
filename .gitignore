@@ -6,3 +6,4 @@ toolset/build-mtls
 materials/materials.db
 *.so
 *.out
+*.perm

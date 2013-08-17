@@ -18,6 +18,8 @@ def main(argv=None):
        help="Verbosity [default: %(default)s]")
     parser.add_argument("--dbg", default=False, action="store_true",
        help="Debug mode [default: %(default)s]")
+    parser.add_argument("-j", default=1, type=int,
+       help="Number of simultaneous jobs to run [default: %(default)s]")
     args = parser.parse_args(argv)
     cfg.verbosity = args.v
     cfg.debug = args.dbg
@@ -40,9 +42,11 @@ def main(argv=None):
 
     elif mm_input.stype == "permutation":
         f = os.path.realpath(__file__)
+        opts = (args.j,)
         exe = "{0} {1}".format(sys.executable, f)
         model = perm.PermutationDriver(runid, exe, mm_input.method,
-                                       mm_input.parameters, mm_input.basexml)
+                                       mm_input.parameters, mm_input.basexml,
+                                       *opts)
 
     else:
         sys.exit("{0}: unrecognized simulation type".format(mm_input.stype))

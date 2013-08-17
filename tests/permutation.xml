@@ -1,0 +1,33 @@
+<GMDSpec>
+
+  <Permutation method="zip" seed="12">
+    <Permutate var="K" method="weibull(125.e9, 14, 3)"/>
+    <Permutate var="G" method="percentage(45.e9, 10)"/>
+  </Permutation>
+
+  <Simulation>
+
+    <Legs kappa="0" tstar="1" estar="-.5" amplitude="1" nfac="1000" ratfac="1">
+      <!-- termination time, number of steps, control, Cij -->
+      0 0 222222 0 0 0 0 0 0
+      1 1 222222 1 0 0 0 0 0
+      2 1 222222 2 0 0 0 0 0
+      3 1 222222 1 0 0 0 0 0
+      4 1 222222 0 0 0 0 0 0
+    </Legs>
+
+    <Material density="5" model="elastic">
+      <K> {K} </K>
+      <G> {G} </G>
+    </Material>
+
+    <Extract>
+      <Variables>
+	stress
+	strain
+      </Variables>
+    </Extract>
+
+  </Simulation>
+
+</GMDSpec>
