@@ -2,7 +2,7 @@
 
 import sys
 import numpy as np
-from numpy.linalg import inv as inv
+from numpy.linalg import inv, solve, lstsq
 
 import utils.tensor as tensor
 from utils.tensor import expm, powm, logm, sqrtm
@@ -90,8 +90,18 @@ def deps2d(dt, k, eps, depsdt):
     return as6x1(d)
 
 
-def sig2d(material, dt, J0, Ec, Et, Pc, Pt, V):
-    """Seek to determine the unknown components of the symmetric part of
+def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional):
+    """Determine the symmetric part of the velocity gradient given stress
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+
+    Approach
+    --------
+    Seek to determine the unknown components of the symmetric part of
     velocity gradient d[v] satisfying
 
                                P(d[v]) = Ppres[:]                      (1)
@@ -101,20 +111,6 @@ def sig2d(material, dt, J0, Ec, Et, Pc, Pt, V):
     which stresses (or stress rates) are prescribed, and Ppres[:] are the
     prescribed values at the current time.
 
-    Parameters
-    ----------
-    material : constitutive model instance
-    simdat : data container object
-       simulation data container
-    matdat : data container object
-       material data container
-
-    Returns
-    -------
-    None
-
-    Approach
-    --------
     Solution is found iteratively in (up to) 3 steps
       1) Call newton to solve 1, return stress, xtra, d if converged
       2) Call newton with d[v] = 0. to solve 1, return stress, xtra, d
@@ -122,36 +118,25 @@ def sig2d(material, dt, J0, Ec, Et, Pc, Pt, V):
       3) Call simplex with d[v] = 0. to solve 1, return stress, xtra, d
 
     """
+    dsave = d.copy()
 
-    # Jacobian
-    Js = J0[[[x] for x in V], V]
-
-    Pd = Pt - Pc[V]
-    dEdt = (Et - Ec) / dt
-    try:
-        dEdt[V] = np.linalg.solve(Js, Pd) / dt
-    except:
-        dEdt[V] -= np.linalg.lstsq(Js, Pd)[0] / dt
-    dEdt0 = np.array(dEdt)
-
-    nV = len(V)
-    W = np.zeros(9)
     if not proportional:
-        converged, dEdt = solvers.newton(material, dt, Pt, V, dEdt)
-        if converged:
-            return dEdt, W
+        d = solvers.newton(material, dt, d, sig, xtra, v, sigspec)
+        if d is not None:
+            return d
 
         # --- didn't converge, try Newton's method with initial
-        # --- d[V]=0.
-        dEdt[V] = np.zeros(nV)
-        converged, dEdt = solvers.newton(material, dt, Pt, V, dEdt)
-        if converged:
-            return dEdt, W
+        # --- d[v]=0.
+        d = dsave.copy()
+        d[v] = np.zeros(len(nv))
+        d = solvers.newton(material, dt, d, sig, xtra, v, sigspec)
+        if d is not None:
+            return d
 
     # --- Still didn't converge. Try downhill simplex method and accept
     #     whatever answer it returns:
-    dEdt = solvers.simplex(material, dt, dEdt0, Pt, V)
-    return dEdt, W
+    d = dsave.copy()
+    return solvers.simplex(material, dt, d, sig, xtra, v, sigspec, proportional)
 
 
 def update_deformation(dt, k, f0, d):

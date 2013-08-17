@@ -31,19 +31,8 @@ class Elastic(Material):
         elastic.elastic_check(params)
         K, G, = params
         self.params = params
-
-        E = 9. * K * G / (6. * K + G)
-        nu = (3. * K - 2. * G) / (6. * K + 2 * G)
-
-        # compute the constant stiffness
-        Eh = E / (1. + nu) / (1. - 2 * nu)
-        self.C = Eh * np.array([[1. - nu, nu, nu, 0, 0, 0],
-                                [nu, 1. - nu, nu, 0, 0, 0],
-                                [nu, nu, 1. - nu, 0, 0, 0],
-                                [0, 0, 0, (1. - 2 * nu) / 2., 0, 0],
-                                [0, 0, 0, 0, (1. - 2 * nu) / 2., 0],
-                                [0, 0, 0, 0, 0, (1. - 2 * nu) / 2.]],
-                               dtype=np.float64)
+        self.bulk_modulus = K
+        self.shear_modulus = G
 
     def update_state(self, dt, d, stress, xtra):
         """Compute updated stress given strain increment
@@ -74,7 +63,7 @@ class Elastic(Material):
         elastic.elastic_update_state(dt, self.params, d, stress)
         return stress, xtra
 
-    def stiffness(self, dt, d, stress, xtra):
+    def _jacobian(self, dt, d, stress, xtra, v):
         """Return the constant stiffness
         dt : float
             time step
@@ -86,6 +75,6 @@ class Elastic(Material):
             Stress at beginning of step
 
         """
-        return self.C
+        return self.constant_jacobian(v)
         #J = elastic.elastic_stiff(dt, self.params, d, stress)
         #return J

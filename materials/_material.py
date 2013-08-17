@@ -27,6 +27,68 @@ class Material(object):
                     for x in "".join(keys).split("|") if x.split()]
         self.xtra_var_keys = keys
 
+    def jacobian(self, dt, d, sig, xtra, v):
+        """Numerically compute material Jacobian by a centered difference scheme.
+
+        Returns
+        -------
+        Js : array_like
+          Jacobian of the deformation J = dsig / dE
+
+        Notes
+        -----
+        The submatrix returned is the one formed by the intersections of the
+        rows and columns specified in the vector subscript array, v. That is,
+        Js = J[v, v]. The physical array containing this submatrix is
+        assumed to be dimensioned Js[nv, nv], where nv is the number of
+        elements in v. Note that in the special case v = [1,2,3,4,5,6], with
+        nv = 6, the matrix that is returned is the full Jacobian matrix, J.
+
+        The components of Js are computed numerically using a centered
+        differencing scheme which requires two calls to the material model
+        subroutine for each element of v. The centering is about the point eps
+        = epsold + d * dt, where d is the rate-of-strain array.
+
+        History
+        -------
+        This subroutine is a python implementation of a routine by the same
+        name in Tom Pucick's MMD driver.
+
+        Authors
+        -------
+        Tom Pucick, original fortran implementation in the MMD driver
+        Tim Fuller, Sandial National Laboratories, tjfulle@sandia.gov
+
+        """
+
+        # local variables
+        nv = len(v)
+        deps =  np.sqrt(np.finfo(np.float).eps)
+        Jsub = np.zeros((nv, nv))
+        dt = 1 if dt == 0. else dt
+
+        for i in range(nv):
+            # perturb forward
+            dp = d.copy()
+            dp[v[i]] = d[v[i]] + (deps / dt) / 2.
+            sigp = sig.copy()
+            xtrap = xtra.copy()
+            sigp, xtrap = self.update_state(dt, dp, sigp, xtrap)
+
+            # perturb backward
+            dm = d.copy()
+            dm[v[i]] = d[v[i]] - (deps / dt) / 2.
+            sigm = sig.copy()
+            xtram = xtra.copy()
+            sigm, xtram = self.update_state(dt, dm, sigm, xtram)
+
+            # compute component of jacobian
+            Jsub[i, :] = (sigp[v] - sigm[v]) / deps
+
+            continue
+
+        return Jsub
+
     def isparam(self, param_name):
         return param_name.upper() in self.param_map
 
@@ -53,3 +115,24 @@ class Material(object):
 
     def initial_state(self):
         return self.xtra
+
+    def constant_jacobian(self, v=np.arange(6)):
+        jac = np.zeros((6, 6))
+        threek = 3. * self.bulk_modulus
+        twog = 2. * self.shear_modulus
+        nu = (threek - twog) / (2. * threek + twog)
+        c1 = (1. - nu) / (1. + nu)
+        c2 = nu / (1. + nu)
+
+        # set diagonal
+        for i in range(3):
+            jac[i, i] = threek * c1
+        for i in range(3, 6):
+            jac[i, i] = twog
+
+        # off diagonal
+        (jac[0, 1], jac[0, 2],
+         jac[1, 0], jac[1, 2],
+         jac[2, 0], jac[2, 1]) = [threek * c2] * 6
+
+        return jac[[[x] for x in v], v]

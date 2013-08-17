@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+from numpy.linalg import solve, lstsq
 
 from __config__ import cfg
 import core.kinematics as kin
@@ -31,7 +32,7 @@ class SolidDriver(Driver):
         self.mtlmdl.setup(mtlprops)
         self.mtlmdl.initialize()
 
-        self.kappa, self.density = opts[:2]
+        self.kappa, self.density, self.proportional = opts[:3]
 
         # register variables
         self.register_variable("STRESS", vtype="SYMTENS")
@@ -88,6 +89,11 @@ class SolidDriver(Driver):
         sig = np.zeros(NSYMM)
         sigdum = np.zeros((2, NSYMM))
 
+        # compute the initial jacobian
+        J0 = self.mtlmdl.constant_jacobian()
+
+        # v array is an array of integers that contains the rows and columns of
+        # the slice needed in the jacobian subroutine.
         nv = 0
         v = np.empty(nv)
         sigspec = np.empty((3, nv))
@@ -100,7 +106,7 @@ class SolidDriver(Driver):
 
             tleg[0] = tleg[1]
             sigdum[0] = sig[:]
-            if v:
+            if len(v):
                 sigdum[0, v] = sigspec[1]
 
             tleg[1], nsteps, ltype, c, ef = leg
@@ -137,16 +143,24 @@ class SolidDriver(Driver):
             sigspec = np.empty((3, nv))
             v = vdum[:nv]
             sigspec[:2] = sigdum[:2, v]
+            Jsub = J0[[[x] for x in v], v]
 
             t = tleg[0]
             dt = delt / nsteps
 
-            # process this leg
             if not nv:
                 # strain or strain rate prescribed and d is constant over
                 # entire leg
                 d = kin.deps2d(delt, kappa, eps, depsdt)
 
+            else:
+                # Initial guess for d[v]
+                try:
+                    depsdt[v] = solve(Jsub, (sigspec[1] - sigspec[0]) / delt)
+                except:
+                    depsdt[v] -= lstsq(Jsub, (sigspec[1] - sigspec[0]) / delt)[0]
+
+            # process this leg
             for n in range(nsteps):
 
                 # increment time
@@ -161,10 +175,8 @@ class SolidDriver(Driver):
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    jac = self.mtlmdl.jacobian()
-                    d = kin.sig2d(self.mtlmdl, dt, jac,
-                                  strain[2], trg_strain,
-                                  stress[2], trg_stress, v)
+                    d = kin.sig2d(self.mtlmdl, dt, depsdt,
+                                  sig, xtra, v, sigspec[2], self.proportional)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate

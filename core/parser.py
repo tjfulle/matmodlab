@@ -93,6 +93,7 @@ def parse_input(user_input):
 
     ns.legs = blocks["Legs"][0]
     ns.kappa = blocks["Legs"][1]
+    ns.proportional = blocks["Legs"][2]
 
     if "Optimize" in blocks:
         ns.stype = "optimize"
@@ -123,6 +124,7 @@ def pLegs(element_list):
     options.addopt("efstar", 1.)
     options.addopt("dstar", 1.)
     options.addopt("type", "default", dtype=str)
+    options.addopt("proportional", "0", dtype=str)
 
     # the following options are for table formatted legs
     options.addopt("tblcols", "1:7", dtype=str)
@@ -161,7 +163,13 @@ def pLegs(element_list):
 
     legs = format_legs(legs, options)
 
-    return legs, options.getopt("kappa")
+    proportional = options.getopt("proportional")
+    if proportional.lower() in ("false", "no", "0"):
+        proportional = 0
+    else:
+        proportional = 1
+
+    return legs, options.getopt("kappa"), proportional
 
 
 def parse_legs_default(lines):

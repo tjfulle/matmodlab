@@ -15,8 +15,11 @@ def main(argv=None):
     aparser.add_argument("source", help="Source file path")
     aparser.add_argument("-v", default=1, type=int,
        help="Verbosity [default: %(default)s]")
+    aparser.add_argument("--dbg", default=False, action="store_true",
+       help="Debug mode [default: %(default)s]")
     args = aparser.parse_args(argv)
     cfg.verbosity = args.v
+    cfg.debug = args.dbg
 
     # parse the user input
     try:
@@ -27,9 +30,9 @@ def main(argv=None):
     mm_input = parser.parse_input(lines)
 
     if mm_input.stype == "simulation":
+        opts = (mm_input.kappa, mm_input.density, mm_input.proportional)
         model = gmd.ModelDriver(runid, mm_input.driver, mm_input.mtlmdl,
-                                mm_input.mtlprops, mm_input.legs, mm_input.kappa,
-                                mm_input.density)
+                                mm_input.mtlprops, mm_input.legs, *opts)
 
     else:
         sys.exit("{0}: simulation type not known".format(mm_input.stype))

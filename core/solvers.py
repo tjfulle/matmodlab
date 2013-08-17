@@ -5,207 +5,180 @@ import numpy as np
 import scipy.optimize
 import sys
 
-import utils.tensor as tensor
-EPSILON = np.finfo(np.float).eps
+EPS = np.finfo(np.float).eps
 
 
-def newton(material, dt, Pt, V, dEdt):
-    '''
-    NAME
-       newton
+def newton(material, dt, darg, sigarg, xtraarg, v, sigspec):
+    """Seek to determine the unknown components of the symmetric part of velocity
+    gradient d[v] satisfying
 
-    PURPOSE
-       Seek to determine the unknown components of the symmetric part of velocity
-       gradient dEdt[V] satisfying
+                               sig(d[v]) = sigspec
 
-                               P(dEdt[V]) = Pt
+    where sig is the current stress, d the symmetric part of the velocity
+    gradient, v is a vector subscript array containing the components for
+    which stresses (or stress rates) are prescribed, and sigspec are the
+    prescribed values at the current time.
 
-       where P is the current stress, dEdt the symmetric part of the velocity
-       gradient, V is a vector subscript array containing the components for
-       which stresses (or stress rates) are prescribed, and Pt are the
-       prescribed values at the current time.
+    Parameters
+    ----------
+    material : instance
+        constiutive model instance
+    dt : float
+        time step
+    sig : ndarray
+        stress at beginning of step
+    xtra : ndarray
+        extra variables at beginning of step
+    v : ndarray
+        vector subscript array containing the components for which
+        stresses (or stress rates) are specified
+    sigspec : ndarray
+        Prescribed stress
 
-    INPUT
-       material:   constiutive model instance
-       simdat: simulation data container
-               dEdt: strain rate
-               dt: timestep
-               P: current stress
-               Pt: prescribed values of stress
-               V: vector subscript array containing the components for which
-                  stresses are prescribed
 
-    OUTPUT
-       simdat: simulation data container
-               dEdt: strain rate at the half step
-       converged: 0  did not converge
-                  1  converged based on tol1 (more stringent)
-                  2  converged based on tol2 (less stringent)
+    Returns
+    -------
+    d : ndarray || None
+        If converged, the symmetric part of the velocity gradient, else None
 
-    THEORY:
-       The approach is an iterative scheme employing a multidimensional Newton's
-       method. Each iteration begins with a call to subroutine jacobian, which
-       numerically computes the Jacobian submatrix
+    Notes
+    -----
+    The approach is an iterative scheme employing a multidimensional Newton's
+    method. Each iteration begins with a call to subroutine jacobian, which
+    numerically computes the Jacobian submatrix
 
-                                  Js = J[V, V]
+                                  Js = J[v, v]
 
-       where J[:,;] is the full Jacobian matrix J = dsig/deps. The value of
-       dEdt[V] is then updated according to
+    where J[:,;] is the full Jacobian matrix J = dsig/deps. The value of
+    d[v] is then updated according to
 
-                dEdt[V] = dEdt[V] - Jsi*Pd(dEdt[V])/dt
+                d[v] = d[v] - Jsi*sigerr(d[v])/dt
 
-       where
+    where
 
-                   Pd(dEdt[V]) = P(dEdt[V]) - Pt
+                   sigerr(d[v]) = sig(d[v]) - sigspec
 
-       The process is repeated until a convergence critierion is satisfied. The
-       argument converged is a flag indicat- ing whether or not the procedure
-       converged:
+    The process is repeated until a convergence critierion is satisfied. The
+    argument converged is a flag indicat- ing whether or not the procedure
+    converged:
 
-    HISTORY
-       This is a python implementation of the fortran routine of the same name in
-       Tom Pucik's MMD driver.
+    """
+    depsmag = lambda a: math.sqrt(sum(a[:3] ** 2) + 2. * sum(a[3:] ** 2)) * dt
 
-    AUTHORS
-       Tom Pucick, original fortran coding
-       Tim Fuller, Sandia National Laboratories, tjfulle@sandia.gov
-                   python implementation
-       M Scot Swan, Sandia National Laboratories, mswan@sandia.gov
-                   replaced computation of inverse of the Jacobian with the more
-                   computationally robust and faster iterative solver
-    '''
+    # Initialize
+    tol1, tol2 = EPS, math.sqrt(EPS)
+    maxit1, maxit2, depsmax = 20, 30, .2
 
-    # --- Local variables
-    nV = len(V)
-    Pd = np.zeros(nV)
-    tol1, tol2 = EPSILON, math.sqrt(EPSILON)
-    maxit1, maxit2, depsmax, converged = 20, 30, 0.2, 0
+    sig = sigarg.copy()
+    d = darg.copy()
+    xtra = xtraarg.copy()
+
+    sigsave = sig.copy()
+    xtrasave = xtra.copy()
 
     # --- Check if strain increment is too large
-    if (depsmag(dEdt, dt) > depsmax):
-        return converged, dEdt
+    if (depsmag(d) > depsmax):
+        return None
 
     # update the material state to get the first guess at the new stress
-    material.update_state(simdat, matdat)
-    P, dum = material.update_state(dt, dEdt, Pc, xtra)
-    Pd = P[V] - Pt
+    sig, xtra = material.update_state(dt, d, sig, xtra)
+    sigerr = sig[v] - sigspec
 
     # --- Perform Newton iteration
     for i in range(maxit2):
-        Js = material.jacobian(simdat, matdat, V)
+        sig = sigsave.copy()
+        xtra = xtrasave.copy()
+        Jsub = material.jacobian(dt, d, sig, xtra, v)
         try:
-            dEdt[V] -= np.linalg.solve(Js, Pd) / dt
+            d[v] -= np.linalg.solve(Jsub, sigerr) / dt
 
         except:
-            dEdt[V] -= np.linalg.lstsq(Js, Pd)[0] / dt
+            d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
             print "Using least squares approximation to matrix inverse"
 
-        if (depsmag(dEdt, dt) > depsmax):
-            # increment too large, restore changed data and exit
-            return converged, D0
+        if (depsmag(d) > depsmax):
+            # increment too large
+            return None
 
-        P, dum = material.update_state(dt, dEdt, Pc, xtra)
-        Pd = P[V] - Pt
-        dnom = np.amax(np.abs(Pt)) if np.amax(np.abs(Pt)) > 2.e-16 else 1.
-        relerr = np.amax(np.abs(Pd)) / dnom
+        sig, xtra = material.update_state(dt, d, sig, xtra)
+        sigerr = sig[v] - sigspec
+        dnom = max(np.amax(np.abs(sigspec)), 1.)
+        relerr = np.amax(np.abs(sigerr) / dnom)
 
-        if i <= maxit1:
-            if relerr < tol1:
-                converged = 1
-                return converged, dEdt
+        if i <= maxit1 and relerr < tol1:
+            return d
 
-        else:
-            if relerr < tol2:
-                converged = 2
-                # restore changed data and store the newly found strain rate
-                return converged, dEdt
+        elif i > maxit1 and relerr < tol2:
+            return d
 
         continue
 
     # didn't converge, restore restore data and exit
-    return converged, dEdt
+    return None
 
 
-def depsmag(sym_velgrad, dt):
-    '''
-    NAME
-       depsmag
+def simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional):
+    """Perform a downhill simplex search to find sym_velgrad[v] such that
 
-    PURPOSE
-       return the L2 norm of the rate of the strain increment
+                        sig(sym_velgrad[v]) = sigspec[v]
 
-    INPUT
-       sym_velgrad:  symmetric part of the velocity gradient at the half-step
-       dt: time step
+    Parameters
+    ----------
+    material : instance
+        constiutive model instance
+    dt : float
+        time step
+    sig : ndarray
+        stress at beginning of step
+    xtra : ndarray
+        extra variables at beginning of step
+    v : ndarray
+        vector subscript array containing the components for which
+        stresses (or stress rates) are specified
+    sigspec : ndarray
+        Prescribed stress
 
-    OUTPUT
-       depsmag: L2 norm of the strain increment
+    Returns
+    -------
+    d : ndarray
+        the symmetric part of the velocity gradient
 
-    AUTHORS
-       Tim Fuller, Sandia National Laboratories, tjfulle@sandia.gov
-    '''
-    return math.sqrt(sum(sym_velgrad[:3] ** 2) +
-                     2. * sum(sym_velgrad[3:] ** 2)) * dt
-
-
-def simplex(material, dt, dEdt, Pt, V):
-    '''
-    NAME
-       simplex
-
-    PURPOSE
-       Perform a downhill simplex search to find sym_velgrad[V] such that
-                        P(sym_velgrad[V]) = Pt[V]
-
-    AUTHORS
-       Tim Fuller, Sandia National Laboratories, tjfulle@sandia.gov
-       M Scot Swan, Sandia National Laboratories, mswan@sandia.gov
-    '''
+    """
     # --- Perform the simplex search
-    args = (material, simdat, matdat, dt, dEdt.copy(), Pt, V)
-    dEdt[V] = scipy.optimize.fmin(func, dEdt[V],
-                                  args=args, maxiter=20, disp=False)
-    return dEdt
+    d = darg.copy()
+    sig = sigarg.copy()
+    xtra = xtraarg.copy()
+    args = (material, dt, d, sig, xtra, v, sigspec, proportional)
+    d[v] = scipy.optimize.fmin(func, d[v], args=args, maxiter=20, disp=False)
+    return d
 
 
-def func(x, material, simdat, matdat, dt, dEdt, Pt, V):
-    '''
-    NAME
-       func
+def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional):
+    """Objective function to be optimized by simplex
 
-    PURPOSE
-       Objective function to minimize during simplex search
-
-    AUTHORS
-       Tim Fuller, Sandia National Laboratories, tjfulle@sandia.gov
-       M Scot Swan, Sandia National Laboratories, mswan@sandia.gov
-    '''
+    """
+    d = darg.copy()
+    sig = sigarg.copy()
+    xtra = xtraarg.copy()
 
     # initialize
-    dEdt[V] = x
-    F0 = matdat.get("deformation gradient", copy=True)
-    D0 = matdat.get("rate of deformation", copy=True)
-    Ff = F0 + tensor.dot(dEdt, F0) * dt
+    d[v] = x
 
     # store the best guesses
-    matdat.store("rate of deformation", dEdt)
-    matdat.store("deformation gradient", Ff)
-    material.update_state(simdat, matdat)
-    P = matdat.get("stress", copy=True)
-    matdat.restore()
+    sig, xtra = material.update_state(dt, d, sig, xtra)
 
     # check the error
     error = 0.
     if not proportional:
-        for i, j in enumerate(V):
-            error += (P[j] - Pt[i]) ** 2
+        for i, j in enumerate(v):
+            error += (sig[j] - sigspec[i]) ** 2
             continue
 
     else:
         stress_v, stress_u = [], []
-        for i, j in enumerate(V):
-            stress_u.append(Pt[i])
-            stress_v.append(P[j])
+        for i, j in enumerate(v):
+            stress_u.append(sigspec[i])
+            stress_v.append(sig[j])
             continue
         stress_v = np.array(stress_v)
         stress_u = np.array(stress_u)
@@ -217,9 +190,5 @@ def func(x, material, simdat, matdat, dt, dEdt, Pt, V):
             error = np.linalg.norm(dum) + np.linalg.norm(stress_v - dum) ** 2
         else:
             error = np.linalg.norm(stress_v)
-
-    # restore data
-    matdat.restore("rate of deformation")
-    matdat.restore("deformation gradient")
 
     return error

@@ -1,0 +1,17 @@
+<Model>
+
+  <Legs kappa="0" tstar="1" estar="-.5" amplitude="1" nfac="1000" ratfac="1">
+    <!-- termination time, number of steps, control, Cij -->
+    0 0 222222 0 0 0 0 0 0
+    1 1 222222 1 0 0 0 0 0
+    2 1 222222 2 0 0 0 0 0
+    3 1 222222 1 0 0 0 0 0
+    4 1 222222 0 0 0 0 0 0
+  </Legs>
+
+  <Material density="5" model="elastic">
+    <K> 9.980040E+09 </K>
+    <G> 3.750938E+09 </G>
+  </Material>
+
+</Model>
