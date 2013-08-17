@@ -37,7 +37,6 @@ def newton(material, dt, darg, sigarg, xtraarg, v, sigspec):
     sigspec : ndarray
         Prescribed stress
 
-
     Returns
     -------
     d : ndarray || None

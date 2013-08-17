@@ -124,7 +124,7 @@ def pLegs(leglmn):
     options.addopt("efstar", 1.)
     options.addopt("dstar", 1.)
     options.addopt("type", "default", dtype=str)
-    options.addopt("proportional", "0", dtype=str)
+    options.addopt("proportional", "0", dtype=mybool)
 
     # the following options are for table formatted legs
     options.addopt("tblcols", "1:7", dtype=str)
@@ -159,10 +159,6 @@ def pLegs(leglmn):
     legs = format_legs(legs, options)
 
     proportional = options.getopt("proportional")
-    if proportional.lower() in ("false", "no", "0"):
-        proportional = 0
-    else:
-        proportional = 1
 
     return legs, options.getopt("kappa"), proportional
 
@@ -701,3 +697,10 @@ def get_name_value(item):
 
 def fmt_str(item):
     return " ".join(item.encode("utf-8").split())
+
+
+def mybool(a):
+    if str(a).lower().strip() in ("false", "no", "0"):
+        return 0
+    else:
+        return 1

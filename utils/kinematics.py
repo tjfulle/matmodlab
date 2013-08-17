@@ -6,7 +6,7 @@ from numpy.linalg import inv, solve, lstsq
 
 import utils.tensor as tensor
 from utils.tensor import expm, powm, logm, sqrtm
-import core.solvers as solvers
+from utils.solvers import newton, simplex
 from utils.errors import Error1
 
 I = np.eye(3)
@@ -121,7 +121,7 @@ def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional):
     dsave = d.copy()
 
     if not proportional:
-        d = solvers.newton(material, dt, d, sig, xtra, v, sigspec)
+        d = newton(material, dt, d, sig, xtra, v, sigspec)
         if d is not None:
             return d
 
@@ -129,14 +129,14 @@ def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional):
         # --- d[v]=0.
         d = dsave.copy()
         d[v] = np.zeros(len(v))
-        d = solvers.newton(material, dt, d, sig, xtra, v, sigspec)
+        d = newton(material, dt, d, sig, xtra, v, sigspec)
         if d is not None:
             return d
 
     # --- Still didn't converge. Try downhill simplex method and accept
     #     whatever answer it returns:
     d = dsave.copy()
-    return solvers.simplex(material, dt, d, sig, xtra, v, sigspec, proportional)
+    return simplex(material, dt, d, sig, xtra, v, sigspec, proportional)
 
 
 def update_deformation(dt, k, f0, d):

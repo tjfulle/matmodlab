@@ -4,9 +4,9 @@ import numpy as np
 from numpy.linalg import solve, lstsq
 
 from __config__ import cfg
-import core.kinematics as kin
 import utils.io as io
 import utils.tensor as tensor
+from utils.kinematics import deps2d, sig2d, update_deformation
 from utils.tensor import NSYMM, NTENS, NVEC, I9
 from utils.errors import Error1
 from materials.material import create_material
@@ -152,7 +152,7 @@ class SolidDriver(Driver):
             if not nv:
                 # strain or strain rate prescribed and d is constant over
                 # entire leg
-                d = kin.deps2d(delt, kappa, eps, depsdt)
+                d = deps2d(delt, kappa, eps, depsdt)
 
             else:
                 # Initial guess for d[v]
@@ -176,12 +176,12 @@ class SolidDriver(Driver):
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    d = kin.sig2d(self.mtlmdl, dt, depsdt,
-                                  sig, xtra, v, sigspec[2], self.proportional)
+                    d = sig2d(self.mtlmdl, dt, depsdt,
+                              sig, xtra, v, sigspec[2], self.proportional)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
-                f, eps = kin.update_deformation(dt, kappa, f, d)
+                f, eps = update_deformation(dt, kappa, f, d)
 
                 # update material state
                 sigsave = np.array(sig)
