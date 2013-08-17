@@ -8,11 +8,14 @@ from numpy.f2py import main as f2py
 from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
-F90_MODELS = {"elastic": {"signature": os.path.join(D, "elastic.pyf"),
-                          "interface": os.path.join(D, "elastic_interface.py"),
-                          "class": "Elastic",
-                          "files": [os.path.join(D, f) for f in
-                                    ("elastic.f90", "elastic_interface.f90")]}}
+SRC = os.path.join(D, "src")
+F90_MODELS = {
+    "elastic": {
+        "interface": os.path.join(D, "elastic_interface.py"),
+        "signature": os.path.join(SRC, "elastic.pyf"),
+        "class": "Elastic",
+        "files": [os.path.join(SRC, f) for f in
+                  ("elastic.f90", "elastic_interface.f90")]}}
 
 def makemf(*args, **kwargs):
 
@@ -20,7 +23,7 @@ def makemf(*args, **kwargs):
     destd = kwargs.get("DESTD", D)
     materials = kwargs.get("MATERIALS")
 
-    mtldict = {"BUILT": {}, "FAILED": []}
+    mtldict = {"BUILT": {}, "FAILED": [], "SKIPPED": 0}
 
     if materials is None:
         materials = F90_MODELS.keys()
@@ -29,6 +32,7 @@ def makemf(*args, **kwargs):
     for (name, items) in F90_MODELS.items():
 
         if name not in materials:
+            mtldict["SKIPPED"] += 1
             continue
 
         source_files = items["files"]

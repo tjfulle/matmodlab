@@ -46,6 +46,8 @@ def main(argv=None):
         help="Do not build TPLs [default: %(default)s]")
     parser.add_argument("--Rtpl", default=False, action="store_true",
         help="Force rebuild of TPLs [default: %(default)s]")
+    parser.add_argument("-d", default=[], action="append",
+        help="Additional directories to find makemf.py files [default: None]")
     args = parser.parse_args(argv)
 
     build_tpls = not args.Ntpl
@@ -65,6 +67,14 @@ def main(argv=None):
 
     path = os.getenv("PATH", "").split(os.pathsep)
     logmes("setup: {0}".format(version))
+
+    mtldirs = [mtld]
+    for d in args.d:
+        d = os.path.realpath(d)
+        if not os.path.isdir(d):
+            logerr("{0}: no such directory".format(d))
+            continue
+        mtldirs.append(d)
 
     # --- system
     logmes("checking host platform", end="... ")
@@ -186,7 +196,7 @@ def main(argv=None):
     bld = os.path.join(tools, "build-mtls")
     remove(bld)
     logmes("writing {0}".format(os.path.basename(bld)), end="...  ")
-    content = build_mtls(py_exe, fdir, root, mtld, gfortran, libd)
+    content = build_mtls(py_exe, fdir, root, mtldirs, gfortran, libd)
     with open(bld, "w") as fobj:
         fobj.write(content)
     os.chmod(bld, 0o750)
@@ -216,7 +226,7 @@ def remove(paths):
     return
 
 
-def build_mtls(py_exe, this_dir, root_dir, mtl_dir, fc, lib_dir):
+def build_mtls(py_exe, this_dir, root_dir, mtl_dirs, fc, lib_dir):
     content = """\
 #!{0}
 import os
@@ -225,7 +235,7 @@ import imp
 import argparse
 D = {1}
 R = {2}
-M = {3}
+MTLDIRS = [{3}]
 sys.path.insert(0, R)
 from materials.material import write_mtldb
 def logmes(message, end="\\n"):
@@ -242,17 +252,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", action="append",
         help="Material to build [default: all]")
-    parser.add_argument("-d", default=[], action="append",
-        help="Additional directories to find makemf.py files")
     args = parser.parse_args(argv)
     logmes("build-mtl: {4}")
     logmes("build-mtl: looking for makemf files")
-    dirs = [M]
-    for d in args.d:
-        if not os.path.isdir(d):
-            logerr("{{0}}: no such directory")
-            continue
-        dirs.append(d)
     if logerr("_inquire_"): sys.exit()
     kwargs = {{"FC": {5},
               "DESTD": {6},
@@ -260,7 +262,7 @@ def main(argv=None):
     mtldict = {{}}
     allfailed = []
     allbuilt = []
-    for dirpath in dirs:
+    for dirpath in MTLDIRS:
         for (d, dirs, files) in os.walk(dirpath):
             if "makemf.py" in files:
                 f = os.path.join(d, "makemf.py")
@@ -269,11 +271,16 @@ def main(argv=None):
                 made = makemf.makemf(**kwargs)
                 failed = made.get("FAILED")
                 built = made.get("BUILT")
+                skipped = made.get("SKIPPED")
                 if failed:
                     logmes("no")
                     allfailed.extend(failed)
-                else:
-                    logmes("yes")
+                if skipped:
+                    if not failed and not built:
+                        logmes("skipped")
+                if built:
+                    if not failed:
+                        logmes("yes")
                     if built:
                         mtldict.update(built)
                         allbuilt.extend(built.keys())
@@ -289,7 +296,8 @@ def main(argv=None):
 if __name__ == "__main__":
     main()
     """.format(py_exe, repr(this_dir), repr(root_dir),
-               repr(mtl_dir), version, repr(fc), repr(lib_dir))
+               ", ".join(repr(d) for d in mtl_dirs), version,
+               repr(fc), repr(lib_dir))
     return content
 
 
