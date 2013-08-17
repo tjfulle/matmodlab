@@ -7,6 +7,7 @@ import argparse
 from utils.errors import Error1
 from exoreader import ExodusIIReader
 
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
@@ -14,11 +15,13 @@ def main(argv=None):
     parser.add_argument("source")
     parser.add_argument("--outfile")
     parser.add_argument("--variables", action="append")
+    parser.add_argument("--ffmt")
     args = parser.parse_args(argv)
-    exodump(args.source, outfile=args.outfile, variables=args.variables)
+    exodump(args.source, outfile=args.outfile, variables=args.variables,
+            ffmt=args.ffmt)
 
 
-def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=".18f"):
+def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=None):
     """Read the exodus file in filepath and dump the contents to a columnar data
     file
 
@@ -29,7 +32,10 @@ def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=".18f"):
     if outfile is None:
         outfile = os.path.splitext(filepath)[0] + ".out"
 
-    ffmt = lambda a, fmt="{0: "+ffmt+"} ": fmt.format(float(a))
+    # Floating point format for numbers
+    if ffmt is None: ffmt = ".18f"
+    fmt = "{0: " + ffmt + "} "
+    ffmt = lambda a, fmt=fmt: fmt.format(float(a))
 
     exof = ExodusIIReader.new_from_exofile(filepath)
     glob_var_names = exof.glob_var_names()
@@ -54,7 +60,7 @@ def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=".18f"):
                                              " ".join(elem_var_names).upper()))
         for i in myrange(0, exof.num_time_steps, step):
             time = exof.get_time(i)
-            fobj.write(ffmt(time) + " ")
+            fobj.write(ffmt(time))
             glob_vars_vals = exof.get_glob_vars(i, disp=1)
             for var in glob_var_names:
                 try: fobj.write(ffmt(glob_vars_vals[var]))
