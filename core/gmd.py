@@ -5,12 +5,13 @@ import numpy as np
 
 from __config__ import cfg
 import utils.io as io
+from utils.exodump import exodump
 from utils.errors import Error1
 from drivers.drivers import create_driver
 
 class ModelDriver(object):
 
-    def __init__(self, runid, driver, mtlmdl, mtlprops, legs, *opts):
+    def __init__(self, runid, driver, mtlmdl, mtlprops, legs, extract, *opts):
         """Initialize the ModelDriver object
 
         Parameters
@@ -34,6 +35,7 @@ class ModelDriver(object):
         self.mtlmdl = mtlmdl
         self.mtlprops = mtlprops
         self.legs = legs
+        self.extract = extract
         self.opts = opts
 
         # set up timing
@@ -94,6 +96,13 @@ class ModelDriver(object):
         print "Finished calculations for simulation {0} in {1:.4f}s".format(
             self.runid, self.timing["final"] - self.timing["initial"])
         self.io.finish()
+
+        if self.extract:
+            otype, variables = self.extract
+            if otype.lower() == "ascii":
+                exodump(self.runid + ".exo", variables=variables)
+            else:
+                raise Error1("{0}: unkown extraction format".format(otype))
         return
 
     def run(self):

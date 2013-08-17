@@ -5,3 +5,4 @@ toolset/wpython
 toolset/build-mtls
 materials/materials.db
 *.so
+*.out

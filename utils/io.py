@@ -118,12 +118,12 @@ class IOManager(object):
         self.exofile.put_time(self.time_step, time_val)
 
         # global values
-        glob_var_vals = np.zeros(self.num_glob_vars, dtype=np.float64)
+        glob_var_vals = np.zeros(self.num_glob_vars)
         self.exofile.put_glob_vars(self.time_step, self.num_glob_vars,
                                    glob_var_vals)
 
         # nodal values
-        nodal_var_vals = np.zeros(self.num_nodes, dtype=np.float64)
+        nodal_var_vals = np.zeros(self.num_nodes)
         for k in range(self.num_nod_vars):
             self.exofile.put_nodal_var(self.time_step, k, self.num_nodes,
                                        nodal_var_vals)

@@ -13,6 +13,7 @@ from __config__ import cfg
 import utils.tensor as tensor
 from utils.errors import Error1
 from utils.namespace import Namespace
+from utils.pprepro import find_and_make_subs, find_and_fill_includes
 from materials.material import get_material_from_db
 
 
@@ -60,7 +61,8 @@ def parse_input(user_input):
     The user input
 
     """
-    user_input = fill_in_includes(user_input)
+    user_input = find_and_fill_includes(user_input)
+    user_input = find_and_make_subs(user_input)
     dom = xdom.parseString(user_input)
 
     # Get the root element (Should always be "Model")
@@ -71,7 +73,7 @@ def parse_input(user_input):
 
     # ------------------------------------------ get and parse blocks --- #
     blocks = {}
-    recognized_blocks = ("Material", "Legs", "Optimize", "Permutate")
+    recognized_blocks = ("Material", "Legs", "Optimize", "Permutate", "Extract")
     for block in recognized_blocks:
         elements = model_input.getElementsByTagName(block)
         if not elements:
@@ -94,6 +96,11 @@ def parse_input(user_input):
     ns.legs = blocks["Legs"][0]
     ns.kappa = blocks["Legs"][1]
     ns.proportional = blocks["Legs"][2]
+
+    if "Extract" in blocks:
+        ns.extract = (blocks["Extract"][0], blocks["Extract"][1])
+    else:
+        ns.extract = None
 
     if "Optimize" in blocks:
         ns.stype = "optimize"
@@ -309,7 +316,7 @@ def format_leg_control(cfmt, leg_num=None):
                          "integer, got {1} {2}".format(i+1, flag, leg))
 
         if flag not in valid_control_flags:
-            valid = ", ".join(str(x) for x in valid_control_flags)
+            valid = ", ".join(stringify(x) for x in valid_control_flags)
             raise Error1("Legs: {0}: invalid control flag choose from "
                          "{1} {2}".format(flag, valid, leg))
 
@@ -516,6 +523,26 @@ def pPermutate(element_list):
     raise Error1("Permutation coding not done")
 
 
+def pExtract(element_list):
+    output = element_list[0]
+    otype = output.attributes.get("type")
+    if otype is None:
+        otype = "ascii"
+    else:
+        otype = otype.value.lower()
+        if otype not in ("ascii",):
+            raise Error1("Extract: {0}: unrecognized type".format(otype))
+    variables = []
+    for item in output.getElementsByTagName("Variables"):
+        data = item.firstChild.data.split("\n")
+        data = [stringify(x, "upper") for sub in data for x in sub.split()]
+        if "ALL" in data:
+            variables = "ALL"
+            break
+        variables.extend(data)
+    return otype, variables
+
+
 def pMaterial(element_list):
     """Parse the material block
 
@@ -541,8 +568,7 @@ def pMaterial(element_list):
         raise Error1("{0}: material not in database".format(model))
 
     # mtlmdl.parameters is a comma separated list of parameters
-    strip = lambda s: str(s.strip().lower())
-    pdict = dict([(strip(n), i)
+    pdict = dict([(stringify(n, "lower"), i)
                   for i, n in enumerate(mtlmdl.parameters.split(","))])
     params = np.zeros(len(pdict))
     for node in material.childNodes:
@@ -562,49 +588,17 @@ def pMaterial(element_list):
     return model, params, mtlmdl.driver, density
 
 
-def fill_in_includes(lines):
-    """Look for 'include' commands in lines and insert then contents in place
-
-    Parameters
-    ----------
-    lines : str
-        User input
-
-    Returns
-    -------
-    lines : str
-        User input, modified in place, with inserts inserted
-
-    """
-    regex = r"<include\s(?P<include>.*)/>"
-    _lines = []
-    for line in lines.split("\n"):
-        if not line.split():
-            _lines.append(line.strip())
-            continue
-        include = re.search(regex, line)
-        if include is None:
-            _lines.append(line)
-            continue
-
-        href = re.search(r"""href=["'](?P<href>.*?)["']""",
-                         include.group("include"))
-        if not href:
-            raise Error1("expected href='...'")
-        name = href.group("href").strip()
-        fpath = os.path.realpath(os.path.expanduser(name))
-        try:
-            fill = open(fpath, "r").read()
-        except IOError:
-            raise Error1(
-                "{0}: include not found".format(repr(name)))
-        _lines.extend(fill_in_includes(fill).split("\n"))
-        continue
-    return "\n".join(_lines)
-
-
 def uni2str(unistr):
     return unistr.encode("utf-8").strip()
+
+
+def stringify(item, action=""):
+    string = str(" ".join(item.split()))
+    if action == "upper":
+        return string.upper()
+    if action == "lower":
+        return string.lower()
+    return string
 
 
 def str2list(string, dtype=str):

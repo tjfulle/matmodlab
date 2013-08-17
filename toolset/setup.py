@@ -40,8 +40,9 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument("--write-bytecode", default=False,
-        action="store_true", help="Write python byte code [default: %(default)s]")
+    parser.add_argument("-B", default=False,
+        action="store_true",
+        help="Suppress python byte code generation [default: %(default)s]")
     parser.add_argument("--Ntpl", default=False, action="store_true",
         help="Do not build TPLs [default: %(default)s]")
     parser.add_argument("--Rtpl", default=False, action="store_true",
@@ -80,7 +81,7 @@ def main(argv=None):
     logmes("checking host platform", end="... ")
     platform = sys.platform
     logmes(platform)
-    sys.dont_write_bytecode = not args.write_bytecode
+    sys.dont_write_bytecode = args.B
 
     # --- python
     logmes("setup: checking python interpreter")
