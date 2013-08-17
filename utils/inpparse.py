@@ -1,8 +1,8 @@
 import os
 import re
 import sys
+import math
 import numpy as np
-import xml.dom as xmldom
 import xml.dom.minidom as xdom
 
 if __name__ == "__main__":
@@ -65,56 +65,49 @@ def parse_input(user_input):
     user_input = find_and_make_subs(user_input)
     dom = xdom.parseString(user_input)
 
-    # Get the root element (Should always be "Model")
+    # Get the root element (Should always be "GMDSpec")
     try:
-        model_input = dom.getElementsByTagName("Model")[0]
+        gmdspec = dom.getElementsByTagName("GMDSpec")[0]
     except IndexError:
-        raise Error1("Expected Root Element 'Model'")
+        raise Error1("Expected Root Element 'GMDSpec'")
 
     # ------------------------------------------ get and parse blocks --- #
-    blocks = {}
-    recognized_blocks = ("Material", "Legs", "Optimize", "Permutate", "Extract")
-    for block in recognized_blocks:
-        elements = model_input.getElementsByTagName(block)
-        if not elements:
+    gmdblks = {}
+    rootblks = (("Optimization", 0, 1),
+                ("Permutation", 0, 1),
+                ("Simulation", 1, 0))
+    for (rootblk, reqd, rem) in rootblks:
+        rootlmns = gmdspec.getElementsByTagName(rootblk)
+        if not rootlmns:
+            if reqd:
+                raise Error1("GMDSpec: {0}: block missing".format(rootblk))
             continue
-        parse_function = getattr(sys.modules[__name__], "p{0}".format(block))
-        blocks[block] = parse_function(elements)
+        if len(rootlmns) > 1:
+            raise Error("Expected 1 {0} block, got {1}".format(
+                rootblk, len(rootlmns)))
+        rootlmn = rootlmns[0]
+        gmdblks[rootblk] = rootlmn
+        if rem:
+            p = rootlmn.parentNode
+            p.removeChild(rootlmn)
 
-        for element in elements:
-            p = element.parentNode
-            p.removeChild(element)
+    if "Optimzation" in gmdblks and "Permutation" in gmdblks:
+        raise Error1("Incompatible blocks: [Optimzation, Permutation]")
 
-    # set up the namespace to return
-    ns = Namespace()
+    if "Optimization" in gmdblks:
+        raise Error1("optimization parsing not done")
 
-    ns.mtlmdl = blocks["Material"][0]
-    ns.mtlprops = blocks["Material"][1]
-    ns.driver = blocks["Material"][2]
-    ns.density = blocks["Material"][3]
-
-    ns.legs = blocks["Legs"][0]
-    ns.kappa = blocks["Legs"][1]
-    ns.proportional = blocks["Legs"][2]
-
-    if "Extract" in blocks:
-        ns.extract = (blocks["Extract"][0], blocks["Extract"][1])
+    elif "Permutation" in gmdblks:
+        return permutation_namespace(gmdblks["Permutation"], gmdspec.toxml())
     else:
-        ns.extract = None
-
-    if "Optimize" in blocks:
-        ns.stype = "optimize"
-    else:
-        ns.stype = "simulation"
-
-    return ns
+        return simulation_namespace(gmdblks["Simulation"])
 
 
 # ------------------------------------------------- Parsing functions --- #
 # Each XML block is parsed with a corresponding function 'pBlockName'
 # where BlockName is the name of the block as entered by the user in the
 # input file
-def pLegs(element_list):
+def pLegs(leglmn):
     """Parse the Legs block and set defaults
 
     """
@@ -138,18 +131,13 @@ def pLegs(element_list):
     options.addopt("tbltfmt", "time", dtype=str, choices=("time", "dt"))
     options.addopt("tblcfmt", "222222", dtype=str)
 
-    try:
-        element = element_list[0]
-    except IndexError:
-        raise Error1("Legs: input not found")
-
     # Get control terms
-    for i in range(element.attributes.length):
-        options.setopt(*get_name_value(element.attributes.item(i)))
+    for i in range(leglmn.attributes.length):
+        options.setopt(*get_name_value(leglmn.attributes.item(i)))
 
     # Read in the actual legs - splitting them in to lists
     lines = []
-    for node in element.childNodes:
+    for node in leglmn.childNodes:
         if node.nodeType == node.COMMENT_NODE:
             continue
         lines.extend([" ".join(uni2str(item).split())
@@ -515,17 +503,59 @@ def format_legs(legs, options):
     return legs
 
 
-def pOptimize(element_list):
+def pOptimization(optlmn):
     raise Error1("Optimization coding not done")
 
 
-def pPermutate(element_list):
-    raise Error1("Permutation coding not done")
+# safe values to be used in eval
+RAND = np.random.RandomState(17)
+GDICT = {"__builtins__": None}
+SAFE = {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos,
+        "tan": math.tan, "asin": math.asin, "acos": math.acos,
+        "atan": math.atan, "atan2": math.atan2, "pi": math.pi,
+        "log": math.log, "exp": math.exp, "floor": math.floor,
+        "ceil": math.ceil, "abs": math.fabs, "random": RAND.random_sample, }
 
 
-def pExtract(element_list):
-    output = element_list[0]
-    otype = output.attributes.get("type")
+def pPermutation(permlmn):
+    """Parse the permutation block
+
+    """
+    pdict = {}
+
+    # Set up options for permutation
+    options = OptionHolder()
+    options.addopt("method", "zip", dtype=str, choices=("zip", "combine"))
+    options.addopt("seed", 12, dtype=int)
+
+    # Get control terms
+    for i in range(permlmn.attributes.length):
+        options.setopt(*get_name_value(permlmn.attributes.item(i)))
+
+    rstate = np.random.RandomState(options.getopt("seed"))
+    gdict = {"__builtins__": None}
+    safe = {"range": lambda a, b, N: np.linspace(a, b, N),
+            "sequence": lambda a: np.array(a),
+            "weibull": lambda a, b, N: a * rstate.weibull(b, N),
+            "uniform": lambda a, b, N: rstate.uniform(a, b, N),
+            "normal": lambda a, b, N: rstate.normal(a, b, N),
+            "percentage": lambda a, b: np.array([a-(b/100.)*a, a, a+(b/100.)* a])}
+
+    # read in permutated values
+    p = {}
+    for items in permlmn.getElementsByTagName("Permutate"):
+        var = str(items.attributes.get("var").value)
+        method = str(items.attributes.get("method").value)
+        p[var] = eval(method, gdict, safe)
+
+    pdict["parameters"] = p
+    pdict["method"] = options.getopt("method")
+
+    return pdict
+
+
+def pExtract(extlmn):
+    otype = extlmn.attributes.get("type")
     if otype is None:
         otype = "ascii"
     else:
@@ -533,7 +563,7 @@ def pExtract(element_list):
         if otype not in ("ascii",):
             raise Error1("Extract: {0}: unrecognized type".format(otype))
     variables = []
-    for item in output.getElementsByTagName("Variables"):
+    for item in extlmn.getElementsByTagName("Variables"):
         data = item.firstChild.data.split("\n")
         data = [stringify(x, "upper") for sub in data for x in sub.split()]
         if "ALL" in data:
@@ -543,21 +573,74 @@ def pExtract(element_list):
     return otype, variables
 
 
-def pMaterial(element_list):
+def simulation_namespace(simlmn):
+    simblk = pSimulation(simlmn)
+
+    # set up the namespace to return
+    ns = Namespace()
+
+    ns.stype = "simulation"
+
+    ns.mtlmdl = simblk["Material"][0]
+    ns.mtlprops = simblk["Material"][1]
+    ns.driver = simblk["Material"][2]
+    ns.density = simblk["Material"][3]
+
+    ns.legs = simblk["Legs"][0]
+    ns.kappa = simblk["Legs"][1]
+    ns.proportional = simblk["Legs"][2]
+
+    ns.extract = simblk.get("Extract")
+
+    return ns
+
+
+def permutation_namespace(permlmn, basexml):
+
+    permblk = pPermutation(permlmn)
+
+    # set up the namespace to return
+    ns = Namespace()
+
+    ns.stype = "permutation"
+    ns.method = permblk["method"]
+    ns.parameters = permblk["parameters"]
+    ns.basexml = basexml
+
+    return ns
+
+
+def pSimulation(simlmn):
+    subblks = (("Material", 1), ("Legs", 1), ("Extract", 0))
+    simblk = {}
+    for (subblk, reqd) in subblks:
+        sublmns = simlmn.getElementsByTagName(subblk)
+        if not sublmns:
+            if reqd:
+                raise Error1("Simulation: {0}: block missing".format(subblk))
+            continue
+        if len(sublmns) > 1:
+            raise Error("Expected 1 {0} block, got {1}".format(
+                subblk, len(sublmns)))
+        sublmn = sublmns[0]
+        parsefcn = getattr(sys.modules[__name__],
+                           "p{0}".format(sublmn.nodeName))
+        simblk[subblk] = parsefcn(sublmn)
+        p = sublmn.parentNode
+        p.removeChild(sublmn)
+    return simblk
+
+
+def pMaterial(mtllmn):
     """Parse the material block
 
     """
-    try:
-        material = element_list[0]
-    except IndexError:
-        raise Error1("Material: input not found")
-
-    model = material.attributes.get("model")
+    model = mtllmn.attributes.get("model")
     if model is None:
         raise Error1("Material: model not found")
     model = str(model.value.lower())
 
-    density = material.attributes.get("density")
+    density = mtllmn.attributes.get("density")
     if density is None:
         density = 1.
     else:
@@ -571,8 +654,8 @@ def pMaterial(element_list):
     pdict = dict([(stringify(n, "lower"), i)
                   for i, n in enumerate(mtlmdl.parameters.split(","))])
     params = np.zeros(len(pdict))
-    for node in material.childNodes:
-        if node.nodeType != material.ELEMENT_NODE:
+    for node in mtllmn.childNodes:
+        if node.nodeType != mtllmn.ELEMENT_NODE:
             continue
         name = node.nodeName
         idx = pdict.get(name.lower())

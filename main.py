@@ -4,6 +4,7 @@ import argparse
 
 from __config__ import cfg
 import core.gmd as gmd
+import core.permutate as perm
 import utils.inpparse as inpparse
 from utils.errors import Error1
 
@@ -26,7 +27,9 @@ def main(argv=None):
         lines = open(args.source, "r").read()
     except IOError:
         raise Error1("{0}: no such file".format(args.source))
-    runid = os.path.splitext(os.path.basename(args.source))[0]
+
+    basename = os.path.basename(args.source).rstrip(".preprocessed")
+    runid = os.path.splitext(basename)[0]
     mm_input = inpparse.parse_input(lines)
 
     if mm_input.stype == "simulation":
@@ -35,8 +38,14 @@ def main(argv=None):
                                 mm_input.mtlprops, mm_input.legs,
                                 mm_input.extract, *opts)
 
+    elif mm_input.stype == "permutation":
+        f = os.path.realpath(__file__)
+        exe = "{0} {1}".format(sys.executable, f)
+        model = perm.PermutationDriver(runid, exe, mm_input.method,
+                                       mm_input.parameters, mm_input.basexml)
+
     else:
-        sys.exit("{0}: simulation type not known".format(mm_input.stype))
+        sys.exit("{0}: unrecognized simulation type".format(mm_input.stype))
 
     # Setup and run the problem
     model.setup()

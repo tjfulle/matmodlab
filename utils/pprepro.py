@@ -74,7 +74,7 @@ def find_vars_to_sub(lines):
     return lines, vdict
 
 
-def find_and_make_subs(lines):
+def find_and_make_subs(lines, prepro=None):
     """Preprocess the input file
 
     Parameters
@@ -88,8 +88,11 @@ def find_and_make_subs(lines):
         preprocessed user input
 
     """
+    global SAFE
+    if prepro is not None:
+        SAFE.update(prepro)
     lines, vdict = find_vars_to_sub(lines)
-    if not vdict:
+    if not vdict and prepro is None:
         return lines
     return make_var_subs(lines, vdict)
 
@@ -138,7 +141,7 @@ def make_var_subs(lines, vdict):
     regex = r"(?i){.*?}"
     matches = re.findall("(?i){.*?}", lines)
     for pat in matches:
-        repl = repr(eval(re.sub(r"[\{\}]", "", pat)))
+        repl = repr(eval(re.sub(r"[\{\}]", "", pat), GDICT, SAFE))
         lines = re.sub(re.escape(pat), repl, lines)
 
     return lines
