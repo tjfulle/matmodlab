@@ -2,11 +2,13 @@ import sys
 import numpy as np
 import datetime
 
+from __config__ import cfg
 import exowriter as exo
 
 
 def logmes(message):
-    sys.stdout.write("gmd: {0}\n".format(message))
+    if cfg.verbosity:
+        sys.stdout.write("gmd: {0}\n".format(message))
 
 
 def logwrn(message=None, warnings=[0]):
