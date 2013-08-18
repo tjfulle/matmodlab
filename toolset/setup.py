@@ -162,7 +162,8 @@ def main(argv=None):
             dd = d.replace(root, ".")
             logmes("building tpl in {0}".format(dd), end="... ")
             tplpy = imp.load_source("tpl", os.path.join(d, "tpl.py"))
-            info = tplpy.build_tpl(ROOT=root, SKIPTPL=args.Ntpl)
+            info = tplpy.build_tpl(ROOT=root, SKIPTPL=args.Ntpl,
+                                   REBUILD=args.Rtpl)
             if info is None:
                 logerr("tpl failed to build")
             else:

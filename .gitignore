@@ -9,3 +9,4 @@ materials/materials.db
 *.out
 *.perm
 TestResults.*
+.built
