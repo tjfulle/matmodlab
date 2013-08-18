@@ -59,8 +59,15 @@ class SolidDriver(Driver):
 
         # initialize nonzero data
         self._data[self.defgrad_slice] = I9
-        self._data[self.xtra_slice] = self.mtlmdl.initial_state()
         self._data[self.density_slice] = self.density
+
+        # initialize material
+        sig = np.zeros(6)
+        xtra = self.mtlmdl.initial_state()
+        sig, xtra = self.mtlmdl.initialize_material(sig, xtra)
+        # -------------------------- quantities derived from final state
+        pres = -np.sum(sig[:3]) / 3.
+        self.setvars(stress=sig, pressure=pres, xtra=xtra)
 
         return
 
@@ -81,13 +88,13 @@ class SolidDriver(Driver):
         # initial leg
         rho = self.data("DENSITY")[0]
         xtra = self.data("XTRA")
+        sig = self.data("STRESS")
         tleg = np.zeros(2)
         d = np.zeros(NSYMM)
         dt = 0.
         eps = np.zeros(NSYMM)
         f = np.reshape(np.eye(3), (9, 1))
         depsdt = np.zeros(NSYMM)
-        sig = np.zeros(NSYMM)
         sigdum = np.zeros((2, NSYMM))
 
         # compute the initial jacobian

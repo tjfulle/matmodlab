@@ -10,12 +10,12 @@ except ImportError:
 class Elastic(Material):
     name = "elastic"
     driver = "solid"
+    param_names = ["K", "G"]
     def __init__(self):
         """Instantiate the Plastic material
 
         """
-        super(Elastic, self).__init__()
-        self.register_parameters("K", "G")
+        self.register_parameters(*self.param_names)
 
     def setup(self, params):
         """Set up the Elastic material
@@ -34,7 +34,7 @@ class Elastic(Material):
         self.bulk_modulus = K
         self.shear_modulus = G
 
-    def update_state(self, dt, d, stress, xtra):
+    def update_state(self, dt, d, stress, xtra, *args):
         """Compute updated stress given strain increment
 
         Parameters
@@ -63,7 +63,7 @@ class Elastic(Material):
         elastic.elastic_update_state(dt, self.params, d, stress)
         return stress, xtra
 
-    def _jacobian(self, dt, d, stress, xtra, v):
+    def jacobian(self, dt, d, stress, xtra, v):
         """Return the constant stiffness
         dt : float
             time step
@@ -76,5 +76,3 @@ class Elastic(Material):
 
         """
         return self.constant_jacobian(v)
-        #J = elastic.elastic_stiff(dt, self.params, d, stress)
-        #return J

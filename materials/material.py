@@ -67,10 +67,12 @@ def read_mtldb():
     return mtldb
 
 
-def write_mtldb(mtldict):
+def write_mtldb(mtldict, wipe=False):
     """Write the materials.db database file
 
     """
+    if wipe and os.path.isfile(MTLDB_FILE):
+        os.remove(MTLDB_FILE)
     mtldb = read_mtldb()
     if mtldb is None:
         mtldb = {}
@@ -85,7 +87,7 @@ def write_mtldb(mtldict):
         child = doc.createElement("Material")
         child.setAttribute("name", name)
         for (aname, aval) in ns.items():
-            child.setAttribute(aname, aval)
+            child.setAttribute(aname, str(aval))
         root.appendChild(child)
     doc.writexml(open(MTLDB_FILE, "w"), addindent="  ", newl="\n")
     doc.unlink()

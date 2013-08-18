@@ -68,20 +68,21 @@ def main(argv=None):
     path = os.getenv("PATH", "").split(os.pathsep)
     logmes("setup: gmd {0}".format(version))
 
-    mtldirs = []
+    mtldirs = [x for x in os.getenv("GMDMTLS", "").split(os.pathsep) if x]
     for d in args.mtldirs:
-        d = os.path.realpath(d)
+        mtldirs.append(os.path.realpath(d))
+    for d in mtldirs:
         if not os.path.isdir(d):
-            logerr("{0}: no such directory".format(d))
+            logerr("{0}: no such material directory".format(d))
             continue
-        mtldirs.append(d)
     mtldirs = os.pathsep.join(mtldirs)
 
-    testdirs = []
+    testdirs = [x for x in os.getenv("GMDTESTS", "").split(os.pathsep) if x]
     for d in args.testdirs:
-        d = os.path.realpath(d)
+        testdirs.append(os.path.realpath(d))
+    for d in testdirs:
         if not os.path.isdir(d):
-            logerr("{0}: no such directory".format(d))
+            logerr("{0}: no such test directory".format(d))
             continue
         testdirs.append(d)
     testdirs = os.pathsep.join(testdirs)
@@ -182,13 +183,14 @@ def main(argv=None):
     pyopts = "" if not sys.dont_write_bytecode else "-B"
 
     write_exe("gmd", tools, os.path.join(root, "main.py"),
-              pypath, pyexe, pyopts, "")
+              pyexe, pyopts, {"PYTHONPATH": pypath})
 
     write_exe("buildmtls", tools, os.path.join(utld, "building.py"),
-              pypath, pyexe, pyopts, mtldirs)
+              pyexe, pyopts,
+              {"PYTHONPATH": pypath, "FC": gfortran, "GMDSETUPMTLDIR": mtldirs})
 
     write_exe("runtests", tools, os.path.join(utld, "testing.py"),
-              pypath, pyexe, pyopts, testdirs)
+              pyexe, pyopts, {"PYTHONPATH": pypath, "GMDSETUPTSTDIR": testdirs})
 
     logmes("setup: Setup complete")
     if build_tpls:
@@ -214,17 +216,17 @@ def remove(paths):
     return
 
 
-def write_exe(name, destd, pyfile, pypath, pyexe, pyopts, env):
+def write_exe(name, destd, pyfile, pyexe, pyopts, env):
     exe = os.path.join(destd, name)
     remove(exe)
     logmes("writing {0}".format(os.path.basename(exe)), end="...  ")
     if not os.path.isfile(pyfile):
         logerr("{0}: no such file".format(pyfile))
         return
+    env = "\n".join("export {0}={1}".format(k, v) for k, v in env.items())
     with open(exe, "w") as fobj:
         fobj.write("#!/bin/sh -f\n")
-        fobj.write("export PYTHONPATH={0}\n".format(pypath))
-        fobj.write("export PY_EXE_ENV={0}\n".format(env))
+        fobj.write("{0}\n".format(env))
         fobj.write("PYTHON={0}\n".format(pyexe))
         fobj.write("PYFILE={0}\n".format(pyfile))
         fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))

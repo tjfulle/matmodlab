@@ -7,7 +7,7 @@ import argparse
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
 MTLDIRS = [os.path.join(R, "materials")]
-MTLDIRS.extend(os.getenv("PY_EXE_ENV", "").split(os.pathsep))
+MTLDIRS.extend([x for x in os.getenv("GMDSETUPMTLDIR", "").split(os.pathsep) if x])
 FC = os.getenv("FC", "gfortran")
 LIBD = os.path.join(R, "lib")
 VERSION = "0.0.0"
@@ -26,6 +26,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", action="append",
         help="Material to build [default: all]")
+    parser.add_argument("-w", action="store_true", default=False,
+        help="Wipe material database before building [default: all]")
     args = parser.parse_args(argv)
 
     logmes("gmd {0}".format(VERSION))
@@ -70,7 +72,7 @@ def main(argv=None):
                "{0}".format(", ".join(allbuilt)))
 
     if mtldict:
-        write_mtldb(mtldict)
+        write_mtldb(mtldict, wipe=args.w)
 
     return
 if __name__ == "__main__":

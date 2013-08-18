@@ -4,12 +4,12 @@ from utils.errors import Error1
 
 class Material(object):
 
-    def __init__(self):
-        self.ndata = 0
-        self.nxtra = 0
-        self.xtra_var_keys = []
-        self.xtra = np.zeros(self.nxtra)
-        self.param_map = {}
+    ndata = 0
+    nxtra = 0
+    xtra_var_keys = []
+    xtra = np.zeros(nxtra)
+    xinit = np.zeros(nxtra)
+    param_map = {}
 
     def register_parameters(self, *parameters):
         self.nparam = len(parameters)
@@ -107,14 +107,19 @@ class Material(object):
     def initialize(self, *args, **kwargs):
         return
 
+    def initialize_material(self, stress, xtra, *args):
+        dt = 1.
+        d = np.zeros(6)
+        return self.update_state(dt, d, stress, xtra, args)
+
     def set_initial_state(self, xtra):
-        self.xtra = np.array(xtra)
+        self.xinit = np.array(xtra)
+
+    def initial_state(self):
+        return self.xinit
 
     def variables(self):
         return self.xtra_var_keys
-
-    def initial_state(self):
-        return self.xtra
 
     def constant_jacobian(self, v=np.arange(6)):
         jac = np.zeros((6, 6))
