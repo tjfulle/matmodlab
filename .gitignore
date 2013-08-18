@@ -2,10 +2,10 @@
 *.exo
 toolset/gmd
 toolset/wpython
-toolset/build-mtls
+toolset/buildmtls
+toolset/runtests
 materials/materials.db
 *.so
 *.out
 *.perm
 TestResults.*
-runtests

@@ -12,7 +12,7 @@ import utils.xmltools as xmltools
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
 TESTS = [os.path.join(R, "tests")]
-TESTS.extend(os.getenv("TESTDIRS", "").split(os.pathsep))
+TESTS.extend(os.getenv("PY_EXE_ENV", "").split(os.pathsep))
 PATH = os.getenv("PATH", "").split(os.pathsep)
 PLATFORM = sys.platform.lower()
 PATH.append(os.path.join(R, "tpl/exowrap/Build_{0}/bin".format(PLATFORM)))

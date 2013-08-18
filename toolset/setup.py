@@ -68,13 +68,14 @@ def main(argv=None):
     path = os.getenv("PATH", "").split(os.pathsep)
     logmes("setup: gmd {0}".format(version))
 
-    mtldirs = [mtld]
+    mtldirs = []
     for d in args.mtldirs:
         d = os.path.realpath(d)
         if not os.path.isdir(d):
             logerr("{0}: no such directory".format(d))
             continue
         mtldirs.append(d)
+    mtldirs = os.pathsep.join(mtldirs)
 
     testdirs = []
     for d in args.testdirs:
@@ -94,8 +95,8 @@ def main(argv=None):
     # --- python
     logmes("setup: checking python interpreter")
     logmes("path to python executable", end="... ")
-    py_exe = os.path.realpath(sys.executable)
-    logmes(py_exe)
+    pyexe = os.path.realpath(sys.executable)
+    logmes(pyexe)
 
     # --- python version
     logmes("checking python version", end="... ")
@@ -129,10 +130,10 @@ def main(argv=None):
 
     # find f2py
     logmes("setup: checking fortran compiler")
-    f2py = os.path.join(os.path.dirname(py_exe), "f2py")
+    f2py = os.path.join(os.path.dirname(pyexe), "f2py")
     logmes("checking for compatible f2py", end="... ")
     if not os.path.isfile(f2py) and sys.platform == "darwin":
-        f2py = os.path.join(py_exe.split("Resources", 1)[0], "bin/f2py")
+        f2py = os.path.join(pyexe.split("Resources", 1)[0], "bin/f2py")
     if not os.path.isfile(f2py):
         logmes("no")
         logerr("compatible f2py required for building exowrap")
@@ -177,58 +178,16 @@ def main(argv=None):
 
     # --- executables
     logmes("setup: writing executable scripts")
-    name = "gmd"
-    gmd = os.path.join(tools, name)
-    pyfile = os.path.join(root, "main.py")
-
-    # remove the executable first
-    remove(gmd)
     pyopts = "" if not sys.dont_write_bytecode else "-B"
-    logmes("writing {0}".format(os.path.basename(gmd)), end="...  ")
-    with open(gmd, "w") as fobj:
-        fobj.write("#!/bin/sh -f\n")
-        fobj.write("export PYTHONPATH={0}\n".format(pypath))
-        fobj.write("PYTHON={0}\n".format(py_exe))
-        fobj.write("PYFILE={0}\n".format(pyfile))
-        fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
-    os.chmod(gmd, 0o750)
-    logmes("done")
 
-    py = os.path.join(tools, "wpython")
-    remove(py)
-    logmes("writing {0}".format(os.path.basename(py)), end="...  ")
-    with open(py, "w") as fobj:
-        fobj.write("#!/bin/sh -f\n")
-        fobj.write("PYTHONPATH={0}\n".format(pypath))
-        fobj.write("{0} {1} $*".format(py_exe, pyopts))
-    os.chmod(py, 0o750)
-    logmes("done")
+    write_exe("gmd", tools, os.path.join(root, "main.py"),
+              pypath, pyexe, pyopts, "")
 
-    bld = os.path.join(tools, "build-mtls")
-    remove(bld)
-    logmes("writing {0}".format(os.path.basename(bld)), end="...  ")
-    content = build_mtls(py_exe, fdir, root, mtldirs, gfortran, libd)
-    with open(bld, "w") as fobj:
-        fobj.write(content)
-    os.chmod(bld, 0o750)
-    logmes("done")
+    write_exe("buildmtls", tools, os.path.join(utld, "building.py"),
+              pypath, pyexe, pyopts, mtldirs)
 
-    name = "runtests"
-    runtests = os.path.join(tools, name)
-    pyfile = os.path.join(utld, "testing.py")
-    # remove the executable first
-    remove(runtests)
-    pyopts = "" if not sys.dont_write_bytecode else "-B"
-    logmes("writing {0}".format(os.path.basename(runtests)), end="...  ")
-    with open(runtests, "w") as fobj:
-        fobj.write("#!/bin/sh -f\n")
-        fobj.write("export PYTHONPATH={0}\n".format(pypath))
-        fobj.write("export TESTDIRS={0}\n".format(testdirs))
-        fobj.write("PYTHON={0}\n".format(py_exe))
-        fobj.write("PYFILE={0}\n".format(pyfile))
-        fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
-    os.chmod(runtests, 0o750)
-    logmes("done")
+    write_exe("runtests", tools, os.path.join(utld, "testing.py"),
+              pypath, pyexe, pyopts, testdirs)
 
     logmes("setup: Setup complete")
     if build_tpls:
@@ -254,74 +213,23 @@ def remove(paths):
     return
 
 
-def build_mtls(py_exe, this_dir, root_dir, mtl_dirs, fc, lib_dir):
-    content = """\
-#!{0}
-import os
-import sys
-import imp
-import argparse
-D = {1}
-R = {2}
-MTLDIRS = [{3}]
-sys.path.insert(0, R)
-from materials.material import write_mtldb
-def logmes(message, end="\\n"):
-    sys.stdout.write("{{0}}{{1}}".format(message, end))
-    sys.stdout.flush()
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv[1:]
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-m", action="append",
-        help="Material to build [default: all]")
-    args = parser.parse_args(argv)
-    logmes("build-mtl: gmd {4}")
-    logmes("build-mtl: looking for makemf files")
-    kwargs = {{"FC": {5},
-              "DESTD": {6},
-              "MATERIALS": args.m}}
-    mtldict = {{}}
-    allfailed = []
-    allbuilt = []
-    for dirpath in MTLDIRS:
-        for (d, dirs, files) in os.walk(dirpath):
-            if "makemf.py" in files:
-                f = os.path.join(d, "makemf.py")
-                logmes("building makemf in {{0}}".format(d), end="... ")
-                makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
-                made = makemf.makemf(**kwargs)
-                failed = made.get("FAILED")
-                built = made.get("BUILT")
-                skipped = made.get("SKIPPED")
-                if failed:
-                    logmes("no")
-                    allfailed.extend(failed)
-                if skipped:
-                    if not failed and not built:
-                        logmes("skipped")
-                if built:
-                    if not failed:
-                        logmes("yes")
-                    if built:
-                        mtldict.update(built)
-                        allbuilt.extend(built.keys())
-    if allfailed:
-        logmes("the following materials failed to build: "
-               "{{0}}".format(", ".join(allfailed)))
-    if allbuilt:
-        logmes("the following materials were built: "
-               "{{0}}".format(", ".join(allbuilt)))
-    if mtldict:
-        write_mtldb(mtldict)
+def write_exe(name, destd, pyfile, pypath, pyexe, pyopts, env):
+    exe = os.path.join(destd, name)
+    remove(exe)
+    logmes("writing {0}".format(os.path.basename(exe)), end="...  ")
+    if not os.path.isfile(pyfile):
+        logerr("{0}: no such file".format(pyfile))
+        return
+    with open(exe, "w") as fobj:
+        fobj.write("#!/bin/sh -f\n")
+        fobj.write("export PYTHONPATH={0}\n".format(pypath))
+        fobj.write("export PY_EXE_ENV={0}\n".format(env))
+        fobj.write("PYTHON={0}\n".format(pyexe))
+        fobj.write("PYFILE={0}\n".format(pyfile))
+        fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
+    os.chmod(exe, 0o750)
+    logmes("done")
     return
-if __name__ == "__main__":
-    main()
-    """.format(py_exe, repr(this_dir), repr(root_dir),
-               ", ".join(repr(d) for d in mtl_dirs), version,
-               repr(fc), repr(lib_dir))
-    return content
-
 
 if __name__ == "__main__":
     main()
