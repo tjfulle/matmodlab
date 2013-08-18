@@ -11,6 +11,7 @@ if __name__ == "__main__":
 
 from __config__ import cfg
 import utils.tensor as tensor
+import utils.xmltools as xmltools
 from utils.errors import Error1
 from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
@@ -133,16 +134,16 @@ def pLegs(leglmn):
 
     # Get control terms
     for i in range(leglmn.attributes.length):
-        options.setopt(*get_name_value(leglmn.attributes.item(i)))
+        options.setopt(*xmltools.get_name_value(leglmn.attributes.item(i)))
 
     # Read in the actual legs - splitting them in to lists
     lines = []
     for node in leglmn.childNodes:
         if node.nodeType == node.COMMENT_NODE:
             continue
-        lines.extend([" ".join(uni2str(item).split())
+        lines.extend([" ".join(xmltools.uni2str(item).split())
                       for item in node.nodeValue.splitlines() if item.split()])
-    lines = [str2list(line) for line in lines]
+    lines = [xmltools.str2list(line) for line in lines]
 
     # parse the legs depending on type
     if options.getopt("type") == "default":
@@ -300,7 +301,8 @@ def format_leg_control(cfmt, leg_num=None):
                          "integer, got {1} {2}".format(i+1, flag, leg))
 
         if flag not in valid_control_flags:
-            valid = ", ".join(stringify(x) for x in valid_control_flags)
+            valid = ", ".join(xmltools.stringify(x)
+                              for x in valid_control_flags)
             raise Error1("Legs: {0}: invalid control flag choose from "
                          "{1} {2}".format(flag, valid, leg))
 
@@ -333,7 +335,8 @@ def format_leg_control(cfmt, leg_num=None):
 
 def format_tbl_cols(tblcols):
     columns = []
-    for item in [x.split(":") for x in str2list(re.sub(r"\s*:\s*", ":", tblcols))]:
+    for item in [x.split(":")
+                 for x in xmltools.str2list(re.sub(r"\s*:\s*", ":", tblcols))]:
         try:
             item = [int(x) for x in item]
         except ValueError:
@@ -526,7 +529,7 @@ def pPermutation(permlmn):
 
     # Get control terms
     for i in range(permlmn.attributes.length):
-        options.setopt(*get_name_value(permlmn.attributes.item(i)))
+        options.setopt(*xmltools.get_name_value(permlmn.attributes.item(i)))
 
     rstate = np.random.RandomState(options.getopt("seed"))
     gdict = {"__builtins__": None}
@@ -559,12 +562,13 @@ def pExtract(extlmn):
 
     # Get control terms
     for i in range(extlmn.attributes.length):
-        options.setopt(*get_name_value(extlmn.attributes.item(i)))
+        options.setopt(*xmltools.get_name_value(extlmn.attributes.item(i)))
 
     variables = []
     for item in extlmn.getElementsByTagName("Variables"):
         data = item.firstChild.data.split("\n")
-        data = [stringify(x, "upper") for sub in data for x in sub.split()]
+        data = [xmltools.stringify(x, "upper")
+                for sub in data for x in sub.split()]
         if "ALL" in data:
             variables = "ALL"
             break
@@ -651,7 +655,7 @@ def pMaterial(mtllmn):
         raise Error1("{0}: material not in database".format(model))
 
     # mtlmdl.parameters is a comma separated list of parameters
-    pdict = dict([(stringify(n, "lower"), i)
+    pdict = dict([(xmltools.stringify(n, "lower"), i)
                   for i, n in enumerate(mtlmdl.parameters.split(","))])
     params = np.zeros(len(pdict))
     for node in mtllmn.childNodes:
@@ -669,34 +673,6 @@ def pMaterial(mtllmn):
         params[idx] = val
 
     return model, params, mtlmdl.driver, density
-
-
-def uni2str(unistr):
-    return unistr.encode("utf-8").strip()
-
-
-def stringify(item, action=""):
-    string = str(" ".join(item.split()))
-    if action == "upper":
-        return string.upper()
-    if action == "lower":
-        return string.lower()
-    return string
-
-
-def str2list(string, dtype=str):
-    string = re.sub(r"[, ]", " ", string)
-    return [dtype(x) for x in string.split()]
-
-
-def get_name_value(item):
-    name = item.name.encode("utf-8").strip()
-    value = fmt_str(item.value)
-    return name, value
-
-
-def fmt_str(item):
-    return " ".join(item.encode("utf-8").split())
 
 
 def mybool(a):

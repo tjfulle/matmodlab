@@ -3,23 +3,69 @@ import re
 import sys
 import time
 import shutil
+import argparse
 import subprocess
 import xml.dom.minidom as xdom
 
-from utils.errors import Error1
-from utils.io import logmes, logwrn
-
+import utils.xmltools as xmltools
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
-TESTS = os.path.join(R, "tests")
+TESTS = [os.path.join(R, "tests")]
+TESTS.extend(os.getenv("TESTDIRS", "").split(os.pathsep))
 PATH = os.getenv("PATH", "").split(os.pathsep)
 PLATFORM = sys.platform.lower()
 PATH.append(os.path.join(R, "tpl/exowrap/Build_{0}/bin".format(PLATFORM)))
-
 PASSSTATUS = 0
 DIFFSTATUS = 1
 FAILSTATUS = 2
+
+
+class Error(Exception):
+    def __init__(self, message):
+        raise SystemExit(message)
+
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-k", action="append", default=[],
+        help="Keywords of tests to include [default: %(default)s]")
+    parser.add_argument("-K", action="append", default=[],
+        help="Keywords of tests to exclude [default: %(default)s]")
+    parser.add_argument("--testdirs", action="append", default=[],
+        help="Additional directories to find tests [default: %(default)s]")
+    args = parser.parse_args(argv)
+
+    dirs = TESTS
+    for d in args.testdirs:
+        if not os.path.isdir(d):
+            logwrn("{0}: no such directory".format(d))
+            continue
+        dirs.append(d)
+
+    rtests = find_rtests(dirs, args.k, args.K)
+    status = run_rtests(rtests)
+
+    if status != PASSSTATUS:
+        print "A test did not pass :("
+    else:
+        print "All tests passed!"
+    return
+
+
+def logmes(message):
+    sys.stdout.write("runtest: {0}\n".format(message))
+    sys.stdout.flush()
+
+
+def logwrn(message=None, warnings=[0]):
+    if message is None:
+        return warnings[0]
+    sys.stderr.write("*** runtest: warning: {0}\n".format(message))
+    sys.stderr.flush()
+    warnings[0] += 1
 
 
 def rtest_statuses(status):
@@ -46,48 +92,48 @@ def find_rtests(search_dirs, include, exclude):
         try:
             rtest = doc.getElementsByTagName("rtest")[0]
         except IndexError:
-            raise Error1("Expected root element rtest in {0}".format(test_file))
+            raise Error("Expected root element rtest in {0}".format(test_file))
 
         # --- name
         name = rtest.attributes.get("name")
         if name is None:
-            raise Error1("{0}: rtest: name attribute required".format(
+            raise Error("{0}: rtest: name attribute required".format(
                 os.path.basename(test_file)))
         name = str(name.value.strip())
 
         # --- keywords
         keywords = rtest.getElementsByTagName("keywords")
         if keywords is None:
-            raise Error1("{0}: rtest: keyword element required".format(name))
-        keywords = child2list(keywords, "lower")
+            raise Error("{0}: rtest: keyword element required".format(name))
+        keywords = xmltools.child2list(keywords, "lower")
 
         # --- link_files
         link_files = rtest.getElementsByTagName("link_files")
         if link_files is None:
-            raise Error1("{0}: rtest: link_files element "
+            raise Error("{0}: rtest: link_files element "
                          "required".format(name))
         link_files = [os.path.join(test_file_d, f).format(NAME=name)
-                      for f in child2list(link_files)]
+                      for f in xmltools.child2list(link_files)]
         for link_file in link_files:
             if not os.path.isfile(link_file):
-                raise Error1("{0}: no such file".format(link_file))
+                raise Error("{0}: no such file".format(link_file))
 
         # --- execute
         execute = []
         exct = rtest.getElementsByTagName("execute")
         if exct is None:
-            raise Error1("{0}: rtest: execute element "
-                         "required".format(name))
+            raise Error("{0}: rtest: execute element "
+                        "required".format(name))
         for item in exct:
             exe = item.attributes.get("name")
             if exe is None:
-                raise Error1("{0}: execute: name attribute "
-                             "required".format(name))
+                raise Error("{0}: execute: name attribute "
+                            "required".format(name))
             exe = exe.value.strip()
             x = which(exe)
             if x is None:
-                raise Error1("{0}: {1}: executable not found".format(name, exe))
-            opts = [s.format(NAME=name) for s in child2list([item])]
+                raise Error("{0}: {1}: executable not found".format(name, exe))
+            opts = [s.format(NAME=name) for s in xmltools.child2list([item])]
             if exe == "exodiff":
                 opts.insert(0, "-status")
             execute.append([x] + opts)
@@ -184,30 +230,5 @@ def which(exe):
     return
 
 
-def str2list(string, dtype=str):
-    string = re.sub(r"[, ]", " ", string)
-    return [dtype(x) for x in string.split()]
-
-
-def child2list(item_list, action=None):
-    child_list = []
-    for item in item_list:
-        child = item.firstChild.data.split("\n")
-        for data in child:
-            child_list.extend([str(s.strip()) for s in data.split()])
-    if action == "lower":
-        child_list = [s.lower() for s in child_list]
-    return child_list
-
-
-def main(dirs):
-    rtests = find_rtests(dirs, ["fast"], [])
-    status = run_rtests(rtests)
-    if status != 0:
-        print "A test did not pass :("
-    else:
-        print "All tests passed!"
-
-
 if __name__ == "__main__":
-    main([TESTS])
+    main()
