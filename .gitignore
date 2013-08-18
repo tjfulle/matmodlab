@@ -7,3 +7,4 @@ materials/materials.db
 *.so
 *.out
 *.perm
+TestResults.*

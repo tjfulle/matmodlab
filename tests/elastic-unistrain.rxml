@@ -1,0 +1,15 @@
+<rtest name="elastic-unistrain">
+
+  <keywords> fast elastic </keywords>
+
+  <link_files>
+    {NAME}.exodiff {NAME}.rxml {NAME}.xml {NAME}.base_exo
+  </link_files>
+
+  <execute name="gmd"> {NAME}.xml </execute>
+
+  <execute name="exodiff">
+    -f {NAME}.exodiff {NAME}.base_exo {NAME}.exo
+  </execute>
+
+</rtest>
