@@ -98,12 +98,9 @@ class ModelDriver(object):
         self.exo.finish()
 
         if self.extract:
-            otype, step, ffmt, variables = self.extract
-            if otype.lower() == "ascii":
-                exodump(self.runid + ".exo", step=step, ffmt=ffmt,
-                        variables=variables)
-            else:
-                raise Error1("{0}: unkown extraction format".format(otype))
+            ofmt, step, ffmt, variables = self.extract
+            exodump(self.runid + ".exo", step=step, ffmt=ffmt,
+                    variables=variables, ofmt=ofmt)
         return
 
     def run(self):

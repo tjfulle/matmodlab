@@ -124,7 +124,7 @@ def pLegs(leglmn):
     options.addopt("fstar", 1.)
     options.addopt("efstar", 1.)
     options.addopt("dstar", 1.)
-    options.addopt("type", "default", dtype=str)
+    options.addopt("format", "default", dtype=str)
     options.addopt("proportional", "0", dtype=mybool)
 
     # the following options are for table formatted legs
@@ -146,16 +146,16 @@ def pLegs(leglmn):
     lines = [xmltools.str2list(line) for line in lines]
 
     # parse the legs depending on type
-    if options.getopt("type") == "default":
+    if options.getopt("format") == "default":
         legs = parse_legs_default(lines)
 
-    elif options.getopt("type") == "table":
+    elif options.getopt("format") == "table":
         legs = parse_legs_table(lines, options.getopt("tbltfmt"),
                                 options.getopt("tblcols"),
                                 options.getopt("tblcfmt"))
 
     else:
-        raise Error1("Legs: {0}: invalid type".format(options.getopt("type")))
+        raise Error1("Legs: {0}: invalid format".format(options.getopt("format")))
 
     legs = format_legs(legs, options)
 
@@ -556,7 +556,7 @@ def pPermutation(permlmn):
 def pExtract(extlmn):
 
     options = OptionHolder()
-    options.addopt("type", "ascii", dtype=str, choices=("ascii", ))
+    options.addopt("format", "ascii", dtype=str, choices=("ascii", "mathematica"))
     options.addopt("step", 1, dtype=int)
     options.addopt("ffmt", ".18f", dtype=str)
 
@@ -573,7 +573,7 @@ def pExtract(extlmn):
             variables = "ALL"
             break
         variables.extend(data)
-    return (options.getopt("type"), options.getopt("step"),
+    return (options.getopt("format"), options.getopt("step"),
             options.getopt("ffmt"), variables)
 
 

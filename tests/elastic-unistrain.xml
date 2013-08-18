@@ -21,7 +21,7 @@
       <G> {G} </G>
     </Material>
 
-    <Extract type="ascii" step="1" ffmt="12.6E">
+    <Extract format="ascii" step="1" ffmt="12.6E">
       <Variables>
 	stress strain
       </Variables>

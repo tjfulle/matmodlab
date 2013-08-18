@@ -8,7 +8,7 @@
   <Simulation>
 
     <Legs kappa="0" tstar="1" estar="-.5" amplitude="1" nfac="100" ratfac="1"
-	  type="table" tblcfmt="444444" tbltfmt="time" tblcols="1:7"
+	  format="table" tblcfmt="444444" tbltfmt="time" tblcols="1:7"
 	  proportional="false">
       <!--TIME STRESS-XX STRESS-YY STRESS-ZZ STRESS-XY STRESS-YZ STRESS-XZ -->
       5.100E-02  -3.820E+08 -1.907E+08 -1.907E+08  0.000E+00  0.000E+00  0.000E+00
@@ -60,7 +60,7 @@
       <G> {G} </G>
     </Material>
 
-    <Extract type="ascii" step="1" ffmt="12.6E">
+    <Extract format="ascii" step="1" ffmt="12.6E">
       <Variables>
 	stress strain
       </Variables>

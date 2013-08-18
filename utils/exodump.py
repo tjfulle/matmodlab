@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import argparse
 
+import utils.io as io
 from utils.errors import Error1
 from exoreader import ExodusIIReader
 
@@ -21,11 +22,16 @@ def main(argv=None):
             ffmt=args.ffmt)
 
 
-def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=None):
+def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=None,
+            ofmt="ascii"):
     """Read the exodus file in filepath and dump the contents to a columnar data
     file
 
     """
+    if ofmt != "ascii":
+        io.logmes("exodump: {0}: unrecognized format".format(ofmt))
+        return
+
     if not os.path.isfile(filepath):
         raise Error1("{0}: no such file".format(filepath))
 

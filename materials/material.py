@@ -1,6 +1,5 @@
 import os
 import sys
-import xml.dom as xmldom
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
