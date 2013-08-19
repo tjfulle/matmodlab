@@ -94,6 +94,7 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
             val = exof.get_elem_var(i, var)[0]
             stream.write(ffmt(val))
         stream.write("\n")
+    exof.close()
 
 
 def find_matches(master, slave):

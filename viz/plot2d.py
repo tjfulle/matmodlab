@@ -16,6 +16,7 @@ import enthought.chaco.api as capi
 import enthought.chaco.tools.api as ctapi
 import enthought.pyface.api as papi
 
+from exoreader import ExodusIIReader
 
 EXE = "plot2d"
 Change_X_Axis_Enabled = True
@@ -187,7 +188,7 @@ class Plot2D(tapi.HasTraits):
             ti = self.find_time_index()
             mheader = self._mheader()
             xname = mheader[self.x_idx]
-            self.y_idx = get_index(mheader, mheader[indices[0]])
+            self.y_idx = getidx(mheader, mheader[indices[0]])
 
             # indices is an integer list containing the columns of the data to
             # be plotted. The indices are wrt to the FIRST file in parsed, not
@@ -199,8 +200,8 @@ class Plot2D(tapi.HasTraits):
                 yname = mheader[idx]
 
                 # get the indices for this file
-                xp_idx = get_index(header, xname)
-                yp_idx = get_index(header, yname)
+                xp_idx = getidx(header, xname)
+                yp_idx = getidx(header, yname)
                 if xp_idx is None or yp_idx is None:
                     continue
 
@@ -224,8 +225,8 @@ class Plot2D(tapi.HasTraits):
                     for fnam, head in self.overlay_headers.items():
                         # get the x and y indeces corresponding to what is
                         # being plotted
-                        xo_idx = get_index(head, xname)
-                        yo_idx = get_index(head, yname)
+                        xo_idx = getidx(head, xname)
+                        yo_idx = getidx(head, yname)
                         if xo_idx is None or yo_idx is None:
                             continue
                         xo = self.overlay_plot_data[fnam][:, xo_idx] * x_scale
@@ -485,11 +486,11 @@ class ModelPlot(tapi.HasStrictTraits):
 
         data = []
         for idx, file_path in enumerate(self.file_paths):
+            fhead, fdata = loadcontents(file_path)
             if idx == 0:
-                mheader = get_header(file_path)
+                mheader = fhead
             fnam = os.path.basename(file_path)
-            self.plot_info[idx] = {fnam: get_header(file_path)}
-            fdata = read_data(file_path)
+            self.plot_info[idx] = {fnam: fhead}
             if not np.any(fdata):
                 logerr("No data found in {0}".format(file_path))
                 continue
@@ -594,11 +595,12 @@ class ModelPlot(tapi.HasStrictTraits):
     def _Reload_Data_fired(self):
         data = []
         for idx, file_path in enumerate(self.file_paths):
+            fhead, fdata = loadcontents(file_path)
             if idx == 0:
-                mheader = get_header(file_path)
+                mheader = fhead
             fnam = os.path.basename(file_path)
-            self.plot_info[idx] = {fnam: get_header(file_path)}
-            data.append(read_data(file_path))
+            self.plot_info[idx] = {fnam: fhead}
+            data.append(fdata)
         self.Plot_Data.plot_data = data
         self.Plot_Data.plot_info = self.plot_info
         self.Multi_Select.choices = mheader
@@ -628,13 +630,12 @@ class ModelPlot(tapi.HasStrictTraits):
         if dialog.return_code == papi.OK:
             for eachfile in dialog.paths:
                 try:
-                    overlay_data = read_data(eachfile)
-                    overlay_headers = get_header(eachfile)
+                    fhead, fdata = loadcontents(eachfile)
                 except:
                     print "Error reading overlay data in file " + eachfile
                 fnam = os.path.basename(eachfile)
-                self.Plot_Data.overlay_plot_data[fnam] = overlay_data
-                self.Plot_Data.overlay_headers[fnam] = overlay_headers
+                self.Plot_Data.overlay_plot_data[fnam] = fdata
+                self.Plot_Data.overlay_headers[fnam] = fhead
                 self.Single_Select_Overlay_Files.choices.append(fnam)
                 continue
             self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
@@ -735,11 +736,10 @@ def create_model_plot(window_name, handler=None, metadata=None, **kwargs):
     main_window.configure_traits(view=view, handler=handler)
 
 
-def get_index(list_, name):
-    """Return the index for name in list_"""
+def getidx(a, name, comments="#"):
+    """Return the index for name in a"""
     try:
-        return [x.lower() for x in list_
-                if x not in ("#", "$",)].index(name.lower())
+        return [x.lower() for x in a if x != comments].index(name.lower())
     except ValueError:
         return None
 
@@ -755,53 +755,37 @@ def logerr(message=None, errors=[0]):
     errors[0] += 1
 
 
-def get_header(fpath, comments="#"):
-    """Get the header of fpath
+def loadcontents(filepath):
+    if filepath.endswith((".exo", ".e")):
+        exof = ExodusIIReader.new_from_exofile(filepath)
+        glob_var_names = exof.glob_var_names()
+        elem_var_names = exof.elem_var_names()
+        data = [exof.get_all_times()]
+        for glob_var_name in glob_var_names:
+            data.append(exof.get_glob_var_time(glob_var_name))
+        for elem_var_name in elem_var_names:
+            data.append(exof.get_elem_var_time(elem_var_name, 0))
+        data = np.transpose(np.array(data))
+        head = glob_var_names + elem_var_names
+        exof.close()
+    else:
+        head = loadhead(filepath)
+        data = loadtxt(filepath, skiprows=1)
+    return head, data
 
-    Parameters
-    ----------
-    fpath : str
-        Path to file
 
-    Returns
-    -------
-    head : array_like
-        list of strings containing column names
+def loadhead(filepath, comments="#"):
+    """Get the file header
 
     """
-    line = " ".join(x.strip() for x in linecache.getline(fpath, 1).split())
+    line = " ".join(x.strip() for x in linecache.getline(filepath, 1).split())
     if line.startswith(comments):
         line = line[1:]
     return line.split()
 
 
-def read_data(f):
-    return loadtxt(f, skiprows=1)
-
-
 def loadtxt(f, skiprows=0, comments="#"):
     """Load text from output files
-
-    Parameters
-    ----------
-    f : str
-        File path
-    skiprows : int
-        skip first skiprows rows
-    comments : str
-        Comment character
-
-    Returns
-    -------
-    data : array_like
-        np array of data
-
-    Comments
-    --------
-
-    This function is similar to np.loadtxt, but with fewer options and we stop
-    reading the file if columns in a row are missing and return what we have
-    up until there. np.loadtxt returns an error.
 
     """
     lines = []
