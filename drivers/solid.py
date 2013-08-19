@@ -218,7 +218,7 @@ class SolidDriver(Driver):
                 if (nsteps - n) % dump_interval == 0 or endstep:
                     iomgr(dt, t)
 
-                if cfg.verbosity and (n == 0 or round(nsteps / 2.) == n or endstep):
+                if n == 0 or round(nsteps / 2.) == n or endstep:
                     io.logmes(consfmt.format(leg_num, n + 1, t, dt))
 
                 if t > termination_time:

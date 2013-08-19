@@ -11,8 +11,8 @@ from drivers.drivers import create_driver
 
 class ModelDriver(object):
 
-    def __init__(self, runid, driver, mtlmdl, mtlprops, legs, tterm,
-                 extract, *opts):
+    def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops, legs, tterm,
+                 extract, opts):
         """Initialize the ModelDriver object
 
         Parameters
@@ -45,7 +45,7 @@ class ModelDriver(object):
         self.timing["initial"] = time.time()
 
         # set up the logger
-        logger = io.Logger(self.runid, cfg.verbosity)
+        logger = io.Logger(self.runid, verbosity)
 
     def setup(self):
 
@@ -95,9 +95,6 @@ class ModelDriver(object):
         io.logmes("{0}: calculations completed ({1:.4f}s)".format(
             self.runid, self.timing["final"] - self.timing["initial"]))
         self.exo.finish()
-
-        if cfg.extract is not None:
-            self.extract = cfg.extract, 1, "12.6E", None
 
         if self.extract:
             ofmt, step, ffmt, variables = self.extract

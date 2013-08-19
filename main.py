@@ -45,9 +45,16 @@ def main(argv=None):
 
     if mm_input.stype == "simulation":
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional)
-        model = gmd.ModelDriver(runid, mm_input.driver, mm_input.mtlmdl,
+        if args.o:
+            if mm_input.extract:
+                sys.stderr.write("file extraction overwritten by command line\n")
+            extract = cfg.extract, 1, "12.6E", None
+        else:
+            extract = mm_input.extract
+
+        model = gmd.ModelDriver(runid, args.v, mm_input.driver, mm_input.mtlmdl,
                                 mm_input.mtlprops, mm_input.legs,
-                                mm_input.ttermination, mm_input.extract, *opts)
+                                mm_input.ttermination, extract, opts)
 
     elif mm_input.stype == "permutation":
         f = os.path.realpath(__file__)
