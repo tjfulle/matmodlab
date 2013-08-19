@@ -805,7 +805,7 @@ def loadtxt(f, skiprows=0, comments="#"):
 
     """
     lines = []
-    for line in open(f, "r").readlines()[skiprows:]:
+    for (iline, line) in enumerate(open(f, "r").readlines()[skiprows:]):
         try:
             line = [float(x) for x in line.split(comments, 1)[0].split()]
         except ValueError:
@@ -815,7 +815,8 @@ def loadtxt(f, skiprows=0, comments="#"):
         if len(line) < ncols:
             break
         if len(line) > ncols:
-            sys.exit("inconsistent data")
+            stop("*** {0}: error: {1}: inconsistent data in row {1}".format(
+                EXE, os.path.basename(f), iline))
         lines.append(line)
     return np.array(lines)
 
