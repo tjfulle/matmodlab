@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 import utils.io as io
-from utils.errors import Error1
+from utils.io import Error1
 from __config__ import cfg
 
 

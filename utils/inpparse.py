@@ -12,7 +12,7 @@ if __name__ == "__main__":
 from __config__ import cfg
 import utils.tensor as tensor
 import utils.xmltools as xmltools
-from utils.errors import Error1
+from utils.io import Error1
 from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
 from materials.material import get_material_from_db

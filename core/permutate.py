@@ -8,7 +8,7 @@ import multiprocessing as mp
 from itertools import izip, product
 
 import utils.io as io
-from utils.errors import Error1
+from utils.io import Error1
 from utils.pprepro import find_and_make_subs
 
 class PermutationDriver(object):

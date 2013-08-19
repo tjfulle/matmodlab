@@ -3,7 +3,7 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
-from utils.errors import Error1
+from utils.io import Error1
 from utils.impmod import load_file
 from utils.namespace import Namespace
 

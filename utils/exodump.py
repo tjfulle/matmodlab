@@ -5,7 +5,7 @@ import numpy as np
 import argparse
 
 import utils.io as io
-from utils.errors import Error1
+from utils.io import Error1
 from exoreader import ExodusIIReader
 
 

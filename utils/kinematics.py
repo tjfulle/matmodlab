@@ -7,7 +7,7 @@ from numpy.linalg import inv, solve, lstsq
 import utils.tensor as tensor
 from utils.tensor import expm, powm, logm, sqrtm
 from utils.solvers import newton, simplex
-from utils.errors import Error1
+from utils.io import Error1
 
 I = np.eye(3)
 

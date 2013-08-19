@@ -8,7 +8,7 @@ import utils.io as io
 import utils.tensor as tensor
 from utils.kinematics import deps2d, sig2d, update_deformation
 from utils.tensor import NSYMM, NTENS, NVEC, I9
-from utils.errors import Error1
+from utils.io import Error1
 from materials.material import create_material
 from drivers.driver import Driver
 

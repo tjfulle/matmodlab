@@ -6,16 +6,58 @@ from __config__ import cfg
 import exowriter as exo
 
 
-def logmes(message):
-    if cfg.verbosity:
-        sys.stdout.write("gmd: {0}\n".format(message))
+class Error1(Exception):
+    def __init__(self, message):
+        if cfg.debug:
+            raise Exception("*** gmd: error: {0}".format(message))
+        raise SystemExit("*** gmd: error: {0}".format(message))
 
 
-def logwrn(message=None, warnings=[0]):
-    if message is None:
-        return warnings[0]
-    sys.stderr.write("*** gmd: warning: {0}\n".format(message))
-    warnings[0] += 1
+LOGFILE = None
+WARNINGS_LOGGED = 0
+VERBOSITY = 1
+class Logger(object):
+    def __init__(self, runid, verbosity):
+        global LOGFILE, VERBOSITY
+        if runid is None and LOGFILE is None:
+            raise Error("inconsistent logger instantiation")
+        if verbosity is not None:
+            VERBOSITY = verbosity
+        if LOGFILE is None:
+            LOGFILE = open(runid + ".log", "w")
+
+    def logmes(self, message, logger=[None]):
+        message = "gmd: {0}\n".format(message)
+        if VERBOSITY:
+            sys.stdout.write(message)
+        LOGFILE.write(message)
+
+    def logwrn(self, message):
+        global WARNINGS_LOGGED
+        if message is None:
+            return WARNINGS_LOGGED
+        message = "*** gmd: warning: {0}\n".format(message)
+        sys.stderr.write(message)
+        LOGFILE.write(message)
+        WARNINGS_LOGGED += 1
+
+    @classmethod
+    def getlogger(cls):
+        if LOGFILE is None:
+            raise Error1("Logger not previously defined")
+        return cls(None, None)
+
+
+def logmes(message, logger=[None]):
+    if logger[0] is None:
+        logger[0] = Logger.getlogger()
+    logger[0].logmes(message)
+
+
+def logwrn(message=None, logger=[None]):
+    if logger[0] is None:
+        logger[0] = Logger.getlogger()
+    return logger[0].logwrn(message)
 
 
 class ExoManager(object):

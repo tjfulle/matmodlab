@@ -6,7 +6,7 @@ import numpy as np
 from __config__ import cfg
 import utils.io as io
 from utils.exodump import exodump
-from utils.errors import Error1
+from utils.io import Error1
 from drivers.drivers import create_driver
 
 class ModelDriver(object):
@@ -43,6 +43,9 @@ class ModelDriver(object):
         # set up timing
         self.timing = {}
         self.timing["initial"] = time.time()
+
+        # set up the logger
+        logger = io.Logger(self.runid, cfg.verbosity)
 
     def setup(self):
 
