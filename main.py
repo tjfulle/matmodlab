@@ -18,17 +18,26 @@ def main(argv=None):
        help="Verbosity [default: %(default)s]")
     parser.add_argument("--dbg", default=False, action="store_true",
        help="Debug mode [default: %(default)s]")
+    parser.add_argument("--sqa", default=False, action="store_true",
+       help="SQA mode [default: %(default)s]")
     parser.add_argument("-j", default=1, type=int,
        help="Number of simultaneous jobs to run [default: %(default)s]")
+    parser.add_argument("-o",
+       help="Extract all variables to O format [default: %(default)s]")
     args = parser.parse_args(argv)
     cfg.verbosity = args.v
     cfg.debug = args.dbg
+    cfg.sqa = args.sqa
+    cfg.extract = args.o
 
     # parse the user input
-    try:
-        lines = open(args.source, "r").read()
-    except IOError:
-        raise Error1("{0}: no such file".format(args.source))
+    source = args.source
+    if not os.path.isfile(source):
+        source += ".xml"
+        if not os.path.isfile(source):
+            sys.exit("gmd: {0}: no such file".format(args.source))
+
+    lines = open(source, "r").read()
 
     basename = os.path.basename(args.source).rstrip(".preprocessed")
     runid = os.path.splitext(basename)[0]
@@ -38,7 +47,7 @@ def main(argv=None):
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional)
         model = gmd.ModelDriver(runid, mm_input.driver, mm_input.mtlmdl,
                                 mm_input.mtlprops, mm_input.legs,
-                                mm_input.extract, *opts)
+                                mm_input.ttermination, mm_input.extract, *opts)
 
     elif mm_input.stype == "permutation":
         f = os.path.realpath(__file__)

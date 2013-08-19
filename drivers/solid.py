@@ -12,7 +12,7 @@ from utils.errors import Error1
 from materials.material import create_material
 from drivers.driver import Driver
 
-np.set_printoptions(precision=2)
+np.set_printoptions(precision=4)
 
 class SolidDriver(Driver):
     name = "solid"
@@ -81,7 +81,9 @@ class SolidDriver(Driver):
         -------
 
         """
-        io.logmes("Starting calculations for simulation {0}".format(self.runid))
+        termination_time = args[0]
+        if termination_time is None:
+            termination_time = legs[-1][0] + 1.e-06
 
         kappa = self.kappa
 
@@ -103,8 +105,6 @@ class SolidDriver(Driver):
         # v array is an array of integers that contains the rows and columns of
         # the slice needed in the jacobian subroutine.
         nv = 0
-        v = np.empty(nv)
-        sigspec = np.empty((3, nv))
         vdum = np.zeros(6, dtype=np.int)
 
         # Process each leg
@@ -114,7 +114,7 @@ class SolidDriver(Driver):
 
             tleg[0] = tleg[1]
             sigdum[0] = sig[:]
-            if len(v):
+            if nv:
                 sigdum[0, v] = sigspec[1]
 
             tleg[1], nsteps, ltype, c, ef = leg
@@ -122,8 +122,10 @@ class SolidDriver(Driver):
             if delt == 0.:
                 continue
 
-            nprints = 20
-            print_interval = max(1, int(nsteps / nprints))
+            # ndumps is the number of times to write to the output file in
+            # this leg
+            ndumps = 20
+            dump_interval = max(1, int(float(nsteps / ndumps)))
             lsn = len(str(nsteps))
             consfmt = ("leg {{0:{0}d}}, step {{1:{1}d}}, time {{2:.4E}}, "
                        "dt {{3:.4E}}".format(lsl, lsn))
@@ -159,7 +161,7 @@ class SolidDriver(Driver):
             if not nv:
                 # strain or strain rate prescribed and d is constant over
                 # entire leg
-                d = deps2d(delt, kappa, eps, depsdt)
+                d = deps2d(dt, kappa, eps, depsdt)
 
             else:
                 # Initial guess for d[v]
@@ -192,6 +194,7 @@ class SolidDriver(Driver):
 
                 # update material state
                 sigsave = np.array(sig)
+                xtrasave = np.array(xtra)
                 sig, xtra = self.mtlmdl.update_state(dt, d, sig, xtra)
 
                 # -------------------------- quantities derived from final state
@@ -212,13 +215,18 @@ class SolidDriver(Driver):
 
                 # --- write state to file
                 endstep = abs(t - tleg[1]) / tleg[1] < 1.E-12
-                if (nsteps - n) % print_interval == 0 or endstep:
+                if (nsteps - n) % dump_interval == 0 or endstep:
                     iomgr(dt, t)
 
                 if cfg.verbosity and (n == 0 or round(nsteps / 2.) == n or endstep):
                     io.logmes(consfmt.format(leg_num, n + 1, t, dt))
 
+                if t > termination_time:
+                    return 0
+
                 continue  # continue to next step
+            if cfg.sqa:
+                io.logmes(repr(np.allclose(xtra, xtrasave)))
 
             continue # continue to next leg
 

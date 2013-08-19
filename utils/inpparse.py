@@ -585,6 +585,8 @@ def simulation_namespace(simlmn):
 
     ns.stype = "simulation"
 
+    ns.ttermination = simblk.get("TerminationTime")
+
     ns.mtlmdl = simblk["Material"][0]
     ns.mtlprops = simblk["Material"][1]
     ns.driver = simblk["Material"][2]
@@ -600,17 +602,13 @@ def simulation_namespace(simlmn):
 
 
 def permutation_namespace(permlmn, basexml):
-
     permblk = pPermutation(permlmn)
-
     # set up the namespace to return
     ns = Namespace()
-
     ns.stype = "permutation"
     ns.method = permblk["method"]
     ns.parameters = permblk["parameters"]
     ns.basexml = basexml
-
     return ns
 
 
@@ -632,6 +630,13 @@ def pSimulation(simlmn):
         simblk[subblk] = parsefcn(sublmn)
         p = sublmn.parentNode
         p.removeChild(sublmn)
+    tlmn = simlmn.getElementsByTagName("TerminationTime")
+    if tlmn:
+        term_time = float(tlmn[0].firstChild.data)
+        simblk["TerminationTime"] = term_time
+        p = tlmn[0].parentNode
+        p.removeChild(tlmn[0])
+
     return simblk
 
 

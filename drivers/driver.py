@@ -15,18 +15,18 @@ class Driver(object):
             var = [name]
 
         elif vtype == "TENS":
-            var = ["{0}-{1}".format(name, x) for x in ("XX", "XY", "XZ",
+            var = ["{0}_{1}".format(name, x) for x in ("XX", "XY", "XZ",
                                                        "YX", "YY", "YZ",
                                                        "ZX", "ZY", "ZZ")]
         elif vtype == "SYMTENS":
-            var = ["{0}-{1}".format(name, x)
+            var = ["{0}_{1}".format(name, x)
                    for x in ("XX", "YY", "ZZ", "XY", "YZ", "XZ")]
 
         elif vtype == "SKEWTENS":
-            var = ["{0}-{1}".format(name, x) for x in ("XY", "YZ", "XZ")]
+            var = ["{0}_{1}".format(name, x) for x in ("XY", "YZ", "XZ")]
 
         elif vtype == "VECTOR":
-            var = ["{0}-{1}".format(name, x) for x in ("X", "Y", "X")]
+            var = ["{0}_{1}".format(name, x) for x in ("X", "Y", "X")]
 
         else:
             raise Error1("{0}: unrecognized vtype".format(vtype))

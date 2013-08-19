@@ -60,6 +60,7 @@ def main(argv=None):
     libd = os.path.join(root, "lib")
     mtld = os.path.join(root, "materials")
     utld = os.path.join(root, "utils")
+    vizd = os.path.join(root, "viz")
     pypath = [root]
 
     tools = os.path.join(root, "toolset")
@@ -191,6 +192,12 @@ def main(argv=None):
 
     write_exe("runtests", tools, os.path.join(utld, "testing.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "GMDSETUPTSTDIR": testdirs})
+
+    write_exe("gmddump", tools, os.path.join(utld, "exodump.py"),
+              pyexe, pyopts, {"PYTHONPATH": pypath})
+
+    write_exe("gmdviz", tools, os.path.join(vizd, "plot2d.py"),
+              pyexe, pyopts, {"PYTHONPATH": pypath})
 
     logmes("setup: Setup complete")
     if build_tpls:

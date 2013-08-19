@@ -7,6 +7,8 @@
 
   <Simulation>
 
+    <TerminationTime> 7.5e-1 </TerminationTime>
+
     <Legs kappa="0" tstar="1" estar="-.5" amplitude="1" nfac="100" ratfac="1"
 	  format="table" tblcfmt="444444" tbltfmt="time" tblcols="1:7"
 	  proportional="false">

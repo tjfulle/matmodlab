@@ -14,15 +14,18 @@ def main(argv=None):
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
     parser.add_argument("source")
-    parser.add_argument("--outfile")
-    parser.add_argument("--variables", action="append")
-    parser.add_argument("--ffmt")
+    parser.add_argument("-o",
+        help="Output file name [default: basename(source).out]")
+    parser.add_argument("--variables", action="append",
+        help="Variables to dump [default: ALL]")
+    parser.add_argument("--ffmt",
+        help="Output floating point format [default: .18f]")
     args = parser.parse_args(argv)
-    exodump(args.source, outfile=args.outfile, variables=args.variables,
+    exodump(args.source, outfile=args.o, variables=args.variables,
             ffmt=args.ffmt)
 
 
-def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=None,
+def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
             ofmt="ascii"):
     """Read the exodus file in filepath and dump the contents to a columnar data
     file
@@ -35,8 +38,25 @@ def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=None,
     if not os.path.isfile(filepath):
         raise Error1("{0}: no such file".format(filepath))
 
+    # setup output stream
     if outfile is None:
-        outfile = os.path.splitext(filepath)[0] + ".out"
+        stream = open(os.path.splitext(filepath)[0] + ".out", "w")
+    elif outfile in ("1", "stdout"):
+        stream = sys.stdout
+    elif outfile in ("2", "stderr"):
+        stream = sys.stderr
+    else:
+        stream = open(outfile, "w")
+
+    # setup variables
+    if variables is None:
+        variables = ["ALL"]
+    else:
+        if not isinstance(variables, (list, tuple)):
+            variables = [variables]
+        variables = [v.strip() for v in variables]
+        if "all" in [v.lower() for v in variables]:
+            variables = ["ALL"]
 
     # Floating point format for numbers
     if ffmt is None: ffmt = ".18f"
@@ -47,7 +67,7 @@ def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=None,
     glob_var_names = exof.glob_var_names()
     elem_var_names = exof.elem_var_names()
 
-    if variables != "ALL":
+    if variables[0] != "ALL":
         glob_var_names = find_matches(glob_var_names, variables)
         elem_var_names = find_matches(elem_var_names, variables)
         bad = [x for x in variables if x is not None]
@@ -61,20 +81,19 @@ def exodump(filepath, outfile=None, variables="ALL", step=1, ffmt=None,
             r.append(end - 1)
         return r
 
-    with open(outfile, "w") as fobj:
-        fobj.write("TIME {0} {1}\n".format(" ".join(glob_var_names).upper(),
-                                             " ".join(elem_var_names).upper()))
-        for i in myrange(0, exof.num_time_steps, step):
-            time = exof.get_time(i)
-            fobj.write(ffmt(time))
-            glob_vars_vals = exof.get_glob_vars(i, disp=1)
-            for var in glob_var_names:
-                try: fobj.write(ffmt(glob_vars_vals[var]))
-                except KeyError: continue
-            for var in elem_var_names:
-                val = exof.get_elem_var(i, var)[0]
-                fobj.write(ffmt(val))
-            fobj.write("\n")
+    stream.write("TIME {0} {1}\n".format(" ".join(glob_var_names).upper(),
+                                         " ".join(elem_var_names).upper()))
+    for i in myrange(0, exof.num_time_steps, step):
+        time = exof.get_time(i)
+        stream.write(ffmt(time))
+        glob_vars_vals = exof.get_glob_vars(i, disp=1)
+        for var in glob_var_names:
+            try: stream.write(ffmt(glob_vars_vals[var]))
+            except KeyError: continue
+        for var in elem_var_names:
+            val = exof.get_elem_var(i, var)[0]
+            stream.write(ffmt(val))
+        stream.write("\n")
 
 
 def find_matches(master, slave):
@@ -82,9 +101,10 @@ def find_matches(master, slave):
     matches = []
     v = []
     def endsort(item):
-        endings = {"-XX": 0, "-YY": 1, "-ZZ": 2,
-                   "-XY": 3, "-YZ": 4, "-XZ": 5,
-                   "-X": 0, "-Y": 1, "-Z": 2}
+        endings = {"_XX": 0, "_YY": 1, "_ZZ": 2,
+                   "_XY": 3, "_YZ": 4, "_XZ": 5,
+                   "_YX": 6, "_ZY": 7, "_ZX": 8,
+                   "_X": 0, "_Y": 1, "_Z": 2}
         for (ending, order) in endings.items():
             if item.endswith(ending):
                 return order
@@ -96,7 +116,7 @@ def find_matches(master, slave):
             slave[i] = None
             continue
         vt = []
-        for match in re.findall(r"(?i)\b{0}-[XYZ]+".format(name), mstring):
+        for match in re.findall(r"(?i)\b{0}_[XYZ]+".format(name), mstring):
             vt.append(match.strip())
             slave[i] = None
             continue

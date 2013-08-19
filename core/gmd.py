@@ -11,7 +11,8 @@ from drivers.drivers import create_driver
 
 class ModelDriver(object):
 
-    def __init__(self, runid, driver, mtlmdl, mtlprops, legs, extract, *opts):
+    def __init__(self, runid, driver, mtlmdl, mtlprops, legs, tterm,
+                 extract, *opts):
         """Initialize the ModelDriver object
 
         Parameters
@@ -35,6 +36,7 @@ class ModelDriver(object):
         self.mtlmdl = mtlmdl
         self.mtlprops = mtlprops
         self.legs = legs
+        self.tterm = tterm
         self.extract = extract
         self.opts = opts
 
@@ -45,6 +47,9 @@ class ModelDriver(object):
     def setup(self):
 
         # set up the driver
+
+        io.logmes("{0}: setting up".format(self.runid))
+
         self.driver.setup(self.runid, self.mtlmdl, self.mtlprops, *self.opts)
 
         # Set up the "mesh"
@@ -72,6 +77,34 @@ class ModelDriver(object):
         self.exo = io.ExoManager(self.runid, self.num_dim, self.coords, connect,
                                  elem_blks, all_element_data, title)
 
+    def run(self):
+        """Run the problem
+
+        """
+        io.logmes("{0}: starting calculations".format(self.runid))
+        opts = (self.tterm,)
+        retcode = self.driver.process_legs(self.legs, self.dump_state, *opts)
+        return retcode
+
+    def finish(self):
+        # udpate and close the file
+        self.timing["final"] = time.time()
+        io.logmes("{0}: calculations completed ({1:.4f}s)".format(
+            self.runid, self.timing["final"] - self.timing["initial"]))
+        self.exo.finish()
+
+        if cfg.extract is not None:
+            self.extract = cfg.extract, 1, "12.6E", None
+
+        if self.extract:
+            ofmt, step, ffmt, variables = self.extract
+            exodump(self.runid + ".exo", step=step, ffmt=ffmt,
+                    variables=variables, ofmt=ofmt)
+            self.timing["extract"] = time.time()
+            io.logmes("{0}: extraction completed ({1:.4f}s)".format(
+                self.runid, self.timing["extract"] - self.timing["final"]))
+        return
+
     def dump_state(self, dt, time_end):
         elem_blk_id = 1
         num_elem_this_blk = 1
@@ -89,23 +122,3 @@ class ModelDriver(object):
 
     def variables(self):
         return self.driver.variables()
-
-    def finish(self):
-        # udpate and close the file
-        self.timing["final"] = time.time()
-        io.logmes("Finished calculations for simulation {0} in {1:.4f}s".format(
-            self.runid, self.timing["final"] - self.timing["initial"]))
-        self.exo.finish()
-
-        if self.extract:
-            ofmt, step, ffmt, variables = self.extract
-            exodump(self.runid + ".exo", step=step, ffmt=ffmt,
-                    variables=variables, ofmt=ofmt)
-        return
-
-    def run(self):
-        """Run the problem
-
-        """
-        retcode = self.driver.process_legs(self.legs, self.dump_state)
-        return retcode

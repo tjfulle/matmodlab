@@ -36,8 +36,11 @@ def main(argv=None):
         help="Keywords of tests to exclude [default: %(default)s]")
     parser.add_argument("--testdirs", action="append", default=[],
         help="Additional directories to find tests [default: %(default)s]")
+    parser.add_argument("tests", nargs="*",
+        help="Specific tests to run [default: %(default)s]")
     args = parser.parse_args(argv)
 
+    # Directory to find tests
     dirs = TESTS
     for d in args.testdirs:
         if not os.path.isdir(d):
@@ -45,7 +48,7 @@ def main(argv=None):
             continue
         dirs.append(d)
 
-    rtests = find_rtests(dirs, args.k, args.K)
+    rtests = find_rtests(dirs, args.k, args.K, args.tests)
     status = run_rtests(rtests)
 
     if status != PASSSTATUS:
@@ -72,16 +75,26 @@ def rtest_statuses(status):
     return {PASSSTATUS: "PASS", DIFFSTATUS: "DIFF", FAILSTATUS: "FAIL"}.get(
         status, "FAIL")
 
-def find_rtests(search_dirs, include, exclude):
+
+def find_rtests(search_dirs, include, exclude, tests=None):
     """Find all regression tests in search_dirs
 
     """
-    # get a list of all test files (files with .rxml extension)
-    test_files = []
-    for d in search_dirs:
-        for (dirname, dirs, files) in os.walk(d):
-            test_files.extend([os.path.join(dirname, f) for f in files
-                               if f.endswith(".rxml")])
+    if tests is None:
+        # get a list of all test files (files with .rxml extension)
+        test_files = []
+        for d in search_dirs:
+            for (dirname, dirs, files) in os.walk(d):
+                test_files.extend([os.path.join(dirname, f) for f in files
+                                   if f.endswith(".rxml")])
+    else:
+        # user supplied test file
+        if not isinstance(tests, (tuple, list)):
+            tests = [tests]
+        test_files = [os.path.realpath(f) for f in tests]
+        for test in test_files:
+            if not os.path.isfile(test):
+                raise Error("{0}: no such file".format(test))
 
     # put all found tests in the rtests dictionary
     rtests = {}
