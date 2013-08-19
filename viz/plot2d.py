@@ -766,7 +766,7 @@ def loadcontents(filepath):
         for elem_var_name in elem_var_names:
             data.append(exof.get_elem_var_time(elem_var_name, 0))
         data = np.transpose(np.array(data))
-        head = glob_var_names + elem_var_names
+        head = ["TIME"] + glob_var_names + elem_var_names
         exof.close()
     else:
         head = loadhead(filepath)
