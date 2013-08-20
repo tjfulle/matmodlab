@@ -22,13 +22,10 @@ def main(argv=None):
        help="SQA mode [default: %(default)s]")
     parser.add_argument("-j", default=1, type=int,
        help="Number of simultaneous jobs to run [default: %(default)s]")
-    parser.add_argument("-o",
-       help="Extract all variables to O format [default: %(default)s]")
     args = parser.parse_args(argv)
     cfg.verbosity = args.v
     cfg.debug = args.dbg
     cfg.sqa = args.sqa
-    cfg.extract = args.o
 
     # parse the user input
     source = args.source
@@ -45,17 +42,6 @@ def main(argv=None):
 
     if mm_input.stype == "simulation":
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional)
-        if args.o:
-            if mm_input.extract:
-                step, ffmt, variables = mm_input.extract[1:]
-                ofmt = args.o
-                sys.stderr.write("file extraction overwritten by command line\n")
-            else:
-                ofmt, step, ffmt, variables = args.o, 1, ".18f", None
-            extract = [ofmt, step, ffmt, variables]
-        else:
-            extract = mm_input.extract
-
         model = gmd.ModelDriver(runid, args.v, mm_input.driver, mm_input.mtlmdl,
                                 mm_input.mtlprops, mm_input.legs,
                                 mm_input.ttermination, mm_input.ndumps, extract,
