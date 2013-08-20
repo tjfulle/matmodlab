@@ -12,7 +12,7 @@ from drivers.drivers import create_driver
 class ModelDriver(object):
 
     def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops, legs, tterm,
-                 extract, opts):
+                 ndumps, extract, opts):
         """Initialize the ModelDriver object
 
         Parameters
@@ -37,6 +37,7 @@ class ModelDriver(object):
         self.mtlprops = mtlprops
         self.legs = legs
         self.tterm = tterm
+        self.ndumps_per_leg = ndumps
         self.extract = extract
         self.opts = opts
 
@@ -85,7 +86,7 @@ class ModelDriver(object):
 
         """
         io.logmes("{0}: starting calculations".format(self.runid))
-        opts = (self.tterm,)
+        opts = (self.tterm, self.ndumps_per_leg)
         retcode = self.driver.process_legs(self.legs, self.dump_state, *opts)
         return retcode
 

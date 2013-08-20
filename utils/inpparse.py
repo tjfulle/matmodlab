@@ -33,6 +33,8 @@ class OptionHolder(object):
 
     def setopt(self, name, value):
         opt = self.getopt(name, getval=False)
+        if opt is None:
+            raise Error1("{0}: setopt: no such option".format(name))
         try:
             value = opt.dtype(value)
         except ValueError:
@@ -47,7 +49,7 @@ class OptionHolder(object):
 
     def getopt(self, name, getval=True):
         try: opt = getattr(self, name)
-        except AttributeError: raise Error1("{0}: no such option".format(name))
+        except AttributeError: return None
         if getval:
             return opt.value
         return opt
@@ -598,6 +600,11 @@ def simulation_namespace(simlmn):
 
     ns.extract = simblk.get("Extract")
 
+    options = simblk.get("Options")
+    ns.error = options["error"]
+    ns.ndumps = options["ndumps"]
+    ns.writeprops = options["writeprops"]
+
     return ns
 
 
@@ -636,6 +643,21 @@ def pSimulation(simlmn):
         simblk["TerminationTime"] = term_time
         p = tlmn[0].parentNode
         p.removeChild(tlmn[0])
+
+    # Get options
+    options = OptionHolder()
+    options.addopt("ndumps", "20", dtype=str)
+    options.addopt("writeprops", False, dtype=mybool)
+    options.addopt("error", "all", dtype=str)
+    for i in range(simlmn.attributes.length):
+        options.setopt(*xmltools.get_name_value(simlmn.attributes.item(i)))
+    ndumps = options.getopt("ndumps")
+    if ndumps == "all":
+        ndumps = 100000000
+    ndumps= int(ndumps)
+    simblk["Options"] = {"ndumps": ndumps,
+                         "writeprops": options.getopt("writeprops"),
+                         "error": options.getopt("error")}
 
     return simblk
 

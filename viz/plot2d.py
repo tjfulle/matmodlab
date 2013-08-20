@@ -37,10 +37,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("source")
     args = parser.parse_args()
-    runid = os.path.splitext(os.path.basename(args.source))[0]
-
-    kwargs = {"output file": args.source}
-    create_model_plot(runid, **kwargs)
+    create_model_plot(args.source)
 
 
 class Plot2D(tapi.HasTraits):
@@ -642,7 +639,20 @@ class ModelPlot(tapi.HasStrictTraits):
         return
 
 
-def create_model_plot(window_name, handler=None, metadata=None, **kwargs):
+def create_view(window_name):
+    view = tuiapi.View(tuiapi.HSplit(
+        tuiapi.VGroup(
+            tuiapi.Item('Multi_Select', show_label=False, width=224,
+                        height=668, springy=True, resizable=True),
+            tuiapi.Item('Change_Axis', show_label=False), ),
+        tuiapi.Item('Plot_Data', show_label=False, width=800, height=768,
+                    springy=True, resizable=True)),
+                       style='custom', width=1124, height=868,
+                       resizable=True, title=window_name)
+    return view
+
+
+def create_model_plot(source, handler=None, metadata=None):
     """Create the plot window
 
     Parameters
@@ -660,79 +670,55 @@ def create_model_plot(window_name, handler=None, metadata=None, **kwargs):
     individual output files are located.
     """
 
-    view = tuiapi.View(tuiapi.HSplit(
-        tuiapi.VGroup(
-            tuiapi.Item('Multi_Select', show_label=False, width=224,
-                        height=668, springy=True, resizable=True),
-            tuiapi.Item('Change_Axis', show_label=False), ),
-        tuiapi.Item('Plot_Data', show_label=False, width=800, height=768,
-                    springy=True, resizable=True)),
-        style='custom', width=1124, height=868,
-        resizable=True, title=window_name)
-
     if metadata is not None:
+        stop("call create_view directly")
         metadata.plot.configure_traits(view=view)
         return
 
-    output_file = kwargs.get("output file")
-    index_file = kwargs.get("index file")
+    if not os.path.isfile(source):
+        stop("{0}: {1}: no such file".format(iam, source))
 
-    if output_file is None and index_file is None:
-        stop("no output or index file given")
+    iam = "create_model_plot"
+    basename = os.path.basename(source)
+    runid, fext = os.path.splitext(basename)
 
-    elif output_file is not None and index_file is not None:
-        stop("specify either an output or index file, not both")
+    if basename == "gmd-tabular.dat":
+        variables, output_files = loadtabular(source)
 
-    if index_file is not None:
-        sim_index = psi.SimulationIndex(index_file=index_file)
-        output_files = []
-        variables = []
-        idx = sim_index.get_index()
-        for run, info in idx.iteritems():
-            output_files.append(info['outfile'])
-            s = []
-            for var, val in info['variables'].iteritems():
-                s.append("%s=%.2g" % (var, val))
-                continue
-            s = ", ".join(s)
-            variables.append(s)
-
-        not_found = [x for x in output_files if not os.path.isfile(x)]
-        if not_found:
-            stop("files not found: {0}".format(", ".join(not_found)))
-
-    elif output_file is not None:
-        output_files = [output_file]
+    elif fext in (".exo", ".out"):
+        output_files = [source]
         variables = [""]
+
+    else:
+        stop("{0}: {1}: unrecognized file extension".format(iam, fext))
 
     view = tuiapi.View(tuiapi.HSplit(
         tuiapi.VGroup(
-                tuiapi.Item('Multi_Select', show_label=False),
-                tuiapi.Item('Change_Axis', show_label=False),
-                tuiapi.Item('Reset_Zoom', show_label=False),
-                tuiapi.Item('Reload_Data', show_label=False),
-                tuiapi.VGroup(
-                    tuiapi.HGroup(tuiapi.Item("X_Scale", label="X Scale",
-                                              editor=tuiapi.TextEditor(
-                                                  multi_line=False)),
-                                  tuiapi.Item("Y_Scale", label="Y Scale",
-                                              editor=tuiapi.TextEditor(
-                                                  multi_line=False))),
-                    show_border=True),
-                tuiapi.VGroup(
-                    tuiapi.HGroup(
-                        tuiapi.Item('Load_Overlay', show_label=False, springy=True),
-                        tuiapi.Item(
-                            'Close_Overlay', show_label=False, springy=True),),
-                    tuiapi.Item('Single_Select_Overlay_Files', show_label=False,
-                                resizable=False), show_border=True)),
+            tuiapi.Item('Multi_Select', show_label=False),
+            tuiapi.Item('Change_Axis', show_label=False),
+            tuiapi.Item('Reset_Zoom', show_label=False),
+            tuiapi.Item('Reload_Data', show_label=False),
+            tuiapi.VGroup(
+                tuiapi.HGroup(tuiapi.Item("X_Scale", label="X Scale",
+                                          editor=tuiapi.TextEditor(
+                                              multi_line=False)),
+                              tuiapi.Item("Y_Scale", label="Y Scale",
+                                          editor=tuiapi.TextEditor(
+                                              multi_line=False))),
+                show_border=True),
+            tuiapi.VGroup(
+                tuiapi.HGroup(
+                    tuiapi.Item('Load_Overlay', show_label=False, springy=True),
+                    tuiapi.Item(
+                        'Close_Overlay', show_label=False, springy=True),),
+                tuiapi.Item('Single_Select_Overlay_Files', show_label=False,
+                            resizable=False), show_border=True)),
         tuiapi.Item('Plot_Data', show_label=False, width=800, height=768,
                     springy=True, resizable=True)),
         style='custom', width=1124, height=868,
-        resizable=True, title=window_name)
+        resizable=True, title=runid)
 
-    main_window = ModelPlot(
-        file_paths=output_files, file_variables=variables)
+    main_window = ModelPlot(file_paths=output_files, file_variables=variables)
     main_window.configure_traits(view=view, handler=handler)
 
 
@@ -753,6 +739,26 @@ def logerr(message=None, errors=[0]):
         return errors[0]
     sys.stderr.write("*** {0}: error: {1}\n".format(EXE, message))
     errors[0] += 1
+
+
+def loadtabular(source):
+    sim_index = psi.SimulationIndex(index_file=index_file)
+    output_files = []
+    variables = []
+    idx = sim_index.get_index()
+    for run, info in idx.iteritems():
+        output_files.append(info['outfile'])
+        s = []
+        for var, val in info['variables'].iteritems():
+            s.append("%s=%.2g" % (var, val))
+            continue
+        s = ", ".join(s)
+        variables.append(s)
+
+    not_found = [x for x in output_files if not os.path.isfile(x)]
+    if not_found:
+        stop("files not found: {0}".format(", ".join(not_found)))
+    return variables, output_files
 
 
 def loadcontents(filepath):

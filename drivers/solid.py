@@ -81,7 +81,7 @@ class SolidDriver(Driver):
         -------
 
         """
-        termination_time = args[0]
+        termination_time, ndumps_per_leg = args[:2]
         if termination_time is None:
             termination_time = legs[-1][0] + 1.e-06
 
@@ -122,10 +122,9 @@ class SolidDriver(Driver):
             if delt == 0.:
                 continue
 
-            # ndumps is the number of times to write to the output file in
-            # this leg
-            ndumps = 20
-            dump_interval = max(1, int(float(nsteps / ndumps)))
+            # ndumps_per_leg is the number of times to write to the output
+            # file in this leg
+            dump_interval = max(1, int(float(nsteps / ndumps_per_leg)))
             lsn = len(str(nsteps))
             consfmt = ("leg {{0:{0}d}}, step {{1:{1}d}}, time {{2:.4E}}, "
                        "dt {{3:.4E}}".format(lsl, lsn))

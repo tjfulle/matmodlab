@@ -200,7 +200,7 @@ def update_deformation(dt, k, f0, d):
     if k == 0:
         eps = logm(u)
     else:
-        Ef = 1. / k * (powm(u, k) - I)
+        eps = 1. / k * (powm(u, k) - I)
     if np.linalg.det(ff) <= 0.:
         raise Error1("negative Jacobian encountered")
     return np.reshape(ff, (9,)), as6x1(eps)
