@@ -33,7 +33,7 @@ class SolidDriver(Driver):
         self.mtlmdl.setup(mtlprops)
         self.mtlmdl.initialize()
 
-        self.kappa, self.density, self.proportional = opts[:3]
+        self.kappa, self.density, self.proportional, self.ndumps = opts[:4]
 
         # register variables
         self.register_variable("STRESS", vtype="SYMTENS")
@@ -81,7 +81,7 @@ class SolidDriver(Driver):
         -------
 
         """
-        termination_time, ndumps_per_leg = args[:2]
+        termination_time = args[0]
         if termination_time is None:
             termination_time = legs[-1][0] + 1.e-06
 
@@ -124,7 +124,7 @@ class SolidDriver(Driver):
 
             # ndumps_per_leg is the number of times to write to the output
             # file in this leg
-            dump_interval = max(1, int(float(nsteps / ndumps_per_leg)))
+            dump_interval = max(1, int(float(nsteps / self.ndumps)))
             lsn = len(str(nsteps))
             consfmt = ("leg {{0:{0}d}}, step {{1:{1}d}}, time {{2:.4E}}, "
                        "dt {{3:.4E}}".format(lsl, lsn))
@@ -161,6 +161,10 @@ class SolidDriver(Driver):
                 # strain or strain rate prescribed and d is constant over
                 # entire leg
                 d = deps2d(dt, kappa, eps, depsdt)
+
+                if cfg.sqa and kappa == 0.:
+                    if not np.allclose(d, depsdt):
+                        logmes("sqa: d != depsdt (k=0, leg={0})".format(leg_num))
 
             else:
                 # Initial guess for d[v]
@@ -224,8 +228,6 @@ class SolidDriver(Driver):
                     return 0
 
                 continue  # continue to next step
-            if cfg.sqa:
-                io.logmes(repr(np.allclose(xtra, xtrasave)))
 
             continue # continue to next leg
 

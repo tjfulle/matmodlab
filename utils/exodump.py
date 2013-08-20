@@ -4,9 +4,12 @@ import sys
 import numpy as np
 import argparse
 
-import utils.io as io
-from utils.io import Error1
 from exoreader import ExodusIIReader
+class ExoDumpError(Exception):
+    def __init__(self, message):
+        raise SystemExit(message)
+
+OFMTS = {"ascii": ".out", "mathematica": ".math"}
 
 
 def main(argv=None):
@@ -20,9 +23,11 @@ def main(argv=None):
         help="Variables to dump [default: ALL]")
     parser.add_argument("--ffmt",
         help="Output floating point format [default: .18f]")
+    parser.add_argument("--ofmt", default="ascii", choices=OFMTS.keys(),
+        help="Output format [default: %(default)s]")
     args = parser.parse_args(argv)
-    exodump(args.source, outfile=args.o, variables=args.variables,
-            ffmt=args.ffmt)
+    return exodump(args.source, outfile=args.o, variables=args.variables,
+                   ffmt=args.ffmt, ofmt=args.ofmt)
 
 
 def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
@@ -31,16 +36,19 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
     file
 
     """
-    if ofmt != "ascii":
-        io.logmes("exodump: {0}: unrecognized format".format(ofmt))
-        return
+    ofmt = ofmt.lower()
+    if ofmt not in OFMTS:
+        sys.stderr.write("*** exodump: warning: {0}: unrecognized "
+                         " format\n".format(ofmt))
+        return 1
 
     if not os.path.isfile(filepath):
-        raise Error1("{0}: no such file".format(filepath))
+        raise ExoDumpError("{0}: no such file".format(filepath))
 
     # setup output stream
     if outfile is None:
-        stream = open(os.path.splitext(filepath)[0] + ".out", "w")
+        ext = OFMTS[ofmt]
+        stream = open(os.path.splitext(filepath)[0] + ext, "w")
     elif outfile in ("1", "stdout"):
         stream = sys.stdout
     elif outfile in ("2", "stderr"):
@@ -60,7 +68,7 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
 
     # Floating point format for numbers
     if ffmt is None: ffmt = ".18f"
-    fmt = "{0: " + ffmt + "} "
+    fmt = "{0: " + ffmt + "}"
     ffmt = lambda a, fmt=fmt: fmt.format(float(a))
 
     exof = ExodusIIReader.new_from_exofile(filepath)
@@ -68,36 +76,65 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
     elem_var_names = exof.elem_var_names()
 
     if variables[0] != "ALL":
-        glob_var_names = find_matches(glob_var_names, variables)
-        elem_var_names = find_matches(elem_var_names, variables)
+        glob_var_names = expand_var_names(glob_var_names, variables)
+        elem_var_names = expand_var_names(elem_var_names, variables)
         bad = [x for x in variables if x is not None]
         if bad:
-            raise Error1("{0}: variables not in "
-                         "{1}".format(", ".join(bad), filepath))
+            raise ExoDumpError("{0}: variables not in "
+                               "{1}".format(", ".join(bad), filepath))
 
-    def myrange(start, end, step):
-        r = [i for i in range(start, end, step)]
-        if end - 1 not in r:
-            r.append(end - 1)
-        return r
-
-    stream.write("TIME {0} {1}\n".format(" ".join(glob_var_names).upper(),
-                                         " ".join(elem_var_names).upper()))
+    # retrieve the data from the database
+    header = ["TIME"]
+    header.extend([h.upper() for h in glob_var_names])
+    header.extend([h.upper() for h in elem_var_names])
+    data = []
     for i in myrange(0, exof.num_time_steps, step):
-        time = exof.get_time(i)
-        stream.write(ffmt(time))
+        row = [exof.get_time(i)]
         glob_vars_vals = exof.get_glob_vars(i, disp=1)
         for var in glob_var_names:
-            try: stream.write(ffmt(glob_vars_vals[var]))
+            try: row.append(glob_vars_vals[var])
             except KeyError: continue
         for var in elem_var_names:
-            val = exof.get_elem_var(i, var)[0]
-            stream.write(ffmt(val))
-        stream.write("\n")
+            row.append(exof.get_elem_var(i, var)[0])
+        data.append(row)
     exof.close()
+    data = np.array(data)
+
+    if len(header) != data.shape[1]:
+        raise ExoDumpError("inconsistent data")
+
+    if ofmt == "ascii":
+        asciidump(stream, ffmt, header, data)
+
+    elif ofmt == "mathematica":
+        mathdump(stream, ffmt, header, data)
+
+    stream.close()
+
+    return 0
 
 
-def find_matches(master, slave):
+def asciidump(stream, ffmt, header, data):
+    stream.write("{0}\n".format(" ".join(header)))
+    stream.write("\n".join(" ".join(ffmt(d) for d in row) for row in data))
+    return
+
+
+def mathdump(stream, ffmt, header, data):
+    for (i, name) in enumerate(header):
+        col = data[:, i]
+        stream.write("{0}={{{1}}}\n".format(
+            name, ",".join(ffmt(d) for d in data[:, i])))
+    return
+
+def myrange(start, end, step):
+    r = [i for i in range(start, end, step)]
+    if end - 1 not in r:
+        r.append(end - 1)
+    return r
+
+
+def expand_var_names(master, slave):
     mstring = " ".join(master)
     matches = []
     v = []
@@ -125,5 +162,6 @@ def find_matches(master, slave):
         matches.extend(vt)
     return matches
 
+
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

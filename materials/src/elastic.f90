@@ -78,36 +78,6 @@ contains
 
   !***************************************************************************!
 
-  subroutine estiff(dt, ui, d, stress, J)
-    ! ----------------------------------------------------------------------- !
-    ! Numerically compute material Jacobian by a centered difference scheme.
-    ! ----------------------------------------------------------------------- !
-    !......................................................................passed
-    implicit none
-    real(kind=rk), intent(in) :: dt, ui(*), d(6), stress(6)
-    real(kind=rk), intent(out) :: J(6, 6)
-    !.......................................................................local
-    integer :: n
-    real(kind=rk) :: sigp(6), sigm(6), dp(6), dm(6), deps
-    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ estiff
-    deps = sqrt(epsilon(d))
-    do n = 1, 6
-       dp = d
-       dp(n) = d(n) + (deps / dt) / two
-       sigp = stress
-       call ecalc(dt, ui, dp, sigp)
-
-       dm = d
-       dm(n) = d(n) - (deps / dt) / two
-       sigm = stress
-       call ecalc(dt, ui, dm, sigm)
-
-       J(:, n) = (sigp - sigm) / deps
-    end do
-  end subroutine estiff
-
-  !***************************************************************************!
-
   function iso(a)
     ! ----------------------------------------------------------------------- !
     ! Isotropic part of second order tensor

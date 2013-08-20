@@ -41,11 +41,11 @@ def main(argv=None):
     mm_input = inpparse.parse_input(lines)
 
     if mm_input.stype == "simulation":
-        opts = (mm_input.kappa, mm_input.density, mm_input.proportional)
+        opts = (mm_input.kappa, mm_input.density, mm_input.proportional,
+                mm_input.ndumps)
         model = gmd.ModelDriver(runid, args.v, mm_input.driver, mm_input.mtlmdl,
                                 mm_input.mtlprops, mm_input.legs,
-                                mm_input.ttermination, mm_input.ndumps, extract,
-                                opts)
+                                mm_input.ttermination, mm_input.extract, opts)
 
     elif mm_input.stype == "permutation":
         f = os.path.realpath(__file__)

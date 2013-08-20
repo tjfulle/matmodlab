@@ -44,19 +44,27 @@ class Logger(object):
     @classmethod
     def getlogger(cls):
         if LOGFILE is None:
-            raise Error1("Logger not previously defined")
+            return None
         return cls(None, None)
 
 
 def logmes(message, logger=[None]):
     if logger[0] is None:
         logger[0] = Logger.getlogger()
+        if logger[0] is None:
+            sys.stdout.write(message + "\n")
+            return
     logger[0].logmes(message)
 
 
 def logwrn(message=None, logger=[None]):
     if logger[0] is None:
         logger[0] = Logger.getlogger()
+        if logger[0] is None:
+            global WARNINGS_LOGGED
+            WARNINGS_LOGGED += 1
+            sys.stderr.write(message + "\n")
+            return
     return logger[0].logwrn(message)
 
 

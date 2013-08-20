@@ -5,135 +5,182 @@ import re
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
-CWD = os.getcwd()
 def main(argv=None):
-    for f in [x for x in os.listdir(CWD) if x.endswith(".inp")]:
-        simname = os.path.splitext(f)[0]
-        xmlf = simname + ".xml"
-        lines = strip_comments(open(f, "r").read())
-        doc = xdom.Document()
-        lines = "\n".join(pretty_list(lines))
-        lines = re.sub("begin simulation .*", "", lines)
-        lines = lines.replace("end simulation", "")
-        lines = "\n".join(pretty_list(lines))
+    if argv is None:
+        argv = sys.argv[1:]
+    if not argv:
+        filepaths = [f for f in os.listdir(os.getcwd()) if f.endswith(".inp")]
+    else:
+        filepaths = [f for f in argv if f.endswith(".inp")]
 
-        root = doc.createElement("GMDSpec")
-        xsim = doc.createElement("Simulation")
+    for filepath in filepaths:
+        p2gmd(filepath)
 
-        # --- find boundary
-        boundary = re.search(r"(?is)begin boundary.*end boundary", lines)
-        if not boundary:
-            print "*** {0}: warning: no boundary".format(simname)
-            doc.unlink()
-            continue
-        boundary = boundary.group()
-        lines = "\n".join(pretty_list(lines.replace(boundary, "")))
-        legs = re.search(r"(?is)begin legs.*end legs", boundary).group()
-        boundary = pretty_list(re.sub(legs, "", boundary))[1:-1]
-        legs = pretty_list(legs)[1:-1]
 
-        xlegs = doc.createElement("Legs")
-        lchanges = {"ampl": "amplitude", "stepstar": "nfac"}
-        for line in boundary:
-            line = [x.strip() for x in re.split(r"[ ,=]", line) if x.split()]
-            print line
-            if not line:
-                continue
-            name, val = line[:2]
-            name = lchanges.get(name.lower(), name.lower())
-            xlegs.setAttribute(name, val)
+def p2gmd(filepath):
+    simname = os.path.splitext(filepath)[0]
+    xmlf = simname + ".xml"
+    lines = strip_comments(open(filepath, "r").read())
+    doc = xdom.Document()
+    lines = "\n".join(pretty_list(lines))
+    lines = re.sub("begin simulation .*", "", lines)
+    lines = lines.replace("end simulation", "")
+    lines = "\n".join(pretty_list(lines))
 
-        if re.search("(?i)using", legs[0]):
-            print "{0}: table conversion not yet done".format(simname)
-            doc.unlink()
-            continue
-        else:
-            legs = format_legs_default(legs)
+    root = doc.createElement("GMDSpec")
+    xsim = doc.createElement("Simulation")
 
-        if legs is None:
-            print "{0}: bad legs".format(simname)
-            doc.unlink()
-            continue
-
-        leg_nodes = []
-        for leg in legs.split("\n"):
-            leg = doc.createTextNode(leg)
-            xlegs.appendChild(leg)
-
-        # --- material
-        material = re.search(r"(?is)begin material.*end material", lines).group()
-        lines = "\n".join(pretty_list(lines.replace(material, "")))
-        model = re.search(r"(?i)constitutive model \w+", material).group()
-        material = pretty_list(re.sub(model, "", material))[1:-1]
-
-        xmaterial = doc.createElement("Material")
-        xmaterial.setAttribute("model", model.split()[-1].lower().strip())
-        for line in material:
-            line = [x.strip() for x in re.split(r"[ ,=]", line) if x.split()]
-            if not line:
-                continue
-            p, v = line
-            xparam = doc.createElement(p.upper())
-            try:
-                xval = doc.createTextNode("{0: 12.6E}".format(float(v)))
-            except:
-                xval = doc.createTextNode(str(v))
-                print "*** {0}: warning: bad param {1}".format(simname, v)
-            xparam.appendChild(xval)
-            xmaterial.appendChild(xparam)
-
-        # --- control
-        control = re.search(r"(?is)begin control.*end control", lines)
-        cchanges = {"nowriteprops": "writeprops"}
-        lcontrol = ("proportional",)
-        if control:
-            control = control.group()
-            lines = "\n".join(pretty_list(lines.replace(control, "")))
-            control = pretty_list(control)[1:-1]
-            for item in control:
-                item = [x.strip() for x in re.split(r"[ ,=]", item) if x.split()]
-                if not item:
-                    continue
-                name = cchanges.get(item[0].lower(), item[0].lower())
-                if len(item) == 1:
-                    val = "true" if name != "writeprops" else "false"
-                else:
-                    val = str(" ".join(item[1:]))
-                if name in lcontrol:
-                    xlegs.setAttribute(name, val)
-                else:
-                    xsim.setAttribute(name, val)
-
-        # --- mathplot
-        mathplot = re.search(r"(?is)begin mathplot.*end mathplot", lines)
-        xtract = None
-        if mathplot:
-            mathplot = mathplot.group()
-            lines = "\n".join(pretty_list(lines.replace(mathplot, "")))
-            mathplot = pretty_list(mathplot)[1:-1]
-            ovars = " ".join(mathplot).upper()
-            xtract = doc.createElement("Extract")
-            xvars = doc.createElement("Variables")
-            xtract.setAttribute("format", "mathematica")
-            xvars.appendChild(doc.createTextNode(ovars))
-            xtract.appendChild(xvars)
-
-        # --- append everything
-        xsim.appendChild(xmaterial)
-        xsim.appendChild(xlegs)
-        if xtract:
-            xsim.appendChild(xtract)
-        root.appendChild(xsim)
-        doc.appendChild(root)
-
-        doc.writexml(open(xmlf, "w"), addindent="  ", newl="\n")
+    # --- find boundary
+    boundary = re.search(r"(?is)begin boundary.*end boundary", lines)
+    if not boundary:
         doc.unlink()
-        lines = pretty_list(lines)
-        if lines:
-            print simname
-            print "\n".join(lines)
-            sys.exit("missed some!")
-        print "{0}: FINISHED".format(simname)
+        return
+    boundary = boundary.group()
+    lines = "\n".join(pretty_list(lines.replace(boundary, "")))
+    legs = re.search(r"(?is)begin legs.*end legs", boundary).group()
+    boundary = pretty_list(re.sub(legs, "", boundary))[1:-1]
+    legs = pretty_list(legs)[1:-1]
+
+    xlegs = doc.createElement("Legs")
+    lchanges = {"ampl": "amplitude", "stepstar": "nfac"}
+    for line in boundary:
+        line = [x.strip() for x in re.split(r"[ ,=]", line) if x.split()]
+        if not line:
+            continue
+        name, val = line[:2]
+        name = lchanges.get(name.lower(), name.lower())
+        xlegs.setAttribute(name, val)
+
+    if re.search("(?i)using", legs[0]):
+        print "{0}: table conversion not yet done".format(simname)
+        doc.unlink()
+        return
+    else:
+        legs = format_legs_default(legs)
+
+    if legs is None:
+        print "{0}: bad legs".format(simname)
+        doc.unlink()
+        return
+
+    leg_nodes = []
+    for leg in legs.split("\n"):
+        leg = doc.createTextNode(leg)
+        xlegs.appendChild(leg)
+
+    # --- material
+    material = re.search(r"(?is)begin material.*end material", lines).group()
+    lines = "\n".join(pretty_list(lines.replace(material, "")))
+    model = re.search(r"(?i)constitutive model \w+", material).group()
+    material = pretty_list(re.sub(model, "", material))[1:-1]
+
+    xmaterial = doc.createElement("Material")
+    xmaterial.setAttribute("model", model.split()[-1].lower().strip())
+    for line in material:
+        line = [x.strip() for x in re.split(r"[ ,=]", line) if x.split()]
+        if not line:
+            continue
+        try:
+            p, v = line
+        except ValueError:
+            p = line[0]
+            v = " ".join(line[1:])
+        xparam = doc.createElement(p.upper())
+        try:
+            xval = doc.createTextNode("{0: 12.6E}".format(float(v)))
+        except:
+            xval = doc.createTextNode(str(v))
+            print "*** {0}: warning: bad param {1}".format(simname, v)
+        xparam.appendChild(xval)
+        xmaterial.appendChild(xparam)
+
+    # --- control
+    control = re.search(r"(?is)begin control.*end control", lines)
+    cchanges = {"nowriteprops": "writeprops"}
+    lcontrol = ("proportional",)
+    if control:
+        control = control.group()
+        lines = "\n".join(pretty_list(lines.replace(control, "")))
+        control = pretty_list(control)[1:-1]
+        for item in control:
+            item = [x.strip() for x in re.split(r"[ ,=]", item) if x.split()]
+            if not item:
+                continue
+            name = cchanges.get(item[0].lower(), item[0].lower())
+            if len(item) == 1:
+                val = "true" if name != "writeprops" else "false"
+            else:
+                val = str(" ".join(item[1:]))
+            if name in lcontrol:
+                xlegs.setAttribute(name, val)
+            else:
+                xsim.setAttribute(name, val)
+
+    # --- mathplot
+    mathplot = re.search(r"(?is)begin mathplot.*end mathplot", lines)
+    xtract = None
+    if mathplot:
+        mathplot = mathplot.group()
+        lines = "\n".join(pretty_list(lines.replace(mathplot, "")))
+        mathplot = pretty_list(mathplot)[1:-1]
+        ovars = " ".join(mathplot).upper()
+        xtract = doc.createElement("Extract")
+        xvars = doc.createElement("Variables")
+        xtract.setAttribute("format", "mathematica")
+        xvars.appendChild(doc.createTextNode(ovars))
+        xtract.appendChild(xvars)
+
+    # --- preprocessing
+    preprocess = re.search(r"(?is)begin preprocessing.*end preprocessing", lines)
+    xprepro = []
+    if preprocess:
+        preprocess = preprocess.group()
+        lines = "\n".join(pretty_list(lines.replace(preprocess, "")))
+        preprocess = "\n".join(pretty_list(preprocess)[1:-1])
+        for line in preprocess.split("\n"):
+            var = re.search(r"(?P<var>\w*).*=.*{(?P<pre>.*)}", line)
+            pre = " {{{0} = {1}}} ".format(var.group("var"), var.group("pre"))
+            xprepro.append(doc.createComment(pre))
+
+    # one last check
+    lines = pretty_list(lines)
+    if lines:
+        for iline, line in enumerate(lines):
+            if "proportional" in line.lower():
+                if len(line.split()) == 1:
+                    val = "true"
+                else:
+                    val = mybool(" ".join(line[1:]))
+                xlegs.setAttribute("proportional", val)
+                lines[iline] = ""
+                continue
+    lines = pretty_list("\n".join(lines))
+
+    # --- append everything
+    if xprepro:
+        for prepro in xprepro:
+            xsim.appendChild(prepro)
+    xsim.appendChild(xmaterial)
+    xsim.appendChild(xlegs)
+    if xtract:
+        xsim.appendChild(xtract)
+    root.appendChild(xsim)
+    doc.appendChild(root)
+
+    doc.writexml(open(xmlf, "w"), addindent="  ", newl="\n")
+    doc.unlink()
+    print "{0}: FINISHED".format(simname)
+
+    if lines:
+        print simname
+        print "\n".join(lines)
+        sys.exit("missed some!")
+
+
+def mybool(string):
+    if string.lower() in ("false", "none", "0", "no"):
+        return "false"
+    return "true"
 
 
 def strip_comments(lines):
@@ -163,21 +210,17 @@ def format_legs_default(legs):
             return None
         n = int(float(n))
         try:
-            cij = [float(r) for r in leg[4:]]
-        except:
-            print "bad cij"
-            return None
-        if len(cij) != len(c):
-            print "bad leg control"
-            return None
-        tncsfmt = "{0:12.6E} {1:3d} {2} "
+            cij = " ".join("{0: 12.6E}".format(float(r)) for r in leg[4:])
+            if len(cij.split()) != len(c):
+                print "bad leg control"
+                return None
 
-        s, e = 3, 6
-        cijsfmt = " ".join("{{{0}: 12.6E}}".format(i) for i in range(s, e))
-        s, e = 6, 3 + len(cij)
-        cijsfmt += " " + " ".join("{{{0}: 2.1E}}".format(i) for i in range(s, e))
-        sfmt = tncsfmt + cijsfmt
-        formatted_legs.append(sfmt.format(tf, n, c, *cij))
+        except:
+            cij = " ".join(leg[4:])
+
+        sfmt = "{0:12.6E} {1:3d} {2} {3}"
+        formatted_legs.append(sfmt.format(tf, n, c, cij))
+
     return "\n".join(formatted_legs)
 
 if __name__ == "__main__":

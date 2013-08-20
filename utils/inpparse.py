@@ -127,7 +127,7 @@ def pLegs(leglmn):
     options.addopt("efstar", 1.)
     options.addopt("dstar", 1.)
     options.addopt("format", "default", dtype=str)
-    options.addopt("proportional", "0", dtype=mybool)
+    options.addopt("proportional", 0, dtype=mybool)
 
     # the following options are for table formatted legs
     options.addopt("tblcols", "1:7", dtype=str)
@@ -647,7 +647,7 @@ def pSimulation(simlmn):
     # Get options
     options = OptionHolder()
     options.addopt("ndumps", "20", dtype=str)
-    options.addopt("writeprops", False, dtype=mybool)
+    options.addopt("writeprops", 0, dtype=mybool)
     options.addopt("error", "all", dtype=str)
     for i in range(simlmn.attributes.length):
         options.setopt(*xmltools.get_name_value(simlmn.attributes.item(i)))
