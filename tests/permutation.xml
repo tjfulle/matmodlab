@@ -5,7 +5,7 @@
     <Permutate var="G" method="percentage(45.e9, 10)"/>
   </Permutation>
 
-  <Simulation>
+  <Physics>
 
     <Legs kappa="0" tstar="1" estar="-.5" amplitude="1" nfac="1000" ratfac="1">
       <!-- termination time, number of steps, control, Cij -->
@@ -27,6 +27,6 @@
       </Variables>
     </Extract>
 
-  </Simulation>
+  </Physics>
 
 </GMDSpec>

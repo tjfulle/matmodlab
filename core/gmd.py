@@ -9,11 +9,11 @@ from utils.exodump import exodump
 from utils.io import Error1
 from drivers.drivers import create_driver
 
-class ModelDriver(object):
+class PhysicsDriver(object):
 
     def __init__(self, runid, driver, mtlmdl, mtlprops, legs, tterm,
                  extract, driver_opts):
-        """Initialize the ModelDriver object
+        """Initialize the PhysicsDriver object
 
         Parameters
         ----------

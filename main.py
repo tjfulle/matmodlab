@@ -40,14 +40,14 @@ def main(argv=None):
     runid = os.path.splitext(basename)[0]
     mm_input = inpparse.parse_input(lines)
 
-    if mm_input.stype == "simulation":
+    if mm_input.stype == "physics":
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional,
                 mm_input.ndumps)
         # set up the logger
         logger = io.Logger(runid, args.v)
-        model = gmd.ModelDriver(runid, mm_input.driver, mm_input.mtlmdl,
-                                mm_input.mtlprops, mm_input.legs,
-                                mm_input.ttermination, mm_input.extract, opts)
+        model = gmd.PhysicsDriver(runid, mm_input.driver, mm_input.mtlmdl,
+                                  mm_input.mtlprops, mm_input.legs,
+                                  mm_input.ttermination, mm_input.extract, opts)
 
     elif mm_input.stype == "permutation":
         f = os.path.realpath(__file__)

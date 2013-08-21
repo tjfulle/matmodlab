@@ -3,6 +3,8 @@
 *.so
 *.out
 *.perm
+*.log
+
 TestResults.*
 .built
 

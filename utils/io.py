@@ -61,6 +61,11 @@ def logwrn(message=None, logger=[None]):
     return logger[0].logwrn(message)
 
 
+def increment_warning():
+    global WARNINGS_LOGGED
+    WARNINGS_LOGGED += 1
+
+
 class ExoManager(object):
     """The main IO manager
 

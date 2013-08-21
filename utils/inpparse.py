@@ -15,6 +15,7 @@ import utils.xmltools as xmltools
 from utils.io import Error1
 from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
+from utils.fcnbldr import build_lambda, build_interpolating_function
 from materials.material import get_material_from_db
 
 
@@ -76,9 +77,14 @@ def parse_input(user_input):
 
     # ------------------------------------------ get and parse blocks --- #
     gmdblks = {}
+    #           (blkname, required, remove)
     rootblks = (("Optimization", 0, 1),
                 ("Permutation", 0, 1),
-                ("Simulation", 1, 0))
+                ("Physics", 1, 0))
+    # find all functions first
+    functions = pFunctions(gmdspec.getElementsByTagName("Function"))
+    args = (functions,)
+
     for (rootblk, reqd, rem) in rootblks:
         rootlmns = gmdspec.getElementsByTagName(rootblk)
         if not rootlmns:
@@ -86,7 +92,7 @@ def parse_input(user_input):
                 raise Error1("GMDSpec: {0}: block missing".format(rootblk))
             continue
         if len(rootlmns) > 1:
-            raise Error("Expected 1 {0} block, got {1}".format(
+            raise Error1("Expected 1 {0} block, got {1}".format(
                 rootblk, len(rootlmns)))
         rootlmn = rootlmns[0]
         gmdblks[rootblk] = rootlmn
@@ -102,18 +108,21 @@ def parse_input(user_input):
 
     elif "Permutation" in gmdblks:
         return permutation_namespace(gmdblks["Permutation"], gmdspec.toxml())
+
     else:
-        return simulation_namespace(gmdblks["Simulation"])
+        return physics_namespace(gmdblks["Physics"], *args)
 
 
 # ------------------------------------------------- Parsing functions --- #
 # Each XML block is parsed with a corresponding function 'pBlockName'
 # where BlockName is the name of the block as entered by the user in the
 # input file
-def pLegs(leglmn):
+def pLegs(leglmn, *args):
     """Parse the Legs block and set defaults
 
     """
+    functions = args[0]
+
     # Set up options for legs
     options = OptionHolder()
     options.addopt("kappa", 0.)
@@ -126,7 +135,8 @@ def pLegs(leglmn):
     options.addopt("fstar", 1.)
     options.addopt("efstar", 1.)
     options.addopt("dstar", 1.)
-    options.addopt("format", "default", dtype=str)
+    options.addopt("format", "default", dtype=str,
+                   choices=("default", "table", "cijfcn"))
     options.addopt("proportional", 0, dtype=mybool)
 
     # the following options are for table formatted legs
@@ -155,6 +165,9 @@ def pLegs(leglmn):
         legs = parse_legs_table(lines, options.getopt("tbltfmt"),
                                 options.getopt("tblcols"),
                                 options.getopt("tblcfmt"))
+
+    elif options.getopt("format") == "cijfcn":
+        legs = parse_legs_cijfcn(lines, functions)
 
     else:
         raise Error1("Legs: {0}: invalid format".format(options.getopt("format")))
@@ -230,6 +243,82 @@ def parse_legs_default(lines):
 
     return legs
 
+
+def parse_legs_cijfcn(lines, functions):
+    """Parse the individual legs
+
+    """
+    start_time = 0.
+    leg_num = 1
+
+    if not lines:
+        raise Error1("No table functions defined")
+    elif len(lines) > 1:
+        raise Error1("Only one line of table functions allowed, "
+                     "got {0}".format(len(lines)))
+
+    termination_time, num_steps, control_hold = lines[0][:3]
+    cijfcns = lines[0][3:]
+
+    # check entries
+    # --- termination time
+    try:
+        termination_time = float(termination_time)
+    except ValueError:
+        raise Error1("Legs: termination time must be a float, "
+                     "got {0}".format(termination_time))
+    if termination_time < 0.:
+        raise Error1("Legs: termination time {0} must be "
+                     "positive".format(termination_time))
+    final_time = termination_time
+
+    # --- number of steps
+    try:
+        num_steps = int(num_steps)
+    except ValueError:
+        raise Error1("Legs: number of steps must be an integer, "
+                     "got {0}".format(num_steps))
+    if num_steps < 0:
+        raise Error1("Legs: number of steps {0} must be "
+                     "positive".format(num_steps))
+
+    # --- control
+    control = format_leg_control(control_hold, leg_num=leg_num)
+
+    # --- get the actual functions
+    Cij = []
+    for icij, cijfcn in enumerate(cijfcns):
+        cijfcn = cijfcn.split(":")
+        try:
+            fid, scale = cijfcn
+        except ValueError:
+            fid, scale = cijfcn[0], 1
+        try:
+            fid = int(float(fid))
+        except ValueError:
+            raise Error1("Function ID must be an integer, got {0}".format(fid))
+        try:
+            scale = float(scale)
+        except ValueError:
+            raise Error1("Function scale must be a float, got {0}".format(scale))
+
+        fcn = functions.get(fid)
+        if fcn is None:
+            raise Error1("{0}: function not defined".format(fid))
+        Cij.append((scale, fcn))
+
+    # --- Check lengths of Cij and control are consistent
+    if len(Cij) != len(control):
+        raise Error1("Legs: len(Cij) != len(control) in leg {0}"
+                     .format(leg_num))
+
+    legs = []
+    for time in np.linspace(start_time, final_time, num_steps):
+        leg = [time, 1, control]
+        leg.append(np.array([s * f(time) for (s, f) in Cij]))
+        legs.append(leg)
+
+    return legs
 
 def parse_legs_table(lines, tbltfmt, tblcols, tblcfmt):
     """Parse the legs table
@@ -458,11 +547,14 @@ def format_legs(legs, options):
         elif 4 in control and len(control) == 1:
             # only one stress value given -> pressure
             Sij = -Cij[0]
-            control = np.array([4] * 6, dtype=np.int)
+            control = np.array([4, 4, 4, 2, 2, 2], dtype=np.int)
             Cij = np.array([Sij, Sij, Sij, 0., 0., 0.])
 
-        if len(control) != 6:
-            raise Error1("Bad control length in leg {0}".format(leg_num))
+        if len(control) != len(Cij):
+            raise Error1("len(cij) != len(control) in leg {0}".format(leg_num))
+
+        control = np.append(control, [2] * (6 - len(control)))
+        Cij = np.append(Cij, [0.] * (6 - len(Cij)))
 
         # adjust components based on user input
         for idx, ctype in enumerate(control):
@@ -504,21 +596,11 @@ def format_legs(legs, options):
     return legs
 
 
-def pOptimization(optlmn):
+def pOptimization(optlmn, *args):
     raise Error1("Optimization coding not done")
 
 
-# safe values to be used in eval
-RAND = np.random.RandomState(17)
-GDICT = {"__builtins__": None}
-SAFE = {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos,
-        "tan": math.tan, "asin": math.asin, "acos": math.acos,
-        "atan": math.atan, "atan2": math.atan2, "pi": math.pi,
-        "log": math.log, "exp": math.exp, "floor": math.floor,
-        "ceil": math.ceil, "abs": math.fabs, "random": RAND.random_sample, }
-
-
-def pPermutation(permlmn):
+def pPermutation(permlmn, *args):
     """Parse the permutation block
 
     """
@@ -555,7 +637,7 @@ def pPermutation(permlmn):
     return pdict
 
 
-def pExtract(extlmn):
+def pExtract(extlmn, *args):
 
     options = OptionHolder()
     options.addopt("format", "ascii", dtype=str, choices=("ascii", "mathematica"))
@@ -579,13 +661,13 @@ def pExtract(extlmn):
             options.getopt("ffmt"), variables)
 
 
-def simulation_namespace(simlmn):
-    simblk = pSimulation(simlmn)
+def physics_namespace(simlmn, *args):
+    simblk = pPhysics(simlmn, *args)
 
     # set up the namespace to return
     ns = Namespace()
 
-    ns.stype = "simulation"
+    ns.stype = "physics"
 
     ns.ttermination = simblk.get("TerminationTime")
 
@@ -619,14 +701,14 @@ def permutation_namespace(permlmn, basexml):
     return ns
 
 
-def pSimulation(simlmn):
+def pPhysics(simlmn, *args):
     subblks = (("Material", 1), ("Legs", 1), ("Extract", 0))
     simblk = {}
     for (subblk, reqd) in subblks:
         sublmns = simlmn.getElementsByTagName(subblk)
         if not sublmns:
             if reqd:
-                raise Error1("Simulation: {0}: block missing".format(subblk))
+                raise Error1("Physics: {0}: block missing".format(subblk))
             continue
         if len(sublmns) > 1:
             raise Error("Expected 1 {0} block, got {1}".format(
@@ -634,7 +716,7 @@ def pSimulation(simlmn):
         sublmn = sublmns[0]
         parsefcn = getattr(sys.modules[__name__],
                            "p{0}".format(sublmn.nodeName))
-        simblk[subblk] = parsefcn(sublmn)
+        simblk[subblk] = parsefcn(sublmn, *args)
         p = sublmn.parentNode
         p.removeChild(sublmn)
     tlmn = simlmn.getElementsByTagName("TerminationTime")
@@ -662,7 +744,7 @@ def pSimulation(simlmn):
     return simblk
 
 
-def pMaterial(mtllmn):
+def pMaterial(mtllmn, *args):
     """Parse the material block
 
     """
@@ -700,6 +782,94 @@ def pMaterial(mtllmn):
         params[idx] = val
 
     return model, params, mtlmdl.driver, density
+
+
+def pFunctions(element_list, *args):
+    """Parse the functions block
+
+    """
+    __ae__ = "ANALYTIC EXPRESSION"
+    __pwl__ = "PIECEWISE LINEAR"
+    const_fcn_id = 1
+    functions = {const_fcn_id: lambda x: 1.}
+    if not element_list:
+        return functions
+
+    for function in element_list:
+
+        fid = function.attributes.get("id")
+        if fid is None:
+            raise Error1("Function: id not found")
+
+        fid = int(fid.value)
+
+        if fid == const_fcn_id:
+            raise Error1("Function id {0} is reserved".format(fid))
+
+        if fid in functions:
+            raise Error1("{0}: duplicate function definition".format(fid))
+
+        ftype = function.attributes.get("type")
+        if ftype is None:
+            raise Error1("Functions.Function: type not found")
+
+        ftype = " ".join(ftype.value.split()).upper()
+
+        if ftype not in (__ae__, __pwl__):
+            raise Error1("{0}: invalid function type".format(ftype))
+
+        expr = function.firstChild.data.strip()
+
+        if ftype == __ae__:
+            var = function.attributes.get("var")
+            if not var:
+                var = "x"
+            else:
+                var = var.value.strip()
+            func, err = build_lambda(expr, var=var, disp=1)
+            if err:
+                raise Error1("{0}: in analytic expression in "
+                             "function {1}".format(err, fid))
+
+        elif ftype == __pwl__:
+            # parse the table in expr
+
+            try:
+                columns = str2list(function.attributes.get("columns").value,
+                                   dtype=str)
+            except AttributeError:
+                columns = ["x", "y"]
+
+            except TypeError:
+                columns = ["x", "y"]
+
+            table = []
+            ncol = len(columns)
+            for line in expr.split("\n"):
+                line = [float(x) for x in line.split()]
+                if not line:
+                    continue
+                if len(line) != ncol:
+                    nl = len(line)
+                    raise Error1("Expected {0} columns in function "
+                                 "{1}, got {2}".format(ncol, fid, nl))
+
+                table.append(line)
+
+            func, err = build_interpolating_function(np.array(table), disp=1)
+            if err:
+                raise Error1("{0}: in piecwise linear table in "
+                             "function {1}".format(err, fid))
+
+        functions[fid] = func
+        continue
+
+    return functions
+
+
+def str2list(string, dtype=int):
+    string = re.sub(r"[, ]", " ", string)
+    return [dtype(x) for x in string.split()]
 
 
 def mybool(a):
