@@ -685,7 +685,7 @@ def create_model_plot(source, handler=None, metadata=None):
     if basename == "gmd-tabular.dat":
         variables, output_files = loadtabular(source)
 
-    elif fext in (".exo", ".out"):
+    elif fext in (".exo", ".out", ".base_exo"):
         output_files = [source]
         variables = [""]
 
