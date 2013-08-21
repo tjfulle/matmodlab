@@ -11,7 +11,7 @@ from drivers.drivers import create_driver
 
 class ModelDriver(object):
 
-    def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops, legs, tterm,
+    def __init__(self, runid, driver, mtlmdl, mtlprops, legs, tterm,
                  extract, driver_opts):
         """Initialize the ModelDriver object
 
@@ -43,9 +43,6 @@ class ModelDriver(object):
         # set up timing
         self.timing = {}
         self.timing["initial"] = time.time()
-
-        # set up the logger
-        logger = io.Logger(self.runid, verbosity)
 
     def setup(self):
 

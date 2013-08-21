@@ -76,7 +76,7 @@ def main(argv=None):
         if not os.path.isdir(d):
             logerr("{0}: no such material directory".format(d))
             continue
-    mtldirs = os.pathsep.join(mtldirs)
+    mtldirs = os.pathsep.join(list(set(mtldirs)))
 
     testdirs = [x for x in os.getenv("GMDTESTS", "").split(os.pathsep) if x]
     for d in args.testdirs:
@@ -85,8 +85,7 @@ def main(argv=None):
         if not os.path.isdir(d):
             logerr("{0}: no such test directory".format(d))
             continue
-        testdirs.append(d)
-    testdirs = os.pathsep.join(testdirs)
+    testdirs = os.pathsep.join(list(set(testdirs)))
 
     # --- system
     logmes("checking host platform", end="... ")

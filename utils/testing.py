@@ -5,6 +5,7 @@ import time
 import shutil
 import argparse
 import subprocess
+import multiprocessing as mp
 import xml.dom.minidom as xdom
 
 import utils.xmltools as xmltools
@@ -23,7 +24,8 @@ FAILSTATUS = 2
 
 class Error(Exception):
     def __init__(self, message):
-        raise SystemExit(message)
+        sys.stderr.write(message + "\n")
+        raise SystemExit(2)
 
 
 def main(argv=None):
@@ -34,6 +36,11 @@ def main(argv=None):
         help="Keywords of tests to include [default: %(default)s]")
     parser.add_argument("-K", action="append", default=[],
         help="Keywords of tests to exclude [default: %(default)s]")
+    parser.add_argument("-j", default=1, type=int,
+        help="Number of simultaneous tests [default: %(default)s]")
+    parser.add_argument("--list", action="store_true", default=False,
+        dest="list_and_exit",
+        help="List matching tests and exit [default: %(default)s]")
     parser.add_argument("--testdirs", action="append", default=[],
         help="Additional directories to find tests [default: %(default)s]")
     parser.add_argument("tests", nargs="*",
@@ -49,7 +56,11 @@ def main(argv=None):
         dirs.append(d)
 
     rtests = find_rtests(dirs, args.k, args.K, args.tests)
-    status = run_rtests(rtests)
+
+    if args.list_and_exit:
+        sys.exit(list_rtests(rtests))
+
+    status = run_rtests(rtests, args.j)
 
     if status != PASSSTATUS:
         print "A test did not pass :("
@@ -80,7 +91,7 @@ def find_rtests(search_dirs, include, exclude, tests=None):
     """Find all regression tests in search_dirs
 
     """
-    if tests is None:
+    if not tests:
         # get a list of all test files (files with .rxml extension)
         test_files = []
         for d in search_dirs:
@@ -167,31 +178,41 @@ def filter_rtests(rtests, include, exclude):
         keywords = val["Keywords"]
         if any(kw in exclude for kw in keywords):
             skip.append(key)
-        if include and not any(kw in keywords for kw in include):
+        if include and not all(kw in keywords for kw in include):
             skip.append(key)
     for key in list(set(skip)):
         del rtests[key]
     return rtests
 
 
-def run_rtests(rtests):
+def run_rtests(rtests, nproc):
     """Run all of the rtests
 
     """
     testd = os.path.join(os.getcwd(), "TestResults.{0}".format(PLATFORM))
+
     if not os.path.isdir(testd):
         os.makedirs(testd)
 
-    statuses = [run_rtest(testd, rtest, details)
-                for (rtest, details) in rtests.items()]
+    test_inp = ((testd, rtest, details) for (rtest, details) in rtests.items())
+    nproc = min(min(mp.cpu_count(), nproc), len(rtests))
+    if nproc == 1:
+        statuses = [run_rtest(job) for job in test_inp]
+
+    else:
+        pool = mp.Pool(processes=nproc)
+        statuses = pool.map(run_rtest, test_inp)
+        pool.close()
+        pool.join()
 
     return max(statuses)
 
 
-def run_rtest(testd, rtest, details):
+def run_rtest(args):
     """Run the rtest
 
     """
+    (testd, rtest, details) = args
     times = [time.time()]
     l = 50
     logmes("{0:{1}s} start".format(rtest, l))
@@ -229,10 +250,10 @@ def run_rtest(testd, rtest, details):
     return status
 
 
-def list_all_rtests(dirs):
-    rtests = find_rtests(dirs, [], [])
+def list_rtests(rtests):
     for (rtest, details) in rtests.items():
-        print rtest
+        print "{0}: {1}".format(rtest, " ".join(details["Keywords"]))
+    return 0
 
 
 def which(exe):

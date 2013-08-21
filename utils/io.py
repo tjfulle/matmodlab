@@ -10,7 +10,8 @@ class Error1(Exception):
     def __init__(self, message):
         if cfg.debug:
             raise Exception("*** gmd: error: {0}".format(message))
-        raise SystemExit("*** gmd: error: {0}".format(message))
+        sys.stderr.write("*** gmd: error: {0}\n".format(message))
+        raise SystemExit(2)
 
 
 LOGFILE = None
@@ -44,27 +45,19 @@ class Logger(object):
     @classmethod
     def getlogger(cls):
         if LOGFILE is None:
-            return None
+            raise Error1("Logger not yet initialized")
         return cls(None, None)
 
 
 def logmes(message, logger=[None]):
     if logger[0] is None:
         logger[0] = Logger.getlogger()
-        if logger[0] is None:
-            sys.stdout.write(message + "\n")
-            return
     logger[0].logmes(message)
 
 
 def logwrn(message=None, logger=[None]):
     if logger[0] is None:
         logger[0] = Logger.getlogger()
-        if logger[0] is None:
-            global WARNINGS_LOGGED
-            WARNINGS_LOGGED += 1
-            sys.stderr.write(message + "\n")
-            return
     return logger[0].logwrn(message)
 
 

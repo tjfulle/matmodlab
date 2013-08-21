@@ -4,6 +4,7 @@ import argparse
 
 from __config__ import cfg
 import core.gmd as gmd
+import utils.io as io
 import core.permutate as perm
 import utils.inpparse as inpparse
 from utils.errors import Error1
@@ -23,7 +24,6 @@ def main(argv=None):
     parser.add_argument("-j", default=1, type=int,
        help="Number of simultaneous jobs to run [default: %(default)s]")
     args = parser.parse_args(argv)
-    cfg.verbosity = args.v
     cfg.debug = args.dbg
     cfg.sqa = args.sqa
 
@@ -43,7 +43,9 @@ def main(argv=None):
     if mm_input.stype == "simulation":
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional,
                 mm_input.ndumps)
-        model = gmd.ModelDriver(runid, args.v, mm_input.driver, mm_input.mtlmdl,
+        # set up the logger
+        logger = io.Logger(runid, args.v)
+        model = gmd.ModelDriver(runid, mm_input.driver, mm_input.mtlmdl,
                                 mm_input.mtlprops, mm_input.legs,
                                 mm_input.ttermination, mm_input.extract, opts)
 
