@@ -136,7 +136,7 @@ def pLegs(leglmn, *args):
     options.addopt("efstar", 1.)
     options.addopt("dstar", 1.)
     options.addopt("format", "default", dtype=str,
-                   choices=("default", "table", "cijfcn"))
+                   choices=("default", "table", "fcnspec"))
     options.addopt("proportional", 0, dtype=mybool)
 
     # the following options are for table formatted legs
@@ -166,7 +166,7 @@ def pLegs(leglmn, *args):
                                 options.getopt("tblcols"),
                                 options.getopt("tblcfmt"))
 
-    elif options.getopt("format") == "cijfcn":
+    elif options.getopt("format") == "fcnspec":
         legs = parse_legs_cijfcn(lines, functions)
 
     else:

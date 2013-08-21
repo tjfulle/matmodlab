@@ -16,9 +16,9 @@
     </Function>
 
     <Legs kappa="0" tstar="1" amplitude="1"
-	  format="cijfcn">
+	  format="fcnspec">
       <!-- termination time, number of steps, control, Cij -->
-      4. 200 222 2:1.e-1 1:0 1:0
+      {2 * pi} 200 222 2:1.e-1 1:0 1:0
     </Legs>
 
     <Material density="5" model="elastic">
