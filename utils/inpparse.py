@@ -56,7 +56,7 @@ class OptionHolder(object):
         return opt
 
 
-def parse_input(user_input):
+def parse_input(filepath):
     """Parse input file contents
 
     Parameters
@@ -65,8 +65,11 @@ def parse_input(user_input):
     The user input
 
     """
-    user_input = find_and_fill_includes(user_input)
-    user_input = find_and_make_subs(user_input)
+    user_input = find_and_fill_includes(open(filepath, "r").read())
+    user_input, nsubs = find_and_make_subs(user_input, disp=1)
+    if nsubs:
+        with open(filepath + ".preprocessed", "w") as fobj:
+            fobj.write(user_input)
     dom = xdom.parseString(user_input)
 
     # Get the root element (Should always be "GMDSpec")

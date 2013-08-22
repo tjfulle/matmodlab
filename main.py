@@ -34,11 +34,9 @@ def main(argv=None):
         if not os.path.isfile(source):
             sys.exit("gmd: {0}: no such file".format(args.source))
 
-    lines = open(source, "r").read()
-
     basename = os.path.basename(args.source).rstrip(".preprocessed")
     runid = os.path.splitext(basename)[0]
-    mm_input = inpparse.parse_input(lines)
+    mm_input = inpparse.parse_input(source)
 
     if mm_input.stype == "physics":
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional,

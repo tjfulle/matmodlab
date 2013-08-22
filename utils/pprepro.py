@@ -34,58 +34,32 @@ def find_vars_to_sub(lines):
 
     Returns
     -------
-    vdict : dict
+    vars_to_sub : dict
         dictionary of found variables
 
     """
     global SAFE
-    vars_to_sub = []
+    vars_to_sub = {}
     hold = []
     regex = r"(?i)\{\s*[\w]+[\w\d]*\s*=.*?\}"
     variables = re.findall(regex, lines)
     for variable in variables:
         vsplit = re.sub(r"[\{\}]", "", variable).split("=")
         key = vsplit[0].strip()
-        expr = vsplit[1].strip()
         hold.append(key)
-        var_to_sub = [key, expr]
-        for (i, var) in enumerate(vars_to_sub):
-            if var[0] == key:
-                vars_to_sub[i] = var_to_sub
-                break
-        else:
-            vars_to_sub.append(var_to_sub)
+        expr = vsplit[1].strip()
+        var_to_sub = eval(expr, GDICT, SAFE)
+        SAFE[key] = var_to_sub
+        vars_to_sub[key] = repr(var_to_sub)
 
-    # preprocess the variables themselves
-    I = 0
-    while I < 25:
-        regex = r"\b({0})\b".format("|".join(key for (key, expr) in vars_to_sub))
-        nsubs = 0
-        for i, (key, expr) in enumerate(vars_to_sub):
-            matches = list(set(re.findall(regex, expr)))
-            for match in matches:
-                # replace each match with the preprocessed value
-                repl = [_[1] for _ in vars_to_sub if _[0] == match][0]
-                expr, n = re.subn(match, repl, expr)
-                nsubs += n
-            vars_to_sub[i] = [key, str(expr)]
-        if not nsubs:
-            break
-        I += 1
-    else:
-        raise Error1("Maximum number of subs exceeded")
-
-    vdict = {}
-    for (key, expr) in vars_to_sub:
-        vdict[key] = repr(eval(expr, GDICT, SAFE))
-
+    # replace value
     for (i, variable) in enumerate(variables):
-        lines = re.sub(re.escape(variable), vdict[hold[i]], lines)
+        lines = re.sub(re.escape(variable), vars_to_sub[hold[i]], lines)
 
-    return lines, vdict
+    return lines, vars_to_sub
 
 
-def find_and_make_subs(lines, prepro=None):
+def find_and_make_subs(lines, prepro=None, disp=0):
     """Preprocess the input file
 
     Parameters
@@ -102,19 +76,26 @@ def find_and_make_subs(lines, prepro=None):
     global SAFE
     if prepro is not None:
         SAFE.update(prepro)
-    lines, vdict = find_vars_to_sub(lines)
-#    if not vdict and prepro is None:
+    lines, vars_to_sub = find_vars_to_sub(lines)
+#    if not vars_to_sub and prepro is None:
 #        return lines
-    return make_var_subs(lines, vdict)
+    return make_var_subs(lines, vars_to_sub, disp=disp)
 
 
-def make_var_subs(lines, vdict):
+def make_var_subs(lines, vars_to_sub, disp=0):
 
     # the regular expression that defines the preprocessing
     pregex = r"(?i){{.*\b{0:s}\b.*}}"
 
     if cfg.debug:
-        for pat, repl in vdict.items():
+        # Print out preprocessed values for debugging
+        sys.stdout.write("Preprocessor values:\n")
+        name_len = max([len(x) for x in vars_to_sub])
+        for pat, repl in vars_to_sub.items():
+            sys.stdout.write("    {0:<{1}s} {2}\n".format(
+                pat + ":", name_len + 2, repl))
+
+        for pat, repl in vars_to_sub.items():
             # Check that each preprocessor variable is used somewhere else in
             # the file. Issue a warning if not. It is done here outside of the
             # replacement loop to be sure that we can check all variables.
@@ -133,32 +114,29 @@ def make_var_subs(lines, vdict):
                 io.increment_warning()
                 continue
 
-        # Print out preprocessed values for debugging
-        sys.stdout.write("Preprocessor values:\n")
-        name_len = max([len(x) for x in vdict])
-        for pat, repl in vdict.items():
-            sys.stdout.write("    {0:<{1}s} {2}\n".format(
-                pat + ':', name_len + 2, repl))
-
-    # Make all substitutions
-    R = r"{{.*\b{0}\b.*}}"
-    for pat, repl in vdict.items():
-        repl = "(" + re.sub(r"[\{\}]", " ", repl).strip() + ")"
-        matches = re.findall(R.format(pat), lines)
+    # Replace '{ var }' with '{ (var_value) }'
+    regex = r"{{.*\b{0}\b.*}}"
+    nsubs = 0
+    for pat, repl in vars_to_sub.items():
+        repl = "({0})".format(re.sub(r"[\{\}]", " ", repl).strip())
+        matches = re.findall(regex.format(pat), lines)
         for match in matches:
-            mrepl = re.sub(r"\b{0}\b".format(pat), repl, match)
+            mrepl, n = re.subn(r"\b{0}\b".format(pat), repl, match)
             lines = re.sub(re.escape(match), mrepl, lines)
+            nsubs += n
             continue
         continue
 
     # Evaluate substitutions
-    errors = 0
     regex = r"(?i){.*?}"
-    matches = re.findall("(?i){.*?}", lines)
+    matches = re.findall(regex, lines)
     for pat in matches:
-        repl = repr(eval(re.sub(r"[\{\}]", "", pat), GDICT, SAFE))
+        repl = re.sub(r"[\{\}]", "", pat)
+        repl = repr(eval(repl, GDICT, SAFE))
         lines = re.sub(re.escape(pat), repl, lines)
 
+    if disp:
+        return lines, nsubs
     return lines
 
 
