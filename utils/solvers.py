@@ -10,7 +10,7 @@ import utils.io as io
 EPS = np.finfo(np.float).eps
 
 
-def newton(material, dt, darg, sigarg, xtraarg, v, sigspec):
+def newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
     """Seek to determine the unknown components of the symmetric part of velocity
     gradient d[v] satisfying
 
@@ -82,7 +82,7 @@ def newton(material, dt, darg, sigarg, xtraarg, v, sigspec):
         return None
 
     # update the material state to get the first guess at the new stress
-    sig, xtra = material.update_state(dt, d, sig, xtra)
+    sig, xtra = material.update_state(dt, d, sig, xtra, *args)
     sigerr = sig[v] - sigspec
 
     # --- Perform Newton iteration
@@ -101,7 +101,7 @@ def newton(material, dt, darg, sigarg, xtraarg, v, sigspec):
             # increment too large
             return None
 
-        sig, xtra = material.update_state(dt, d, sig, xtra)
+        sig, xtra = material.update_state(dt, d, sig, xtra, *args)
         sigerr = sig[v] - sigspec
         dnom = max(np.amax(np.abs(sigspec)), 1.)
         relerr = np.amax(np.abs(sigerr) / dnom)
@@ -118,7 +118,8 @@ def newton(material, dt, darg, sigarg, xtraarg, v, sigspec):
     return None
 
 
-def simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional):
+def simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
+            *args):
     """Perform a downhill simplex search to find sym_velgrad[v] such that
 
                         sig(sym_velgrad[v]) = sigspec[v]
@@ -154,7 +155,8 @@ def simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional):
     return d
 
 
-def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional):
+def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
+         *args):
     """Objective function to be optimized by simplex
 
     """
@@ -166,7 +168,7 @@ def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional):
     d[v] = x
 
     # store the best guesses
-    sig, xtra = material.update_state(dt, d, sig, xtra)
+    sig, xtra = material.update_state(dt, d, sig, xtra, *args)
 
     # check the error
     error = 0.

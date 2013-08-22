@@ -6,9 +6,9 @@ class Material(object):
 
     ndata = 0
     nxtra = 0
-    xtra_var_keys = []
     xtra = np.zeros(nxtra)
     xinit = np.zeros(nxtra)
+    mtl_variables = []
     param_map = {}
 
     def register_parameters(self, *parameters):
@@ -18,6 +18,9 @@ class Material(object):
             self.param_map[name] = idx
             setattr(self, name, idx)
 
+    def register_mtl_variable(self, var, vtype):
+        self.mtl_variables.append((var, vtype))
+
     def register_xtra_variables(self, keys, mig=False):
         if self.nxtra:
             raise Error1("Register extra variables at most once")
@@ -25,7 +28,8 @@ class Material(object):
         if mig:
             keys = [" ".join(x.split())
                     for x in "".join(keys).split("|") if x.split()]
-        self.xtra_var_keys = keys
+        for key in keys:
+            self.mtl_variables.append((key, "SCALAR"))
 
     def jacobian(self, dt, d, sig, xtra, v):
         """Numerically compute material Jacobian by a centered difference scheme.
@@ -104,13 +108,16 @@ class Material(object):
     def update_state(self, *args, **kwargs):
         raise Error1("update_state must be provided by model")
 
-    def initialize(self, *args, **kwargs):
+    def initialize_material(self, *args, **kwargs):
         return
 
-    def initialize_material(self, stress, xtra, *args):
+    def adjust_initial_state(self, xtra):
+        return xtra
+
+    def call_material_zero_state(self, stress, xtra, *args):
         dt = 1.
         d = np.zeros(6)
-        return self.update_state(dt, d, stress, xtra, args)
+        return self.update_state(dt, d, stress, xtra, *args)
 
     def set_initial_state(self, xtra):
         self.xinit = np.array(xtra)
@@ -118,8 +125,8 @@ class Material(object):
     def initial_state(self):
         return self.xinit
 
-    def variables(self):
-        return self.xtra_var_keys
+    def material_variables(self):
+        return self.mtl_variables
 
     def constant_jacobian(self, v=np.arange(6)):
         jac = np.zeros((6, 6))

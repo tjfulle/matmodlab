@@ -103,8 +103,8 @@ def find_and_make_subs(lines, prepro=None):
     if prepro is not None:
         SAFE.update(prepro)
     lines, vdict = find_vars_to_sub(lines)
-    if not vdict and prepro is None:
-        return lines
+#    if not vdict and prepro is None:
+#        return lines
     return make_var_subs(lines, vdict)
 
 

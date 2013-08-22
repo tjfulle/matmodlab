@@ -25,15 +25,10 @@ class SolidDriver(Driver):
         """
         self.runid = runid
         self.mtlmdl = create_material(material)
+        self.kappa, self.density, self.proportional, self.ndumps = opts[:4]
 
         # Save the unchecked parameters
         self.mtlmdl.unchecked_params = mtlprops
-
-        # Setup and initialize material model
-        self.mtlmdl.setup(mtlprops)
-        self.mtlmdl.initialize()
-
-        self.kappa, self.density, self.proportional, self.ndumps = opts[:4]
 
         # register variables
         self.register_variable("STRESS", vtype="SYMTENS")
@@ -47,11 +42,16 @@ class SolidDriver(Driver):
         self.register_variable("PRESSURE", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
 
+        # Setup
+        self.mtlmdl.setup(mtlprops)
+
         # register material variables
         self.xtra_start = self.ndata
-        self.xtra_end = self.xtra_start + self.mtlmdl.nxtra
-        for var in self.mtlmdl.variables():
-            self.register_variable(var, vtype="SCALAR")
+        for (var, vtype) in self.mtlmdl.material_variables():
+            self.register_variable(var, vtype=vtype)
+
+        nxtra = self.ndata - self.xtra_start
+        self.xtra_end = self.xtra_start + nxtra
         setattr(self, "xtra_slice", slice(self.xtra_start, self.xtra_end))
 
         # allocate storage
@@ -64,9 +64,15 @@ class SolidDriver(Driver):
         # initialize material
         sig = np.zeros(6)
         xtra = self.mtlmdl.initial_state()
-        sig, xtra = self.mtlmdl.initialize_material(sig, xtra)
+        args = (I9, np.zeros(3))
+
+        sig, xtra = self.mtlmdl.call_material_zero_state(sig, xtra, *args)
+
         # -------------------------- quantities derived from final state
         pres = -np.sum(sig[:3]) / 3.
+
+        xtra = self.mtlmdl.adjust_initial_state(xtra)
+
         self.setvars(stress=sig, pressure=pres, xtra=xtra)
 
         return
@@ -198,7 +204,7 @@ class SolidDriver(Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.mtlmdl.update_state(dt, d, sig, xtra)
+                sig, xtra = self.mtlmdl.update_state(dt, d, sig, xtra, f, ef)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)

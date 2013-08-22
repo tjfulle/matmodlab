@@ -1,5 +1,7 @@
 import numpy as np
 
+from utils.errors import Error1
+
 class Driver(object):
     _variables = []
     ndata = 0
@@ -26,7 +28,7 @@ class Driver(object):
             var = ["{0}_{1}".format(name, x) for x in ("XY", "YZ", "XZ")]
 
         elif vtype == "VECTOR":
-            var = ["{0}_{1}".format(name, x) for x in ("X", "Y", "X")]
+            var = ["{0}_{1}".format(name, x) for x in ("X", "Y", "Z")]
 
         else:
             raise Error1("{0}: unrecognized vtype".format(vtype))

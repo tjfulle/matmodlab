@@ -90,7 +90,7 @@ def deps2d(dt, k, eps, depsdt):
     return as6x1(d)
 
 
-def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional):
+def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional, *args):
     """Determine the symmetric part of the velocity gradient given stress
 
     Parameters
@@ -121,7 +121,7 @@ def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional):
     dsave = d.copy()
 
     if not proportional:
-        d = newton(material, dt, d, sig, xtra, v, sigspec)
+        d = newton(material, dt, d, sig, xtra, v, sigspec, *args)
         if d is not None:
             return d
 
@@ -129,14 +129,15 @@ def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional):
         # --- d[v]=0.
         d = dsave.copy()
         d[v] = np.zeros(len(v))
-        d = newton(material, dt, d, sig, xtra, v, sigspec)
+        d = newton(material, dt, d, sig, xtra, v, sigspec, *args)
         if d is not None:
             return d
 
     # --- Still didn't converge. Try downhill simplex method and accept
     #     whatever answer it returns:
     d = dsave.copy()
-    return simplex(material, dt, d, sig, xtra, v, sigspec, proportional)
+    return simplex(material, dt, d, sig, xtra, v, sigspec, proportional,
+                   *args)
 
 
 def update_deformation(dt, k, f0, d):
