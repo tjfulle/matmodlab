@@ -537,7 +537,6 @@ def write_html_summary(testd, tests_to_summarize):
 def generate_rtest_html_summary(rtest, details, testd):
     # get info from details
     rtestd = os.path.join(testd, rtest)
-    files = [f for f in os.listdir(rtestd) if os.path.isfile(f)]
     status = rtest_statuses(details[S_STAT])
     prev_stat = details.get(S_PSTAT)
     if prev_stat is not None:
@@ -557,8 +556,9 @@ def generate_rtest_html_summary(rtest, details, testd):
     rtest_html_summary.append("<ul>\n")
     rtest_html_summary.append("<li>{0}</li>".format(rtest))
     rtest_html_summary.append("<ul>")
-    rtest_html_summary.append("<li>Files: ")
 
+    rtest_html_summary.append("<li>Files: ")
+    files = [f for f in os.listdir(rtestd) if not os.path.isdir(f)]
     for f in files:
         fpath = os.path.join(rtestd, f).replace(testd, ".")
         rtest_html_summary.append("<a href='{0}' type='text/plain'>{1}</a> "

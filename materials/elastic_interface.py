@@ -15,6 +15,7 @@ class Elastic(Material):
         """Instantiate the Plastic material
 
         """
+        super(Elastic, self).__init__()
         self.register_parameters(*self.param_names)
 
     def setup(self, params):

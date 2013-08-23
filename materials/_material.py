@@ -4,12 +4,14 @@ from utils.io import Error1
 
 class Material(object):
 
-    ndata = 0
-    nxtra = 0
-    xtra = np.zeros(nxtra)
-    xinit = np.zeros(nxtra)
-    mtl_variables = []
-    param_map = {}
+    def __init__(self):
+        self.ndata = 0
+        self.nxtra = 0
+        self.xtra = np.zeros(self.nxtra)
+        self.xinit = np.zeros(self.nxtra)
+        self.mtl_variables = []
+        self.param_map = {}
+        self.initialized = True
 
     def register_parameters(self, *parameters):
         self.nparam = len(parameters)

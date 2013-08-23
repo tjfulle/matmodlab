@@ -16,8 +16,8 @@ VERSION = "0.0.0"
 from materials.material import write_mtldb
 
 
-def log_message(message, end="\n"):
-    sys.stdout.write("build-mtl: {0}{1}".format(message, end))
+def log_message(message, end="\n", pre="build-mtl: "):
+    sys.stdout.write("{0}{1}{2}".format(pre, message, end))
     sys.stdout.flush()
 
 
@@ -50,16 +50,16 @@ def main(argv=None):
                 skipped = made.get("SKIPPED")
 
                 if failed:
-                    log_message("no")
+                    log_message("no", pre="")
                     allfailed.extend(failed)
 
                 if skipped:
                     if not failed and not built:
-                        log_message("skipped")
+                        log_message("skipped", pre="")
 
                 if built:
                     if not failed:
-                        log_message("yes")
+                        log_message("yes", pre="")
                     if built:
                         mtldict.update(built)
                         allbuilt.extend(built.keys())
