@@ -10,12 +10,13 @@ MTLDIRS = [os.path.join(R, "materials")]
 MTLDIRS.extend([x for x in os.getenv("GMDSETUPMTLDIR", "").split(os.pathsep) if x])
 FC = os.getenv("FC", "gfortran")
 LIBD = os.path.join(R, "lib")
+FIO = os.path.join(D, "gmdfio.f90")
 VERSION = "0.0.0"
 
 from materials.material import write_mtldb
 
 
-def logmes(message, end="\n"):
+def log_message(message, end="\n"):
     sys.stdout.write("build-mtl: {0}{1}".format(message, end))
     sys.stdout.flush()
 
@@ -30,10 +31,10 @@ def main(argv=None):
         help="Wipe material database before building [default: all]")
     args = parser.parse_args(argv)
 
-    logmes("gmd {0}".format(VERSION))
-    logmes("looking for makemf files")
+    log_message("gmd {0}".format(VERSION))
+    log_message("looking for makemf files")
 
-    kwargs = {"FC": FC, "DESTD": LIBD, "MATERIALS": args.m}
+    kwargs = {"FC": FC, "DESTD": LIBD, "MATERIALS": args.m, "FIO": FIO}
     mtldict = {}
     allfailed = []
     allbuilt = []
@@ -41,7 +42,7 @@ def main(argv=None):
         for (d, dirs, files) in os.walk(dirpath):
             if "makemf.py" in files:
                 f = os.path.join(d, "makemf.py")
-                logmes("building makemf in {0}".format(d), end="... ")
+                log_message("building makemf in {0}".format(d), end="... ")
                 makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
                 made = makemf.makemf(**kwargs)
                 failed = made.get("FAILED")
@@ -49,26 +50,26 @@ def main(argv=None):
                 skipped = made.get("SKIPPED")
 
                 if failed:
-                    logmes("no")
+                    log_message("no")
                     allfailed.extend(failed)
 
                 if skipped:
                     if not failed and not built:
-                        logmes("skipped")
+                        log_message("skipped")
 
                 if built:
                     if not failed:
-                        logmes("yes")
+                        log_message("yes")
                     if built:
                         mtldict.update(built)
                         allbuilt.extend(built.keys())
 
     if allfailed:
-        logmes("the following materials failed to build: "
+        log_message("the following materials failed to build: "
                "{0}".format(", ".join(allfailed)))
 
     if allbuilt:
-        logmes("the following materials were built: "
+        log_message("the following materials were built: "
                "{0}".format(", ".join(allbuilt)))
 
     if mtldict:

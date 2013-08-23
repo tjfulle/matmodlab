@@ -79,7 +79,7 @@ def main(argv=None):
     dirs = TESTS
     for d in args.testdirs:
         if not os.path.isdir(d):
-            logwrn("{0}: no such directory".format(d))
+            log_warning("{0}: no such directory".format(d))
             continue
         dirs.append(d)
 
@@ -99,13 +99,13 @@ def main(argv=None):
         sys.exit(list_rtests(rtests))
 
     # how many did we find?
-    logmes("Found {0} tests in {1:.2f}s".format(
+    log_message("Found {0} tests in {1:.2f}s".format(
         len(rtests), timing.tests_found - timing.start))
 
     completed_rtests = get_completed_rtests(testd)
     if not args.F:
         for rtest in [_ for _ in rtests if _ in completed_rtests]:
-            logmes("{0}: test previously run.  use -F to "
+            log_message("{0}: test previously run.  use -F to "
                    "force a rerun".format(rtest))
             del rtests[rtest]
             cur_stat = completed_rtests[rtest][S_STAT]
@@ -115,30 +115,30 @@ def main(argv=None):
 
     # run all of the tests
     if not rtests:
-        logmes("No tests found matching criteria")
+        log_message("No tests found matching criteria")
         if completed_rtests:
             dump_rtests_to_file(testd, completed_rtests)
             write_html_summary(testd, completed_rtests)
         return
 
-    logmes("Running {0} tests".format(len(rtests)))
+    log_message("Running {0} tests".format(len(rtests)))
     rtests = run_rtests(testd, rtests, args.j)
     timing.tests_finished = time.time()
-    logmes("All tests ran in {0:.2f}s".format(
+    log_message("All tests ran in {0:.2f}s".format(
         timing.tests_finished - timing.start))
 
     statuses = [details[S_STAT] for (rtest, details) in rtests.items()]
     status = max(statuses)
     if status != PASS_STATUS:
-        logmes("1 or more tests did not pass")
+        log_message("1 or more tests did not pass")
     else:
-        logmes("All tests passed")
+        log_message("All tests passed")
 
     if args.plot:
         failed = [rtest for (rtest, details) in rtests.items()
                   if details[S_STAT] in (DIFF_STATUS, FAIL_STATUS)]
         if failed:
-            logmes("Postprocessing {0} tests".format(len(failed)))
+            log_message("Postprocessing {0} tests".format(len(failed)))
 
         for rtest in failed:
             postprocess_rtest(rtest, rtests[rtest])
@@ -218,7 +218,7 @@ def create_overlay_plots(rtest, destd, file1, file2=None):
 
     aspect_ratio = 4. / 3.
     plots = []
-    logmes("{0:{1}s} starting plots".format(rtest + ":", WIDTH - 9), exe)
+    log_message("{0:{1}s} starting plots".format(rtest + ":", WIDTH - 9), exe)
     for yvar in [n for n in head1 if n != xvar]:
         name = yvar + ".png"
         f = os.path.join(destd, name)
@@ -238,7 +238,7 @@ def create_overlay_plots(rtest, destd, file1, file2=None):
         plt.savefig(f, dpi=100)
         plots.append(f)
     msg = "plots complete ({0:.2f}s)".format(time.time() - ti)
-    logmes("{0:{1}s} {2}".format(rtest + ":", WIDTH - len(msg) + 5, msg), exe)
+    log_message("{0:{1}s} {2}".format(rtest + ":", WIDTH - len(msg) + 5, msg), exe)
 
     # write an html summary
     with open(os.path.join(destd, F_POST), "w") as fobj:
@@ -257,12 +257,12 @@ def create_overlay_plots(rtest, destd, file1, file2=None):
     return
 
 
-def logmes(message, exe="runtests"):
+def log_message(message, exe="runtests"):
     sys.stdout.write("{0}: {1}\n".format(exe, message))
     sys.stdout.flush()
 
 
-def logwrn(message=None, warnings=[0]):
+def log_warning(message=None, warnings=[0]):
     if message is None:
         return warnings[0]
     sys.stderr.write("*** runtests: warning: {0}\n".format(message))
@@ -398,7 +398,7 @@ def run_rtest(args):
     """
     (testd, rtest, details) = args[:3]
     times = [time.time()]
-    logmes("{0:{1}s} start".format(rtest + ":", WIDTH))
+    log_message("{0:{1}s} start".format(rtest + ":", WIDTH))
     # make the test directory
     rtestd = os.path.join(testd, rtest)
     if os.path.isdir(rtestd):
@@ -429,7 +429,7 @@ def run_rtest(args):
     stat = rtest_statuses(status)
     t = times[-1] - times[0]
     msg = "done({0:.2f}s) [{1}]".format(t, stat)
-    logmes("{0:{1}s} {2}".format(rtest + ":", WIDTH - len(msg) + 12, msg))
+    log_message("{0:{1}s} {2}".format(rtest + ":", WIDTH - len(msg) + 12, msg))
 
     details[S_TESTD] = rtestd
     details[S_STAT] = status
@@ -440,7 +440,7 @@ def run_rtest(args):
 
 def list_rtests(rtests):
     for (rtest, details) in rtests.items():
-        logmes("{0}: {1}".format(rtest, " ".join(details[S_KWS])))
+        log_message("{0}: {1}".format(rtest, " ".join(details[S_KWS])))
     return 0
 
 

@@ -13,7 +13,7 @@ from distutils import sysconfig
 
 version = "0.0.0"
 
-def logmes(message, end="\n"):
+def log_message(message, end="\n"):
     sys.stdout.write("{0}{1}".format(message, end))
     sys.stdout.flush()
 
@@ -67,7 +67,7 @@ def main(argv=None):
     core = os.path.join(root, "core")
 
     path = os.getenv("PATH", "").split(os.pathsep)
-    logmes("setup: gmd {0}".format(version))
+    log_message("setup: gmd {0}".format(version))
 
     mtldirs = [x for x in os.getenv("GMDMTLS", "").split(os.pathsep) if x]
     for d in args.mtldirs:
@@ -88,87 +88,87 @@ def main(argv=None):
     testdirs = os.pathsep.join(list(set(testdirs)))
 
     # --- system
-    logmes("checking host platform", end="... ")
+    log_message("checking host platform", end="... ")
     platform = sys.platform
-    logmes(platform)
+    log_message(platform)
     sys.dont_write_bytecode = args.B
 
     # --- python
-    logmes("setup: checking python interpreter")
-    logmes("path to python executable", end="... ")
+    log_message("setup: checking python interpreter")
+    log_message("path to python executable", end="... ")
     pyexe = os.path.realpath(sys.executable)
-    logmes(pyexe)
+    log_message(pyexe)
 
     # --- python version
-    logmes("checking python version", end="... ")
+    log_message("checking python version", end="... ")
     (major, minor, micro, relev, ser) = sys.version_info
-    logmes("python {0}.{1}.{2}.{3}".format(*sys.version_info))
+    log_message("python {0}.{1}.{2}.{3}".format(*sys.version_info))
     if (major != 3 and major != 2) or (major == 2 and minor < 6):
         logerr("python >= 2.6 required")
 
     # --- 64 bit python?
-    logmes("checking for 64 bit python", end="... ")
+    log_message("checking for 64 bit python", end="... ")
     if sys.maxsize < 2 ** 32:
-        logmes("no")
+        log_message("no")
         logerr("gmd requires 64 bit python (due to exowrap)")
-    else: logmes("yes")
+    else: log_message("yes")
 
     # --- numpy
-    logmes("checking whether numpy is importable", end="... ")
+    log_message("checking whether numpy is importable", end="... ")
     try:
         import numpy
-        logmes("yes")
+        log_message("yes")
     except ImportError:
         logerr("no")
 
     # --- scipy
-    logmes("checking whether scipy is importable", end="... ")
+    log_message("checking whether scipy is importable", end="... ")
     try:
         import scipy
-        logmes("yes")
+        log_message("yes")
     except ImportError:
         logerr("no")
 
     # find f2py
-    logmes("setup: checking fortran compiler")
+    log_message("setup: checking fortran compiler")
     f2py = os.path.join(os.path.dirname(pyexe), "f2py")
-    logmes("checking for compatible f2py", end="... ")
+    log_message("checking for compatible f2py", end="... ")
     if not os.path.isfile(f2py) and sys.platform == "darwin":
         f2py = os.path.join(pyexe.split("Resources", 1)[0], "bin/f2py")
     if not os.path.isfile(f2py):
-        logmes("no")
+        log_message("no")
         logerr("compatible f2py required for building exowrap")
         make_exowrap = False
-    else: logmes("yes")
+    else: log_message("yes")
 
-    logmes("checking for gfortran", end="... ")
+    log_message("checking for gfortran", end="... ")
     gfortran = None
     for p in path:
         if os.path.isfile(os.path.join(p, "gfortran")):
             gfortran = os.path.join(p, "gfortran")
-            logmes("yes")
+            log_message("yes")
             break
     else:
-        logmes("no")
+        log_message("no")
         logerr("gfortran required for building tpl libraries")
 
     if logerr():
         stop("Resolve before continuing")
 
     # build TPLs
-    logmes("setup: looking for tpl.py files")
+    log_message("setup: looking for tpl.py files")
     for (d, dirs, files) in os.walk(tpl):
         if "tpl.py" in files:
             f = os.path.join(d, "tpl.py")
             dd = d.replace(root, ".")
-            logmes("building tpl in {0}".format(dd), end="... ")
+            log_message("building tpl in {0}".format(dd), end="... ")
             tplpy = imp.load_source("tpl", os.path.join(d, "tpl.py"))
             info = tplpy.build_tpl(ROOT=root, SKIPTPL=args.Ntpl,
                                    REBUILD=args.Rtpl)
             if info is None:
                 logerr("tpl failed to build")
             else:
-                logmes("yes")
+                log_message("yes")
                 pypath.append(info.get("PYTHONPATH"))
     if logerr():
         stop("Resolve before continuing")
@@ -179,7 +179,7 @@ def main(argv=None):
             sys.path.insert(0, path)
 
     # --- executables
-    logmes("setup: writing executable scripts")
+    log_message("setup: writing executable scripts")
     pyopts = "" if not sys.dont_write_bytecode else "-B"
 
     write_exe("gmd", tools, os.path.join(root, "main.py"),
@@ -198,9 +198,9 @@ def main(argv=None):
     write_exe("gmdviz", tools, os.path.join(vizd, "plot2d.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath})
 
-    logmes("setup: Setup complete")
+    log_message("setup: Setup complete")
     if build_tpls:
-        logmes("setup: To finish installation, "
+        log_message("setup: To finish installation, "
                "add: \n          {0}\n"
                "       to your PATH environment variable".format(tools))
     return
@@ -225,7 +225,7 @@ def remove(paths):
 def write_exe(name, destd, pyfile, pyexe, pyopts, env):
     exe = os.path.join(destd, name)
     remove(exe)
-    logmes("writing {0}".format(os.path.basename(exe)), end="...  ")
+    log_message("writing {0}".format(os.path.basename(exe)), end="...  ")
     if not os.path.isfile(pyfile):
         logerr("{0}: no such file".format(pyfile))
         return
@@ -237,7 +237,7 @@ def write_exe(name, destd, pyfile, pyexe, pyopts, env):
         fobj.write("PYFILE={0}\n".format(pyfile))
         fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
     os.chmod(exe, 0o750)
-    logmes("done")
+    log_message("done")
     return
 
 if __name__ == "__main__":

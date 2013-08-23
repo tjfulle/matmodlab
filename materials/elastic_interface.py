@@ -1,7 +1,7 @@
 import numpy as np
 
 from materials._material import Material
-from utils.io import Error1
+from utils.io import Error1, log_error, log_message
 try:
     import lib.elastic as elastic
 except ImportError:
@@ -28,7 +28,7 @@ class Elastic(Material):
         """
         if elastic is None:
             raise Error1("elastic model not imported")
-        elastic.elastic_check(params)
+        elastic.elastic_check(params, log_error, log_message)
         K, G, = params
         self.params = params
         self.bulk_modulus = K
@@ -60,7 +60,8 @@ class Elastic(Material):
             Updated extra variables
 
         """
-        elastic.elastic_update_state(dt, self.params, d, stress)
+        elastic.elastic_update_state(dt, self.params, d, stress,
+                                     log_error, log_message)
         return stress, xtra
 
     def jacobian(self, dt, d, stress, xtra, v):

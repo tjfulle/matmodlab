@@ -1,15 +1,40 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
+python module gmd__user__routines
+    interface gmd_user_interface
+        subroutine log_message(message)
+            intent(callback) log_message
+            character*(*) :: message
+            real intent(callback) :: report_and_raise_error
+        end subroutine log_message
+        subroutine log_error(message)
+            intent(callback) log_error
+            character*(*) :: message
+            real intent(callback) :: log_message
+        end subroutine report_and_raise_error
+    end interface gmd_user_interface
+end python module gmd__user__routines
+
 
 python module elastic ! in
 interface  ! in :elastic
    subroutine elastic_check(ui)
      use elastic, only: pchk
+     use gmd__user__routines
+     intent(callback) log_error
+     external log_error
+     intent(callback) log_message
+     external log_message
      integer, parameter :: nui=2
      real(kind=8) dimension(nui),intent(inout) :: ui
    end subroutine elastic_check
    subroutine elastic_update_state(dt,ui,d,stress)
      use elastic, only: pcalc
+     use gmd__user__routines
+     intent(callback) log_error
+     external log_error
+     intent(callback) log_message
+     external log_message
      integer, parameter :: nui=2
      real(kind=8) intent(in) :: dt
      real(kind=8) dimension(nui),intent(in) :: ui
@@ -18,6 +43,11 @@ interface  ! in :elastic
    end subroutine elastic_update_state
    subroutine elastic_stiff(nx,dt,ui,d,stress,xtra,j)
      use elastic, only: estiff
+     use gmd__user__routines
+     intent(callback) log_error
+     external log_error
+     intent(callback) log_message
+     external log_message
      integer, parameter :: nui=2
      real(kind=8) intent(in) :: dt
      real(kind=8) dimension(nui),intent(in) :: ui

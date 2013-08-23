@@ -13,7 +13,7 @@ F90_MODELS = {
     "elastic": {
         "interface": os.path.join(D, "elastic_interface.py"),
         "signature": os.path.join(SRC, "elastic.pyf"),
-        "class": "Elastic",
+        "class": "Elastic", "fio": True,
         "files": [os.path.join(SRC, f) for f in
                   ("elastic.f90", "elastic_interface.f90")]}}
 
@@ -21,6 +21,8 @@ def makemf(*args, **kwargs):
 
     fc = kwargs.get("FC", "gfortran")
     destd = kwargs.get("DESTD", D)
+    FIO = kwargs.get("FIO")
+    assert FIO, "FIO not passed"
     materials = kwargs.get("MATERIALS")
 
     mtldict = {"BUILT": {}, "FAILED": [], "SKIPPED": 0}
@@ -36,6 +38,8 @@ def makemf(*args, **kwargs):
             continue
 
         source_files = items["files"]
+        if items["fio"]:
+            source_files.append(FIO)
         signature = os.path.realpath(os.path.join(D, items["signature"]))
 
         # f2py pulls its arguments from sys.argv

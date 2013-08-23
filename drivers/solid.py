@@ -170,7 +170,7 @@ class SolidDriver(Driver):
 
                 if cfg.sqa and kappa == 0.:
                     if not np.allclose(d, depsdt):
-                        logmes("sqa: d != depsdt (k=0, leg={0})".format(leg_num))
+                        log_message("sqa: d != depsdt (k=0, leg={0})".format(leg_num))
 
             else:
                 # Initial guess for d[v]
@@ -228,7 +228,7 @@ class SolidDriver(Driver):
                     iomgr(dt, t)
 
                 if n == 0 or round(nsteps / 2.) == n or endstep:
-                    io.logmes(consfmt.format(leg_num, n + 1, t, dt))
+                    io.log_message(consfmt.format(leg_num, n + 1, t, dt))
 
                 if t > termination_time:
                     return 0

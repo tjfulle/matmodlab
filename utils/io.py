@@ -27,13 +27,13 @@ class Logger(object):
         if LOGFILE is None:
             LOGFILE = open(runid + ".log", "w")
 
-    def logmes(self, message, logger=[None]):
+    def log_message(self, message, logger=[None]):
         message = "gmd: {0}\n".format(message)
         if VERBOSITY:
             sys.stdout.write(message)
         LOGFILE.write(message)
 
-    def logwrn(self, message):
+    def log_warning(self, message):
         global WARNINGS_LOGGED
         if message is None:
             return WARNINGS_LOGGED
@@ -49,16 +49,20 @@ class Logger(object):
         return cls(None, None)
 
 
-def logmes(message, logger=[None]):
+def log_message(message, logger=[None]):
     if logger[0] is None:
         logger[0] = Logger.getlogger()
-    logger[0].logmes(message)
+    logger[0].log_message(message)
 
 
-def logwrn(message=None, logger=[None]):
+def log_warning(message=None, logger=[None]):
     if logger[0] is None:
         logger[0] = Logger.getlogger()
-    return logger[0].logwrn(message)
+    return logger[0].log_warning(message)
+
+
+def log_error(message):
+    raise Error1(message)
 
 
 def increment_warning():

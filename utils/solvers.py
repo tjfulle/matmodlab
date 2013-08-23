@@ -95,7 +95,7 @@ def newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
 
         except:
             d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
-            io.logwrn("Using least squares approximation to matrix inverse")
+            io.log_warning("Using least squares approximation to matrix inverse")
 
         if (depsmag(d) > depsmax):
             # increment too large

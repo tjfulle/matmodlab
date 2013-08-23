@@ -7,7 +7,7 @@ import core.gmd as gmd
 import utils.io as io
 import core.permutate as perm
 import utils.inpparse as inpparse
-from utils.errors import Error1
+from utils.io import Error1
 
 
 def main(argv=None):

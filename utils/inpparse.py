@@ -23,7 +23,8 @@ class OptionHolder(object):
     def __init__(self):
         pass
 
-    def addopt(self, name, default, test=lambda x: True, dtype=float, choices=None):
+    def addopt(self, name, default, test=lambda x: True,
+               dtype=float, choices=None):
         ns = Namespace()
         ns.name = name
         ns.value = default

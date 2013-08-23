@@ -48,7 +48,7 @@ class PhysicsDriver(object):
 
         # set up the driver
 
-        io.logmes("{0}: setting up".format(self.runid))
+        io.log_message("{0}: setting up".format(self.runid))
 
         self.driver.setup(self.runid, self.mtlmdl, self.mtlprops,
                           *self.driver_opts)
@@ -82,7 +82,7 @@ class PhysicsDriver(object):
         """Run the problem
 
         """
-        io.logmes("{0}: starting calculations".format(self.runid))
+        io.log_message("{0}: starting calculations".format(self.runid))
         run_opts = (self.tterm, )
         retcode = self.driver.process_legs(self.legs, self.dump_state, *run_opts)
         return retcode
@@ -90,7 +90,7 @@ class PhysicsDriver(object):
     def finish(self):
         # udpate and close the file
         self.timing["final"] = time.time()
-        io.logmes("{0}: calculations completed ({1:.4f}s)".format(
+        io.log_message("{0}: calculations completed ({1:.4f}s)".format(
             self.runid, self.timing["final"] - self.timing["initial"]))
         self.exo.finish()
 
@@ -99,7 +99,7 @@ class PhysicsDriver(object):
             exodump(self.runid + ".exo", step=step, ffmt=ffmt,
                     variables=variables, ofmt=ofmt)
             self.timing["extract"] = time.time()
-            io.logmes("{0}: extraction completed ({1:.4f}s)".format(
+            io.log_message("{0}: extraction completed ({1:.4f}s)".format(
                 self.runid, self.timing["extract"] - self.timing["final"]))
         return
 
