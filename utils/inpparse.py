@@ -621,19 +621,24 @@ def pPermutation(permlmn, *args):
 
     rstate = np.random.RandomState(options.getopt("seed"))
     gdict = {"__builtins__": None}
-    safe = {"range": lambda a, b, N: np.linspace(a, b, N),
+    N_default = 10
+    safe = {"range": lambda a, b, N=N_default: np.linspace(a, b, N),
             "sequence": lambda a: np.array(a),
-            "weibull": lambda a, b, N: a * rstate.weibull(b, N),
-            "uniform": lambda a, b, N: rstate.uniform(a, b, N),
-            "normal": lambda a, b, N: rstate.normal(a, b, N),
-            "percentage": lambda a, b: np.array([a-(b/100.)*a, a, a+(b/100.)* a])}
+            "weibull": lambda a, b, N=N_default: a * rstate.weibull(b, N),
+            "uniform": lambda a, b, N=N_default: rstate.uniform(a, b, N),
+            "normal": lambda a, b, N=N_default: rstate.normal(a, b, N),
+            "percentage": lambda a, b, N=N_default: (
+                np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))}
 
     # read in permutated values
     p = {}
     for items in permlmn.getElementsByTagName("Permutate"):
         var = str(items.attributes.get("var").value)
         method = str(items.attributes.get("method").value)
-        p[var] = eval(method, gdict, safe)
+        try:
+            p[var] = eval(method, gdict, safe)
+        except:
+            raise Error1("{0}: invalid extression".format(method))
 
     pdict["parameters"] = p
     pdict["method"] = options.getopt("method")

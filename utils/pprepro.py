@@ -77,8 +77,10 @@ def find_and_make_subs(lines, prepro=None, disp=0):
     if prepro is not None:
         SAFE.update(prepro)
     lines, vars_to_sub = find_vars_to_sub(lines)
-#    if not vars_to_sub and prepro is None:
-#        return lines
+    if not vars_to_sub and prepro is None:
+        if disp:
+            return lines, 0
+        return lines
     return make_var_subs(lines, vars_to_sub, disp=disp)
 
 
@@ -87,7 +89,7 @@ def make_var_subs(lines, vars_to_sub, disp=0):
     # the regular expression that defines the preprocessing
     pregex = r"(?i){{.*\b{0:s}\b.*}}"
 
-    if cfg.debug:
+    if cfg.debug and vars_to_sub:
         # Print out preprocessed values for debugging
         sys.stdout.write("Preprocessor values:\n")
         name_len = max([len(x) for x in vars_to_sub])

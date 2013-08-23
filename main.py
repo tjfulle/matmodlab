@@ -23,6 +23,8 @@ def main(argv=None):
        help="SQA mode [default: %(default)s]")
     parser.add_argument("-j", default=1, type=int,
        help="Number of simultaneous jobs to run [default: %(default)s]")
+    parser.add_argument("-V", default=False, action="store_true",
+       help="Launch simulation visualizer on completion [default: %(default)s]")
     args = parser.parse_args(argv)
     cfg.debug = args.dbg
     cfg.sqa = args.sqa
@@ -62,6 +64,10 @@ def main(argv=None):
     model.setup()
     model.run()
     model.finish()
+
+    if args.V:
+        from viz.plot2d import create_model_plot
+        create_model_plot(model.output())
 
 
 if __name__ == "__main__":

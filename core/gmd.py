@@ -120,3 +120,6 @@ class PhysicsDriver(object):
 
     def variables(self):
         return self.driver.variables()
+
+    def output(self):
+        return self.runid + ".exo"

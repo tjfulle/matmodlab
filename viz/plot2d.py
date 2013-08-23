@@ -37,7 +37,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("source")
     args = parser.parse_args()
-    create_model_plot(args.source)
+    source = os.path.realpath(args.source)
+    if not os.path.isfile(source):
+        stop("{0}: no such file".format(source))
+    create_model_plot(source)
 
 
 class Plot2D(tapi.HasTraits):
@@ -629,7 +632,8 @@ class ModelPlot(tapi.HasStrictTraits):
                 try:
                     fhead, fdata = loadcontents(eachfile)
                 except:
-                    print "Error reading overlay data in file " + eachfile
+                    logmes("{0}: Error reading overlay data".format(eachfile))
+                    continue
                 fnam = os.path.basename(eachfile)
                 self.Plot_Data.overlay_plot_data[fnam] = fdata
                 self.Plot_Data.overlay_headers[fnam] = fhead
@@ -734,6 +738,10 @@ def stop(message):
     raise SystemExit(message)
 
 
+def logmes(message):
+    sys.stdout.write("plot2d: {0}\n".format(message))
+
+
 def logerr(message=None, errors=[0]):
     if message is None:
         return errors[0]
@@ -742,22 +750,26 @@ def logerr(message=None, errors=[0]):
 
 
 def loadtabular(source):
-    sim_index = psi.SimulationIndex(index_file=index_file)
-    output_files = []
+    """Read in the gmd-tabular.dat file
+
+    """
+    lines = [" ".join(line.split()) for line in open(source, "r").readlines()
+             if line.split()]
+    runid = lines[0].split(":")[1].strip()
+
+    dirname = os.path.dirname(source)
+    eval_dirs = [os.path.join(dirname, d) for d in os.listdir(dirname)
+                 if d.startswith("eval_")]
+    output_files = [os.path.join(d, runid + ".exo") for d in eval_dirs]
+    if not all(os.path.isfile(f) for f in output_files):
+        stop("1 or more output files not found")
     variables = []
-    idx = sim_index.get_index()
-    for run, info in idx.iteritems():
-        output_files.append(info['outfile'])
-        s = []
-        for var, val in info['variables'].iteritems():
-            s.append("%s=%.2g" % (var, val))
-            continue
-        s = ", ".join(s)
+    var_names = lines[3].split()[1:]
+    for line in lines[4:]:
+        s = ", ".join("{0}={1:.2g}".format(a, float(b))
+                      for (a, b) in zip(var_names, line.split()[1:]))
         variables.append(s)
 
-    not_found = [x for x in output_files if not os.path.isfile(x)]
-    if not_found:
-        stop("files not found: {0}".format(", ".join(not_found)))
     return variables, output_files
 
 

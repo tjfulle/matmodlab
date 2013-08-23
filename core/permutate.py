@@ -25,6 +25,8 @@ class PermutationDriver(object):
         self.ivalues = [parameters[k] for k in self.names]
         self.parameters = parameters
 
+        io.Logger(runid, 1)
+
     def setup(self):
 
         if self.method == "zip":
@@ -68,7 +70,8 @@ class PermutationDriver(object):
 
     def finish(self):
         # write the summary
-        tabular = open(os.path.join(self.rootd, "gmd-tabular.dat"), "w")
+        self.tabular_file = os.path.join(self.rootd, "gmd-tabular.dat")
+        tabular = open(self.tabular_file, "w")
         ml = 12
         tabsfmt = lambda a, ml=ml: "{0:{1}s} ".format(a, ml)
         tabffmt = lambda a, ml=ml: "{0: {1}.{2}e} ".format(a, ml, ml/2)
@@ -90,6 +93,9 @@ class PermutationDriver(object):
             tabular.write("\n")
         tabular.flush()
         tabular.close()
+
+    def output(self):
+        return self.tabular_file
 
 
 
