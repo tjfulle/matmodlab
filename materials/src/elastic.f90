@@ -115,28 +115,4 @@ contains
     return
   end function dev
 
-  !***************************************************************************!
-
-  SUBROUTINE LOGMES(MSG)
-    CHARACTER*(*) MSG
-    PRINT*,"INFO: "//MSG
-    RETURN
-  END SUBROUTINE LOGMES
-
-  !***************************************************************************!
-
-  SUBROUTINE BOMBED(MSG)
-    CHARACTER*(*) MSG
-    PRINT*,"ERROR: "//MSG//" reported from [MIG]"
-    STOP
-  END SUBROUTINE BOMBED
-
-  !***************************************************************************!
-
-  SUBROUTINE FATERR(CALLER, MSG)
-    CHARACTER*(*) CALLER,MSG
-    PRINT*,"FATAL ERROR: "//MSG//" reported by ["//CALLER//"]"
-    STOP
-  END SUBROUTINE FATERR
-
 end module elastic

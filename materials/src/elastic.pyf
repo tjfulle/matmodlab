@@ -41,20 +41,6 @@ interface  ! in :elastic
      real(kind=8) dimension(6),intent(in) :: d
      real(kind=8) dimension(6),intent(inout) :: stress
    end subroutine elastic_update_state
-   subroutine elastic_stiff(nx,dt,ui,d,stress,xtra,j)
-     use elastic, only: estiff
-     use gmd__user__routines
-     intent(callback) log_error
-     external log_error
-     intent(callback) log_message
-     external log_message
-     integer, parameter :: nui=2
-     real(kind=8) intent(in) :: dt
-     real(kind=8) dimension(nui),intent(in) :: ui
-     real(kind=8) dimension(6),intent(in) :: d
-     real(kind=8) dimension(6),intent(in) :: stress
-     real(kind=8) dimension(6,6),intent(out) :: j
-   end subroutine elastic_stiff
 end interface
 end python module elastic
 

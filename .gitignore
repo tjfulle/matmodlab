@@ -4,6 +4,7 @@
 *.out
 *.perm
 *.log
+*.preprocessed
 
 TestResults.*
 .built
