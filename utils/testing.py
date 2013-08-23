@@ -103,15 +103,19 @@ def main(argv=None):
         len(rtests), timing.tests_found - timing.start))
 
     completed_rtests = get_completed_rtests(testd)
-    if not args.F:
-        for rtest in [_ for _ in rtests if _ in completed_rtests]:
-            log_message("{0}: test previously run.  use -F to "
-                   "force a rerun".format(rtest))
-            del rtests[rtest]
-            cur_stat = completed_rtests[rtest][S_STAT]
-            prev_stat = completed_rtests[rtest].get(S_PSTAT, cur_stat)
-            completed_rtests[rtest][S_PSTAT] = prev_stat
-            completed_rtests[rtest][S_STAT] = NOTRUN_STATUS
+    for rtest in completed_rtests:
+        if rtest in rtests:
+            if not args.F:
+                log_message("{0}: test previously run.  use -F to "
+                            "force a rerun".format(rtest))
+                del rtests[rtest]
+        cur_stat = completed_rtests[rtest][S_STAT]
+        prev_stat = completed_rtests[rtest].get(S_PSTAT, cur_stat)
+        completed_rtests[rtest][S_PSTAT] = prev_stat
+        completed_rtests[rtest][S_STAT] = NOTRUN_STATUS
+    for rtest in rtests:
+        if rtest in completed_rtests:
+            del completed_rtests[rtest]
 
     # run all of the tests
     if not rtests:
@@ -558,7 +562,8 @@ def generate_rtest_html_summary(rtest, details, testd):
     rtest_html_summary.append("<ul>")
 
     rtest_html_summary.append("<li>Files: ")
-    files = [f for f in os.listdir(rtestd) if not os.path.isdir(f)]
+    files = [f for f in os.listdir(rtestd)
+             if os.path.isfile(os.path.join(rtestd, f))]
     for f in files:
         fpath = os.path.join(rtestd, f).replace(testd, ".")
         rtest_html_summary.append("<a href='{0}' type='text/plain'>{1}</a> "
