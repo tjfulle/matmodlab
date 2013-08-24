@@ -764,8 +764,8 @@ def loadtabular(source):
     if not all(os.path.isfile(f) for f in output_files):
         stop("1 or more output files not found")
     variables = []
-    var_names = lines[3].split()[1:]
-    for line in lines[4:]:
+    var_names = lines[2].split()[1:]
+    for line in lines[3:]:
         s = ", ".join("{0}={1:.2g}".format(a, float(b))
                       for (a, b) in zip(var_names, line.split()[1:]))
         variables.append(s)

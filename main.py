@@ -3,11 +3,15 @@ import sys
 import argparse
 
 from __config__ import cfg
-import core.gmd as gmd
 import utils.io as io
+import core.gmd as gmd
 import core.permutate as perm
+import core.optimize as opt
 import utils.inpparse as inpparse
+from utils.inpparse import S_PHYSICS, S_OPT, S_PERMUTATION
 from utils.io import Error1
+
+FILE = os.path.realpath(__file__)
 
 
 def main(argv=None):
@@ -40,7 +44,7 @@ def main(argv=None):
     runid = os.path.splitext(basename)[0]
     mm_input = inpparse.parse_input(source)
 
-    if mm_input.stype == "physics":
+    if mm_input.stype == S_PHYSICS:
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional,
                 mm_input.ndumps)
         # set up the logger
@@ -49,13 +53,21 @@ def main(argv=None):
                                   mm_input.mtlprops, mm_input.legs,
                                   mm_input.ttermination, mm_input.extract, opts)
 
-    elif mm_input.stype == "permutation":
-        f = os.path.realpath(__file__)
+    elif mm_input.stype == S_PERMUTATION:
         opts = (args.j,)
-        exe = "{0} {1}".format(sys.executable, f)
-        model = perm.PermutationDriver(runid, exe, mm_input.method,
-                                       mm_input.parameters, mm_input.basexml,
-                                       *opts)
+        exe = "{0} {1}".format(sys.executable, FILE)
+        model = perm.PermutationDriver(runid, mm_input.method,
+                                       mm_input.parameters, exe,
+                                       mm_input.basexml, *opts)
+
+    elif mm_input.stype == S_OPT:
+        exe = "{0} {1}".format(sys.executable, FILE)
+        model = opt.OptimizationDriver(runid, mm_input.method,
+                                       exe, mm_input.objective_function,
+                                       mm_input.parameters,
+                                       mm_input.tolerance, mm_input.maxiter,
+                                       mm_input.disp, mm_input.basexml,
+                                       mm_input.auxiliary_files)
 
     else:
         sys.exit("{0}: unrecognized simulation type".format(mm_input.stype))

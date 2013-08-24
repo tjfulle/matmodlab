@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+"""Provides a recipe for computing the maximum error between the expected
+stress vs. time slope and the simulated.
+
+"""
+import os
+import sys
+import numpy as np
+
+from exoreader import ExodusIIReader
+
+def main(*argv):
+    exof, aux = argv[:2]
+    # read in baseline data
+    auxhead = open(aux).readline().split()
+    auxdat = np.loadtxt(aux, skiprows=1)
+    idxs = np.empty(4, dtype=np.int)
+    for i, item in enumerate(("TIME", "STRESS_XX", "STRESS_YY", "STRESS_ZZ")):
+        idxs[i] = auxhead.index(item)
+    baseline = auxdat[:, idxs]
+
+    # read in output data
+    exof = ExodusIIReader.new_from_exofile(exof)
+    simtime = exof.get_all_times()
+    simsig = []
+    for item in ("STRESS_XX", "STRESS_YY", "STRESS_ZZ"):
+        simsig.append(exof.get_elem_var_time(item, 0))
+    simsig = np.transpose(simsig)
+
+    # do the comparison
+    basetime, basesig = baseline[:, 0], baseline[:, 1:]
+    error = -1
+    t0 = max(np.amin(basetime), np.amin(simtime))
+    tf = min(np.amax(basetime), np.amax(simtime))
+    n = basetime.shape[0]
+    for idx in range(3):
+        base = lambda x: np.interp(x, basetime, basesig[:, idx])
+        comp = lambda y: np.interp(y, simtime, simsig[:, idx])
+        rms = np.sqrt(np.mean([(base(i) - comp(i)) ** 2
+                               for i in range(4)])) #np.linspace(t0, tf, n)]))
+        dnom = np.amax(np.abs(simsig[:, idx]))
+        if dnom < 1.e-12: dnom = 1.
+        error = max(rms / dnom, error)
+        continue
+
+    print error
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main(*sys.argv[1:]))

@@ -1,0 +1,22 @@
+<GMDSpec>
+
+  <Optimization method="cobyla" maxiter="25" tolerance="1e-4" disp="0">
+    <ObjectiveFunction href="opt-sig-v-time"/>
+    <AuxiliaryFile href="opt-baseline.dat"/>
+    <Optimize var="opt_k" bounds="125.e9 150.e9" initial_value="129.e9"/>
+    <Optimize var="opt_g" bounds="45.e9 57.e9" initial_value="54.e9"/>
+  </Optimization>
+
+  <Physics writeprops="false">
+
+    <Material model="elastic">
+      <G> {opt_g} </G>  <!-- 53.e9  value used to create exmpls.tbl -->
+      <K> {opt_k} </K>  <!-- 135.e9 value used to create exmpls.tbl -->
+    </Material>
+
+    <Legs format="table" tblcols="1 3:8" tblcfmt="222222" tbltfmt="time">
+      <include href="exmpls.tbl"/>
+    </Legs>
+
+  </Physics>
+</GMDSpec>

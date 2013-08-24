@@ -11,19 +11,25 @@ import utils.io as io
 from utils.io import Error1
 from utils.pprepro import find_and_make_subs
 
+
+PERM_METHODS = ("zip", "combine", )
+
+
 class PermutationDriver(object):
-    def __init__(self, runid, exe, method, parameters, basexml, *opts):
+    def __init__(self, runid, method, parameters, exe, basexml, *opts):
 
-        self.nproc = opts[0]
-        self.rootd = os.path.join(os.getcwd(), runid + ".perm")
         self.runid = runid
-        self.exe = exe
         self.method = method
+        self.exe = exe
         self.basexml = basexml
+        self.nproc = opts[0]
+        self.rootd = os.path.join(os.getcwd(), runid + ".eval")
 
-        self.names = parameters.keys()
-        self.ivalues = [parameters[k] for k in self.names]
-        self.parameters = parameters
+        self.names = []
+        self.ivalues = []
+        for (name, ivalue) in parameters:
+            self.names.append(name)
+            self.ivalues.append(ivalue)
 
         io.Logger(runid, 1)
 
@@ -81,7 +87,6 @@ class PermutationDriver(object):
         tabular.write("Run ID: {0}\n".format(self.runid))
         today = datetime.date.today().strftime("%a %b %d %Y %H:%M:%S")
         tabular.write("Date: {0}\n".format(today))
-        tabular.write("Number of evaluations: {0}\n\n".format(njobs))
         tabular.write("{0}\n".format(head))
         for (i, params) in enumerate(self.ranges):
             tabular.write(tabsfmt(repr(i)))

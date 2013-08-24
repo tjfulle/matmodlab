@@ -3,6 +3,8 @@
 *.so
 *.out
 *.perm
+*.eval
+*.opt
 *.log
 *.preprocessed
 
@@ -18,4 +20,3 @@ toolset/gmddump
 toolset/gmdviz
 
 materials/materials.db
-

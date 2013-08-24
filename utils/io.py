@@ -34,13 +34,12 @@ class Logger(object):
         LOGFILE.write(message)
 
     def log_warning(self, message):
-        global WARNINGS_LOGGED
         if message is None:
             return WARNINGS_LOGGED
         message = "*** gmd: warning: {0}\n".format(message)
         sys.stderr.write(message)
         LOGFILE.write(message)
-        WARNINGS_LOGGED += 1
+        increment_warning()
 
     @classmethod
     def getlogger(cls):

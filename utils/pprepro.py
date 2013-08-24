@@ -1,7 +1,9 @@
+import os
 import re
 import sys
 import math
 import numpy as np
+import xml.dom.minidom as xdom
 
 import utils.io as io
 from utils.io import Error1
@@ -44,6 +46,7 @@ def find_vars_to_sub(lines):
     regex = r"(?i)\{\s*[\w]+[\w\d]*\s*=.*?\}"
     variables = re.findall(regex, lines)
     for variable in variables:
+        print variable
         vsplit = re.sub(r"[\{\}]", "", variable).split("=")
         key = vsplit[0].strip()
         hold.append(key)
@@ -57,6 +60,15 @@ def find_vars_to_sub(lines):
         lines = re.sub(re.escape(variable), vars_to_sub[hold[i]], lines)
 
     return lines, vars_to_sub
+
+
+def find_subs_to_make(lines):
+    """Find all substitutions that need to be made
+
+    """
+    regex = re.compile(r"{(?P<var>.*)}")
+    subs_to_make = [k for m in regex.findall(lines) for k in m.split()]
+    return subs_to_make
 
 
 def find_and_make_subs(lines, prepro=None, disp=0):
@@ -156,6 +168,11 @@ def find_and_fill_includes(lines):
         User input, modified in place, with inserts inserted
 
     """
+    #doc = xdom.parseString(lines)
+    #includes = doc.getElementsByTagName("include")
+    #print dir(includes[0])
+    #print includes
+    #sys.exit('check include')
     regex = r"<include\s(?P<include>.*)/>"
     _lines = []
     for line in lines.split("\n"):
@@ -178,6 +195,6 @@ def find_and_fill_includes(lines):
         except IOError:
             raise Error1(
                 "{0}: include not found".format(repr(name)))
-        _lines.extend(fill_in_includes(fill).split("\n"))
+        _lines.extend(find_and_fill_includes(fill).split("\n"))
         continue
     return "\n".join(_lines)

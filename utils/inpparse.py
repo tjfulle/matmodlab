@@ -19,6 +19,19 @@ from utils.fcnbldr import build_lambda, build_interpolating_function
 from materials.material import get_material_from_db
 
 
+S_PHYSICS = "Physics"
+S_PERMUTATION = "Permutation"
+S_OPT = "Optimization"
+
+S_AUX_FILES = "Auxiliary Files"
+S_METHOD = "Method"
+S_PARAMS = "Parameters"
+S_OBJ_FCN = "Objective Function"
+S_MITER = "Maximum Iterations"
+S_TOL = "Tolerance"
+S_DISP = "Disp"
+
+
 class OptionHolder(object):
     def __init__(self):
         pass
@@ -66,25 +79,26 @@ def parse_input(filepath):
     The user input
 
     """
+    # find all "include" files, and preprocess the input
     user_input = find_and_fill_includes(open(filepath, "r").read())
     user_input, nsubs = find_and_make_subs(user_input, disp=1)
     if nsubs:
         with open(filepath + ".preprocessed", "w") as fobj:
             fobj.write(user_input)
-    dom = xdom.parseString(user_input)
 
-    # Get the root element (Should always be "GMDSpec")
+    # Parse the xml document, the root element is always "GMDSpec"
+    doc = xdom.parseString(user_input)
     try:
-        gmdspec = dom.getElementsByTagName("GMDSpec")[0]
+        gmdspec = doc.getElementsByTagName("GMDSpec")[0]
     except IndexError:
         raise Error1("Expected Root Element 'GMDSpec'")
 
     # ------------------------------------------ get and parse blocks --- #
     gmdblks = {}
     #           (blkname, required, remove)
-    rootblks = (("Optimization", 0, 1),
-                ("Permutation", 0, 1),
-                ("Physics", 1, 0))
+    rootblks = ((S_OPT, 0, 1),
+                (S_PERMUTATION, 0, 1),
+                (S_PHYSICS, 1, 0))
     # find all functions first
     functions = pFunctions(gmdspec.getElementsByTagName("Function"))
     args = (functions,)
@@ -104,17 +118,17 @@ def parse_input(filepath):
             p = rootlmn.parentNode
             p.removeChild(rootlmn)
 
-    if "Optimzation" in gmdblks and "Permutation" in gmdblks:
+    if S_OPT in gmdblks and S_PERMUTATION in gmdblks:
         raise Error1("Incompatible blocks: [Optimzation, Permutation]")
 
-    if "Optimization" in gmdblks:
-        raise Error1("optimization parsing not done")
+    if S_OPT in gmdblks:
+        return optimization_namespace(gmdblks[S_OPT], gmdspec.toxml())
 
-    elif "Permutation" in gmdblks:
-        return permutation_namespace(gmdblks["Permutation"], gmdspec.toxml())
+    elif S_PERMUTATION in gmdblks:
+        return permutation_namespace(gmdblks[S_PERMUTATION], gmdspec.toxml())
 
     else:
-        return physics_namespace(gmdblks["Physics"], *args)
+        return physics_namespace(gmdblks[S_PHYSICS], *args)
 
 
 # ------------------------------------------------- Parsing functions --- #
@@ -601,7 +615,77 @@ def format_legs(legs, options):
 
 
 def pOptimization(optlmn, *args):
-    raise Error1("Optimization coding not done")
+    """Parse the optimization block
+
+    """
+    odict = {}
+
+    # Set up options for permutation
+    options = OptionHolder()
+    options.addopt("method", "simplex", dtype=str,
+                   choices=("simplex", "powell", "cobyla", "slsqp"))
+    options.addopt("maxiter", 25, dtype=int)
+    options.addopt("tolerance", 1.e-6, dtype=float)
+    options.addopt("disp", 0, dtype=int)
+
+    # Get control terms
+    for i in range(optlmn.attributes.length):
+        options.setopt(*xmltools.get_name_value(optlmn.attributes.item(i)))
+
+    # objective function
+    objfcn = optlmn.getElementsByTagName("ObjectiveFunction")
+    if not objfcn:
+        raise Error1("ObjectiveFunction not found")
+    elif len(objfcn) > 1:
+        raise Error1("Only one ObjectiveFunction tag supported")
+    objfcn = objfcn[0]
+    objfile = objfcn.getAttribute("href")
+    if not objfile:
+        raise Error1("Expected href attribute to ObjectiveFunction")
+    elif not os.path.isfile(objfile):
+        raise Error1("{0}: no such file".format(objfile))
+    objfile = os.path.realpath(objfile)
+
+    # auxiliary files
+    auxfiles = []
+    for item in optlmn.getElementsByTagName("AuxiliaryFile"):
+        auxfile = item.getAttribute("href")
+        if not auxfile:
+            raise Error1("Expected href attribute to AuxiliaryFile")
+        elif not os.path.isfile(auxfile):
+            raise Error1("{0}: no such file".format(auxfile))
+        auxfiles.append(os.path.realpath(auxfile))
+
+    # read in optimization parameters
+    p = []
+    for items in optlmn.getElementsByTagName("Optimize"):
+        var = str(items.attributes.get("var").value)
+
+        ivalue = items.attributes.get("initial_value")
+        if not ivalue:
+            raise Error1("{0}: no initial value given".format(var))
+        ivalue = float(ivalue.value)
+
+        bounds = items.attributes.get("bounds")
+        if not bounds:
+            bounds = [None, None]
+        else:
+            bounds = str2list(bounds.value, dtype=float)
+        if len(bounds) != 2:
+            raise Error1("{0}: incorrect bounds, must give upper "
+                         "and lower bound".format(var))
+        p.append([var, ivalue, bounds])
+
+    odict[S_METHOD] = options.getopt("method")
+    odict[S_MITER] = options.getopt("maxiter")
+    odict[S_TOL] = options.getopt("tolerance")
+    odict[S_DISP] = options.getopt("disp")
+
+    odict[S_PARAMS] = p
+    odict[S_AUX_FILES] = auxfiles
+    odict[S_OBJ_FCN] = objfile
+
+    return odict
 
 
 def pPermutation(permlmn, *args):
@@ -631,17 +715,17 @@ def pPermutation(permlmn, *args):
                 np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))}
 
     # read in permutated values
-    p = {}
+    p = []
     for items in permlmn.getElementsByTagName("Permutate"):
         var = str(items.attributes.get("var").value)
-        method = str(items.attributes.get("method").value)
+        values = str(items.attributes.get("values").value)
         try:
-            p[var] = eval(method, gdict, safe)
+            p.append([var, eval(values, gdict, safe)])
         except:
-            raise Error1("{0}: invalid extression".format(method))
+            raise Error1("{0}: invalid extression".format(values))
 
-    pdict["parameters"] = p
-    pdict["method"] = options.getopt("method")
+    pdict[S_PARAMS] = p
+    pdict[S_METHOD] = options.getopt("method")
 
     return pdict
 
@@ -676,7 +760,7 @@ def physics_namespace(simlmn, *args):
     # set up the namespace to return
     ns = Namespace()
 
-    ns.stype = "physics"
+    ns.stype = S_PHYSICS
 
     ns.ttermination = simblk.get("TerminationTime")
 
@@ -699,13 +783,29 @@ def physics_namespace(simlmn, *args):
     return ns
 
 
+def optimization_namespace(optlmn, basexml):
+    optblk = pOptimization(optlmn)
+    # set up the namespace to return
+    ns = Namespace()
+    ns.stype = S_OPT
+    ns.method = optblk[S_METHOD]
+    ns.parameters = optblk[S_PARAMS]
+    ns.auxiliary_files = optblk[S_AUX_FILES]
+    ns.objective_function = optblk[S_OBJ_FCN]
+    ns.tolerance = optblk[S_TOL]
+    ns.maxiter = optblk[S_MITER]
+    ns.disp = optblk[S_DISP]
+    ns.basexml = basexml
+    return ns
+
+
 def permutation_namespace(permlmn, basexml):
     permblk = pPermutation(permlmn)
     # set up the namespace to return
     ns = Namespace()
-    ns.stype = "permutation"
-    ns.method = permblk["method"]
-    ns.parameters = permblk["parameters"]
+    ns.stype = S_PERMUTATION
+    ns.method = permblk[S_METHOD]
+    ns.parameters = permblk[S_PARAMS]
     ns.basexml = basexml
     return ns
 
@@ -877,6 +977,9 @@ def pFunctions(element_list, *args):
 
 
 def str2list(string, dtype=int):
+    string = " ".join(string.split())
+    string = re.sub(r"^[\(\[\{]", " ", string.strip())
+    string = re.sub(r"[\)\]\}]$", " ", string.strip())
     string = re.sub(r"[, ]", " ", string)
     return [dtype(x) for x in string.split()]
 
