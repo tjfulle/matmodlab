@@ -18,20 +18,23 @@ PERM_METHODS = ("zip", "combine", )
 class PermutationDriver(object):
     def __init__(self, runid, method, parameters, exe, basexml, *opts):
 
+        self.rootd = os.path.join(os.getcwd(), runid + ".eval")
+        if os.path.isdir(self.rootd):
+            shutil.rmtree(self.rootd)
+        os.makedirs(self.rootd)
+        io.Logger(runid, 1, d=self.rootd)
+
         self.runid = runid
         self.method = method
         self.exe = exe
         self.basexml = basexml
         self.nproc = opts[0]
-        self.rootd = os.path.join(os.getcwd(), runid + ".eval")
 
         self.names = []
         self.ivalues = []
         for (name, ivalue) in parameters:
             self.names.append(name)
             self.ivalues.append(ivalue)
-
-        io.Logger(runid, 1)
 
     def setup(self):
 
@@ -45,17 +48,13 @@ class PermutationDriver(object):
         elif self.method == "combine":
             self.ranges = list(product(*self.ivalues))
 
-        if os.path.isdir(self.rootd):
-            shutil.rmtree(self.rootd)
-        os.makedirs(self.rootd)
-
         pass
 
     def run(self):
 
         os.chdir(self.rootd)
         cwd = os.getcwd()
-        io.log_message("Starting permutation jobs")
+        io.log_message("starting permutation jobs")
 
         job_inp = ((i, self.exe, self.runid, self.names, self.basexml,
                     params, self.rootd)
@@ -71,7 +70,7 @@ class PermutationDriver(object):
             pool.close()
             pool.join()
 
-        io.log_message("Finished permutation jobs")
+        io.log_message("finished permutation jobs")
         return
 
     def finish(self):
@@ -113,11 +112,14 @@ def run_single_job(args):
 
     # write the params.in for this run
     prepro = {}
+    pparams = []
     with open("params.in", "w") as fobj:
         for iname, name in enumerate(names):
             param = params[iname]
             prepro[name] = param
+            pparams.append("{0}={1:.4e}".format(name, param))
             fobj.write("{0} = {1: .18f}\n".format(name, param))
+    pparams = ",".join(pparams)
 
     # Preprocess the input
     xmlinp = find_and_make_subs(basexml, prepro=prepro)
@@ -127,13 +129,13 @@ def run_single_job(args):
 
     cmd = "{0} {1}".format(exe, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
-    io.log_message("Starting job {0}".format(job_num))
+    io.log_message("starting job {0} with {1}".format(job_num, pparams))
     job = subprocess.Popen(cmd.split(), stdout=out,
                            stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
-        io.log_message("Job {0} failed".format(job_num))
+        io.log_message("*** error: job {0} failed".format(job_num))
     else:
-        io.log_message("Finished with job {0}".format(job_num))
+        io.log_message("finished with job {0}".format(job_num))
 
     return job.returncode

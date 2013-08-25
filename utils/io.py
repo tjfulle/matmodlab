@@ -1,3 +1,4 @@
+import os
 import sys
 import numpy as np
 import datetime
@@ -18,14 +19,18 @@ LOGFILE = None
 WARNINGS_LOGGED = 0
 VERBOSITY = 1
 class Logger(object):
-    def __init__(self, runid, verbosity):
+    def __init__(self, runid, verbosity, d=None):
         global LOGFILE, VERBOSITY
         if runid is None and LOGFILE is None:
-            raise Error("inconsistent logger instantiation")
+            raise Error1("inconsistent logger instantiation")
         if verbosity is not None:
             VERBOSITY = verbosity
+        if d is None:
+            d = os.getcwd()
+        if not os.path.isdir(d):
+            raise Error1("{0}: no such directory".format(d))
         if LOGFILE is None:
-            LOGFILE = open(runid + ".log", "w")
+            LOGFILE = open(os.path.join(d, runid + ".log"), "w")
 
     def log_message(self, message, logger=[None]):
         message = "gmd: {0}\n".format(message)

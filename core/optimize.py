@@ -20,8 +20,16 @@ class OptimizationDriver(object):
                  parameters, tolerance, maxiter, disp,
                  basexml, auxiliary, *opts):
 
-        io.Logger(runid, 1)
+        # root directory to run the problem
+        self.rootd = os.path.join(os.getcwd(), runid + ".eval")
+        if os.path.isdir(self.rootd):
+            shutil.rmtree(self.rootd)
+        os.makedirs(self.rootd)
 
+        # logger
+        io.Logger(runid, 1, d=self.rootd)
+
+        # check inputs
         self.method = OPT_METHODS.get(method.lower())
         if self.method is None:
             io.log_warning("{0}: unrecognized optimization method".format(method))
@@ -70,14 +78,10 @@ class OptimizationDriver(object):
         self.maxiter = maxiter
         self.disp = disp
         self.basexml = basexml
-        self.rootd = os.path.join(os.getcwd(), runid + ".eval")
         self.auxiliary_files = auxiliary
         self.tabular_file = os.path.join(self.rootd, "gmd-tabular.dat")
 
     def setup(self):
-        if os.path.isdir(self.rootd):
-            shutil.rmtree(self.rootd)
-        os.makedirs(self.rootd)
         with open(self.tabular_file, "w") as fobj:
             fobj.write("Run ID: {0}\n".format(self.runid))
             today = datetime.date.today().strftime("%a %b %d %Y %H:%M:%S")
@@ -95,7 +99,7 @@ class OptimizationDriver(object):
         """
         os.chdir(self.rootd)
         cwd = os.getcwd()
-        io.log_message("Starting optimization job")
+        io.log_message("starting optimization job")
 
         # optimization methods work best with number around 1, here we
         # normalize the optimization variables and save the multiplier to be
@@ -151,8 +155,8 @@ class OptimizationDriver(object):
 
     def finish(self):
         """ finish up the optimization job """
-        io.log_message("Optimized parameters found in {0} iterations".format(IOPT))
-        io.log_message("Optimized parameters:")
+        io.log_message("optimized parameters found in {0} iterations".format(IOPT))
+        io.log_message("optimized parameters:")
         for (i, name) in enumerate(self.names):
             io.log_message("\t{0} = {1:12.6E}".format(name, self.xopt[i]))
         pass
@@ -185,13 +189,22 @@ def func(xcall, *args):
     os.mkdir(evald)
     os.chdir(evald)
 
+    # tabular.dat file
+    tabobj = open(tabular, "a")
+    tabobj.write("{0:<17d} ".format(IOPT))
+
     # write the params.in for this run
     prepro = {}
+    optparams = []
     with open("params.in", "w") as fobj:
         for iname, name in enumerate(xnames):
             param = xcall[iname] * xfac[iname]
             prepro[name] = param
             fobj.write("{0} = {1: .18f}\n".format(name, param))
+            optparams.append("{0}={1:.4e}".format(name, param))
+            tabobj.write("{0: 20.10E} ".format(param))
+    optparams = ",".join(optparams)
+    io.log_message("starting job {0} with {1}".format(IOPT, optparams))
 
     # Preprocess the input
     xmlinp = pprepro.find_and_make_subs(basexml, prepro=prepro)
@@ -206,28 +219,33 @@ def func(xcall, *args):
                            stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
-        io.log_message("Job {0} failed".format(IOPT))
-    else:
-        io.log_message("Finished with job {0}".format(IOPT))
+        opterr = np.nan
+        tabobj.write("{0: 20.10E}\n".format(opterr))
+        tabobj.close()
+        io.log_message("**** error: job {0} failed".format(IOPT))
+        return opterr
 
     # Now run the script
     # Run the job
+    io.log_message("analyzing results of job {0}".format(IOPT))
     outf = os.path.join(evald, runid + ".exo")
     cmd = "{0} {1} {2}".format(script, outf, " ".join(aux))
     job = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
-        io.log_message("Job {0} script failed".format(IOPT))
-    out, err = job.communicate()
-    opterr = float(out)
+        io.log_message("*** error: job {0} script failed".format(IOPT))
+        opterr = np.nan
 
-    with open(tabular, "a") as fobj:
-        fobj.write("{0:<17d} ".format(IOPT))
-        for iname, name in enumerate(xnames):
-            param = prepro[name]
-            fobj.write("{0: 20.10E} ".format(param))
-        fobj.write("{0: 20.10E}\n".format(opterr))
+    else:
+        out, err = job.communicate()
+        opterr = float(out)
+
+    tabobj.write("{0: 20.10E}\n".format(opterr))
+    tabobj.close()
+
+    io.log_message("finished with job {0}".format(IOPT))
+
 
     # go back to the basedir
     os.chdir(basedir)
