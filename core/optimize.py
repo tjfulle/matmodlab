@@ -16,7 +16,7 @@ OPT_METHODS = {"simplex": "fmin", "powell": "fmin_powell",
                "cobyla": "fmin_cobyla"}
 
 class OptimizationDriver(object):
-    def __init__(self, runid, method, exe, script,
+    def __init__(self, runid, verbosity, method, exe, script,
                  parameters, tolerance, maxiter, disp,
                  basexml, auxiliary, *opts):
 
@@ -27,7 +27,7 @@ class OptimizationDriver(object):
         os.makedirs(self.rootd)
 
         # logger
-        io.Logger(runid, 1, d=self.rootd)
+        io.setup_logger(runid, verbosity, d=self.rootd)
 
         # check inputs
         self.method = OPT_METHODS.get(method.lower())

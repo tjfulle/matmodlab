@@ -346,7 +346,7 @@ def find_rtests(search_dirs, include, exclude, tests=None):
                 raise Error("{0}: {1}: executable not found".format(name, exe))
             opts = [s.format(NAME=name) for s in xmltools.child2list([item])]
             if exe == "exodiff":
-                opts.insert(0, "-status")
+                opts = ["-status", "-allow_name_mismatch"] + opts
             execute.append([x] + opts)
 
         rtests[name] = {S_EXEC: execute, S_LNFL: link_files,

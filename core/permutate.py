@@ -16,13 +16,13 @@ PERM_METHODS = ("zip", "combine", )
 
 
 class PermutationDriver(object):
-    def __init__(self, runid, method, parameters, exe, basexml, *opts):
+    def __init__(self, runid, verbosity, method, parameters, exe, basexml, *opts):
 
         self.rootd = os.path.join(os.getcwd(), runid + ".eval")
         if os.path.isdir(self.rootd):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
-        io.Logger(runid, 1, d=self.rootd)
+        io.setup_logger(runid, verbosity, d=self.rootd)
 
         self.runid = runid
         self.method = method

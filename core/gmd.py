@@ -11,7 +11,7 @@ from drivers.drivers import create_driver
 
 class PhysicsDriver(object):
 
-    def __init__(self, runid, driver, mtlmdl, mtlprops, legs, tterm,
+    def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops, legs, tterm,
                  extract, driver_opts):
         """Initialize the PhysicsDriver object
 
@@ -27,6 +27,9 @@ class PhysicsDriver(object):
             The deformation legs
 
         """
+
+        io.setup_logger(runid, verbosity)
+
         self.runid = runid
 
         self.driver = create_driver(driver)
@@ -68,7 +71,8 @@ class PhysicsDriver(object):
         num_elem_this_blk = 1
         elem_type = "HEX"
         num_nodes_per_elem = 8
-        ele_var_names = self.variables()
+        glob_var_data = [self.driver.glob_variables(), self.driver.glob_data()]
+        ele_var_names = self.driver.variables()
         elem_blk_data = self.driver.data()
         elem_blks = [[elem_blk_id, elem_blk_els, elem_type,
                       num_nodes_per_elem, ele_var_names]]
@@ -76,7 +80,8 @@ class PhysicsDriver(object):
         title = "gmd {0} simulation".format(self.driver.name)
 
         self.exo = io.ExoManager(self.runid, self.num_dim, self.coords, connect,
-                                 elem_blks, all_element_data, title)
+                                 glob_var_data, elem_blks,
+                                 all_element_data, title)
 
     def run(self):
         """Run the problem
@@ -103,7 +108,11 @@ class PhysicsDriver(object):
                 self.runid, self.timing["extract"] - self.timing["final"]))
         return
 
-    def dump_state(self, dt, time_end):
+    def dump_state(self, time_end):
+        # global data
+        glob_data = self.driver.glob_data()
+
+        # element data
         elem_blk_id = 1
         num_elem_this_blk = 1
         elem_blk_data = self.driver.data()
@@ -116,7 +125,7 @@ class PhysicsDriver(object):
             k = i * self.num_dim
             u[k:k+self.num_dim] = np.dot(F, X) - X
 
-        self.exo.write_data(time_end, dt, all_element_data, u)
+        self.exo.write_data(time_end, glob_data, all_element_data, u)
 
     def variables(self):
         return self.driver.variables()

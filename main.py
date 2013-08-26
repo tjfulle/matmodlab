@@ -3,7 +3,6 @@ import sys
 import argparse
 
 from __config__ import cfg
-import utils.io as io
 import core.gmd as gmd
 import core.permutate as perm
 import core.optimize as opt
@@ -38,9 +37,9 @@ def main(argv=None):
     if not os.path.isfile(source):
         source += ".xml"
         if not os.path.isfile(source):
-            sys.exit("gmd: {0}: no such file".format(args.source))
+            raise OSError("{0}: no such file".format(args.source))
 
-    basename = os.path.basename(args.source).rstrip(".preprocessed")
+    basename = os.path.basename(source).rstrip(".preprocessed")
     runid = os.path.splitext(basename)[0]
     mm_input = inpparse.parse_input(source)
 
@@ -48,21 +47,20 @@ def main(argv=None):
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional,
                 mm_input.ndumps)
         # set up the logger
-        logger = io.Logger(runid, args.v)
-        model = gmd.PhysicsDriver(runid, mm_input.driver, mm_input.mtlmdl,
+        model = gmd.PhysicsDriver(runid, args.v, mm_input.driver, mm_input.mtlmdl,
                                   mm_input.mtlprops, mm_input.legs,
                                   mm_input.ttermination, mm_input.extract, opts)
 
     elif mm_input.stype == S_PERMUTATION:
         opts = (args.j,)
         exe = "{0} {1}".format(sys.executable, FILE)
-        model = perm.PermutationDriver(runid, mm_input.method,
+        model = perm.PermutationDriver(runid, args.v, mm_input.method,
                                        mm_input.parameters, exe,
                                        mm_input.basexml, *opts)
 
     elif mm_input.stype == S_OPT:
         exe = "{0} {1}".format(sys.executable, FILE)
-        model = opt.OptimizationDriver(runid, mm_input.method,
+        model = opt.OptimizationDriver(runid, args.v, mm_input.method,
                                        exe, mm_input.objective_function,
                                        mm_input.parameters,
                                        mm_input.tolerance, mm_input.maxiter,

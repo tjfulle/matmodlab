@@ -31,6 +31,9 @@ class SolidDriver(Driver):
         self.mtlmdl.unchecked_params = mtlprops
 
         # register variables
+        self.register_glob_variable("TIME_STEP")
+        self.register_glob_variable("STEP_NUM")
+        self.register_glob_variable("LEG_NUM")
         self.register_variable("STRESS", vtype="SYMTENS")
         self.register_variable("STRAIN", vtype="SYMTENS")
         self.register_variable("DEFGRAD", vtype="TENS")
@@ -94,6 +97,7 @@ class SolidDriver(Driver):
         kappa = self.kappa
 
         # initial leg
+        glob_step_num = 0
         rho = self.data("DENSITY")[0]
         xtra = self.data("XTRA")
         sig = self.data("STRESS")
@@ -170,7 +174,8 @@ class SolidDriver(Driver):
 
                 if cfg.sqa and kappa == 0.:
                     if not np.allclose(d, depsdt):
-                        log_message("sqa: d != depsdt (k=0, leg={0})".format(leg_num))
+                        log_message("sqa: d != depsdt (k=0, leg"
+                                    "={0})".format(leg_num))
 
             else:
                 # Initial guess for d[v]
@@ -216,6 +221,10 @@ class SolidDriver(Driver):
                 dstress = (sig - sigsave) / dt
 
                 # advance all data after updating state
+                glob_step_num += 1
+                self.setglobvars(leg_num=leg_num,
+                                 step_num=glob_step_num, time_step=dt)
+
                 self.setvars(stress=sig, strain=eps, defgrad=f,
                              symm_l=d, efield=ef, eqstrain=eqeps,
                              vstrain=epsv, density=rho, pressure=pres,
@@ -225,7 +234,7 @@ class SolidDriver(Driver):
                 # --- write state to file
                 endstep = abs(t - tleg[1]) / tleg[1] < 1.E-12
                 if (nsteps - n) % dump_interval == 0 or endstep:
-                    iomgr(dt, t)
+                    iomgr(t)
 
                 if n == 0 or round(nsteps / 2.) == n or endstep:
                     io.log_message(consfmt.format(leg_num, n + 1, t, dt))

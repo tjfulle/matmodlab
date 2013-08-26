@@ -4,8 +4,11 @@ from utils.io import Error1
 
 class Driver(object):
     _variables = []
+    _glob_variables = []
     ndata = 0
+    nglobdata = 0
     _data = np.zeros(ndata)
+    _glob_data = np.zeros(nglobdata)
 
     def register_variable(self, var, vtype="SCALAR"):
         """Register material variable
@@ -39,6 +42,20 @@ class Driver(object):
         self._variables.extend(var)
         setattr(self, "{0}_slice".format(name.lower()), slice(start, end))
 
+    def register_glob_variable(self, var):
+        """Register global variable
+
+        All global variables are scalars (so far)
+
+        """
+        name = var.upper()
+        var = [name]
+        start = self.nglobdata
+        self.nglobdata += len(var)
+        end = self.nglobdata
+        self._glob_variables.extend(var)
+        setattr(self, "{0}_slice".format(name.lower()), slice(start, end))
+
     def data(self, name=None):
         """Return the current material data
 
@@ -49,6 +66,21 @@ class Driver(object):
 
         """
         return self._data[self.getslice(name)]
+
+    def glob_data(self, name=None):
+        """Return the current material data
+
+        Returns
+        -------
+        data : array_like
+            Material data
+
+        """
+        if name is None:
+            _slice = slice(0, self.nglobdata)
+        else:
+            _slice = self.getslice(name)
+        return self._glob_data[_slice]
 
     def getslice(self, name=None):
         if name is None:
@@ -66,10 +98,18 @@ class Driver(object):
         """
         # Model data array.  See comments above.
         self._data = np.zeros(self.ndata)
+        self._glob_data = np.zeros(self.nglobdata)
 
     def setvars(self, **kwargs):
         for kw, arg in kwargs.items():
             self._data[self.getslice(kw)] = arg
 
+    def setglobvars(self, **kwargs):
+        for (kw, arg) in kwargs.items():
+            self._glob_data[self.getslice(kw)] = arg
+
     def variables(self):
         return self._variables
+
+    def glob_variables(self):
+        return self._glob_variables

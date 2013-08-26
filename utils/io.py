@@ -2,67 +2,61 @@ import os
 import sys
 import numpy as np
 import datetime
+import logging
 
 from __config__ import cfg
 import exowriter as exo
 
 
+WARNINGS_LOGGED = 0
+LOGGER = None
+LEVELS = {2: logging.DEBUG,
+          1: logging.INFO,
+          0: logging.WARNING,}
+
+
 class Error1(Exception):
     def __init__(self, message):
+        logging.exception(message)
         if cfg.debug:
             raise Exception("*** gmd: error: {0}".format(message))
-        sys.stderr.write("*** gmd: error: {0}\n".format(message))
         raise SystemExit(2)
 
 
-LOGFILE = None
-WARNINGS_LOGGED = 0
-VERBOSITY = 1
-class Logger(object):
-    def __init__(self, runid, verbosity, d=None):
-        global LOGFILE, VERBOSITY
-        if runid is None and LOGFILE is None:
-            raise Error1("inconsistent logger instantiation")
-        if verbosity is not None:
-            VERBOSITY = verbosity
-        if d is None:
-            d = os.getcwd()
-        if not os.path.isdir(d):
-            raise Error1("{0}: no such directory".format(d))
-        if LOGFILE is None:
-            LOGFILE = open(os.path.join(d, runid + ".log"), "w")
+def setup_logger(runid, verbosity, d=None):
+    global LOGGER
+    if LOGGER is not None:
+        raise Error1("Logger already setup")
 
-    def log_message(self, message, logger=[None]):
-        message = "gmd: {0}\n".format(message)
-        if VERBOSITY:
-            sys.stdout.write(message)
-        LOGFILE.write(message)
+    if d is None:
+        d = os.getcwd()
+    if not os.path.isdir(d):
+        raise OSError("{0}: no such directory".format(d))
+    logfile = os.path.join(d, runid + ".log")
 
-    def log_warning(self, message):
-        if message is None:
-            return WARNINGS_LOGGED
-        message = "*** gmd: warning: {0}\n".format(message)
-        sys.stderr.write(message)
-        LOGFILE.write(message)
-        increment_warning()
+    logging.basicConfig(level=logging.DEBUG,
+        format="gmd: %(asctime)s %(levelname)s: %(message)s",
+        datefmt="%b %d %Y, %H:%M:%S", filename=logfile, filemode='w')
 
-    @classmethod
-    def getlogger(cls):
-        if LOGFILE is None:
-            raise Error1("Logger not yet initialized")
-        return cls(None, None)
+    # console logging
+    ch = logging.StreamHandler()
+    ch.setLevel(LEVELS.get(verbosity, logging.INFO))
+    cf = logging.Formatter("gmd: %(levelname)s: %(message)s")
+    ch.setFormatter(cf)
+    logging.getLogger("").addHandler(ch)
+
+    LOGGER = logging.getLogger("")
+
+    return
 
 
-def log_message(message, logger=[None]):
-    if logger[0] is None:
-        logger[0] = Logger.getlogger()
-    logger[0].log_message(message)
+def log_message(message):
+    LOGGER.info(message)
 
 
-def log_warning(message=None, logger=[None]):
-    if logger[0] is None:
-        logger[0] = Logger.getlogger()
-    return logger[0].log_warning(message)
+def log_warning(message):
+    increment_warning()
+    LOGGER.warning(message)
 
 
 def log_error(message):
@@ -78,8 +72,8 @@ class ExoManager(object):
     """The main IO manager
 
     """
-    def __init__(self, runid, num_dim, coords, conn, elem_blks,
-                 all_element_data, title):
+    def __init__(self, runid, num_dim, coords, conn, glob_var_data,
+                 elem_blks, all_element_data, title):
         """Instantiate a IOManager object
 
         runid : str
@@ -157,12 +151,12 @@ class ExoManager(object):
         self.exofile.put_qa(num_qa_rec, qa_record)
 
         # write results variables parameters and names
-        glob_var_names = ["TIME_STEP"]
+        glob_var_names = glob_var_data[0]
         self.num_glob_vars = len(glob_var_names)
         self.exofile.put_var_param("g", self.num_glob_vars)
         self.exofile.put_var_names("g", self.num_glob_vars, glob_var_names)
 
-        nod_var_names = ["DISPLX", "DISPLY"]
+        nod_var_names = ["DISPLX", "DISPLY", "DISPLZ"]
         if self.num_dim == 3:
             nod_var_names.append("DISPLZ")
         self.num_nod_vars = len(nod_var_names)
@@ -187,7 +181,7 @@ class ExoManager(object):
         self.exofile.put_time(self.time_step, time_val)
 
         # global values
-        glob_var_vals = np.zeros(self.num_glob_vars)
+        glob_var_vals = glob_var_data[1]
         self.exofile.put_glob_vars(self.time_step, self.num_glob_vars,
                                    glob_var_vals)
 
@@ -210,7 +204,7 @@ class ExoManager(object):
         self.time_step += 1
         pass
 
-    def write_data(self, time, dt, all_element_data, u):
+    def write_data(self, time, glob_var_vals, all_element_data, u):
         """Dump information from current time step to results file
 
         Parameters
@@ -239,10 +233,7 @@ class ExoManager(object):
         self.exofile.put_time(self.time_step, time)
 
         # write global variables
-        glob_var_vals = np.zeros(self.num_glob_vars)
-        for j in range(self.num_glob_vars):
-            glob_var_vals[j] = dt
-            continue
+        assert len(glob_var_vals) == self.num_glob_vars
         self.exofile.put_glob_vars(self.time_step, self.num_glob_vars,
                                    glob_var_vals)
 
@@ -254,9 +245,8 @@ class ExoManager(object):
         # write element variables
         for (elem_blk_id, num_elem_this_blk, elem_blk_data) in all_element_data:
             for k in range(self.num_elem_vars):
-                self.exofile.put_elem_var(
-                    self.time_step, k, elem_blk_id,
-                    num_elem_this_blk, elem_blk_data.T[k])
+                self.exofile.put_elem_var(self.time_step, k, elem_blk_id,
+                                          num_elem_this_blk, elem_blk_data.T[k])
             continue
 
         # udpate and close the file

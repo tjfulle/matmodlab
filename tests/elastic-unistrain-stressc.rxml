@@ -9,7 +9,7 @@
   <execute name="gmd"> {NAME}.xml </execute>
 
   <execute name="exodiff">
-    -f base.exodiff {NAME}.base_exo {NAME}.exo
+    -f base.exodiff {NAME}.exo {NAME}.base_exo
   </execute>
 
 </rtest>

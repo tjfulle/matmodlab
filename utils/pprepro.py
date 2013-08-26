@@ -46,7 +46,6 @@ def find_vars_to_sub(lines):
     regex = r"(?i)\{\s*[\w]+[\w\d]*\s*=.*?\}"
     variables = re.findall(regex, lines)
     for variable in variables:
-        print variable
         vsplit = re.sub(r"[\{\}]", "", variable).split("=")
         key = vsplit[0].strip()
         hold.append(key)
