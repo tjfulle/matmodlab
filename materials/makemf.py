@@ -82,7 +82,7 @@ def makemf(*args, **kwargs):
         ns.filepath = module.__file__.rstrip("c")
         ns.mclass = material.__class__.__name__
         ns.name = material.name
-        ns.parameters = ", ".join(material.parameters()).lower()
+        ns.parameters = ", ".join(material.params()).lower()
         ns.driver = material.driver
 
         mtldict["BUILT"][material.name] = ns

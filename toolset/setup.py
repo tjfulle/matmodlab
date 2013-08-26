@@ -198,6 +198,9 @@ def main(argv=None):
     write_exe("gmdviz", tools, os.path.join(vizd, "plot2d.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath})
 
+    write_exe("gmddiff", tools, os.path.join(utld, "gmddiff.py"),
+              pyexe, pyopts, {"PYTHONPATH": pypath})
+
     log_message("setup: Setup complete")
     if build_tpls:
         log_message("setup: To finish installation, "

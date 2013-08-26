@@ -31,7 +31,7 @@ class Elastic(Material):
             raise Error1("elastic model not imported")
         elastic.elastic_check(params, log_error, log_message)
         K, G, = params
-        self.params = params
+        self.set_param_vals(params)
         self.bulk_modulus = K
         self.shear_modulus = G
 
@@ -61,7 +61,7 @@ class Elastic(Material):
             Updated extra variables
 
         """
-        elastic.elastic_update_state(dt, self.params, d, stress,
+        elastic.elastic_update_state(dt, self._param_vals, d, stress,
                                      log_error, log_message)
         return stress, xtra
 

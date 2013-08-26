@@ -3,11 +3,11 @@ import numpy as np
 from base.io import Error1
 
 class Driver(object):
-    _variables = []
+    _elem_variables = []
     _glob_variables = []
     ndata = 0
-    nglobdata = 0
     _data = np.zeros(ndata)
+    nglobdata = 0
     _glob_data = np.zeros(nglobdata)
 
     def register_variable(self, var, vtype="SCALAR"):
@@ -39,7 +39,7 @@ class Driver(object):
         start = self.ndata
         self.ndata += len(var)
         end = self.ndata
-        self._variables.extend(var)
+        self._elem_variables.extend(var)
         setattr(self, "{0}_slice".format(name.lower()), slice(start, end))
 
     def register_glob_variable(self, var):
@@ -56,7 +56,10 @@ class Driver(object):
         self._glob_variables.extend(var)
         setattr(self, "{0}_slice".format(name.lower()), slice(start, end))
 
-    def data(self, name=None):
+    def elem_vars(self):
+        return self._elem_variables
+
+    def elem_var_vals(self, name=None):
         """Return the current material data
 
         Returns
@@ -67,7 +70,10 @@ class Driver(object):
         """
         return self._data[self.getslice(name)]
 
-    def glob_data(self, name=None):
+    def glob_vars(self):
+        return self._glob_variables
+
+    def glob_var_vals(self, name=None):
         """Return the current material data
 
         Returns
@@ -107,9 +113,3 @@ class Driver(object):
     def setglobvars(self, **kwargs):
         for (kw, arg) in kwargs.items():
             self._glob_data[self.getslice(kw)] = arg
-
-    def variables(self):
-        return self._variables
-
-    def glob_variables(self):
-        return self._glob_variables

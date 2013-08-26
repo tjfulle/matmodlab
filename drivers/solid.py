@@ -98,9 +98,9 @@ class SolidDriver(Driver):
 
         # initial leg
         glob_step_num = 0
-        rho = self.data("DENSITY")[0]
-        xtra = self.data("XTRA")
-        sig = self.data("STRESS")
+        rho = self.elem_var_vals("DENSITY")[0]
+        xtra = self.elem_var_vals("XTRA")
+        sig = self.elem_var_vals("STRESS")
         tleg = np.zeros(2)
         d = np.zeros(NSYMM)
         dt = 0.

@@ -18,5 +18,6 @@ toolset/runtests
 toolset/runtests
 toolset/gmddump
 toolset/gmdviz
+toolset/gmddiff
 
 materials/materials.db

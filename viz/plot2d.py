@@ -774,7 +774,7 @@ def loadtabular(source):
 
 
 def loadcontents(filepath):
-    if filepath.endswith((".exo", ".e")):
+    if filepath.endswith((".exo", ".e", ".base_exo")):
         exof = ExodusIIReader.new_from_exofile(filepath)
         glob_var_names = exof.glob_var_names()
         elem_var_names = exof.elem_var_names()

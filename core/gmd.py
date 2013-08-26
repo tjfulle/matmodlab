@@ -36,6 +36,7 @@ class PhysicsDriver(object):
         if self.driver is None:
             raise Error1("{0}: unknown driver type".format(driver))
 
+        self.mtlargs = (mtlmdl, mtlprops)
         self.mtlmdl = mtlmdl
         self.mtlprops = mtlprops
         self.legs = legs
@@ -66,14 +67,18 @@ class PhysicsDriver(object):
                                dtype=np.float64) * .5
         connect = np.array([range(8)], dtype=np.int)
 
+        # get global and element info to write to exodus file
+        glob_var_names = self.driver.glob_vars()
+        glob_var_vals = self.driver.glob_var_vals()
+        glob_var_data = [glob_var_names, glob_var_vals]
+
         elem_blk_id = 1
         elem_blk_els = [0]
         num_elem_this_blk = 1
         elem_type = "HEX"
         num_nodes_per_elem = 8
-        glob_var_data = [self.driver.glob_variables(), self.driver.glob_data()]
-        ele_var_names = self.driver.variables()
-        elem_blk_data = self.driver.data()
+        ele_var_names = self.driver.elem_vars()
+        elem_blk_data = self.driver.elem_var_vals()
         elem_blks = [[elem_blk_id, elem_blk_els, elem_type,
                       num_nodes_per_elem, ele_var_names]]
         all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
@@ -84,22 +89,23 @@ class PhysicsDriver(object):
                                  all_element_data, title)
 
         # write to the log file the material props
-        mtl = self.driver.mtlmdl
-        param_names = self.driver.mtlmdl.parameters()
-        L = max(max(len(n) for n in param_names), 10)
-        param_vals = self.driver.mtlmdl.params
-        param_ivals = self.driver.mtlmdl.unchecked_params
+        L = max(max(len(n) for n in ele_var_names), 10)
+        param_ivals = self.mtlprops
+        param_names = self.driver.mtlmdl.params()
+        param_vals = self.driver.mtlmdl.param_vals()
         io.log_debug("Material Parameters")
         io.log_debug("{1:{0}s}  {2:12}  {3:12}".format(
             L, "Name", "iValue", "Value"))
-        for p in zip(param_names, param_vals, param_ivals):
+        for p in zip(param_names, param_ivals, param_vals):
             io.log_debug("{1:{0}s} {2: 12.6E} {3: 12.6E}".format(L, *p))
+
+        # write out plotable data
         io.log_debug("Output Variables:")
         io.log_debug("Global")
-        for item in self.driver.glob_variables():
+        for item in glob_var_names:
             io.log_debug(item)
         io.log_debug("Element")
-        for item in self.driver.variables():
+        for item in ele_var_names:
             io.log_debug(item)
 
     def run(self):
@@ -129,16 +135,16 @@ class PhysicsDriver(object):
 
     def dump_state(self, time_end):
         # global data
-        glob_data = self.driver.glob_data()
+        glob_data = self.driver.glob_var_vals()
 
         # element data
         elem_blk_id = 1
         num_elem_this_blk = 1
-        elem_blk_data = self.driver.data()
+        elem_blk_data = self.driver.elem_var_vals()
         all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
 
         # determine displacement
-        F = np.reshape(self.driver.data("DEFGRAD"), (3, 3))
+        F = np.reshape(self.driver.elem_var_vals("DEFGRAD"), (3, 3))
         u = np.zeros(self.num_nodes * self.num_dim)
         for i, X in enumerate(self.coords):
             k = i * self.num_dim
@@ -147,7 +153,7 @@ class PhysicsDriver(object):
         self.exo.write_data(time_end, glob_data, all_element_data, u)
 
     def variables(self):
-        return self.driver.variables()
+        return self.driver.elem_vars()
 
     def output(self):
         return self.runid + ".exo"

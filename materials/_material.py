@@ -98,9 +98,6 @@ class Material(object):
     def isparam(self, param_name):
         return param_name.upper() in self.param_map
 
-    def parameters(self):
-        return sorted(self.param_map, key=lambda x: self.param_map[x])
-
     def parameter_index(self, param_name):
         return self.param_map.get(param_name.upper())
 
@@ -120,6 +117,9 @@ class Material(object):
         dt = 1.
         d = np.zeros(6)
         return self.update_state(dt, d, stress, xtra, *args)
+
+    def set_param_vals(self, param_vals):
+        self._param_vals = np.array(param_vals)
 
     def set_initial_state(self, xtra):
         self.xinit = np.array(xtra)
@@ -152,4 +152,7 @@ class Material(object):
         return jac[[[x] for x in v], v]
 
     def param_vals(self):
-        return self.params
+        return self._param_vals
+
+    def params(self):
+        return sorted(self.param_map, key=lambda x: self.param_map[x])
