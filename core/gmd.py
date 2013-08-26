@@ -36,9 +36,8 @@ class PhysicsDriver(object):
         if self.driver is None:
             raise Error1("{0}: unknown driver type".format(driver))
 
-        self.mtlargs = (mtlmdl, mtlprops)
-        self.mtlmdl = mtlmdl
-        self.mtlprops = mtlprops
+        self.material = (mtlmdl, mtlprops)
+        self.mtlprops = np.array(mtlprops)
         self.legs = legs
         self.tterm = tterm
         self.extract = extract
@@ -54,8 +53,7 @@ class PhysicsDriver(object):
 
         io.log_message("{0}: setting up".format(self.runid))
 
-        self.driver.setup(self.runid, self.mtlmdl, self.mtlprops,
-                          *self.driver_opts)
+        self.driver.setup(self.runid, self.material, *self.driver_opts)
 
         # Set up the "mesh"
         self.num_dim = 3

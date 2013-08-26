@@ -19,13 +19,13 @@ class SolidDriver(Driver):
     def __init__(self):
         pass
 
-    def setup(self, runid, material, mtlprops, *opts):
+    def setup(self, runid, material, *opts):
         """Setup the driver object
 
         """
         self.runid = runid
-        self.mtlmdl = create_material(material)
-        self.kappa, self.density, self.proportional, self.ndumps = opts[:4]
+        self.mtlmdl = create_material(material[0])
+        self.kappa, self.density, self.proportional = opts[:3]
 
         # register variables
         self.register_glob_variable("TIME_STEP")
@@ -43,10 +43,10 @@ class SolidDriver(Driver):
         self.register_variable("DSTRESS", vtype="SYMTENS")
 
         # Save the unchecked parameters
-        self.mtlmdl.unchecked_params = mtlprops
+        self.mtlmdl.unchecked_params = material[1]
 
         # Setup
-        self.mtlmdl.setup(mtlprops)
+        self.mtlmdl.setup(material[1])
 
         # register material variables
         self.xtra_start = self.ndata
@@ -127,32 +127,32 @@ class SolidDriver(Driver):
             if nv:
                 sigdum[0, v] = sigspec[1]
 
-            tleg[1], nsteps, ltype, c, ef = leg
+            tleg[1], nsteps, control, c, ndumps, ef = leg
             delt = tleg[1] - tleg[0]
             if delt == 0.:
                 continue
 
             # ndumps_per_leg is the number of times to write to the output
             # file in this leg
-            dump_interval = max(1, int(float(nsteps / self.ndumps)))
+            dump_interval = max(1, int(float(nsteps / ndumps)))
             lsn = len(str(nsteps))
             consfmt = ("leg {{0:{0}d}}, step {{1:{1}d}}, time {{2:.4E}}, "
                        "dt {{3:.4E}}".format(lsl, lsn))
 
             nv = 0
             for i, cij in enumerate(c):
-                if ltype[i] == 1:                            # -- strain rate
+                if control[i] == 1:                            # -- strain rate
                     depsdt[i] = cij
 
-                elif ltype[i] == 2:                          # -- strain
+                elif control[i] == 2:                          # -- strain
                     depsdt[i] = (cij - eps[i]) / delt
 
-                elif ltype[i] == 3:                          # -- stress rate
+                elif control[i] == 3:                          # -- stress rate
                     sigdum[1, i] = sigdum[0, i] + cij * delt
                     vdum[nv] = i
                     nv += 1
 
-                elif ltype[i] == 4:                          # -- stress
+                elif control[i] == 4:                          # -- stress
                     sigdum[1, i] = cij
                     vdum[nv] = i
                     nv += 1

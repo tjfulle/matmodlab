@@ -156,6 +156,7 @@ def pLegs(leglmn, *args):
     options.addopt("format", "default", dtype=str,
                    choices=("default", "table", "fcnspec"))
     options.addopt("proportional", 0, dtype=mybool)
+    options.addopt("ndumps", "20", dtype=str)
 
     # the following options are for table formatted legs
     options.addopt("tblcols", "1:7", dtype=str)
@@ -482,6 +483,10 @@ def format_legs(legs, options):
     amplitude = options.getopt("amplitude")
     ratfac = options.getopt("ratfac")
     nfac = options.getopt("nfac")
+    ndumps = options.getopt("ndumps")
+    if ndumps == "all":
+        ndumps = 100000000
+    ndumps= int(ndumps)
 
     # factors to be applied to deformation types
     efac = amplitude * options.getopt("estar")
@@ -606,6 +611,8 @@ def format_legs(legs, options):
         legs[ileg][1] = num_steps
         legs[ileg][2] = control
         legs[ileg][3] = Cij
+        legs[ileg].append(ndumps)
+
         # legs[ileg].append(Rij)
         legs[ileg].append(efcomp)
 
@@ -754,8 +761,8 @@ def pExtract(extlmn, *args):
             options.getopt("ffmt"), variables)
 
 
-def physics_namespace(simlmn, *args):
-    simblk = pPhysics(simlmn, *args)
+def physics_namespace(physlmn, *args):
+    simblk = pPhysics(physlmn, *args)
 
     # set up the namespace to return
     ns = Namespace()
@@ -777,8 +784,6 @@ def physics_namespace(simlmn, *args):
 
     options = simblk.get("Options")
     ns.error = options["error"]
-    ns.ndumps = options["ndumps"]
-    ns.writeprops = options["writeprops"]
 
     return ns
 
@@ -810,11 +815,11 @@ def permutation_namespace(permlmn, basexml):
     return ns
 
 
-def pPhysics(simlmn, *args):
+def pPhysics(physlmn, *args):
     subblks = (("Material", 1), ("Legs", 1), ("Extract", 0))
     simblk = {}
     for (subblk, reqd) in subblks:
-        sublmns = simlmn.getElementsByTagName(subblk)
+        sublmns = physlmn.getElementsByTagName(subblk)
         if not sublmns:
             if reqd:
                 raise Error1("Physics: {0}: block missing".format(subblk))
@@ -828,7 +833,7 @@ def pPhysics(simlmn, *args):
         simblk[subblk] = parsefcn(sublmn, *args)
         p = sublmn.parentNode
         p.removeChild(sublmn)
-    tlmn = simlmn.getElementsByTagName("TerminationTime")
+    tlmn = physlmn.getElementsByTagName("TerminationTime")
     if tlmn:
         term_time = float(tlmn[0].firstChild.data)
         simblk["TerminationTime"] = term_time
@@ -837,18 +842,10 @@ def pPhysics(simlmn, *args):
 
     # Get options
     options = OptionHolder()
-    options.addopt("ndumps", "20", dtype=str)
-    options.addopt("writeprops", 0, dtype=mybool)
     options.addopt("error", "all", dtype=str)
-    for i in range(simlmn.attributes.length):
-        options.setopt(*xmltools.get_name_value(simlmn.attributes.item(i)))
-    ndumps = options.getopt("ndumps")
-    if ndumps == "all":
-        ndumps = 100000000
-    ndumps= int(ndumps)
-    simblk["Options"] = {"ndumps": ndumps,
-                         "writeprops": options.getopt("writeprops"),
-                         "error": options.getopt("error")}
+    for i in range(physlmn.attributes.length):
+        options.setopt(*xmltools.get_name_value(physlmn.attributes.item(i)))
+    simblk["Options"] = {"error": options.getopt("error")}
 
     return simblk
 

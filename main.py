@@ -44,8 +44,7 @@ def main(argv=None):
     mm_input = inpparse.parse_input(source)
 
     if mm_input.stype == S_PHYSICS:
-        opts = (mm_input.kappa, mm_input.density, mm_input.proportional,
-                mm_input.ndumps)
+        opts = (mm_input.kappa, mm_input.density, mm_input.proportional)
         # set up the logger
         model = gmd.PhysicsDriver(runid, args.v, mm_input.driver, mm_input.mtlmdl,
                                   mm_input.mtlprops, mm_input.legs,
