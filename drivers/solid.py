@@ -27,9 +27,6 @@ class SolidDriver(Driver):
         self.mtlmdl = create_material(material)
         self.kappa, self.density, self.proportional, self.ndumps = opts[:4]
 
-        # Save the unchecked parameters
-        self.mtlmdl.unchecked_params = mtlprops
-
         # register variables
         self.register_glob_variable("TIME_STEP")
         self.register_glob_variable("STEP_NUM")
@@ -44,6 +41,9 @@ class SolidDriver(Driver):
         self.register_variable("DENSITY", vtype="SCALAR")
         self.register_variable("PRESSURE", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
+
+        # Save the unchecked parameters
+        self.mtlmdl.unchecked_params = mtlprops
 
         # Setup
         self.mtlmdl.setup(mtlprops)

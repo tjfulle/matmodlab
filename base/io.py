@@ -50,6 +50,10 @@ def setup_logger(runid, verbosity, d=None):
     return
 
 
+def log_debug(message):
+    LOGGER.debug(message)
+
+
 def log_message(message):
     LOGGER.info(message)
 

@@ -83,6 +83,25 @@ class PhysicsDriver(object):
                                  glob_var_data, elem_blks,
                                  all_element_data, title)
 
+        # write to the log file the material props
+        mtl = self.driver.mtlmdl
+        param_names = self.driver.mtlmdl.parameters()
+        L = max(max(len(n) for n in param_names), 10)
+        param_vals = self.driver.mtlmdl.params
+        param_ivals = self.driver.mtlmdl.unchecked_params
+        io.log_debug("Material Parameters")
+        io.log_debug("{1:{0}s}  {2:12}  {3:12}".format(
+            L, "Name", "iValue", "Value"))
+        for p in zip(param_names, param_vals, param_ivals):
+            io.log_debug("{1:{0}s} {2: 12.6E} {3: 12.6E}".format(L, *p))
+        io.log_debug("Output Variables:")
+        io.log_debug("Global")
+        for item in self.driver.glob_variables():
+            io.log_debug(item)
+        io.log_debug("Element")
+        for item in self.driver.variables():
+            io.log_debug(item)
+
     def run(self):
         """Run the problem
 

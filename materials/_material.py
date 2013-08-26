@@ -150,3 +150,6 @@ class Material(object):
          jac[2, 0], jac[2, 1]) = [threek * c2] * 6
 
         return jac[[[x] for x in v], v]
+
+    def param_vals(self):
+        return self.params
