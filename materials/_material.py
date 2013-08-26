@@ -31,7 +31,7 @@ class Material(object):
             keys = [" ".join(x.split())
                     for x in "".join(keys).split("|") if x.split()]
         for key in keys:
-            self.mtl_variables.append((key, "SCALAR"))
+            self.register_mtl_variable(key, "SCALAR")
 
     def jacobian(self, dt, d, sig, xtra, v):
         """Numerically compute material Jacobian by a centered difference scheme.
@@ -110,8 +110,8 @@ class Material(object):
     def initialize_material(self, *args, **kwargs):
         return
 
-    def adjust_initial_state(self, xtra):
-        return xtra
+    def adjust_initial_state(self, *args, **kwargs):
+        return args[0]
 
     def call_material_zero_state(self, stress, xtra, *args):
         dt = 1.
