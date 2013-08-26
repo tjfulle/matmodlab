@@ -59,7 +59,7 @@ def main(argv=None):
     tpl = os.path.join(root, "tpl")
     libd = os.path.join(root, "lib")
     mtld = os.path.join(root, "materials")
-    utld = os.path.join(root, "utils")
+    utld = os.path.join(root, "base")
     vizd = os.path.join(root, "viz")
     pypath = [root]
 

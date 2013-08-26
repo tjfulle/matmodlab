@@ -4,10 +4,10 @@ import sys
 import numpy as np
 from numpy.linalg import inv, solve, lstsq
 
-import utils.tensor as tensor
-from utils.tensor import expm, powm, logm, sqrtm
-from utils.solvers import newton, simplex
-from utils.io import Error1
+import base.tensor as tensor
+from base.tensor import expm, powm, logm, sqrtm
+from base.solvers import newton, simplex
+from base.io import Error1
 
 I = np.eye(3)
 

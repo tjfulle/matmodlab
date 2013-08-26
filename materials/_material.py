@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.io import Error1
+from base.io import Error1
 
 class Material(object):
 

@@ -10,12 +10,12 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.join(D, "../"))
 
 from __config__ import cfg
-import utils.tensor as tensor
-import utils.xmltools as xmltools
-from utils.io import Error1
-from utils.namespace import Namespace
-from utils.pprepro import find_and_make_subs, find_and_fill_includes
-from utils.fcnbldr import build_lambda, build_interpolating_function
+import base.tensor as tensor
+import base.xmltools as xmltools
+from base.io import Error1
+from base.namespace import Namespace
+from base.pprepro import find_and_make_subs, find_and_fill_includes
+from base.fcnbldr import build_lambda, build_interpolating_function
 from materials.material import get_material_from_db
 
 

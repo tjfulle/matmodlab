@@ -4,9 +4,9 @@ import time
 import numpy as np
 
 from __config__ import cfg
-import utils.io as io
-from utils.exodump import exodump
-from utils.io import Error1
+import base.io as io
+from base.exodump import exodump
+from base.io import Error1
 from drivers.drivers import create_driver
 
 class PhysicsDriver(object):

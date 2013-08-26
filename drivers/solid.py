@@ -4,11 +4,11 @@ import numpy as np
 from numpy.linalg import solve, lstsq
 
 from __config__ import cfg
-import utils.io as io
-import utils.tensor as tensor
-from utils.kinematics import deps2d, sig2d, update_deformation
-from utils.tensor import NSYMM, NTENS, NVEC, I9
-from utils.io import Error1
+import base.io as io
+import base.tensor as tensor
+from base.kinematics import deps2d, sig2d, update_deformation
+from base.tensor import NSYMM, NTENS, NVEC, I9
+from base.io import Error1
 from materials.material import create_material
 from drivers.driver import Driver
 

@@ -7,9 +7,9 @@ import xml.dom.minidom as xdom
 import multiprocessing as mp
 from itertools import izip, product
 
-import utils.io as io
-from utils.io import Error1
-from utils.pprepro import find_and_make_subs
+import base.io as io
+from base.io import Error1
+from base.pprepro import find_and_make_subs
 
 
 PERM_METHODS = ("zip", "combine", )

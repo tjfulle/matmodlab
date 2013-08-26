@@ -6,9 +6,9 @@ from __config__ import cfg
 import core.gmd as gmd
 import core.permutate as perm
 import core.optimize as opt
-import utils.inpparse as inpparse
-from utils.inpparse import S_PHYSICS, S_OPT, S_PERMUTATION
-from utils.io import Error1
+import base.inpparse as inpparse
+from base.inpparse import S_PHYSICS, S_OPT, S_PERMUTATION
+from base.io import Error1
 
 FILE = os.path.realpath(__file__)
 

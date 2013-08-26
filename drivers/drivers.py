@@ -3,9 +3,9 @@ import sys
 import xml.dom as xmldom
 import xml.dom.minidom as xdom
 
-from utils.io import Error1
-from utils.impmod import load_file
-from utils.namespace import Namespace
+from base.io import Error1
+from base.impmod import load_file
+from base.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
 

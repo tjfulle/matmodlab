@@ -1,7 +1,7 @@
 import numpy as np
 
 from materials._material import Material
-from utils.io import Error1, log_error, log_message
+from base.io import Error1, log_error, log_message
 try:
     import lib.elastic as elastic
 except ImportError:
