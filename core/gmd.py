@@ -92,19 +92,19 @@ class PhysicsDriver(object):
         param_names = self.driver.mtlmdl.params()
         param_vals = self.driver.mtlmdl.param_vals()
         io.log_debug("Material Parameters")
-        io.log_debug("{1:{0}s}  {2:12}  {3:12}".format(
+        io.log_debug("  {1:{0}s}  {2:12}  {3:12}".format(
             L, "Name", "iValue", "Value"))
         for p in zip(param_names, param_ivals, param_vals):
-            io.log_debug("{1:{0}s} {2: 12.6E} {3: 12.6E}".format(L, *p))
+            io.log_debug("  {1:{0}s} {2: 12.6E} {3: 12.6E}".format(L, *p))
 
         # write out plotable data
         io.log_debug("Output Variables:")
         io.log_debug("Global")
         for item in glob_var_names:
-            io.log_debug(item)
+            io.log_debug("  " + item)
         io.log_debug("Element")
         for item in ele_var_names:
-            io.log_debug(item)
+            io.log_debug("  " + item)
 
     def run(self):
         """Run the problem

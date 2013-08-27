@@ -1,4 +1,4 @@
-<rtest name="gmd/optimization-cobyla">
+<rtest name="gmd/optimization-simplex">
 
   <keywords> medium elastic optimization </keywords>
 

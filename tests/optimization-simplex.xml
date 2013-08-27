@@ -1,10 +1,10 @@
 <GMDSpec>
 
-  <Optimization method="simplex" maxiter="25" tolerance="1e-4" disp="0">
+  <Optimization method="cobyla" maxiter="25" tolerance="1e-4" disp="0">
     <ObjectiveFunction href="opt-sig-v-time"/>
     <AuxiliaryFile href="opt-baseline.dat"/>
-    <Optimize var="opt_k" initial_value="129.e9"/>
-    <Optimize var="opt_g" initial_value="54.e9"/>
+    <Optimize var="opt_k" bounds="125.e9 150.e9" initial_value="129.e9"/>
+    <Optimize var="opt_g" bounds="45.e9 57.e9" initial_value="54.e9"/>
   </Optimization>
 
   <Physics>

@@ -29,6 +29,7 @@ S_STAT = "Status"
 S_PSTAT = "Previous Status"
 S_LNFL = "Link Files"
 S_EXEC = "Execute"
+S_BDIR = "Base Directory"
 S_KWS = "Keywords"
 S_TESTD = "Test Directory"
 S_TIME = "Completion Time"
@@ -310,7 +311,7 @@ def find_rtests(search_dirs, include, exclude, tests=None):
         if name is None:
             raise Error("{0}: rtest: name attribute required".format(
                 os.path.basename(test_file)))
-        name = str(name.value.strip())
+        bdir, name = os.path.split(str(name.value.strip()))
 
         # --- keywords
         keywords = rtest.getElementsByTagName("keywords")
@@ -320,14 +321,12 @@ def find_rtests(search_dirs, include, exclude, tests=None):
 
         # --- link_files
         link_files = rtest.getElementsByTagName("link_files")
-        if link_files is None:
-            raise Error("{0}: rtest: link_files element "
-                         "required".format(name))
-        link_files = [os.path.join(test_file_d, f).format(NAME=name)
-                      for f in xmltools.child2list(link_files)]
-        for link_file in link_files:
-            if not os.path.isfile(link_file):
-                raise Error("{0}: no such file".format(link_file))
+        if link_files:
+            link_files = [os.path.join(test_file_d, f).format(NAME=name)
+                          for f in xmltools.child2list(link_files)]
+            for link_file in link_files:
+                if not os.path.isfile(link_file):
+                    raise Error("{0}: no such file".format(link_file))
 
         # --- execute
         execute = []
@@ -349,7 +348,7 @@ def find_rtests(search_dirs, include, exclude, tests=None):
                 opts = ["-status", "-allow_name_mismatch"] + opts
             execute.append([x] + opts)
 
-        rtests[name] = {S_EXEC: execute, S_LNFL: link_files,
+        rtests[name] = {S_BDIR: bdir, S_EXEC: execute, S_LNFL: link_files,
                         S_KWS: keywords}
         doc.unlink()
 
@@ -401,10 +400,11 @@ def run_rtest(args):
 
     """
     (testd, rtest, details) = args[:3]
+    bdir = details[S_BDIR]
     times = [time.time()]
     log_message("{0:{1}s} start".format(rtest + ":", WIDTH))
     # make the test directory
-    rtestd = os.path.join(testd, rtest)
+    rtestd = os.path.join(testd, details[S_BDIR], rtest)
     if os.path.isdir(rtestd):
         shutil.rmtree(rtestd)
     os.makedirs(rtestd)
@@ -540,7 +540,7 @@ def write_html_summary(testd, tests_to_summarize):
 
 def generate_rtest_html_summary(rtest, details, testd):
     # get info from details
-    rtestd = os.path.join(testd, rtest)
+    rtestd = details[S_TESTD]
     status = rtest_statuses(details[S_STAT])
     prev_stat = details.get(S_PSTAT)
     if prev_stat is not None:
