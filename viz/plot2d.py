@@ -381,7 +381,7 @@ class ChangeAxis(tapi.HasStrictTraits):
 
 
 class SingleSelectAdapter(tuit.TabularAdapter):
-    columns = [('Payette Outputs', 'myvalue')]
+    columns = [('Plotable Variables', 'myvalue')]
 
     myvalue_text = tapi.Property
 
@@ -431,7 +431,7 @@ class SingleSelectOverlayFiles(tapi.HasPrivateTraits):
 
 
 class MultiSelectAdapter(tuit.TabularAdapter):
-    columns = [('Payette Outputs', 'myvalue')]
+    columns = [('Plotable Variables', 'myvalue')]
 
     myvalue_text = tapi.Property
 
