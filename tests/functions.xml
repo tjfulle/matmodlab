@@ -15,10 +15,10 @@
       2. 4.
     </Function>
 
-    <Legs kappa="0" tstar="1" amplitude="1" format="fcnspec">
+    <Path type="prdef" kappa="0" tstar="1" amplitude="1" format="fcnspec">
       <!-- termination time, number of steps, control, Cij -->
       {2 * pi} 200 222 2:1.e-1 1:0 1:0
-    </Legs>
+    </Path>
 
     <Material density="5" model="elastic">
       <K> {K} </K>

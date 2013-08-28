@@ -149,7 +149,7 @@ def create_driver(drivername):
     # Instantiate the material object
     driver_mod = load_file(driver.filepath)
     driver_cls = getattr(driver_mod, driver.mtlcls)
-    return driver_cls()
+    return driver_cls
 
 
 def read_driver_db():

@@ -43,11 +43,11 @@ def main(argv=None):
     mm_input = parse_input(source)
 
     if mm_input.stype == S_PHYSICS:
-        opts = (mm_input.kappa, mm_input.density, mm_input.proportional)
+        opts = (mm_input.density,)
         # set up the logger
         model = PhysicsHandler(runid, args.v, mm_input.driver, mm_input.mtlmdl,
-                               mm_input.mtlprops, mm_input.legs,
-                               mm_input.ttermination, mm_input.extract, opts)
+                               mm_input.mtlprops, mm_input.ttermination,
+                               mm_input.extract, opts)
 
     elif mm_input.stype == S_PERMUTATION:
         opts = (args.j,)

@@ -16,16 +16,35 @@ F90_MODELS = {
         "class": "Elastic", "fio": True,
         "files": [os.path.join(SRC, f) for f in
                   ("elastic.f90", "elastic_interface.f90")]}}
+PY_MODELS = {
+    "idealgas": {
+        "interface": os.path.join(D, "idealgas.py"),
+        "class": "IdealGas"}}
 
 def makemf(*args, **kwargs):
+    mtldict = {"BUILT": {}, "FAILED": [], "SKIPPED": 0}
+    built, failed, skipped = make_fortran_models(*args, **kwargs)
+    mtldict["BUILT"] = built
+    mtldict["FAILED"] = failed
+    mtldict["SKIPPED"] = skipped
+
+    built, failed, skipped = make_python_models(*args, **kwargs)
+    mtldict["BUILT"].update(built)
+    mtldict["FAILED"].extend(failed)
+    mtldict["SKIPPED"] += skipped
+
+    return mtldict
+
+def make_fortran_models(*args, **kwargs):
+    skipped = 0
+    failed = []
+    built = {}
 
     fc = kwargs.get("FC", "gfortran")
     destd = kwargs.get("DESTD", D)
     FIO = kwargs.get("FIO")
     assert FIO, "FIO not passed"
     materials = kwargs.get("MATERIALS")
-
-    mtldict = {"BUILT": {}, "FAILED": [], "SKIPPED": 0}
 
     if materials is None:
         materials = F90_MODELS.keys()
@@ -34,7 +53,7 @@ def makemf(*args, **kwargs):
     for (name, items) in F90_MODELS.items():
 
         if name not in materials:
-            mtldict["SKIPPED"] += 1
+            skipped += 1
             continue
 
         source_files = items["files"]
@@ -57,20 +76,20 @@ def makemf(*args, **kwargs):
         with open(f, "w") as sys.stdout:
             with open(f, "a") as sys.stderr:
                 try:
-                    built = not f2py()
+                    success = not f2py()
                 except BaseException as e:
                     msg = re.sub(r"error: ", "", e.message)
-                    built = None
+                    success = None
                 except:
                     msg = "failed to build {0} with f2py".format(name)
-                    built = None
+                    success = None
 
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
         sys.stdout.flush()
         sys.stderr.flush()
 
-        if built is None:
-            mtldict["FAILED"].append(name)
+        if success is None:
+            failed.append(name)
             continue
 
         interface = items["interface"]
@@ -84,14 +103,45 @@ def makemf(*args, **kwargs):
         ns.name = material.name
         ns.parameters = ", ".join(material.params()).lower()
 
-        mtldict["BUILT"][material.name] = ns
+        built[material.name] = ns
 
         if destd != D:
             shutil.move(name + ".so", os.path.join(destd, name + ".so"))
 
     sys.argv = [x for x in argv]
 
-    return mtldict
+    return built, failed, skipped
+
+def make_python_models(*args, **kwargs):
+    skipped = 0
+    failed = []
+    built = {}
+
+    destd = kwargs.get("DESTD", D)
+    materials = kwargs.get("MATERIALS")
+    if materials is None:
+        materials = PY_MODELS.keys()
+
+    for (name, items) in PY_MODELS.items():
+
+        if name not in materials:
+            skipped += 1
+            continue
+
+        interface = items["interface"]
+        py_mod = os.path.splitext(os.path.basename(interface))[0]
+        module = imp.load_source(py_mod, interface)
+        material = getattr(module, items["class"])()
+
+        ns = Namespace()
+        ns.filepath = module.__file__.rstrip("c")
+        ns.mclass = material.__class__.__name__
+        ns.name = material.name
+        ns.parameters = ", ".join(material.params()).lower()
+
+        built[material.name] = ns
+
+    return built, failed, skipped
 
 if __name__ == "__main__":
     makemf()

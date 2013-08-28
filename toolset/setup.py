@@ -11,7 +11,12 @@ import argparse
 import subprocess
 from distutils import sysconfig
 
-version = "0.0.0"
+fpath = os.path.realpath(__file__)
+fdir, fnam = os.path.split(fpath)
+root = os.path.dirname(fdir)
+sys.path.insert(0, root)
+from __config__ import __version__
+version = ".".join(str(x) for x in __version__)
 
 def log_message(message, end="\n"):
     sys.stdout.write("{0}{1}".format(message, end))
@@ -53,9 +58,6 @@ def main(argv=None):
     make_exowrap = True
 
     # module level variables
-    fpath = os.path.realpath(__file__)
-    fdir, fnam = os.path.split(fpath)
-    root = os.path.dirname(fdir)
     tpl = os.path.join(root, "tpl")
     libd = os.path.join(root, "lib")
     mtld = os.path.join(root, "materials")

@@ -4,6 +4,8 @@ import sys
 import imp
 import argparse
 
+from __config__ import __version__
+
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
 MTLDIRS = [os.path.join(R, "materials")]
@@ -12,7 +14,7 @@ FC = os.getenv("FC", "gfortran")
 LIBD = os.path.join(R, "lib")
 UTLD = os.path.join(R, "utils")
 FIO = os.path.join(UTLD, "gmdfio.f90")
-VERSION = "0.0.0"
+VERSION = ".".join(str(x) for x in __version__)
 
 from materials.material import write_mtldb
 

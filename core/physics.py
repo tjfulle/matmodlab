@@ -6,11 +6,10 @@ import numpy as np
 from __config__ import cfg
 import core.io as io
 from utils.exodump import exodump
-from drivers.driver import create_driver
 
 class PhysicsHandler(object):
 
-    def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops, legs, tterm,
+    def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops, tterm,
                  extract, driver_opts):
         """Initialize the PhysicsHandler object
 
@@ -22,22 +21,15 @@ class PhysicsHandler(object):
         mtlprops : ndarray
             The (unchecked) material properties
 
-        legs : list
-            The deformation legs
-
         """
 
         io.setup_logger(runid, verbosity)
 
         self.runid = runid
 
-        self.driver = create_driver(driver)
-        if self.driver is None:
-            raise io.Error1("{0}: unknown driver type".format(driver))
-
+        self.driver = driver()
         self.material = (mtlmdl, mtlprops)
         self.mtlprops = np.array(mtlprops)
-        self.legs = legs
         self.tterm = tterm
         self.extract = extract
         self.driver_opts = driver_opts
@@ -111,7 +103,7 @@ class PhysicsHandler(object):
         """
         io.log_message("{0}: starting calculations".format(self.runid))
         run_opts = (self.tterm, )
-        retcode = self.driver.process_legs(self.legs, self.dump_state, *run_opts)
+        retcode = self.driver.process_paths(self.dump_state, *run_opts)
         return retcode
 
     def finish(self):

@@ -41,5 +41,14 @@ def fmtstr(string):
     return " ".join(string.split())
 
 
+def str2list(string, dtype=int):
+    string = " ".join(string.split())
+    string = re.sub(r"^[\(\[\{]", " ", string.strip())
+    string = re.sub(r"[\)\]\}]$", " ", string.strip())
+    string = re.sub(r"[, ]", " ", string)
+    return [dtype(x) for x in string.split()]
+
+
+
 if __name__ == "__main__":
     main()
