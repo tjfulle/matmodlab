@@ -18,7 +18,7 @@ from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
 from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.opthold import OptionHolder
-from materials.material import get_material_from_db
+from materials.material import get_material_from_db, get_material_params_from_db
 
 
 S_PHYSICS = "Physics"
@@ -305,8 +305,8 @@ def pPhysics(physlmn, *args):
     simblk = {}
 
     # Get the driver first
-    drattr = physlmn.getAttribute("driver")
-    driver = "solid" if not drattr else drattr.value.strip()
+    driver = physlmn.getAttribute("driver")
+    driver = "solid" if not driver else driver
     if not isdriver(driver):
         raise Error1("{0}: unrecognized driver".format(driver))
     driver = create_driver(driver)
@@ -368,26 +368,47 @@ def pMaterial(mtllmns, *args):
     # mtlmdl.parameters is a comma separated list of parameters
     pdict = dict([(xmltools.stringify(n, "lower"), i)
                   for i, n in enumerate(mtlmdl.parameters.split(","))])
-    params = np.zeros(len(pdict))
-    for node in mtllmn.childNodes:
-        if node.nodeType != mtllmn.ELEMENT_NODE:
+    params = parse_mtl_params(mtllmn.childNodes, pdict, model)
+    if INP_ERRORS:
+        raise Error1("Stopping due to previous errors")
+
+    return model, params, density
+
+
+def parse_mtl_params(nodes, pdict, model):
+    # create a mapping of (name, value) pairs
+    param_map = {}
+    for node in nodes:
+        if node.nodeType != node.ELEMENT_NODE:
             continue
         name = node.nodeName
+        val = node.firstChild.data.strip()
+        if name.lower() == "matlabel":
+            mtl_db_params = get_material_params_from_db(val, model)
+            if mtl_db_params is None:
+                fatal_inp_error("Material: error reading parameters for "
+                                "{0} from database".format(val))
+                continue
+            param_map.update(mtl_db_params)
+
+        else:
+            param_map[name] = val
+
+    params = np.zeros(len(pdict))
+    for (name, val) in param_map.items():
         idx = pdict.get(name.lower())
         if idx is None:
             fatal_inp_error("Material: {0}: invalid parameter".format(name))
             continue
         try:
-            val = float(node.firstChild.data)
+            val = float(val)
         except ValueError:
             fatal_inp_error("Material: {0}: invalid value "
-                            "{1}".format(name, node.firstChild))
+                            "{1}".format(name, val))
+            continue
         params[idx] = val
 
-    if INP_ERRORS:
-        raise Error1("Stopping due to previous errors")
-
-    return model, params, density
+    return params
 
 
 def pFunctions(element_list, *args):

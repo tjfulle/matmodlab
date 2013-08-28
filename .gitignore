@@ -20,4 +20,4 @@ toolset/gmddump
 toolset/gmdviz
 toolset/gmddiff
 
-materials/materials.db
+materials/material_models.db

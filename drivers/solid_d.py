@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import numpy as np
 from numpy.linalg import solve, lstsq
@@ -588,7 +589,8 @@ class SolidDriver(Driver):
     def format_tbl_cols(tblcols):
         columns = []
         for item in [x.split(":")
-                     for x in xmltools.str2list(re.sub(r"\s*:\s*", ":", tblcols))]:
+                     for x in xmltools.str2list(
+                             re.sub(r"\s*:\s*", ":", tblcols), dtype=str)]:
             try:
                 item = [int(x) for x in item]
             except ValueError:
