@@ -93,6 +93,7 @@ def main(argv=None):
 
     # find the rtests
     rtests = find_rtests(dirs, args.k, args.K, args.tests)
+    ntests = len(rtests)
     timing.tests_found = time.time()
 
     # list them if that is all that is wanted
@@ -103,6 +104,7 @@ def main(argv=None):
     log_message("Found {0} tests in {1:.2f}s".format(
         len(rtests), timing.tests_found - timing.start))
 
+    statuses = []
     completed_rtests = get_completed_rtests(testd)
     for rtest in completed_rtests:
         if rtest in rtests:
@@ -110,6 +112,7 @@ def main(argv=None):
                 log_message("{0}: test previously run.  use -F to "
                             "force a rerun".format(rtest))
                 del rtests[rtest]
+                statuses.append(NOTRUN_STATUS)
         cur_stat = completed_rtests[rtest][S_STAT]
         prev_stat = completed_rtests[rtest].get(S_PSTAT, cur_stat)
         completed_rtests[rtest][S_PSTAT] = prev_stat
@@ -120,24 +123,27 @@ def main(argv=None):
 
     # run all of the tests
     if not rtests:
-        log_message("No tests found matching criteria")
+        log_message("No tests to run")
         if completed_rtests:
             dump_rtests_to_file(testd, completed_rtests)
             write_html_summary(testd, completed_rtests)
-        return
 
-    log_message("Running {0} tests".format(len(rtests)))
-    rtests = run_rtests(testd, rtests, args.j)
-    timing.tests_finished = time.time()
-    log_message("All tests ran in {0:.2f}s".format(
-        timing.tests_finished - timing.start))
-
-    statuses = [details[S_STAT] for (rtest, details) in rtests.items()]
-    status = max(statuses)
-    if status != PASS_STATUS:
-        log_message("1 or more tests did not pass")
     else:
-        log_message("All tests passed")
+        log_message("Running {0} tests".format(len(rtests)))
+        rtests = run_rtests(testd, rtests, args.j)
+        timing.tests_finished = time.time()
+        statuses.extend([details[S_STAT] for (rtest, details) in rtests.items()])
+        log_message("{0} tests ran in {1:.2f}s".format(
+            ntests, timing.tests_finished - timing.start))
+
+    npass = len([s for s in statuses if s == PASS_STATUS])
+    nfail = len([s for s in statuses if s == FAIL_STATUS])
+    ndiff = len([s for s in statuses if s == DIFF_STATUS])
+    nnrun = len([s for s in statuses if s == NOTRUN_STATUS])
+    if npass: log_message("  {0}/{1} tests passed".format(npass, ntests))
+    if ndiff: log_message("  {0}/{1} tests diffed".format(ndiff, ntests))
+    if nfail: log_message("  {0}/{1} tests failed".format(nfail, ntests))
+    if nnrun: log_message("  {0}/{1} tests not run".format(nnrun, ntests))
 
     if args.plot:
         failed = [rtest for (rtest, details) in rtests.items()
@@ -152,7 +158,7 @@ def main(argv=None):
     dump_rtests_to_file(testd, rtests)
     write_html_summary(testd, rtests)
 
-    return
+    return max(statuses)
 
 
 def rtest_statuses(status=None):
@@ -402,7 +408,7 @@ def run_rtest(args):
     (testd, rtest, details) = args[:3]
     bdir = details[S_BDIR]
     times = [time.time()]
-    log_message("{0:{1}s} start".format(rtest + ":", WIDTH))
+    log_message("{0:{1}s} running".format(rtest + ":", WIDTH))
     # make the test directory
     rtestd = os.path.join(testd, details[S_BDIR], rtest)
     if os.path.isdir(rtestd):
@@ -426,6 +432,8 @@ def run_rtest(args):
         out.close()
         times.append(time.time())
         if status[-1] != 0:
+            if exe == "gmd":
+                status[-1] = 2
             break
 
     status = max(status)
@@ -433,7 +441,7 @@ def run_rtest(args):
     stat = rtest_statuses(status)
     t = times[-1] - times[0]
     msg = "done({0:.2f}s) [{1}]".format(t, stat)
-    log_message("{0:{1}s} {2}".format(rtest + ":", WIDTH - len(msg) + 12, msg))
+    log_message("{0:{1}s} {2}".format(rtest + ":", WIDTH - len(msg) + 14, msg))
 
     details[S_TESTD] = rtestd
     details[S_STAT] = status
@@ -580,4 +588,4 @@ def generate_rtest_html_summary(rtest, details, testd):
     return "\n".join(rtest_html_summary)
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
