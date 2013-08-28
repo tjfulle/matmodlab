@@ -42,9 +42,6 @@ class SolidDriver(Driver):
         self.register_variable("PRESSURE", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
 
-        # Save the unchecked parameters
-        self.mtlmdl.unchecked_params = material[1]
-
         # Setup
         self.mtlmdl.setup(material[1])
 

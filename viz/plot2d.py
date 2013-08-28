@@ -29,18 +29,25 @@ GDICT = {"__builtins__": None}
 EPSILON = np.finfo(np.float).eps
 SIZE = (700, 600)
 LS = ['dot dash', 'dash', 'dot', 'long dash']
+S_TABDAT = "gmd-tabular.dat"
+L_EXO_EXT = [".exo", ".base_exo", ".e"]
+L_DAT_EXT = [".out",]
+L_REC_EXT = L_EXO_EXT + L_DAT_EXT
 
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument("source")
+    parser.add_argument("sources", nargs="+")
     args = parser.parse_args()
-    source = os.path.realpath(args.source)
-    if not os.path.isfile(source):
-        stop("{0}: no such file".format(source))
-    create_model_plot(source)
+    for source in args.sources:
+        if not os.path.isfile(source):
+            logerr("{0}: no such file".format(source))
+    if logerr():
+        stop("*** error: stopping due to previous errors")
+
+    create_model_plot(args.sources)
 
 
 class Plot2D(tapi.HasTraits):
@@ -463,7 +470,7 @@ class ModelPlot(tapi.HasStrictTraits):
     X_Scale = tapi.String("1.0")
     Y_Scale = tapi.String("1.0")
     Single_Select_Overlay_Files = tapi.Instance(SingleSelectOverlayFiles)
-    file_paths = tapi.List(tapi.String)
+    filepaths = tapi.List(tapi.String)
     file_variables = tapi.List(tapi.String)
 
     def __init__(self, **traits):
@@ -485,19 +492,19 @@ class ModelPlot(tapi.HasStrictTraits):
         tapi.HasStrictTraits.__init__(self, **traits)
 
         data = []
-        for idx, file_path in enumerate(self.file_paths):
-            fhead, fdata = loadcontents(file_path)
+        for idx, filepath in enumerate(self.filepaths):
+            fhead, fdata = loadcontents(filepath)
             if idx == 0:
                 mheader = fhead
-            fnam = os.path.basename(file_path)
+            fnam = os.path.basename(filepath)
             self.plot_info[idx] = {fnam: fhead}
             if not np.any(fdata):
-                logerr("No data found in {0}".format(file_path))
+                logerr("No data found in {0}".format(filepath))
                 continue
             data.append(fdata)
             continue
         if logerr():
-            stop("Stopping due to previous errors")
+            stop("***error: stopping due to previous errors")
 
         self.Plot_Data = Plot2D(
             plot_data=data, variables=self.file_variables,
@@ -594,11 +601,11 @@ class ModelPlot(tapi.HasStrictTraits):
 
     def _Reload_Data_fired(self):
         data = []
-        for idx, file_path in enumerate(self.file_paths):
-            fhead, fdata = loadcontents(file_path)
+        for idx, filepath in enumerate(self.filepaths):
+            fhead, fdata = loadcontents(filepath)
             if idx == 0:
                 mheader = fhead
-            fnam = os.path.basename(file_path)
+            fnam = os.path.basename(filepath)
             self.plot_info[idx] = {fnam: fhead}
             data.append(fdata)
         self.Plot_Data.plot_data = data
@@ -656,45 +663,45 @@ def create_view(window_name):
     return view
 
 
-def create_model_plot(source, handler=None, metadata=None):
+def create_model_plot(sources, handler=None, metadata=None):
     """Create the plot window
 
     Parameters
     ----------
-    kwargs : dict
-      "output file" : file path to simulation output file
-      "index file" : file path to simulation index file
 
-    Notes
-    -----
-    When run_payette is called for a single job simulation, the output is
-    written to a file "simulation_name.out". If, however, run_payette is
-    called for a multiple job simulation, an index file of the multiple output
-    files is created. The index file has information about where the
-    individual output files are located.
     """
+    def genrunid(path):
+        return os.path.splitext(os.path.basename(path))[0]
 
     if metadata is not None:
-        stop("call create_view directly")
+        stop("*** error: call create_view directly")
         metadata.plot.configure_traits(view=view)
         return
 
-    if not os.path.isfile(source):
-        stop("{0}: {1}: no such file".format(iam, source))
-
-    iam = "create_model_plot"
-    basename = os.path.basename(source)
-    runid, fext = os.path.splitext(basename)
-
-    if basename == "gmd-tabular.dat":
-        variables, output_files = loadtabular(source)
-
-    elif fext in (".exo", ".out", ".base_exo"):
-        output_files = [source]
-        variables = [""]
+    if [source for source in sources if S_TABDAT in os.path.basename(source)]:
+        if len(sources) > 1:
+            stop("*** error: only one source allowed with {0}".format(S_TABDAT))
+        source = sources[0]
+        if not os.path.isfile(source):
+            stop("*** error: {0}: no such file".format(source))
+        filepaths, variables = readtabular(source)
+        runid = genrunid(filepaths[0])
 
     else:
-        stop("{0}: {1}: unrecognized file extension".format(iam, fext))
+        filepaths = []
+        for source in sources:
+            if not os.path.isfile(source):
+                logerr("{0}: {1}: no such file".format(iam, source))
+                continue
+            fname, fext = os.path.splitext(source)
+            if fext not in L_REC_EXT:
+                logerr("{0}: unrecognized file extension".format(source))
+                continue
+            filepaths.append(source)
+        if logerr():
+            stop("***error: stopping due to previous errors")
+        variables = [""] * len(filepaths)
+        runid = "GMD VIZ" if len(filepaths) > 1 else genrunid(filepaths[0])
 
     view = tuiapi.View(tuiapi.HSplit(
         tuiapi.VGroup(
@@ -722,7 +729,7 @@ def create_model_plot(source, handler=None, metadata=None):
         style='custom', width=1124, height=868,
         resizable=True, title=runid)
 
-    main_window = ModelPlot(file_paths=output_files, file_variables=variables)
+    main_window = ModelPlot(filepaths=filepaths, file_variables=variables)
     main_window.configure_traits(view=view, handler=handler)
 
 
@@ -749,7 +756,7 @@ def logerr(message=None, errors=[0]):
     errors[0] += 1
 
 
-def loadtabular(source):
+def readtabular(source):
     """Read in the gmd-tabular.dat file
 
     """
@@ -760,8 +767,8 @@ def loadtabular(source):
     dirname = os.path.dirname(source)
     eval_dirs = [os.path.join(dirname, d) for d in os.listdir(dirname)
                  if d.startswith("eval_")]
-    output_files = [os.path.join(d, runid + ".exo") for d in eval_dirs]
-    if not all(os.path.isfile(f) for f in output_files):
+    sources = [os.path.join(d, runid + ".exo") for d in eval_dirs]
+    if not all(os.path.isfile(f) for f in sources):
         stop("1 or more output files not found")
     variables = []
     var_names = lines[2].split()[1:]
@@ -770,7 +777,7 @@ def loadtabular(source):
                       for (a, b) in zip(var_names, line.split()[1:]))
         variables.append(s)
 
-    return variables, output_files
+    return sources, variables
 
 
 def loadcontents(filepath):

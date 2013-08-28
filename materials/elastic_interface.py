@@ -9,7 +9,6 @@ except ImportError:
 
 class Elastic(Material):
     name = "elastic"
-    driver = "solid"
     param_names = ["K", "G"]
     def __init__(self):
         """Instantiate the Plastic material

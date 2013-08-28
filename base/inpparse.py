@@ -16,7 +16,9 @@ from base.io import Error1
 from base.namespace import Namespace
 from base.pprepro import find_and_make_subs, find_and_fill_includes
 from base.fcnbldr import build_lambda, build_interpolating_function
+from base.opthold import OptionHolder
 from materials.material import get_material_from_db
+from drivers.driver import isdriver
 
 
 S_PHYSICS = "Physics"
@@ -30,44 +32,13 @@ S_OBJ_FCN = "Objective Function"
 S_MITER = "Maximum Iterations"
 S_TOL = "Tolerance"
 S_DISP = "Disp"
+S_TTERM = "Termination Time"
 
-
-class OptionHolder(object):
-    def __init__(self):
-        pass
-
-    def addopt(self, name, default, test=lambda x: True,
-               dtype=float, choices=None):
-        ns = Namespace()
-        ns.name = name
-        ns.value = default
-        ns.test = test
-        ns.dtype = dtype
-        ns.choices = choices
-        setattr(self, name, ns)
-
-    def setopt(self, name, value):
-        opt = self.getopt(name, getval=False)
-        if opt is None:
-            raise Error1("{0}: setopt: no such option".format(name))
-        try:
-            value = opt.dtype(value)
-        except ValueError:
-            raise Error1("{0}: invalid type for {1}".format(value, name))
-        if not opt.test(value):
-            raise Error1("{0}: invalid value for {1}".format(value, name))
-        if opt.choices is not None:
-            if value not in opt.choices:
-                raise Error1("{0}: must be one of {1}, got {2}".format(
-                    name, ", ".join(opt.choices), value))
-        opt.value = value
-
-    def getopt(self, name, getval=True):
-        try: opt = getattr(self, name)
-        except AttributeError: return None
-        if getval:
-            return opt.value
-        return opt
+INP_ERRORS = 0
+def fatal_inp_error(message):
+    global INP_ERRORS
+    INP_ERRORS += 1
+    sys.stderr.write("*** error: {0}\n".format(message))
 
 
 def parse_input(filepath):
@@ -769,12 +740,11 @@ def physics_namespace(physlmn, *args):
 
     ns.stype = S_PHYSICS
 
-    ns.ttermination = simblk.get("TerminationTime")
+    ns.ttermination = simblk.get(S_TTERM)
 
     ns.mtlmdl = simblk["Material"][0]
     ns.mtlprops = simblk["Material"][1]
-    ns.driver = simblk["Material"][2]
-    ns.density = simblk["Material"][3]
+    ns.density = simblk["Material"][2]
 
     ns.legs = simblk["Legs"][0]
     ns.kappa = simblk["Legs"][1]
@@ -784,6 +754,7 @@ def physics_namespace(physlmn, *args):
 
     options = simblk.get("Options")
     ns.error = options["error"]
+    ns.driver = options["driver"]
 
     return ns
 
@@ -833,19 +804,25 @@ def pPhysics(physlmn, *args):
         simblk[subblk] = parsefcn(sublmn, *args)
         p = sublmn.parentNode
         p.removeChild(sublmn)
-    tlmn = physlmn.getElementsByTagName("TerminationTime")
+    tlmn = physlmn.getElementsByTagName(S_TTERM)
     if tlmn:
         term_time = float(tlmn[0].firstChild.data)
-        simblk["TerminationTime"] = term_time
+        simblk[S_TTERM] = term_time
         p = tlmn[0].parentNode
         p.removeChild(tlmn[0])
 
     # Get options
+    simblk["Options"] = {}
     options = OptionHolder()
     options.addopt("error", "all", dtype=str)
+    options.addopt("driver", "solid", dtype=str)
     for i in range(physlmn.attributes.length):
         options.setopt(*xmltools.get_name_value(physlmn.attributes.item(i)))
-    simblk["Options"] = {"error": options.getopt("error")}
+    simblk["Options"]["error"] = options.getopt("error")
+    driver = options.getopt("driver")
+    if not isdriver(driver):
+        raise Error1("{0}: unrecognized driver".format(driver))
+    simblk["Options"]["driver"] = driver
 
     return simblk
 
@@ -879,15 +856,19 @@ def pMaterial(mtllmn, *args):
         name = node.nodeName
         idx = pdict.get(name.lower())
         if idx is None:
-            raise Error1("Material: {0}: invalid parameter".format(name))
+            fatal_inp_error("Material: {0}: invalid parameter".format(name))
+            continue
         try:
             val = float(node.firstChild.data)
         except ValueError:
-            raise Error1("Material: {0}: invalid value "
-                         "{1}".format(name, node.firstChild))
+            fatal_inp_error("Material: {0}: invalid value "
+                            "{1}".format(name, node.firstChild))
         params[idx] = val
 
-    return model, params, mtlmdl.driver, density
+    if INP_ERRORS:
+        raise Error1("Stopping due to previous errors")
+
+    return model, params, density
 
 
 def pFunctions(element_list, *args):

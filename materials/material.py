@@ -61,7 +61,6 @@ def read_mtldb():
         ns.filepath = filepath
         ns.mclass = str(mtl.attributes.getNamedItem("mclass").value)
         ns.parameters = ", ".join(str(x.strip().lower()) for x in p)
-        ns.driver = str(mtl.attributes.getNamedItem("driver").value)
         mtldb[name] = ns
     return mtldb
 

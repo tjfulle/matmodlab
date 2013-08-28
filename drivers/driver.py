@@ -1,6 +1,15 @@
+import os
+import sys
 import numpy as np
+import xml.dom.minidom as xdom
 
 from base.io import Error1
+from base.impmod import load_file
+from base.namespace import Namespace
+
+D = os.path.dirname(os.path.realpath(__file__))
+DRIVER_DB = None
+
 
 class Driver(object):
     _elem_variables = []
@@ -113,3 +122,57 @@ class Driver(object):
     def setglobvars(self, **kwargs):
         for (kw, arg) in kwargs.items():
             self._glob_data[self.getslice(kw)] = arg
+
+
+# --- Driver database access functions
+def isdriver(drivername):
+    driver = getdriver(drivername)
+    if driver is None:
+        return False
+    return True
+
+
+def getdriver(drivername):
+    if DRIVER_DB is None:
+        read_driver_db()
+    return DRIVER_DB.get(" ".join(drivername.split()).lower())
+
+
+def create_driver(drivername):
+    """Create a material object from the material name
+
+    """
+    driver = getdriver(drivername)
+    if driver is None:
+        return None
+
+    # Instantiate the material object
+    driver_mod = load_file(driver.filepath)
+    driver_cls = getattr(driver_mod, driver.mtlcls)
+    return driver_cls()
+
+
+def read_driver_db():
+    """Read the materials.db database file
+
+    """
+    global DRIVER_DB
+    filepath = os.path.join(D, "drivers.db")
+
+    DRIVER_DB = {}
+    doc = xdom.parse(filepath)
+    materials = doc.getElementsByTagName("Drivers")[0]
+
+    for material in materials.getElementsByTagName("Driver"):
+        ns = Namespace()
+        dtype = " ".join(
+            str(material.attributes.getNamedItem("type").value).lower().split())
+        filepath = str(material.attributes.getNamedItem("filepath").value)
+        filepath = os.path.realpath(os.path.join(D, filepath))
+        if not os.path.isfile(filepath):
+            raise Error1("{0}: no such file".format(filepath))
+        ns.filepath = filepath
+        ns.mtlcls = str(material.attributes.getNamedItem("class").value)
+        DRIVER_DB[dtype] = ns
+
+    return DRIVER_DB
