@@ -39,6 +39,8 @@ def main(argv=None):
             raise OSError("{0}: no such file".format(args.source))
 
     basename = os.path.basename(source).rstrip(".preprocessed")
+    if not basename.endswith(".xml"):
+        raise SystemExit("*** gmd: expected .xml file extension")
     runid = os.path.splitext(basename)[0]
     mm_input = parse_input(source)
 
