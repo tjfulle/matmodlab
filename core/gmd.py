@@ -7,7 +7,7 @@ from __config__ import cfg
 import base.io as io
 from base.exodump import exodump
 from base.io import Error1
-from drivers.driver import create_driver
+from core.driver import create_driver
 
 class PhysicsDriver(object):
 

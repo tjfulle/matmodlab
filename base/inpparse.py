@@ -12,13 +12,13 @@ if __name__ == "__main__":
 from __config__ import cfg
 import base.tensor as tensor
 import base.xmltools as xmltools
+from core.driver import isdriver
 from base.io import Error1
 from base.namespace import Namespace
 from base.pprepro import find_and_make_subs, find_and_fill_includes
 from base.fcnbldr import build_lambda, build_interpolating_function
 from base.opthold import OptionHolder
 from materials.material import get_material_from_db
-from drivers.driver import isdriver
 
 
 S_PHYSICS = "Physics"
