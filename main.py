@@ -3,12 +3,11 @@ import sys
 import argparse
 
 from __config__ import cfg
-import core.gmd as gmd
-import core.permutate as perm
-import core.optimize as opt
-import base.inpparse as inpparse
-from base.inpparse import S_PHYSICS, S_OPT, S_PERMUTATION
-from base.io import Error1
+from core.physics import PhysicsHandler
+from core.permutate import PermutationHandler
+from core.optimize import OptimizationHandler
+from core.inpparse import parse_input, S_PHYSICS, S_OPT, S_PERMUTATION
+from core.io import Error1
 
 FILE = os.path.realpath(__file__)
 
@@ -41,30 +40,30 @@ def main(argv=None):
 
     basename = os.path.basename(source).rstrip(".preprocessed")
     runid = os.path.splitext(basename)[0]
-    mm_input = inpparse.parse_input(source)
+    mm_input = parse_input(source)
 
     if mm_input.stype == S_PHYSICS:
         opts = (mm_input.kappa, mm_input.density, mm_input.proportional)
         # set up the logger
-        model = gmd.PhysicsDriver(runid, args.v, mm_input.driver, mm_input.mtlmdl,
-                                  mm_input.mtlprops, mm_input.legs,
-                                  mm_input.ttermination, mm_input.extract, opts)
+        model = PhysicsHandler(runid, args.v, mm_input.driver, mm_input.mtlmdl,
+                               mm_input.mtlprops, mm_input.legs,
+                               mm_input.ttermination, mm_input.extract, opts)
 
     elif mm_input.stype == S_PERMUTATION:
         opts = (args.j,)
         exe = "{0} {1}".format(sys.executable, FILE)
-        model = perm.PermutationDriver(runid, args.v, mm_input.method,
-                                       mm_input.parameters, exe,
-                                       mm_input.basexml, *opts)
+        model = PermutationHandler(runid, args.v, mm_input.method,
+                                   mm_input.parameters, exe,
+                                   mm_input.basexml, *opts)
 
     elif mm_input.stype == S_OPT:
         exe = "{0} {1}".format(sys.executable, FILE)
-        model = opt.OptimizationDriver(runid, args.v, mm_input.method,
-                                       exe, mm_input.objective_function,
-                                       mm_input.parameters,
-                                       mm_input.tolerance, mm_input.maxiter,
-                                       mm_input.disp, mm_input.basexml,
-                                       mm_input.auxiliary_files)
+        model = OptimizationHandler(runid, args.v, mm_input.method,
+                                    exe, mm_input.objective_function,
+                                    mm_input.parameters,
+                                    mm_input.tolerance, mm_input.maxiter,
+                                    mm_input.disp, mm_input.basexml,
+                                    mm_input.auxiliary_files)
 
     else:
         sys.exit("{0}: unrecognized simulation type".format(mm_input.stype))

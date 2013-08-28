@@ -7,15 +7,14 @@ import xml.dom.minidom as xdom
 import multiprocessing as mp
 from itertools import izip, product
 
-import base.io as io
-from base.io import Error1
-from base.pprepro import find_and_make_subs
+import core.io as io
+from utils.pprepro import find_and_make_subs
 
 
 PERM_METHODS = ("zip", "combine", )
 
 
-class PermutationDriver(object):
+class PermutationHandler(object):
     def __init__(self, runid, verbosity, method, parameters, exe, basexml, *opts):
 
         self.rootd = os.path.join(os.getcwd(), runid + ".eval")
@@ -40,9 +39,9 @@ class PermutationDriver(object):
 
         if self.method == "zip":
             if not all(len(x) == len(self.ivalues[0]) for x in self.ivalues):
-                raise Error1("Number of permutations must be the same for "
-                             "all permutated parameters when using method: {0}"
-                             .format(self.method))
+                raise io.Error1("Number of permutations must be the same for "
+                                "all permutated parameters when using method: {0}"
+                                .format(self.method))
             self.ranges = zip(*self.ivalues)
 
         elif self.method == "combine":

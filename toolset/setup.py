@@ -59,12 +59,12 @@ def main(argv=None):
     tpl = os.path.join(root, "tpl")
     libd = os.path.join(root, "lib")
     mtld = os.path.join(root, "materials")
-    utld = os.path.join(root, "base")
+    utld = os.path.join(root, "utils")
     vizd = os.path.join(root, "viz")
-    pypath = [root]
-
     tools = os.path.join(root, "toolset")
     core = os.path.join(root, "core")
+
+    pypath = [root]
 
     path = os.getenv("PATH", "").split(os.pathsep)
     log_message("setup: gmd {0}".format(version))
@@ -185,11 +185,11 @@ def main(argv=None):
     write_exe("gmd", tools, os.path.join(root, "main.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath})
 
-    write_exe("buildmtls", tools, os.path.join(utld, "building.py"),
+    write_exe("buildmtls", tools, os.path.join(core, "build.py"),
               pyexe, pyopts,
               {"PYTHONPATH": pypath, "FC": gfortran, "GMDSETUPMTLDIR": mtldirs})
 
-    write_exe("runtests", tools, os.path.join(utld, "testing.py"),
+    write_exe("runtests", tools, os.path.join(core, "test.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "GMDSETUPTSTDIR": testdirs})
 
     write_exe("gmddump", tools, os.path.join(utld, "exodump.py"),

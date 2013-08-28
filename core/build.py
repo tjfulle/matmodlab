@@ -10,7 +10,8 @@ MTLDIRS = [os.path.join(R, "materials")]
 MTLDIRS.extend([x for x in os.getenv("GMDSETUPMTLDIR", "").split(os.pathsep) if x])
 FC = os.getenv("FC", "gfortran")
 LIBD = os.path.join(R, "lib")
-FIO = os.path.join(D, "gmdfio.f90")
+UTLD = os.path.join(R, "utils")
+FIO = os.path.join(UTLD, "gmdfio.f90")
 VERSION = "0.0.0"
 
 from materials.material import write_mtldb

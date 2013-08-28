@@ -10,8 +10,8 @@ import cPickle as pickle
 import multiprocessing as mp
 import xml.dom.minidom as xdom
 
-import base.xmltools as xmltools
-from base.namespace import Namespace
+import utils.xmltools as xmltools
+from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))

@@ -5,7 +5,7 @@ import numpy as np
 import scipy.optimize
 import sys
 
-import base.io as io
+import core.io as io
 
 EPS = np.finfo(np.float).eps
 

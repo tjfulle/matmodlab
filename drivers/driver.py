@@ -3,9 +3,9 @@ import sys
 import numpy as np
 import xml.dom.minidom as xdom
 
-from base.io import Error1
-from base.impmod import load_file
-from base.namespace import Namespace
+from core.io import Error1
+from utils.impmod import load_file
+from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
 DRIVER_DB = None

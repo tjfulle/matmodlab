@@ -5,10 +5,6 @@ import math
 import numpy as np
 import xml.dom.minidom as xdom
 
-import base.io as io
-from base.io import Error1
-from __config__ import cfg
-
 
 # safe values to be used in eval
 RAND = np.random.RandomState(17)
@@ -24,6 +20,8 @@ SAFE = {"np": np,
         "floor": np.floor, "ceil": np.ceil,
         "pi": math.pi, "G": 9.80665, "inf": np.inf, "nan": np.nan,
         "random": RAND.random_sample, }
+DEBUG = False
+WARNINGS = 0
 
 
 def find_vars_to_sub(lines):
@@ -96,11 +94,11 @@ def find_and_make_subs(lines, prepro=None, disp=0):
 
 
 def make_var_subs(lines, vars_to_sub, disp=0):
-
+    global WARNING
     # the regular expression that defines the preprocessing
     pregex = r"(?i){{.*\b{0:s}\b.*}}"
 
-    if cfg.debug and vars_to_sub:
+    if vars_to_sub and DEBUG:
         # Print out preprocessed values for debugging
         sys.stdout.write("Preprocessor values:\n")
         name_len = max([len(x) for x in vars_to_sub])
@@ -121,10 +119,10 @@ def make_var_subs(lines, vars_to_sub, disp=0):
             # optimization jobs to make sure that all permutated and optimized
             # variables are used properly in the file before the job actually
             # begins.
-            if not re.search(pregex.format(pat), lines):
+            if pat not in SAFE and not re.search(pregex.format(pat), lines):
                 sys.stderr.write("*** prepro: {0}: not found in "
                                  "input\n".format(pat))
-                io.increment_warning()
+                WARNINGS += 1
                 continue
 
     # Replace '{ var }' with '{ (var_value) }'
@@ -186,14 +184,13 @@ def find_and_fill_includes(lines):
         href = re.search(r"""href=["'](?P<href>.*?)["']""",
                          include.group("include"))
         if not href:
-            raise Error1("expected href='...'")
+            raise SystemExit("expected href='...'")
         name = href.group("href").strip()
         fpath = os.path.realpath(os.path.expanduser(name))
         try:
             fill = open(fpath, "r").read()
         except IOError:
-            raise Error1(
-                "{0}: include not found".format(repr(name)))
+            raise SystemExit("{0}: include not found".format(repr(name)))
         _lines.extend(find_and_fill_includes(fill).split("\n"))
         continue
     return "\n".join(_lines)

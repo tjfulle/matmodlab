@@ -6,16 +6,15 @@ import shutil
 import scipy.optimize
 import datetime
 
-import base.io as io
-from base.io import Error1
-import base.pprepro as pprepro
+import core.io as io
+import utils.pprepro as pprepro
 
 IOPT = -1
 HUGE = 1.e80
 OPT_METHODS = {"simplex": "fmin", "powell": "fmin_powell",
                "cobyla": "fmin_cobyla"}
 
-class OptimizationDriver(object):
+class OptimizationHandler(object):
     def __init__(self, runid, verbosity, method, exe, script,
                  parameters, tolerance, maxiter, disp,
                  basexml, auxiliary, *opts):
@@ -69,7 +68,7 @@ class OptimizationDriver(object):
             self.ivals.append(ival)
 
         if io.WARNINGS_LOGGED:
-            raise Error1("Stopping due to previous errors")
+            raise io.Error1("Stopping due to previous errors")
 
         self.runid = runid
         self.exe = exe

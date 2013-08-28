@@ -4,12 +4,11 @@ import numpy as np
 from numpy.linalg import solve, lstsq
 
 from __config__ import cfg
-import base.io as io
-import base.tensor as tensor
-from core.driver import Driver
-from base.kinematics import deps2d, sig2d, update_deformation
-from base.tensor import NSYMM, NTENS, NVEC, I9
-from base.io import Error1
+import utils.tensor as tensor
+from drivers.driver import Driver
+from core.kinematics import deps2d, sig2d, update_deformation
+from utils.tensor import NSYMM, NTENS, NVEC, I9
+from core.io import Error1, log_message
 from materials.material import create_material
 
 np.set_printoptions(precision=4)
@@ -234,7 +233,7 @@ class SolidDriver(Driver):
                     iomgr(t)
 
                 if n == 0 or round(nsteps / 2.) == n or endstep:
-                    io.log_message(consfmt.format(leg_num, n + 1, t, dt))
+                    log_message(consfmt.format(leg_num, n + 1, t, dt))
 
                 if t > termination_time:
                     return 0

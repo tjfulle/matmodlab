@@ -5,7 +5,7 @@ import subprocess
 import shutil
 from numpy.f2py import main as f2py
 
-from base.namespace import Namespace
+from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
 SRC = os.path.join(D, "src")

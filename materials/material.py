@@ -3,9 +3,9 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
-from base.io import Error1
-from base.impmod import load_file
-from base.namespace import Namespace
+from core.io import Error1
+from utils.impmod import load_file
+from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
 MTLDB_FILE = os.path.join(D, "materials.db")

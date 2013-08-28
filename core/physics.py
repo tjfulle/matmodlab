@@ -4,16 +4,15 @@ import time
 import numpy as np
 
 from __config__ import cfg
-import base.io as io
-from base.exodump import exodump
-from base.io import Error1
-from core.driver import create_driver
+import core.io as io
+from utils.exodump import exodump
+from drivers.driver import create_driver
 
-class PhysicsDriver(object):
+class PhysicsHandler(object):
 
     def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops, legs, tterm,
                  extract, driver_opts):
-        """Initialize the PhysicsDriver object
+        """Initialize the PhysicsHandler object
 
         Parameters
         ----------
@@ -34,7 +33,7 @@ class PhysicsDriver(object):
 
         self.driver = create_driver(driver)
         if self.driver is None:
-            raise Error1("{0}: unknown driver type".format(driver))
+            raise io.Error1("{0}: unknown driver type".format(driver))
 
         self.material = (mtlmdl, mtlprops)
         self.mtlprops = np.array(mtlprops)
