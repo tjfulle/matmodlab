@@ -5,6 +5,7 @@ import random
 import argparse
 import linecache
 import numpy as np
+import matplotlib.pyplot as plt
 
 from enthought.chaco.example_support import COLOR_PALETTE
 from enthought.enable.example_support import DemoFrame, demo_main
@@ -33,6 +34,7 @@ S_TABDAT = "gmd-tabular.dat"
 L_EXO_EXT = [".exo", ".base_exo", ".e"]
 L_DAT_EXT = [".out",]
 L_REC_EXT = L_EXO_EXT + L_DAT_EXT
+XY_PAIRS = {}
 
 
 def main(argv=None):
@@ -164,12 +166,14 @@ class Plot2D(tapi.HasTraits):
         return
 
     def change_plot(self, indices, x_scale=None, y_scale=None):
+        global XY_PAIRS
         self.plot_indices = indices
         self.container = self.create_container()
         self.high_time = float(max(self.plot_data[0][:, 0]))
         self.low_time = float(min(self.plot_data[0][:, 0]))
         self.container.data = capi.ArrayPlotData()
         self.time_data_labels = {}
+        XY_PAIRS = {}
         if len(indices) == 0:
             return
         x_scale, y_scale = self.get_axis_scales(x_scale, y_scale)
@@ -219,6 +223,7 @@ class Plot2D(tapi.HasTraits):
                 else:
                     entry = "{0} {1}".format(yname, variables)
                 self.create_plot(x, y, yp_idx, d, entry, "solid")
+                XY_PAIRS[fnam] = [xname, x, yname, y]
 
                 # create point marker
                 xp = self.plot_data[d][ti, xp_idx] * x_scale
@@ -241,6 +246,7 @@ class Plot2D(tapi.HasTraits):
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
                         self.create_plot(xo, yo, yo_idx, d, entry, LS[ls_ % 4])
+                        XY_PAIRS[fnam] = [xname, x, yname, y]
                         ls_ += 1
                         continue
 
@@ -465,6 +471,7 @@ class ModelPlot(tapi.HasStrictTraits):
     Change_Axis = tapi.Instance(ChangeAxis)
     Reset_Zoom = tapi.Button('Reset Zoom')
     Reload_Data = tapi.Button('Reload Data')
+    Print_to_PDF = tapi.Button('Print to PDF')
     Load_Overlay = tapi.Button('Open Overlay')
     Close_Overlay = tapi.Button('Close Overlay')
     X_Scale = tapi.String("1.0")
@@ -490,21 +497,12 @@ class ModelPlot(tapi.HasStrictTraits):
         """
 
         tapi.HasStrictTraits.__init__(self, **traits)
-
+        fileinfo = get_sorted_fileinfo(self.filepaths)
         data = []
-        for idx, filepath in enumerate(self.filepaths):
-            fhead, fdata = loadcontents(filepath)
-            if idx == 0:
-                mheader = fhead
-            fnam = os.path.basename(filepath)
+        for idx, (fnam, fhead, fdata) in enumerate(fileinfo):
+            if idx == 0: mheader = fhead
             self.plot_info[idx] = {fnam: fhead}
-            if not np.any(fdata):
-                logerr("No data found in {0}".format(filepath))
-                continue
             data.append(fdata)
-            continue
-        if logerr():
-            stop("***error: stopping due to previous errors")
 
         self.Plot_Data = Plot2D(
             plot_data=data, variables=self.file_variables,
@@ -600,12 +598,10 @@ class ModelPlot(tapi.HasStrictTraits):
         return
 
     def _Reload_Data_fired(self):
+        fileinfo = get_sorted_fileinfo(self.filepaths)
         data = []
-        for idx, filepath in enumerate(self.filepaths):
-            fhead, fdata = loadcontents(filepath)
-            if idx == 0:
-                mheader = fhead
-            fnam = os.path.basename(filepath)
+        for idx, (fnam, fhead, fdata) in enumerate(fileinfo):
+            if idx == 0: mheader = fhead
             self.plot_info[idx] = {fnam: fhead}
             data.append(fdata)
         self.Plot_Data.plot_data = data
@@ -613,6 +609,18 @@ class ModelPlot(tapi.HasStrictTraits):
         self.Multi_Select.choices = mheader
         self.Change_Axis.headers = mheader
         self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
+
+    def _Print_to_PDF_fired(self):
+        plt.figure(0)
+        plt.cla()
+        plt.clf()
+        for (label, xy_pair) in XY_PAIRS.items():
+            xname, x, yname, y = xy_pair
+            plt.plot(x, y, label=label)
+        plt.xlabel(xname)
+        plt.ylabel(yname)
+        plt.legend(loc="best")
+        plt.savefig("{0}-vs-{1}.pdf".format(yname, xname))
 
     def _Close_Overlay_fired(self):
         if self.Single_Select_Overlay_Files.selected:
@@ -709,6 +717,7 @@ def create_model_plot(sources, handler=None, metadata=None):
             tuiapi.Item('Change_Axis', show_label=False),
             tuiapi.Item('Reset_Zoom', show_label=False),
             tuiapi.Item('Reload_Data', show_label=False),
+            tuiapi.Item('Print_to_PDF', show_label=False),
             tuiapi.VGroup(
                 tuiapi.HGroup(tuiapi.Item("X_Scale", label="X Scale",
                                           editor=tuiapi.TextEditor(
@@ -828,6 +837,25 @@ def loadtxt(f, skiprows=0, comments="#"):
                 EXE, os.path.basename(f), iline))
         lines.append(line)
     return np.array(lines)
+
+
+def get_sorted_fileinfo(filepaths):
+    """Sort the fileinfo based on length of header in each file in filepaths so
+    that the file with the longest header is first
+
+    """
+    fileinfo = []
+    for filepath in filepaths:
+        fnam = os.path.basename(filepath)
+        fhead, fdata = loadcontents(filepath)
+        if not np.any(fdata):
+            logerr("No data found in {0}".format(filepath))
+            continue
+        fileinfo.append((fnam, fhead, fdata))
+        continue
+    if logerr():
+        stop("***error: stopping due to previous errors")
+    return sorted(fileinfo, key=lambda x: len(x[1]), reverse=True)
 
 
 if __name__ == "__main__":
