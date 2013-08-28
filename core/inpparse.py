@@ -384,7 +384,8 @@ def parse_mtl_params(nodes, pdict, model):
         name = node.nodeName
         val = node.firstChild.data.strip()
         if name.lower() == "matlabel":
-            mtl_db_params = get_material_params_from_db(val, model)
+            dbfile = node.getAttribute("db")
+            mtl_db_params = get_material_params_from_db(val, model, dbfile=dbfile)
             if mtl_db_params is None:
                 fatal_inp_error("Material: error reading parameters for "
                                 "{0} from database".format(val))

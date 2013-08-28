@@ -38,13 +38,13 @@ def read_mtldb():
     """Read the MTL_MODEL_DB_FILE database file
 
     """
-    if not os.path.isfile(MTLDB_FILE):
+    if not os.path.isfile(MTL_MODEL_DB_FILE):
         return None
 
     try:
-        doc = xdom.parse(MTLDB_FILE)
+        doc = xdom.parse(MTL_MODEL_DB_FILE)
     except ExpatError:
-        os.remove(MTLDB_FILE)
+        os.remove(MTL_MODEL_DB_FILE)
         return None
 
     mtldb = {}
@@ -70,8 +70,8 @@ def write_mtldb(mtldict, wipe=False):
     """Write the MTL_MODEL_DB_FILE database file
 
     """
-    if wipe and os.path.isfile(MTLDB_FILE):
-        os.remove(MTLDB_FILE)
+    if wipe and os.path.isfile(MTL_MODEL_DB_FILE):
+        os.remove(MTL_MODEL_DB_FILE)
     mtldb = read_mtldb()
     if mtldb is None:
         mtldb = {}
@@ -88,13 +88,19 @@ def write_mtldb(mtldict, wipe=False):
         for (aname, aval) in ns.items():
             child.setAttribute(aname, str(aval))
         root.appendChild(child)
-    doc.writexml(open(MTLDB_FILE, "w"), addindent="  ", newl="\n")
+    doc.writexml(open(MTL_MODEL_DB_FILE, "w"), addindent="  ", newl="\n")
     doc.unlink()
 
 
-def get_material_params_from_db(matname, mdlname):
+def get_material_params_from_db(matname, mdlname, dbfile=None):
     def logerr(m): sys.stderr.write("*** error: {0}\n".format(m))
-    doc = xdom.parse(MTL_PARAM_DB_FILE)
+    if not dbfile:
+        doc = xdom.parse(MTL_PARAM_DB_FILE)
+    else:
+        if not os.path.isfile(dbfile):
+            logerr("{0}: material db file not found".format(dbfile))
+            return
+        doc = xdom.parse(dbfile)
     materials = doc.getElementsByTagName("Materials")[0]
     materials = materials.getElementsByTagName("Material")
     for material in materials:
