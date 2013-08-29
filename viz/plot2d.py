@@ -173,9 +173,9 @@ class Plot2D(tapi.HasTraits):
         self.low_time = float(min(self.plot_data[0][:, 0]))
         self.container.data = capi.ArrayPlotData()
         self.time_data_labels = {}
-        XY_PAIRS = {}
         if len(indices) == 0:
             return
+        XY_PAIRS = {}
         x_scale, y_scale = self.get_axis_scales(x_scale, y_scale)
 
         # loop through plot data and plot it

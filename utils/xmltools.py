@@ -25,6 +25,18 @@ def get_name_value(item):
     return name, value
 
 
+def item_name_and_value(item):
+    name = item.name.encode("utf-8").strip()
+    value = fmtstr(item.value)
+    return name, value
+
+
+def node_name_and_value(node):
+    name = node.nodeName.encode("utf-8").strip()
+    val = stringify(node.firstChild.data)
+    return name, val
+
+
 def uni2str(unistr):
     return unistr.encode("utf-8").strip()
 

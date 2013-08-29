@@ -1,3 +1,7 @@
+class OptionHolderError(Exception):
+    pass
+
+
 class Namespace(object):
     def __repr__(self):
         string = ", ".join("{0}={1}".format(k, repr(v)) for (k, v) in
@@ -23,17 +27,18 @@ class OptionHolder(object):
     def setopt(self, name, value):
         opt = self.getopt(name, getval=False)
         if opt is None:
-            raise SystemExit("{0}: setopt: no such option".format(name))
+            raise OptionHolderError("{0}: setopt: no such option".format(name))
         try:
             value = opt.dtype(value)
         except ValueError:
-            raise SystemExit("{0}: invalid type for {1}".format(value, name))
+            raise OptionHolderError("{0}: invalid type for {1}".format(value, name))
         if not opt.test(value):
-            raise SystemExit("{0}: invalid value for {1}".format(value, name))
+            raise OptionHolderError("{0}: invalid value for "
+                                    "{1}".format(value, name))
         if opt.choices is not None:
             if value not in opt.choices:
-                raise SystemExit("{0}: must be one of {1}, got {2}".format(
-                    name, ", ".join(opt.choices), value))
+                raise OptionHolderError("{0}: must be one of {1}, got "
+                      "{2}".format(name, ", ".join(opt.choices), value))
         opt.value = value
 
     def getopt(self, name, getval=True):

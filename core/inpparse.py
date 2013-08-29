@@ -12,7 +12,7 @@ if __name__ == "__main__":
 from __config__ import cfg
 import utils.tensor as tensor
 import utils.xmltools as xmltools
-from core.io import Error1
+from core.io import fatal_inp_error, input_errors
 from drivers.driver import isdriver, create_driver
 from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
@@ -38,11 +38,11 @@ S_EXTRACT = "Extract"
 S_PATH = "Path"
 S_DRIVER = "driver"
 
-INP_ERRORS = 0
-def fatal_inp_error(message):
-    global INP_ERRORS
-    INP_ERRORS += 1
-    sys.stderr.write("*** error: {0}\n".format(message))
+
+class UserInputError(Exception):
+    def __init__(self, message):
+        sys.stderr.write("*** {0} ***\n".format(message))
+        sys.exit(2)
 
 
 def parse_input(filepath):
@@ -66,7 +66,7 @@ def parse_input(filepath):
     try:
         gmdspec = doc.getElementsByTagName("GMDSpec")[0]
     except IndexError:
-        raise Error1("Expected Root Element 'GMDSpec'")
+        raise UserInputError("Expected Root Element 'GMDSpec'")
 
     # ------------------------------------------ get and parse blocks --- #
     gmdblks = {}
@@ -82,28 +82,40 @@ def parse_input(filepath):
         rootlmns = gmdspec.getElementsByTagName(rootblk)
         if not rootlmns:
             if reqd:
-                raise Error1("GMDSpec: {0}: block missing".format(rootblk))
+                fatal_inp_error("GMDSpec: {0}: block missing".format(rootblk))
             continue
+
         if len(rootlmns) > 1:
-            raise Error1("Expected 1 {0} block, got {1}".format(
+            fatal_inp_error("Expected 1 {0} block, got {1}".format(
                 rootblk, len(rootlmns)))
+            continue
+
         rootlmn = rootlmns[0]
         gmdblks[rootblk] = rootlmn
+
         if rem:
             p = rootlmn.parentNode
             p.removeChild(rootlmn)
 
+    if input_errors():
+        raise UserInputError("Stopping due to previous Errors")
+
     if S_OPT in gmdblks and S_PERMUTATION in gmdblks:
-        raise Error1("Incompatible blocks: [Optimzation, Permutation]")
+        raise UserInputError("Incompatible blocks: [Optimzation, Permutation]")
 
     if S_OPT in gmdblks:
-        return optimization_namespace(gmdblks[S_OPT], gmdspec.toxml())
+        ns = optimization_namespace(gmdblks[S_OPT], gmdspec.toxml())
 
     elif S_PERMUTATION in gmdblks:
-        return permutation_namespace(gmdblks[S_PERMUTATION], gmdspec.toxml())
+        ns = permutation_namespace(gmdblks[S_PERMUTATION], gmdspec.toxml())
 
     else:
-        return physics_namespace(gmdblks[S_PHYSICS], *args)
+        ns = physics_namespace(gmdblks[S_PHYSICS], *args)
+
+    if input_errors():
+        raise UserInputError("Stopping due to previous Errors")
+
+    return ns
 
 
 # ------------------------------------------------- Parsing functions --- #
@@ -131,26 +143,30 @@ def pOptimization(optlmn, *args):
     # objective function
     objfcn = optlmn.getElementsByTagName("ObjectiveFunction")
     if not objfcn:
-        raise Error1("ObjectiveFunction not found")
+        fatal_inp_error("ObjectiveFunction not found")
     elif len(objfcn) > 1:
-        raise Error1("Only one ObjectiveFunction tag supported")
-    objfcn = objfcn[0]
+        fatal_inp_error("Only one ObjectiveFunction tag supported")
+    else:
+        objfcn = objfcn[0]
+
     objfile = objfcn.getAttribute("href")
     if not objfile:
-        raise Error1("Expected href attribute to ObjectiveFunction")
+        fatal_inp_error("Expected href attribute to ObjectiveFunction")
     elif not os.path.isfile(objfile):
-        raise Error1("{0}: no such file".format(objfile))
-    objfile = os.path.realpath(objfile)
+        fatal_inp_error("{0}: no such file".format(objfile))
+    else:
+        objfile = os.path.realpath(objfile)
 
     # auxiliary files
     auxfiles = []
     for item in optlmn.getElementsByTagName("AuxiliaryFile"):
         auxfile = item.getAttribute("href")
         if not auxfile:
-            raise Error1("Expected href attribute to AuxiliaryFile")
+            fatal_inp_error("Expected href attribute to AuxiliaryFile")
         elif not os.path.isfile(auxfile):
-            raise Error1("{0}: no such file".format(auxfile))
-        auxfiles.append(os.path.realpath(auxfile))
+            fatal_inp_error("{0}: no such file".format(auxfile))
+        else:
+            auxfiles.append(os.path.realpath(auxfile))
 
     # read in optimization parameters
     p = []
@@ -159,7 +175,8 @@ def pOptimization(optlmn, *args):
 
         ivalue = items.attributes.get("initial_value")
         if not ivalue:
-            raise Error1("{0}: no initial value given".format(var))
+            fatal_inp_error("{0}: no initial value given".format(var))
+            continue
         ivalue = float(ivalue.value)
 
         bounds = items.attributes.get("bounds")
@@ -168,8 +185,9 @@ def pOptimization(optlmn, *args):
         else:
             bounds = xmltools.str2list(bounds.value, dtype=float)
         if len(bounds) != 2:
-            raise Error1("{0}: incorrect bounds, must give upper "
-                         "and lower bound".format(var))
+            fatal_inp_error("{0}: incorrect bounds, must give upper "
+                            "and lower bound".format(var))
+            continue
         p.append([var, ivalue, bounds])
 
     odict[S_METHOD] = options.getopt("method")
@@ -218,7 +236,8 @@ def pPermutation(permlmn, *args):
         try:
             p.append([var, eval(values, gdict, safe)])
         except:
-            raise Error1("{0}: invalid extression".format(values))
+            fatal_inp_error("{0}: invalid expression".format(values))
+            continue
 
     pdict[S_PARAMS] = p
     pdict[S_METHOD] = options.getopt("method")
@@ -308,7 +327,9 @@ def pPhysics(physlmn, *args):
     driver = physlmn.getAttribute("driver")
     driver = "solid" if not driver else driver
     if not isdriver(driver):
-        raise Error1("{0}: unrecognized driver".format(driver))
+        fatal_inp_error("{0}: unrecognized driver".format(driver))
+        return
+
     driver = create_driver(driver)
     simblk[S_DRIVER] = driver
 
@@ -318,7 +339,7 @@ def pPhysics(physlmn, *args):
         sublmns = physlmn.getElementsByTagName(subblk)
         if not sublmns:
             if reqd:
-                raise Error1("Physics: {0}: block missing".format(subblk))
+                fatal_inp_error("Physics: {0}: block missing".format(subblk))
             continue
         parsefcn = getattr(sys.modules[__name__],
                            "p{0}".format(sublmns[0].nodeName))
@@ -330,10 +351,11 @@ def pPhysics(physlmn, *args):
     # Finally, parse the paths and surfaces
     pathlmns = physlmn.getElementsByTagName(S_PATH)
     if not pathlmns:
-        raise Error1("Physics: {0}: block missing".format(S_PATH))
-    error = driver.parse_and_register_paths(pathlmns, *args)
-    if error:
-        raise Error1("Physics: error parsing {0}".format(S_PATH))
+        fatal_inp_error("Physics: {0}: block missing".format(S_PATH))
+    else:
+        error = driver.parse_and_register_paths(pathlmns, *args)
+        if error:
+            fatal_inp_error("Physics: error parsing {0}".format(S_PATH))
 
     return simblk
 
@@ -352,7 +374,8 @@ def pMaterial(mtllmns, *args):
     mtllmn = mtllmns[-1]
     model = mtllmn.attributes.get("model")
     if model is None:
-        raise Error1("Material: model not found")
+        fatal_inp_error("Material: model not found")
+        return
     model = str(model.value.lower())
 
     density = mtllmn.attributes.get("density")
@@ -363,22 +386,21 @@ def pMaterial(mtllmns, *args):
 
     mtlmdl = get_material_from_db(model)
     if mtlmdl is None:
-        raise Error1("{0}: material not in database".format(model))
+        fatal_inp_error("{0}: material not in database".format(model))
+        return
 
     # mtlmdl.parameters is a comma separated list of parameters
     pdict = dict([(xmltools.stringify(n, "lower"), i)
                   for i, n in enumerate(mtlmdl.parameters.split(","))])
-    params = parse_mtl_params(mtllmn.childNodes, pdict, model)
-    if INP_ERRORS:
-        raise Error1("Stopping due to previous errors")
+    params = parse_mtl_params(mtllmn, pdict, model)
 
     return model, params, density
 
 
-def parse_mtl_params(nodes, pdict, model):
+def parse_mtl_params(mtllmn, pdict, model):
     # create a mapping of (name, value) pairs
     param_map = {}
-    for node in nodes:
+    for node in mtllmn.childNodes:
         if node.nodeType != node.ELEMENT_NODE:
             continue
         name = node.nodeName
@@ -395,6 +417,7 @@ def parse_mtl_params(nodes, pdict, model):
         else:
             param_map[name] = val
 
+    # put the parameters in an array
     params = np.zeros(len(pdict))
     for (name, val) in param_map.items():
         idx = pdict.get(name.lower())
@@ -427,24 +450,29 @@ def pFunctions(element_list, *args):
 
         fid = function.attributes.get("id")
         if fid is None:
-            raise Error1("Function: id not found")
+            fatal_inp_error("Function: id not found")
+            continue
 
         fid = int(fid.value)
 
         if fid == const_fcn_id:
-            raise Error1("Function id {0} is reserved".format(fid))
+            fatal_inp_error("Function id {0} is reserved".format(fid))
+            continue
 
         if fid in functions:
-            raise Error1("{0}: duplicate function definition".format(fid))
+            fatal_inp_error("{0}: duplicate function definition".format(fid))
+            continue
 
         ftype = function.attributes.get("type")
         if ftype is None:
-            raise Error1("Functions.Function: type not found")
+            fatal_inp_error("Functions.Function: type not found")
+            continue
 
         ftype = " ".join(ftype.value.split()).upper()
 
         if ftype not in (__ae__, __pwl__):
-            raise Error1("{0}: invalid function type".format(ftype))
+            fatal_inp_error("{0}: invalid function type".format(ftype))
+            continue
 
         expr = function.firstChild.data.strip()
 
@@ -456,8 +484,9 @@ def pFunctions(element_list, *args):
                 var = var.value.strip()
             func, err = build_lambda(expr, var=var, disp=1)
             if err:
-                raise Error1("{0}: in analytic expression in "
-                             "function {1}".format(err, fid))
+                fatal_inp_error("{0}: in analytic expression in "
+                                "function {1}".format(err, fid))
+                continue
 
         elif ftype == __pwl__:
             # parse the table in expr
@@ -479,15 +508,17 @@ def pFunctions(element_list, *args):
                     continue
                 if len(line) != ncol:
                     nl = len(line)
-                    raise Error1("Expected {0} columns in function "
-                                 "{1}, got {2}".format(ncol, fid, nl))
+                    fatal_inp_error("Expected {0} columns in function "
+                                    "{1}, got {2}".format(ncol, fid, nl))
+                    continue
 
                 table.append(line)
 
             func, err = build_interpolating_function(np.array(table), disp=1)
             if err:
-                raise Error1("{0}: in piecwise linear table in "
-                             "function {1}".format(err, fid))
+                fatal_inp_error("{0}: in piecwise linear table in "
+                                "function {1}".format(err, fid))
+                continue
 
         functions[fid] = func
         continue

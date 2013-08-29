@@ -11,14 +11,14 @@ from drivers.driver import Driver
 from core.kinematics import deps2d, sig2d, update_deformation
 from utils.tensor import NSYMM, NTENS, NVEC, I9
 from utils.opthold import OptionHolder
-from core.io import Error1, log_message
+from core.io import fatal_inp_error, input_errors, log_message
 from materials.material import create_material
 
 np.set_printoptions(precision=4)
 
 class SolidDriver(Driver):
     name = "solid"
-    path = []
+    paths = {}
     proportional = 0
     kappa = 0.
     def __init__(self):
@@ -92,7 +92,7 @@ class SolidDriver(Driver):
         -------
 
         """
-        legs = self.path
+        legs = self.paths["prdef"]
         termination_time = args[0]
         if termination_time is None:
             termination_time = legs[-1][0] + 1.e-06
@@ -259,24 +259,37 @@ class SolidDriver(Driver):
         paths to the class
 
         """
+        path_fcns = {"prdef": cls.pPrdef}
+
         if len(pathlmns) > 1:
-            raise Error1("Only 1 Path tag supported for solid driver")
-        cls.path, cls.kappa, cls.proportional = cls.pPath(pathlmns[0], *args)
+            fatal_inp_error("Only 1 Path tag supported for solid driver")
+            return 1
+
+        pathlmn = pathlmns[0]
+        ptype = pathlmn.getAttribute("type")
+        if not ptype:
+            fatal_inp_error("Path requires type attribute")
+            return 1
+        pathlmn.removeAttribute("type")
+        parse_fcn = path_fcns.get(ptype.strip().lower())
+        if parse_fcn is None:
+            fatal_inp_error("{0}: unkown Path type".format(ptype))
+            return 1
+        items = parse_fcn(pathlmn, *args)
+        if input_errors():
+            return 1
+
+        path, cls.kappa, cls.proportional = items
+        cls.paths["prdef"] = path
+
         return 0
 
     @classmethod
-    def pPath(cls, pathlmn, *args):
+    def pPrdef(cls, pathlmn, *args):
         """Parse the Path block and set defaults
 
         """
         functions = args[0]
-        ptype = pathlmn.getAttribute("type")
-        if not ptype:
-            raise Error1("Path 'type' not defined")
-        ptype = ptype.strip().lower()
-        if ptype not in ("prdef",):
-            raise Error1("{0}: unknown Path type")
-        pathlmn.removeAttribute("type")
 
         # Set up options for Path
         options = OptionHolder()
@@ -314,20 +327,21 @@ class SolidDriver(Driver):
         lines = [xmltools.str2list(line, dtype=str) for line in lines]
 
         # parse the Path depending on type
-        if options.getopt("format") == "default":
+        pformat = options.getopt("format")
+        if pformat == "default":
             path = cls.parse_path_default(lines)
 
-        elif options.getopt("format") == "table":
+        elif pformat == "table":
             path = cls.parse_path_table(lines, options.getopt("tbltfmt"),
                                         options.getopt("tblcols"),
                                         options.getopt("tblcfmt"))
 
-        elif options.getopt("format") == "fcnspec":
+        elif pformat == "fcnspec":
             path = cls.parse_path_cijfcn(lines, functions)
 
         else:
-            raise Error1("Path: {0}: invalid "
-                         "format".format(options.getopt("format")))
+            fatal_inp_error("Path: {0}: invalid format".format(pformat))
+            return
 
         # store relevant info to the class
         path = cls.format_path(path, options)
@@ -352,28 +366,16 @@ class SolidDriver(Driver):
 
             # check entries
             # --- termination time
-            try:
-                termination_time = float(termination_time)
-            except ValueError:
-                raise Error1("Path: termination time of leg {0} must be a float, "
-                             "got {1}".format(leg_num, termination_time))
-            if termination_time < 0.:
-                raise Error1("Path: termination time {0} of leg {1} must be "
-                             "positive".format(termination_time, leg_num))
-            elif termination_time < final_time:
-                raise Error("Path: time must increase monitonically at leg "
-                            "{0}".format(leg_num))
+            termination_time = format_termination_time(
+                leg_num, termination_time, final_time)
+            if termination_time is None:
+                termination_time = 1e99
             final_time = termination_time
 
             # --- number of steps
-            try:
-                num_steps = int(num_steps)
-            except ValueError:
-                raise Error1("Path: number of steps of leg {0} must be an integer, "
-                             "got {1}".format(leg_num, num_steps))
-            if num_steps < 0:
-                raise Error1("Path: number of steps {0} of leg {1} must be "
-                             "positive".format(num_steps, leg_num))
+            num_steps = format_num_steps(leg_num, num_steps)
+            if num_steps is None:
+                num_steps = 10000
 
             # --- control
             control = cls.format_path_control(control_hold, leg_num=leg_num)
@@ -384,16 +386,18 @@ class SolidDriver(Driver):
                 try:
                     comp = float(comp)
                 except ValueError:
-                    raise Error1("Path: Component {0} of leg {1} must be a "
-                                 "float, got {2}".format(i+1, leg_num, comp))
+                    fatal_inp_error("Path: Component {0} of leg {1} must be a "
+                                    "float, got {2}".format(i+1, leg_num, comp))
                 Cij.append(comp)
 
             Cij = np.array(Cij)
 
             # --- Check lengths of Cij and control are consistent
             if len(Cij) != len(control):
-                raise Error1("Path: len(Cij) != len(control) in leg {0}"
-                             .format(leg_num))
+                fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
+                                .format(leg_num))
+                continue
+
 
             path.append([termination_time, num_steps, control, Cij])
             leg_num += 1
@@ -423,13 +427,15 @@ class SolidDriver(Driver):
             try:
                 line = np.array([float(x) for x in line])
             except ValueError:
-                raise Error1("Expected floats in leg {0}, got {1}".format(
+                fatal_inp_error("Expected floats in leg {0}, got {1}".format(
                     leg_num, line))
+                continue
             try:
                 line = line[columns]
             except IndexError:
-                raise Error1("Requested column not found in leg "
-                             "{0}".format(leg_num))
+                fatal_inp_error("Requested column not found in leg "
+                                "{0}".format(leg_num))
+                continue
 
             if tbltfmt == "dt":
                 termination_time += line[0]
@@ -440,12 +446,10 @@ class SolidDriver(Driver):
 
             # check entries
             # --- termination time
-            if termination_time < 0.:
-                raise Error1("Path: termination time {0} of leg {1} must be "
-                             "positive".format(termination_time, leg_num))
-            elif termination_time < final_time:
-                raise Error("Path: time must increase monitonically at leg "
-                            "{0}".format(leg_num))
+            termination_time = format_termination_time(
+                leg_num, termination_time, final_time)
+            if termination_time is None:
+                continue
             final_time = termination_time
 
             # --- number of steps
@@ -453,8 +457,8 @@ class SolidDriver(Driver):
 
             # --- Check lengths of Cij and control are consistent
             if len(Cij) != len(control):
-                raise Error1("Path: len(Cij) != len(control) in leg {0}"
-                             .format(leg_num))
+                fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
+                                .format(leg_num))
 
             path.append([termination_time, num_steps, control, Cij])
             leg_num += 1
@@ -471,35 +475,28 @@ class SolidDriver(Driver):
         leg_num = 1
 
         if not lines:
-            raise Error1("No table functions defined")
+            fatal_inp_error("No table functions defined")
+            return
         elif len(lines) > 1:
-            raise Error1("Only one line of table functions allowed, "
-                         "got {0}".format(len(lines)))
+            fatal_inp_error("Only one line of table functions allowed, "
+                            "got {0}".format(len(lines)))
+            return
 
         termination_time, num_steps, control_hold = lines[0][:3]
         cijfcns = lines[0][3:]
 
         # check entries
         # --- termination time
-        try:
-            termination_time = float(termination_time)
-        except ValueError:
-            raise Error1("Path: termination time must be a float, "
-                         "got {0}".format(termination_time))
-        if termination_time < 0.:
-            raise Error1("Path: termination time {0} must be "
-                         "positive".format(termination_time))
+        termination_time = format_termination_time(1, termination_time, 1.e99)
+        if termination_time is None:
+            # place holder, just to check rest of input
+            termination_time = 1.e99
         final_time = termination_time
 
         # --- number of steps
-        try:
-            num_steps = int(num_steps)
-        except ValueError:
-            raise Error1("Path: number of steps must be an integer, "
-                         "got {0}".format(num_steps))
-        if num_steps < 0:
-            raise Error1("Path: number of steps {0} must be "
-                         "positive".format(num_steps))
+        num_steps = format_num_steps(1, num_steps)
+        if num_steps is None:
+            num_steps = 10000
 
         # --- control
         control = cls.format_path_control(control_hold, leg_num=leg_num)
@@ -515,22 +512,25 @@ class SolidDriver(Driver):
             try:
                 fid = int(float(fid))
             except ValueError:
-                raise Error1("Function ID must be an integer, got {0}".format(fid))
+                fatal_inp_error("expected integer function ID, got {0}".format(fid))
+                continue
             try:
                 scale = float(scale)
             except ValueError:
-                raise Error1("Function scale must be a float, got "
-                             "{0}".format(scale))
+                fatal_inp_error("expected real function scale for function {0}"
+                                ", got {1}".format(fid, scale))
+                continue
 
             fcn = functions.get(fid)
             if fcn is None:
-                raise Error1("{0}: function not defined".format(fid))
+                fatal_inp_error("{0}: function not defined".format(fid))
+                continue
             Cij.append((scale, fcn))
 
         # --- Check lengths of Cij and control are consistent
         if len(Cij) != len(control):
-            raise Error1("Path: len(Cij) != len(control) in leg {0}"
-                         .format(leg_num))
+            fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
+                            .format(leg_num))
 
         path = []
         for time in np.linspace(start_time, final_time, num_steps):
@@ -549,38 +549,40 @@ class SolidDriver(Driver):
             try:
                 flag = int(flag)
             except ValueError:
-                raise Error1("Path: control flag {0} must be an "
-                             "integer, got {1} {2}".format(i+1, flag, leg))
+                fatal_inp_error("Path: expected control flag {0} to be an integer"
+                                ", got {1} {2}".format(i+1, flag, leg))
+                continue
 
             if flag not in valid_control_flags:
                 valid = ", ".join(xmltools.stringify(x)
                                   for x in valid_control_flags)
-                raise Error1("Path: {0}: invalid control flag choose from "
-                             "{1} {2}".format(flag, valid, leg))
+                fatal_inp_error("Path: expected control flag to be one of {0}, "
+                                "got {1} {2}".format(valid, flag, leg))
+                continue
 
             control.append(flag)
 
         if 5 in control:
             if any(flag != 5 and flag not in (6, 9) for flag in control):
-                raise Error1("Path: mixed mode deformation not allowed with "
-                             "deformation gradient control {0}".format(leg))
+                fatal_inp_error("Path: mixed mode deformation not allowed with "
+                                "deformation gradient control {0}".format(leg))
 
             # must specify all components
             elif len(control) != 9:
-                raise Error1("all 9 components of deformation gradient must "
-                             "be specified {0}".format(leg))
+                fatal_inp_error("all 9 components of deformation gradient must "
+                                "be specified {0}".format(leg))
 
         if 8 in control:
             # like deformation gradient control, if displacement is specified
             # for one, it must be for all
             if any(flag != 8 and flag not in (6, 9) for flag in control):
-                raise Error1("Path: mixed mode deformation not allowed with "
-                             "displacement control {0}".format(leg))
+                fatal_inp_error("Path: mixed mode deformation not allowed with "
+                                "displacement control {0}".format(leg))
 
             # must specify all components
             elif len(control) != 3:
-                raise Error1("all 3 components of displacement must "
-                             "be specified {0}".format(leg))
+                fatal_inp_error("all 3 components of displacement must "
+                                "be specified {0}".format(leg))
 
         return np.array(control, dtype=np.int)
 
@@ -594,20 +596,26 @@ class SolidDriver(Driver):
             try:
                 item = [int(x) for x in item]
             except ValueError:
-                raise Error1("Path: tblcols items must be int, got "
-                             "{0}".format(tblcols))
+                fatal_inp_error("Path: expected integer tblcols, got "
+                                "{0}".format(tblcols))
+                continue
             item[0] -= 1
 
             if len(item) == 1:
                 columns.append(item[0])
+
             elif len(item) not in (2, 3):
-                raise Error1("Path: tblcfmt range must be specified as "
-                             "start:end:[step], got {0}".format(
-                                 ":".join(str(x) for x in item)))
+                fatal_inp_error("Path: expected tblcfmt range to be specified as "
+                                "start:end:[step], got {0}".format(
+                                    ":".join(str(x) for x in item)))
+                continue
+
             if len(item) == 2:
                 columns.extend(range(item[0], item[1]))
+
             elif len(item) == 3:
                 columns.extend(range(item[0], item[1], item[2]))
+
         return columns
 
     @staticmethod
@@ -619,7 +627,7 @@ class SolidDriver(Driver):
         stress_control = any(c in (3, 4) for leg in path for c in leg[2])
         kappa = options.getopt("kappa")
         if stress_control and kappa != 0.:
-            raise Error1("kappa must be 0 with stress control option")
+            fatal_inp_error("kappa must be 0 with stress control option")
 
         # From these formulas, note that AMPL may be used to increase or
         # decrease the peak strain without changing the strain rate. ratfac is
@@ -651,6 +659,11 @@ class SolidDriver(Driver):
             num_steps = int(nfac * num_steps)
             termination_time = tfac * termination_time
 
+            if len(control) != len(Cij):
+                fatal_inp_error("len(cij) != len(control) in leg "
+                                "{0}".format(leg_num))
+                continue
+
             # pull out electric field from other deformation specifications
             efcomp = np.zeros(3)
             trtbl = np.array([True] * len(control))
@@ -660,6 +673,7 @@ class SolidDriver(Driver):
                     efcomp[j] = effac * Cij[i]
                     trtbl[i] = False
                     j += 1
+
             Cij = Cij[trtbl]
             control = control[trtbl]
 
@@ -668,16 +682,16 @@ class SolidDriver(Driver):
                 defgrad = np.reshape(ffac * Cij, (3, 3))
                 jac = np.linalg.det(defgrad)
                 if jac <= 0:
-                    raise Error1("Inadmissible deformation gradient in "
-                                 "leg {0} gave a Jacobian of "
-                                 "{1:f}".format(leg_num, jac))
+                    fatal_inp_error("Inadmissible deformation gradient in "
+                                    "leg {0} gave a Jacobian of "
+                                    "{1:f}".format(leg_num, jac))
 
                 # convert defgrad to strain E with associated rotation given by
                 # axis of rotation x and angle of rotation theta
                 Rij, Vij = np.linalg.qr(defgrad)
                 if np.max(np.abs(Rij - np.eye(3))) > np.finfo(np.float).eps:
-                    raise Error1("Rotation encountered in leg {0}. "
-                                 "Rotations are not yet supported".format(leg_num))
+                    fatal_inp_error("Rotation encountered in leg {0}. "
+                                    "Rotations are not supported".format(leg_num))
                 Uij = tensor.asarray(np.dot(Rij.T, np.dot(Vij, Rij)))
                 Rij = np.reshape(Rij, (9,))
                 Cij = tensor.u2e(Uij, kappa)
@@ -699,8 +713,8 @@ class SolidDriver(Driver):
                 # only one strain value given -> volumetric strain
                 evol = Cij[0]
                 if kappa * evol + 1. < 0.:
-                    raise Error1("1 + kappa * ev must be positive in leg "
-                                 "{0}".format(leg_num))
+                    fatal_inp_error("1 + kappa * ev must be positive in leg "
+                                    "{0}".format(leg_num))
 
                 if kappa == 0.:
                     eij = evol / 3.
@@ -718,9 +732,6 @@ class SolidDriver(Driver):
                 control = np.array([4, 4, 4, 2, 2, 2], dtype=np.int)
                 Cij = np.array([Sij, Sij, Sij, 0., 0., 0.])
 
-            if len(control) != len(Cij):
-                raise Error1("len(cij) != len(control) in leg {0}".format(leg_num))
-
             control = np.append(control, [2] * (6 - len(control)))
             Cij = np.append(Cij, [0.] * (6 - len(Cij)))
 
@@ -735,8 +746,8 @@ class SolidDriver(Driver):
                     Cij[idx] *= efac
 
                     if kappa * Cij[idx] + 1. < 0.:
-                        raise Error("1 + kappa*E[{0}] must be positive in "
-                                    "leg {1}".format(idx, leg_num))
+                        fatal_inp_error("1 + kappa*E[{0}] must be positive in "
+                                        "leg {1}".format(idx, leg_num))
 
                 elif ctype == 4:
                     # adjust stress
@@ -747,9 +758,10 @@ class SolidDriver(Driver):
             # initial stress check
             if termination_time == 0.:
                 if 3 in control:
-                    raise Error1("initial stress rate ambiguous")
+                    fatal_inp_error("initial stress rate ambiguous")
+
                 elif 4 in control and any(x != 4 for x in control):
-                    raise Error1("Mixed initial state not allowed")
+                    fatal_inp_error("Mixed initial state not allowed")
 
             # Replace leg with modfied values
             path[ileg][0] = termination_time
@@ -770,3 +782,40 @@ def mybool(a):
         return 0
     else:
         return 1
+
+
+def format_termination_time(leg_num, termination_time, final_time):
+    try:
+        termination_time = float(termination_time)
+    except ValueError:
+        fatal_inp_error("Path: expected float for termination time of "
+                        "leg {0} got {1}".format(leg_num, termination_time))
+        return
+
+    if termination_time < 0.:
+        fatal_inp_error("Path: expected positive termination time leg {0} "
+                        "got {1}".format(leg_num, termination_time))
+        return
+
+    if termination_time < final_time:
+        fatal_inp_error("Path: expected time to increase monotonically in "
+                        "leg {0}".format(leg_num))
+        return
+
+    return termination_time
+
+
+def format_num_steps(leg_num, num_steps):
+    try:
+        num_steps = int(num_steps)
+    except ValueError:
+        fatal_inp_error("Path: expected integer number of steps in "
+                        "leg {0} got {1}".format(leg_num, num_steps))
+        return
+    if num_steps < 0:
+        fatal_inp_error("Path: expected positive integer number of "
+                        "steps in leg {0} got {1}".format(
+                            leg_num, num_steps))
+        return
+
+    return num_steps

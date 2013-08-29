@@ -8,6 +8,7 @@ from __config__ import cfg
 import exowriter as exo
 
 
+INP_ERRORS = 0
 WARNINGS_LOGGED = 0
 LOGGER = None
 LEVELS = {2: logging.DEBUG,
@@ -21,6 +22,18 @@ class Error1(Exception):
         if cfg.debug:
             raise Exception("*** gmd: error: {0}".format(message))
         raise SystemExit(2)
+
+
+def fatal_inp_error(message):
+    global INP_ERRORS
+    INP_ERRORS += 1
+    sys.stderr.write("*** error: {0}\n".format(message))
+    if INP_ERRORS > 5:
+        raise SystemExit("*** error: maximum number of input errors exceeded")
+
+
+def input_errors():
+    return INP_ERRORS
 
 
 def setup_logger(runid, verbosity, d=None):

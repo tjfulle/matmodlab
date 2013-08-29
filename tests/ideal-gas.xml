@@ -10,15 +10,15 @@
       <CV> 1.5 </CV>
     </Material>
 
-    <Surface increments="10">
-      <DensityRange> (1, 100) </DensityRange>
-      <TemperatureRange> (5, 300) </TemperatureRange>
-    </Surface>
-
     <Path type="hugoniot" increments="100">
       <DensityRange> (1, 100) </DensityRange>
       <InitialTemperature> 100 </InitialTemperature>
     </Path>
+
+    <Surface increments="10">
+      <DensityRange> (1, 100) </DensityRange>
+      <TemperatureRange> (5, 300) </TemperatureRange>
+    </Surface>
 
     <Path type="isotherm" increments="200">
       <DensityRange> (1, 100) </DensityRange>
