@@ -113,6 +113,9 @@ class PhysicsHandler(object):
             self.runid, self.timing["final"] - self.timing["initial"]))
         self.exo.finish()
 
+        # close the log
+        io.close_and_reset_logger()
+
         if self.extract:
             ofmt, step, ffmt, variables = self.extract
             exodump(self.runid + ".exo", step=step, ffmt=ffmt,

@@ -97,6 +97,9 @@ class PermutationHandler(object):
         tabular.flush()
         tabular.close()
 
+        # close the log
+        io.close_and_reset_logger()
+
     def output(self):
         return self.tabular_file
 
