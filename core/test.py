@@ -325,6 +325,17 @@ def find_rtests(search_dirs, include, exclude, tests=None):
             raise Error("{0}: rtest: keyword element required".format(name))
         keywords = xmltools.child2list(keywords, "lower")
 
+        # --- repeat test
+        repeat = rtest.attributes.get("repeat")
+        if repeat is None:
+            Nrepeat = 1
+        else:
+            try:
+                Nrepeat = int(repeat.value)
+            except ValueError:
+                raise Error("{0}: rtest: invalid value for 'repeat'".format(
+                          name))
+
         # --- link_files
         link_files = rtest.getElementsByTagName("link_files")
         if link_files:
@@ -354,8 +365,17 @@ def find_rtests(search_dirs, include, exclude, tests=None):
                 opts = ["-status", "-allow_name_mismatch"] + opts
             execute.append([x] + opts)
 
-        rtests[name] = {S_BDIR: bdir, S_EXEC: execute, S_LNFL: link_files,
-                        S_KWS: keywords}
+        if Nrepeat == 1:
+            rtests[name] = {S_BDIR: bdir, S_EXEC: execute, S_LNFL: link_files,
+                            S_KWS: keywords}
+        else:
+            # Add multiple instances of the same test (for use with random inputs)
+            Ndigits = len("{0:d}".format(Nrepeat))
+            for idx in range(1, Nrepeat + 1):
+                suffix = "_{0:0{1}d}".format(idx, Ndigits)
+                rtests[name + suffix] = {S_BDIR: bdir + suffix,
+                                         S_EXEC: execute, S_LNFL: link_files,
+                                         S_KWS: keywords}
         doc.unlink()
 
     return filter_rtests(rtests, include, exclude)
