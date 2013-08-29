@@ -204,6 +204,9 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
 
 
 def rms_error(t1, d1, t2, d2):
+    """Compute the RMS and normalized RMS error
+
+    """
     if t1.shape[0] == t2.shape[0]:
         rms = np.sqrt(np.mean((d1 - d2) ** 2))
     else:
@@ -214,6 +217,9 @@ def rms_error(t1, d1, t2, d2):
 
 
 def interp_rms_error(t1, d1, t2, d2):
+    """Compute RMS error by interpolation
+
+    """
     ti = max(np.amin(t1), np.amin(t2))
     tf = min(np.amax(t1), np.amax(t2))
     n = t1.shape[0]
@@ -225,6 +231,32 @@ def interp_rms_error(t1, d1, t2, d2):
 
 
 def read_diff_file(filepath):
+    """Read the diff instruction file
+
+    Parameters
+    ----------
+    filepath : str
+        Path to diff instruction file
+
+    Notes
+    -----
+    The diff instruction file has the following format
+
+    <GMDDiff [ftol="real"] [dtol="real"] [floor="real"]>
+      <Variable name="string" [ftol="real"] [dtol="real"] [floor="real"]/>
+    </GMDDiff>
+
+    It lets you specify:
+      global failure tolerance (GMDDiff ftol attribute)
+      global diff tolerance (GMDDiff dtol attribute)
+      global floor (GMDDiff floor attribute)
+
+      individual variables to specify (Variable tags)
+      individual failure tolerance (Variable ftol attribute)
+      individual diff tolerance (Variable dtol attribute)
+      individual floor (Variable floor attribute)
+
+    """
     doc = xdom.parse(filepath)
     try:
         gmddiff = doc.getElementsByTagName("GMDDiff")[0]
