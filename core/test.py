@@ -63,8 +63,10 @@ def main(argv=None):
         help="Number of simultaneous tests [default: %(default)s]")
     parser.add_argument("-F", action="store_true", default=False,
         help="Force tests previously run to rerun [default: %(default)s]")
-    parser.add_argument("--plot", action="store_true", default=False,
+    parser.add_argument("--plot-failed", action="store_true", default=False,
         help="Create overlay plots for failed tests [default: %(default)s]")
+    parser.add_argument("--plot-all", action="store_true", default=False,
+        help="Create overlay plots for completed tests [default: %(default)s]")
     parser.add_argument("--list", action="store_true", default=False,
         dest="list_and_exit",
         help="List matching tests and exit [default: %(default)s]")
@@ -145,13 +147,16 @@ def main(argv=None):
     if nfail: log_message("  {0}/{1} tests failed".format(nfail, ntests))
     if nnrun: log_message("  {0}/{1} tests not run".format(nnrun, ntests))
 
-    if args.plot:
-        failed = [rtest for (rtest, details) in rtests.items()
-                  if details[S_STAT] in (DIFF_STATUS, FAIL_STATUS)]
-        if failed:
-            log_message("Postprocessing {0} tests".format(len(failed)))
+    if args.plot_all or args.plot_failed:
+        if args.plot_all:
+            to_plot = [rtest for (rtest, details) in rtests.items()]
+        else:
+            to_plot = [rtest for (rtest, details) in rtests.items()
+                       if details[S_STAT] in (DIFF_STATUS, FAIL_STATUS)]
+        if to_plot:
+            log_message("Postprocessing {0} tests".format(len(to_plot)))
 
-        for rtest in failed:
+        for rtest in to_plot:
             postprocess_rtest(rtest, rtests[rtest])
 
     rtests.update(completed_rtests)
@@ -238,11 +243,13 @@ def create_overlay_plots(rtest, destd, file1, file2=None):
         plt.cla()
         plt.xlabel("TIME")
         plt.ylabel(yvar)
+
         if file2 is not None:
             if yvar not in head2:
                 continue
-            y2 = data1[:, head2.index(yvar)]
+            y2 = data2[:, head2.index(yvar)]
             plt.plot(x2, y2, ls="-", lw=4, c="orange", label=label2)
+
         plt.plot(x1, y1, ls="-", lw=2, c="green", label=label1)
         plt.legend(loc="best")
         plt.gcf().set_size_inches(aspect_ratio * 5, 5.)

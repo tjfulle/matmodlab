@@ -58,9 +58,19 @@ def setup_logger(runid, verbosity, d=None):
     ch.setFormatter(cf)
     logging.getLogger("").addHandler(ch)
 
+    # set the logger
     LOGGER = logging.getLogger("")
 
     return
+
+
+def close_and_reset_logger():
+    global LOGGER, INP_ERRORS
+    for handler in [x for x in LOGGER.handlers]:
+        LOGGER.removeHandler(handler)
+    del LOGGER
+    LOGGER = None
+    INP_ERRORS = 0
 
 
 def log_debug(message):

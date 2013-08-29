@@ -18,10 +18,11 @@ np.set_printoptions(precision=4)
 
 class SolidDriver(Driver):
     name = "solid"
-    paths = {}
-    proportional = 0
-    kappa = 0.
+    paths = None
+    proportional = None
+    kappa = None
     def __init__(self):
+        super(SolidDriver, self).__init__()
         pass
 
     def setup(self, runid, material, *opts):
@@ -280,7 +281,7 @@ class SolidDriver(Driver):
             return 1
 
         path, cls.kappa, cls.proportional = items
-        cls.paths["prdef"] = path
+        cls.paths = {"prdef": path}
 
         return 0
 

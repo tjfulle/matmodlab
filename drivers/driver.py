@@ -12,12 +12,14 @@ DRIVER_DB = None
 
 
 class Driver(object):
-    _elem_variables = []
-    _glob_variables = []
-    ndata = 0
-    _data = np.zeros(ndata)
-    nglobdata = 0
-    _glob_data = np.zeros(nglobdata)
+
+    def __init__(self):
+        self._elem_variables = []
+        self._glob_variables = []
+        self.ndata = 0
+        self._data = np.zeros(self.ndata)
+        self.nglobdata = 0
+        self._glob_data = np.zeros(self.nglobdata)
 
     def register_variable(self, var, vtype="SCALAR"):
         """Register material variable

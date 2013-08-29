@@ -21,6 +21,8 @@ DIFFTOL = 1.E-06
 FAILTOL = 1.E-04
 FLOOR = 1.E-12
 
+EXE= "gmddiff"
+
 
 def main(argv=None):
     if argv is None:
@@ -29,6 +31,9 @@ def main(argv=None):
     parser.add_argument("-f",
         help=("Use the given file to specify the variables to be considered "
               "and to what tolerances [default: %(default)s]."))
+    parser.add_argument("--interp", default=False, action="store_true",
+        help=("Interpolate variabes through time to compute error "
+              "[default: %(default)s]."))
     parser.add_argument("source1")
     parser.add_argument("source2")
     args = parser.parse_args(argv)
@@ -51,7 +56,7 @@ def main(argv=None):
                         [FLOOR] * len(H1))
 
 
-    status = diff_files(H1, D1, H2, D2, variables)
+    status = diff_files(H1, D1, H2, D2, variables, interp=args.interp)
 
     if status == 0:
         LOG.info("Files are the same")
@@ -116,13 +121,14 @@ def loadtxt(f, skiprows=0, comments="#"):
         if len(line) < ncols:
             break
         if len(line) > ncols:
-            stop("*** {0}: error: {1}: inconsistent data in row {1}".format(
+            LOG.error("*** {0}: error: {1}: inconsistent data in row {1}".format(
                 EXE, os.path.basename(f), iline))
+            raise SystemExit(2)
         lines.append(line)
     return np.array(lines)
 
 
-def diff_files(head1, data1, head2, data2, vars_to_compare):
+def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
     """Diff the files
 
     """
@@ -138,13 +144,16 @@ def diff_files(head1, data1, head2, data2, vars_to_compare):
         LOG.error("TIME not in File2")
         return 2
 
-    if t1.shape[0] != t2.shape[0]:
-        LOG.error("Number of timesteps in File1 and File2 differ")
-        return 2
+    if not interp:
+        # interpolation will not be used when comparing values, so the
+        # timesteps must be equal
+        if t1.shape[0] != t2.shape[0]:
+            LOG.error("Number of timesteps in File1 and File2 differ")
+            return 2
 
-    if not np.allclose(t1, t2, atol=FAILTOL, rtol=FAILTOL):
-        LOG.error("Timestep size in File1 and File2 differ")
-        return 2
+        if not np.allclose(t1, t2, atol=FAILTOL, rtol=FAILTOL):
+            LOG.error("Timestep size in File1 and File2 differ")
+            return 2
 
     status = []
     for (var, dtol, ftol, floor) in vars_to_compare:
@@ -168,10 +177,12 @@ def diff_files(head1, data1, head2, data2, vars_to_compare):
         d2 = afloor(data2[:, i2], floor)
 
         LOG.info("Comparing {0}".format(var))
-        if np.allclose(d1, d2, atol=ftol, rtol=ftol):
-            LOG.info("File1.{0} == File2.{0}\n".format(var))
-            status.append(0)
-            continue
+
+        if not interp:
+            if np.allclose(d1, d2, atol=ftol, rtol=ftol):
+                LOG.info("File1.{0} := File2.{0}\n".format(var))
+                status.append(0)
+                continue
 
         rms, nrms = rms_error(t1, d1, t2, d2)
         if nrms < dtol:
@@ -193,6 +204,9 @@ def diff_files(head1, data1, head2, data2, vars_to_compare):
 
 
 def rms_error(t1, d1, t2, d2):
+    """Compute the RMS and normalized RMS error
+
+    """
     if t1.shape[0] == t2.shape[0]:
         rms = np.sqrt(np.mean((d1 - d2) ** 2))
     else:
@@ -203,6 +217,9 @@ def rms_error(t1, d1, t2, d2):
 
 
 def interp_rms_error(t1, d1, t2, d2):
+    """Compute RMS error by interpolation
+
+    """
     ti = max(np.amin(t1), np.amin(t2))
     tf = min(np.amax(t1), np.amax(t2))
     n = t1.shape[0]
@@ -214,6 +231,32 @@ def interp_rms_error(t1, d1, t2, d2):
 
 
 def read_diff_file(filepath):
+    """Read the diff instruction file
+
+    Parameters
+    ----------
+    filepath : str
+        Path to diff instruction file
+
+    Notes
+    -----
+    The diff instruction file has the following format
+
+    <GMDDiff [ftol="real"] [dtol="real"] [floor="real"]>
+      <Variable name="string" [ftol="real"] [dtol="real"] [floor="real"]/>
+    </GMDDiff>
+
+    It lets you specify:
+      global failure tolerance (GMDDiff ftol attribute)
+      global diff tolerance (GMDDiff dtol attribute)
+      global floor (GMDDiff floor attribute)
+
+      individual variables to specify (Variable tags)
+      individual failure tolerance (Variable ftol attribute)
+      individual diff tolerance (Variable dtol attribute)
+      individual floor (Variable floor attribute)
+
+    """
     doc = xdom.parse(filepath)
     try:
         gmddiff = doc.getElementsByTagName("GMDDiff")[0]

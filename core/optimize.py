@@ -158,7 +158,9 @@ class OptimizationHandler(object):
         io.log_message("optimized parameters:")
         for (i, name) in enumerate(self.names):
             io.log_message("\t{0} = {1:12.6E}".format(name, self.xopt[i]))
-        pass
+
+        # close the log
+        io.close_and_reset_logger()
 
     def output(self):
         return self.tabular_file

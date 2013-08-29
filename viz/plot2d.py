@@ -678,6 +678,9 @@ def create_model_plot(sources, handler=None, metadata=None):
     ----------
 
     """
+    if not isinstance(sources, (list)):
+        stop("*** error: sources must be list of files")
+
     def genrunid(path):
         return os.path.splitext(os.path.basename(path))[0]
 
