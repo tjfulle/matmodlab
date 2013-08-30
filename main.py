@@ -16,7 +16,6 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument("sources", nargs="+", help="Source file paths")
     parser.add_argument("-v", default=1, type=int,
        help="Verbosity [default: %(default)s]")
     parser.add_argument("--dbg", default=False, action="store_true",
@@ -27,9 +26,16 @@ def main(argv=None):
        help="Number of simultaneous jobs to run [default: %(default)s]")
     parser.add_argument("-V", default=False, action="store_true",
        help="Launch simulation visualizer on completion [default: %(default)s]")
+    parser.add_argument("sources", nargs="*", help="Source file paths")
     args = parser.parse_args(argv)
     cfg.debug = args.dbg
     cfg.sqa = args.sqa
+
+    if not args.sources:
+        sys.exit("GUI not yet functional")
+        import viz.select as vs
+        window = vs.MaterialModelSelector(model_type="any")
+        sys.exit(window.configure_traits())
 
     output = []
     for (i, source) in enumerate(args.sources):
