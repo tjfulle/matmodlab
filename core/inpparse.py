@@ -498,7 +498,7 @@ def pFunctions(element_list, *args):
         elif ftype == __pwl__:
             # parse the table in expr
             cols = function.getAttribute("cols")
-            if cols is None:
+            if not cols:
                 cols = np.arange(2)
             else:
                 cols = np.array(xmltools.str2list(cols, dtype=int)) - 1
