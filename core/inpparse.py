@@ -9,7 +9,7 @@ if __name__ == "__main__":
     D = os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.join(D, "../"))
 
-from __config__ import cfg
+from __config__ import cfg, MTL_PARAM_DB_FILE
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from core.io import fatal_inp_error, input_errors
@@ -18,7 +18,8 @@ from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
 from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.opthold import OptionHolder
-from materials.material import get_material_from_db, get_material_params_from_db
+from utils.mtldb import read_material_params_from_db
+from materials.material import get_material_from_db
 
 
 S_PHYSICS = "Physics"
@@ -98,7 +99,7 @@ def parse_input(filepath):
             p.removeChild(rootlmn)
 
     if input_errors():
-        raise UserInputError("Stopping due to previous Errors")
+        raise UserInputError("stopping due to previous Errors")
 
     if S_OPT in gmdblks and S_PERMUTATION in gmdblks:
         raise UserInputError("Incompatible blocks: [Optimzation, Permutation]")
@@ -113,7 +114,7 @@ def parse_input(filepath):
         ns = physics_namespace(gmdblks[S_PHYSICS], *args)
 
     if input_errors():
-        raise UserInputError("Stopping due to previous Errors")
+        raise UserInputError("stopping due to previous Errors")
 
     return ns
 
@@ -270,7 +271,10 @@ def pExtract(extlmns, *args):
 
 
 def physics_namespace(physlmn, *args):
+
     simblk = pPhysics(physlmn, *args)
+    if input_errors():
+        raise UserInputError("stopping due to previous errors")
 
     # set up the namespace to return
     ns = Namespace()
@@ -353,9 +357,7 @@ def pPhysics(physlmn, *args):
     if not pathlmns:
         fatal_inp_error("Physics: {0}: block missing".format(S_PATH))
     else:
-        error = driver.parse_and_register_paths(pathlmns, *args)
-        if error:
-            fatal_inp_error("Physics: error parsing {0}".format(S_PATH))
+        driver.parse_and_register_paths(pathlmns, *args)
 
     return simblk
 
@@ -407,7 +409,9 @@ def parse_mtl_params(mtllmn, pdict, model):
         val = node.firstChild.data.strip()
         if name.lower() == "matlabel":
             dbfile = node.getAttribute("db")
-            mtl_db_params = get_material_params_from_db(val, model, dbfile=dbfile)
+            if not dbfile:
+                dbfile = MTL_PARAM_DB_FILE
+            mtl_db_params = read_material_params_from_db(val, model, dbfile)
             if mtl_db_params is None:
                 fatal_inp_error("Material: error reading parameters for "
                                 "{0} from database".format(val))
@@ -452,13 +456,10 @@ def pFunctions(element_list, *args):
         if fid is None:
             fatal_inp_error("Function: id not found")
             continue
-
         fid = int(fid.value)
-
         if fid == const_fcn_id:
             fatal_inp_error("Function id {0} is reserved".format(fid))
             continue
-
         if fid in functions:
             fatal_inp_error("{0}: duplicate function definition".format(fid))
             continue
@@ -467,21 +468,27 @@ def pFunctions(element_list, *args):
         if ftype is None:
             fatal_inp_error("Functions.Function: type not found")
             continue
-
         ftype = " ".join(ftype.value.split()).upper()
-
         if ftype not in (__ae__, __pwl__):
             fatal_inp_error("{0}: invalid function type".format(ftype))
             continue
 
-        expr = function.firstChild.data.strip()
+        href = function.getAttribute("href")
+        if href:
+            if ftype == __ae__:
+                fatal_inp_error("function file support only for piecewise linear")
+                continue
+            if not os.path.isfile(href):
+                fatal_inp_error("{0}: no such file".format(href))
+            expr = open(href, "r").read()
+
+        else:
+            expr = function.firstChild.data.strip()
 
         if ftype == __ae__:
-            var = function.attributes.get("var")
+            var = function.getAttribute("var")
             if not var:
                 var = "x"
-            else:
-                var = var.value.strip()
             func, err = build_lambda(expr, var=var, disp=1)
             if err:
                 fatal_inp_error("{0}: in analytic expression in "
@@ -490,31 +497,33 @@ def pFunctions(element_list, *args):
 
         elif ftype == __pwl__:
             # parse the table in expr
-
-            try:
-                columns = xmltools.str2list(
-                    function.attributes.get("columns").value, dtype=str)
-            except AttributeError:
-                columns = ["x", "y"]
-
-            except TypeError:
-                columns = ["x", "y"]
+            cols = function.getAttribute("cols")
+            if cols is None:
+                cols = np.arange(2)
+            else:
+                cols = np.array(xmltools.str2list(cols, dtype=int)) - 1
+                if len(cols) != 2:
+                    fatal_inp_error("len(cols) != 2")
+                    continue
 
             table = []
-            ncol = len(columns)
+            nc = 0
             for line in expr.split("\n"):
-                line = [float(x) for x in line.split()]
+                line = line.split("#", 1)[0].split()
                 if not line:
                     continue
-                if len(line) != ncol:
-                    nl = len(line)
-                    fatal_inp_error("Expected {0} columns in function "
-                                    "{1}, got {2}".format(ncol, fid, nl))
+                line = [float(x) for x in line]
+                if not nc: nc = len(line)
+                if len(line) != nc:
+                    fatal_inp_error("Inconsistent table data")
                     continue
-
+                if len(line) < np.amax(cols):
+                    fatal_inp_error("Note enought columns in table data")
+                    continue
                 table.append(line)
+            table = np.array(table)[cols]
 
-            func, err = build_interpolating_function(np.array(table), disp=1)
+            func, err = build_interpolating_function(table, disp=1)
             if err:
                 fatal_inp_error("{0}: in piecwise linear table in "
                                 "function {1}".format(err, fid))

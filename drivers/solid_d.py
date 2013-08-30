@@ -264,26 +264,26 @@ class SolidDriver(Driver):
 
         if len(pathlmns) > 1:
             fatal_inp_error("Only 1 Path tag supported for solid driver")
-            return 1
+            return
 
         pathlmn = pathlmns[0]
         ptype = pathlmn.getAttribute("type")
         if not ptype:
             fatal_inp_error("Path requires type attribute")
-            return 1
+            return
         pathlmn.removeAttribute("type")
         parse_fcn = path_fcns.get(ptype.strip().lower())
         if parse_fcn is None:
             fatal_inp_error("{0}: unkown Path type".format(ptype))
-            return 1
+            return
         items = parse_fcn(pathlmn, *args)
         if input_errors():
-            return 1
+            return
 
         path, cls.kappa, cls.proportional = items
         cls.paths = {"prdef": path}
 
-        return 0
+        return
 
     @classmethod
     def pPrdef(cls, pathlmn, *args):
@@ -310,9 +310,9 @@ class SolidDriver(Driver):
         options.addopt("ndumps", "20", dtype=str)
 
         # the following options are for table formatted Path
-        options.addopt("tblcols", "1:7", dtype=str)
-        options.addopt("tbltfmt", "time", dtype=str, choices=("time", "dt"))
-        options.addopt("tblcfmt", "222222", dtype=str)
+        options.addopt("cols", "1:7", dtype=str)
+        options.addopt("tfmt", "time", dtype=str, choices=("time", "dt"))
+        options.addopt("cfmt", "222222", dtype=str)
 
         # Get control terms
         for i in range(pathlmn.attributes.length):
@@ -333,12 +333,15 @@ class SolidDriver(Driver):
             path = cls.parse_path_default(lines)
 
         elif pformat == "table":
-            path = cls.parse_path_table(lines, options.getopt("tbltfmt"),
-                                        options.getopt("tblcols"),
-                                        options.getopt("tblcfmt"))
+            path = cls.parse_path_table(lines, options.getopt("tfmt"),
+                                        options.getopt("cols"),
+                                        options.getopt("cfmt"))
 
         elif pformat == "fcnspec":
-            path = cls.parse_path_cijfcn(lines, functions)
+            path = cls.parse_path_cijfcn(lines, functions,
+                                         options.getopt("nfac"),
+                                         options.getopt("cfmt"))
+            options.setopt("nfac", 1)
 
         else:
             fatal_inp_error("Path: {0}: invalid format".format(pformat))
@@ -407,7 +410,7 @@ class SolidDriver(Driver):
         return path
 
     @classmethod
-    def parse_path_table(cls, lines, tbltfmt, tblcols, tblcfmt):
+    def parse_path_table(cls, lines, tfmt, cols, cfmt):
         """Parse the path table
 
         """
@@ -416,11 +419,11 @@ class SolidDriver(Driver):
         termination_time = 0.
         leg_num = 1
 
-        # Convert tblcols to a list
-        columns = cls.format_tbl_cols(tblcols)
+        # Convert cols to a list
+        columns = cls.format_tbl_cols(cols)
 
         # check the control
-        control = cls.format_path_control(tblcfmt)
+        control = cls.format_path_control(cfmt)
 
         for line in lines:
             if not line:
@@ -438,7 +441,7 @@ class SolidDriver(Driver):
                                 "{0}".format(leg_num))
                 continue
 
-            if tbltfmt == "dt":
+            if tfmt == "dt":
                 termination_time += line[0]
             else:
                 termination_time = line[0]
@@ -468,7 +471,7 @@ class SolidDriver(Driver):
         return path
 
     @classmethod
-    def parse_path_cijfcn(cls, lines, functions):
+    def parse_path_cijfcn(cls, lines, functions, num_steps, cfmt):
         """Parse the path given by functions
 
         """
@@ -483,24 +486,19 @@ class SolidDriver(Driver):
                             "got {0}".format(len(lines)))
             return
 
-        termination_time, num_steps, control_hold = lines[0][:3]
-        cijfcns = lines[0][3:]
+        termination_time = lines[0][0]
+        cijfcns = lines[0][1:]
 
         # check entries
         # --- termination time
-        termination_time = format_termination_time(1, termination_time, 1.e99)
+        termination_time = format_termination_time(1, termination_time, -1)
         if termination_time is None:
             # place holder, just to check rest of input
             termination_time = 1.e99
         final_time = termination_time
 
-        # --- number of steps
-        num_steps = format_num_steps(1, num_steps)
-        if num_steps is None:
-            num_steps = 10000
-
         # --- control
-        control = cls.format_path_control(control_hold, leg_num=leg_num)
+        control = cls.format_path_control(cfmt, leg_num=leg_num)
 
         # --- get the actual functions
         Cij = []
@@ -589,16 +587,16 @@ class SolidDriver(Driver):
 
 
     @staticmethod
-    def format_tbl_cols(tblcols):
+    def format_tbl_cols(cols):
         columns = []
         for item in [x.split(":")
                      for x in xmltools.str2list(
-                             re.sub(r"\s*:\s*", ":", tblcols), dtype=str)]:
+                             re.sub(r"\s*:\s*", ":", cols), dtype=str)]:
             try:
                 item = [int(x) for x in item]
             except ValueError:
-                fatal_inp_error("Path: expected integer tblcols, got "
-                                "{0}".format(tblcols))
+                fatal_inp_error("Path: expected integer cols, got "
+                                "{0}".format(cols))
                 continue
             item[0] -= 1
 
@@ -606,7 +604,7 @@ class SolidDriver(Driver):
                 columns.append(item[0])
 
             elif len(item) not in (2, 3):
-                fatal_inp_error("Path: expected tblcfmt range to be specified as "
+                fatal_inp_error("Path: expected cfmt range to be specified as "
                                 "start:end:[step], got {0}".format(
                                     ":".join(str(x) for x in item)))
                 continue

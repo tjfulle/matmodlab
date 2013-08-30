@@ -23,7 +23,8 @@ def main(argv=None):
     parser.add_argument("--sqa", default=False, action="store_true",
        help="SQA mode [default: %(default)s]")
     parser.add_argument("-j", default=1, type=int,
-       help="Number of simultaneous jobs to run [default: %(default)s]")
+       help=("Number of simultaneous jobs to run (permutation only) "
+             "[default: %(default)s]"))
     parser.add_argument("-V", default=False, action="store_true",
        help="Launch simulation visualizer on completion [default: %(default)s]")
     parser.add_argument("sources", nargs="*", help="Source file paths")
