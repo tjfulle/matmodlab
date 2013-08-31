@@ -1,0 +1,344 @@
+\documentclass[11pt]{report}
+\usepackage{ifthen}
+\newcommand{\gmd}{\texttt{gmd}}
+\newcommand{\tag}[1]{\texttt{<#1>}}
+\newcommand{\gat}[1]{\texttt{<\textbackslash{}#1>}}
+\newcommand{\element}[4][0in]{%
+  \indent\hspace{#1}\tag{#2 #3}\\%
+  \indent\hspace{.2in}#4\\%
+  \indent\hspace{#1}\gat{#2}}
+\newcommand{\attr}[4]{%
+  \ifthenelse{\equal{#3}{}}{%
+    \ifthenelse{\equal{#4}{}}{%
+      \texttt{#1=``#2''}}{%
+      \texttt{#1=``#2\{#4\}''}}}{%
+    \ifthenelse{\equal{#4}{}}{%
+      \texttt{#1=``#2[#3]''}}{%
+      \texttt{#1=``#2[#3]\{#4\}''}}}}
+
+
+\title{\gmd{} Users Guide}
+
+\begin{document}
+\maketitle
+
+% ----------------------------------------------------------------------------- %
+\chapter{Introduction}
+\gmd{} is a Generalized Model Driver.
+
+% ----------------------------------------------------------------------------- %
+\chapter{User Input}
+User input is via xml control files. In general, tags use CamelCase and
+attributes lower case.
+
+% ----------------------------------------------------------------------------- %
+\section{GMDSpec}
+\begin{verbatim}
+<GMDSpec>
+\end{verbatim}
+%
+All input files must have as their root element \tag{GMDSpec}. Recognized
+subelements of \tag{GMDSpec} are
+%
+\begin{itemize}
+  \item \tag{Physics}
+  \item \tag{Permutation}
+  \item \tag{Optimization}
+\end{itemize}
+
+Additionally, the following global elements are recognized in any element.
+%
+\begin{itemize}
+  \item \tag{include}
+  \item \tag{Function}
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\section{Function}
+\begin{verbatim}
+<Function id="int"
+          type="str{analytic expression, piecewise linear}"
+          var="str[x]" href="str" cols="list">
+\end{verbatim}
+%
+Define functions to be used elsewhere in input. \texttt{id=1} is
+reserved for the constant $1.$ function.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Examples}
+Analytic extression
+%
+\begin{verbatim}
+<Function id="2" type="analytic expression" var="t">
+  sin(t)
+</Function>
+\end{verbatim}
+
+Piecewise linear table
+%
+\begin{verbatim}
+<Function id="2" type="piecewise linear">
+  1 2
+  2 3
+  3 5
+</Function>
+\end{verbatim}
+
+Read a piecewise linear table from an external file using columns 1 and 3
+%
+\begin{verbatim}
+<Function id="2" type="piecewise linear" href="./file.dat" cols="1 3"/>
+\end{verbatim}
+
+\begin{verbatim}
+% cat file.dat
+# Column1 Column2 Column3
+1 1 4
+2 3 7
+.
+.
+.
+100 4.2 1.43
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Include}
+\begin{verbatim}
+<Include href="str"/>
+\end{verbatim}
+%
+Path to file to be included as if its contents were inplace in the input file
+
+\subsection{Example}
+\begin{verbatim}
+<Include href="/path/to/some/file.ext"/>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Physics}
+\begin{verbatim}
+<Physics driver="str[solid]{solid, eos}">
+\end{verbatim}
+%
+Define the physics of the simulation. Recognized subelements of \tag{Physics}
+are
+%
+\begin{itemize}
+  \item \tag{Path}
+  \item \tag{Material}
+  \item \tag{Extract}
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Path}
+\begin{verbatim}
+<Path type="str{prdef, prstate, isotherm, hugoniot}"
+      format="str[default]{default, table, fcnspec}"
+      nfac="int[1]" kappa="real[0]"
+      tstar="real[1]" estar="real[1]" sstar="real[1]"
+      amplitude="real[1]" ratfac="real[1]">
+\end{verbatim}
+%
+Define deformation paths.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Examples}
+\begin{verbatim}
+<Path type="prdef" kappa="0" tstar="1" estar="-.5" amplitude="1"
+      nfac="1000" ratfac="1">
+  <!-- termination time, number of steps, control, Cij -->
+  0 0 222222 0 0 0 0 0 0
+  1 1 222222 1 0 0 0 0 0
+  2 1 222222 2 0 0 0 0 0
+  3 1 222222 1 0 0 0 0 0
+  4 1 222222 0 0 0 0 0 0
+</Path>
+\end{verbatim}
+
+\begin{verbatim}
+<Path type="prdef" nfac="100">
+  0 0 444 0 0 0
+  1 1 444 -7490645504 -3739707392 -3739707392
+  2 1 444 -14981291008 -7479414784 -7479414784
+  3 1 444 -7490645504 -3739707392 -3739707392
+  4 1 444 0 0 0
+</Path>
+\end{verbatim}
+
+\paragraph{Function Specification:}
+Function are specified as \texttt{function id[:scale]}
+\begin{verbatim}
+<Path type="prdef" kappa="0" tstar="1" amplitude="1" format="fcnspec"
+      cfmt="222" nfac="200">
+  {2 * pi} 2:1.e-1 1:0 1:0
+</Path>
+\end{verbatim}
+
+\begin{verbatim}
+<Path type="prdef" format="table" cols="1 3:8" cfmt="222222" tfmt="time">
+  <include href="exmpls.tbl"/>
+</Path>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Material}
+\begin{verbatim}
+<Material model="str">
+\end{verbatim}
+%
+Specify the material model and parameters. Material parameters are specified
+as individual elements.
+
+\subsubsection{Material database}
+\begin{verbatim}
+<Matlabel db="str[MTL_PARAM_DB_FILE]">
+\end{verbatim}
+%
+Insert model parameters from a database
+
+\subsubsection{Examples}
+\begin{verbatim}
+<Material model="elastic">
+  <G>  54E+09 </G>
+  <K> 124E+09 </K>
+</Material>
+\end{verbatim}
+
+\begin{verbatim}
+<Material model="elastic">
+  <Matlabel db="./materials.xml"> aluminum </Matlabel>
+  <K> 124E+09 </K>
+</Material>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Extract}
+\begin{verbatim}
+<Extract format="str[ascii]{ascii, mathematic}" step="int[1]" ffmt="str[.18f]">
+\end{verbatim}
+%
+Extract variables from exodus output to different formats. Variables to be
+extracted are specified children of the \tag{Extract} element. All components
+of vector and tensor variables will be extracted if only the basename is
+specified.  Time is always extracted as the first entry of the output file.
+
+\subsubsection{Examples}
+Extract all components of stress and strain
+%
+\begin{verbatim}
+<Extract format="ascii">
+  STRESS STRAIN
+</Extract>
+\end{verbatim}
+
+Extract only the XX, YY, and ZZ components of stress
+%
+\begin{verbatim}
+<Extract format="ascii">
+  STRESS_XX STRESS_YY STRESS_ZZ
+</Extract>
+\end{verbatim}
+
+Extract everything
+\begin{verbatim}
+<Extract format="ascii">
+  ALL
+</Extract>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Permutation}
+\begin{verbatim}
+<Permutation method="str[zip]{zip, combine}" seed="real[12]">
+\end{verbatim}
+%
+Permutate model input parameters to investigate sensitivities. Recognized
+subelements of \tag{Permutation}
+
+\begin{itemize}
+  \item \tag{Permutate}
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Permutate}
+\begin{verbatim}
+<Permutate var="str"
+           values="fcn{range, list, weibull, uniform, normal, percentage}"
+\end{verbatim}
+%
+Specify the paramaters to permutate.  Parameters should appear elsewhere in
+the input file in preprocessing braces.
+
+\subsection{Example}
+\begin{verbatim}
+<Permutation method="zip" seed="12">
+  <Permutate var="K" values="weibull(125.e9, 14, 3)"/>
+  <Permutate var="G" values="percentage(45.e9, 10, 3)"/>
+</Permutation>
+\end{verbatim}
+
+
+% ----------------------------------------------------------------------------- %
+\section{Optimization}
+\begin{verbatim}
+<Optimization method="str[simplex]{simplex, powell, cobyla}"
+              maxiter="int[25]" tolerance="real[1e-6]">
+\end{verbatim}
+%
+Optimize specified parameters against user specified objective function.
+Recognized subelements of \tag{Optimization}
+
+\begin{itemize}
+  \item \tag{Optimize}
+  \item \tag{AuxiliaryFile}
+  \item \tag{ObjectiveFunction}
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Optimize}
+\begin{verbatim}
+<Optimize var="str" initial_value="real" bounds="list"/>
+\end{verbatim}
+%
+Specify the variable to be optimized, giving initial value and, optionally,
+bounds.  Only the \texttt{cobyla} method accepts bounds.  Variable name should
+occur elsewhere in the input file in braces.
+
+% ----------------------------------------------------------------------------- %
+\subsection{AuxiliaryFile}
+Path to any auxiliary file needed by the optimization objective function.
+\begin{verbatim}
+<AuxiliaryFile href="str"/>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\subsection{ObjectiveFunction}
+Path to a user defined executable script that returns the error to the
+optimization routine.
+\begin{verbatim}
+<ObjectiveFunction href="str"/>
+\end{verbatim}
+
+An \texttt{ObjectiveFunction} \texttt{scriptname} is called from the command
+line as
+\begin{verbatim}
+% ./scriptname simulation_output.exo [auxiliary_file_1 [... auxiliary_file_n]]
+\end{verbatim}
+
+\subsection{Example}
+
+\begin{verbatim}
+<Optimization method="simplex" maxiter="25" tolerance="1e-4" disp="0">
+  <ObjectiveFunction href="opt-sig-v-time"/>
+  <AuxiliaryFile href="opt-baseline.dat"/>
+  <Optimize var="opt_k" initial_value="129.e9"/>
+  <Optimize var="opt_g" initial_value="54.e9"/>
+</Optimization>
+\end{verbatim}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

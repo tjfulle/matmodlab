@@ -55,7 +55,7 @@ def parse_input(filepath):
     The user input
 
     """
-    # find all "include" files, and preprocess the input
+    # find all "Include" files, and preprocess the input
     user_input = find_and_fill_includes(open(filepath, "r").read())
     user_input, nsubs = find_and_make_subs(user_input, disp=1)
     if nsubs:
@@ -222,7 +222,7 @@ def pPermutation(permlmn, *args):
     gdict = {"__builtins__": None}
     N_default = 10
     safe = {"range": lambda a, b, N=N_default: np.linspace(a, b, N),
-            "sequence": lambda a: np.array(a),
+            "list": lambda a: np.array(a),
             "weibull": lambda a, b, N=N_default: a * rstate.weibull(b, N),
             "uniform": lambda a, b, N=N_default: rstate.uniform(a, b, N),
             "normal": lambda a, b, N=N_default: rstate.normal(a, b, N),
@@ -257,15 +257,11 @@ def pExtract(extlmns, *args):
     for i in range(extlmn.attributes.length):
         options.setopt(*xmltools.get_name_value(extlmn.attributes.item(i)))
 
-    variables = []
-    for item in extlmn.getElementsByTagName("Variables"):
-        data = item.firstChild.data.split("\n")
-        data = [xmltools.stringify(x, "upper")
-                for sub in data for x in sub.split()]
-        if "ALL" in data:
-            variables = "ALL"
-            break
-        variables.extend(data)
+    data = extlmn.firstChild.data.split("\n")
+    variables = [xmltools.stringify(x, "upper")
+                 for sub in data for x in sub.split()]
+    if "ALL" in variables:
+        variables = "ALL"
     return (options.getopt("format"), options.getopt("step"),
             options.getopt("ffmt"), variables)
 

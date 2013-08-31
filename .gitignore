@@ -8,6 +8,11 @@
 *.log
 *.preprocessed
 
+docs/auto
+docs/*.aux
+docs/*.log
+docs/*.synctex.gz
+
 TestResults.*
 .built
 
