@@ -46,10 +46,10 @@ subelements of \tag{GMDSpec} are
   \item \tag{Optimization}
 \end{itemize}
 
-Additionally, the following global elements are recognized in any element.
+Additionally, the following elements are read from anywhere in the input file
 %
 \begin{itemize}
-  \item \tag{include}
+  \item \tag{Include}
   \item \tag{Function}
 \end{itemize}
 
@@ -59,6 +59,8 @@ Preprocessing allows specifying variables in the input inside of comment tags
 for use in other parts of the input. Syntax mirrors that of \texttt{aprepro}.
 
 \subsection{Example}
+Specify the \tag{Material} parameter \texttt{K} and \tag{Path} parameter
+\texttt{estar} as variables
 \begin{verbatim}
 <GMDSpec>
   <!-- {K = 23e9}
