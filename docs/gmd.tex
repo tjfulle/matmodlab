@@ -54,6 +54,29 @@ Additionally, the following global elements are recognized in any element.
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
+\section{Preprocessing}
+Preprocessing allows specifying variables in the input inside of comment tags
+for use in other parts of the input. Syntax mirrors that of \texttt{aprepro}.
+
+\subsection{Example}
+\begin{verbatim}
+<GMDSpec>
+  <!-- {K = 23e9}
+       {estar = -.05}
+  -->
+  <Physics>
+    <Material model="elastic">
+      <K> {K} </K>
+      <G> 54e9 </G>
+    </Material>
+    <Path type="prdef" estar="{estar}">
+         . . .
+    </Path>
+  </Physics>
+</GMDSpec>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
 \section{Function}
 \begin{verbatim}
 <Function id="int"
@@ -66,7 +89,7 @@ reserved for the constant $1.$ function.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Examples}
-Analytic extression
+\paragraph{Analytic extression}
 %
 \begin{verbatim}
 <Function id="2" type="analytic expression" var="t">
@@ -74,7 +97,7 @@ Analytic extression
 </Function>
 \end{verbatim}
 
-Piecewise linear table
+\paragraph{Piecewise linear table}
 %
 \begin{verbatim}
 <Function id="2" type="piecewise linear">
@@ -83,7 +106,7 @@ Piecewise linear table
   3 5
 </Function>
 \end{verbatim}
-
+%
 Read a piecewise linear table from an external file using columns 1 and 3
 %
 \begin{verbatim}
@@ -266,15 +289,27 @@ subelements of \tag{Permutation}
            values="fcn{range, list, weibull, uniform, normal, percentage}"
 \end{verbatim}
 %
-Specify the paramaters to permutate.  Parameters should appear elsewhere in
+Specify the paramaters to permutate. Variable names should occur elsewhere in
 the input file in preprocessing braces.
 
 \subsection{Example}
+Permutate the \texttt{K} and \texttt{G} parameters
+%
 \begin{verbatim}
 <Permutation method="zip" seed="12">
   <Permutate var="K" values="weibull(125.e9, 14, 3)"/>
   <Permutate var="G" values="percentage(45.e9, 10, 3)"/>
 </Permutation>
+\end{verbatim}
+
+In the \tag{Material} element, the \texttt{K} and \texttt{G} parameters are
+specified as
+%
+\begin{verbatim}
+<Material model="elastic">
+  <K> {K} </K>
+  <G> {G} </G>
+</Material>
 \end{verbatim}
 
 
@@ -301,8 +336,8 @@ Recognized subelements of \tag{Optimization}
 \end{verbatim}
 %
 Specify the variable to be optimized, giving initial value and, optionally,
-bounds.  Only the \texttt{cobyla} method accepts bounds.  Variable name should
-occur elsewhere in the input file in braces.
+bounds.  Only the \texttt{cobyla} method accepts bounds.  Variable names should
+occur elsewhere in the input file in preprocessing braces.
 
 % ----------------------------------------------------------------------------- %
 \subsection{AuxiliaryFile}
@@ -326,7 +361,7 @@ line as
 \end{verbatim}
 
 \subsection{Example}
-
+Optimize the \texttt{K} and \texttt{G} parameters
 \begin{verbatim}
 <Optimization method="simplex" maxiter="25" tolerance="1e-4" disp="0">
   <ObjectiveFunction href="opt-sig-v-time"/>
@@ -334,6 +369,16 @@ line as
   <Optimize var="opt_k" initial_value="129.e9"/>
   <Optimize var="opt_g" initial_value="54.e9"/>
 </Optimization>
+\end{verbatim}
+
+In the \tag{Material} element, the \texttt{K} and \texttt{G} parameters are
+specified as
+%
+\begin{verbatim}
+<Material model="elastic">
+  <K> {opt_k} </K>
+  <G> {opt_g} </G>
+</Material>
 \end{verbatim}
 
 \end{document}
