@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import shutil
 import subprocess
 import datetime
@@ -8,6 +9,7 @@ import multiprocessing as mp
 from itertools import izip, product
 
 import core.io as io
+from __config__ import cfg
 from utils.pprepro import find_and_make_subs
 
 
@@ -30,6 +32,7 @@ class PermutationHandler(object):
         self.nproc = opts[0]
 
         self.names = []
+        self.timing = {}
         self.ivalues = []
         for (name, ivalue) in parameters:
             self.names.append(name)
@@ -53,7 +56,8 @@ class PermutationHandler(object):
 
         os.chdir(self.rootd)
         cwd = os.getcwd()
-        io.log_message("starting permutation jobs")
+        io.log_message("{0}: starting jobs".format(self.runid))
+        self.timing["start"] = time.time()
 
         job_inp = ((i, self.exe, self.runid, self.names, self.basexml,
                     params, self.rootd)
@@ -70,6 +74,7 @@ class PermutationHandler(object):
             pool.join()
 
         io.log_message("finished permutation jobs")
+        self.timing["end"] = time.time()
         return
 
     def finish(self):
@@ -98,6 +103,8 @@ class PermutationHandler(object):
         tabular.close()
 
         # close the log
+        io.log_message("{0}: calculations completed ({1:.4f}s)".format(
+            self.runid, self.timing["end"] - self.timing["start"]))
         io.close_and_reset_logger()
 
     def output(self):
@@ -129,7 +136,7 @@ def run_single_job(args):
     with open(xmlf, "w") as fobj:
         fobj.write(xmlinp)
 
-    cmd = "{0} {1}".format(exe, xmlf)
+    cmd = "{0} -I{1} {2}".format(exe, cfg.I, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
     io.log_message("starting job {0} with {1}".format(job_num, pparams))
     job = subprocess.Popen(cmd.split(), stdout=out,

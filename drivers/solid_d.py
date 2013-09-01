@@ -304,6 +304,7 @@ class SolidDriver(Driver):
         options.addopt("fstar", 1.)
         options.addopt("efstar", 1.)
         options.addopt("dstar", 1.)
+        options.addopt("href", None, dtype=str)
         options.addopt("format", "default", dtype=str,
                        choices=("default", "table", "fcnspec"))
         options.addopt("proportional", 0, dtype=mybool)
@@ -319,12 +320,22 @@ class SolidDriver(Driver):
             options.setopt(*xmltools.get_name_value(pathlmn.attributes.item(i)))
 
         # Read in the actual Path - splitting them in to lists
-        lines = []
-        for node in pathlmn.childNodes:
-            if node.nodeType == node.COMMENT_NODE:
-                continue
-            lines.extend([" ".join(xmltools.uni2str(item).split())
-                          for item in node.nodeValue.splitlines() if item.split()])
+        href = options.getopt("href")
+        if href:
+            if not os.path.isfile(href):
+                if not os.path.isfile(os.path.join(cfg.I, href)):
+                    fatal_inp_error("{0}: no such file".format(href))
+                    return
+                href = os.path.join(cfg.I, href)
+            lines = open(href, "r").readlines()
+        else:
+            lines = []
+            for node in pathlmn.childNodes:
+                if node.nodeType == node.COMMENT_NODE:
+                    continue
+                lines.extend([" ".join(xmltools.uni2str(item).split())
+                              for item in node.nodeValue.splitlines()
+                              if item.split()])
         lines = [xmltools.str2list(line, dtype=str) for line in lines]
 
         # parse the Path depending on type
@@ -345,6 +356,9 @@ class SolidDriver(Driver):
 
         else:
             fatal_inp_error("Path: {0}: invalid format".format(pformat))
+            return
+
+        if input_errors():
             return
 
         # store relevant info to the class
@@ -479,7 +493,7 @@ class SolidDriver(Driver):
         leg_num = 1
 
         if not lines:
-            fatal_inp_error("No table functions defined")
+            fatal_inp_error("Empty path encountered")
             return
         elif len(lines) > 1:
             fatal_inp_error("Only one line of table functions allowed, "

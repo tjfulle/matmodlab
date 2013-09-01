@@ -26,10 +26,10 @@ S_PHYSICS = "Physics"
 S_PERMUTATION = "Permutation"
 S_OPT = "Optimization"
 
-S_AUX_FILES = "Auxiliary Files"
+S_AUX_FILE = "AuxiliaryFile"
 S_METHOD = "Method"
 S_PARAMS = "Parameters"
-S_OBJ_FCN = "Objective Function"
+S_OBJ_FCN = "ObjectiveFunction"
 S_MITER = "Maximum Iterations"
 S_TOL = "Tolerance"
 S_DISP = "Disp"
@@ -142,17 +142,17 @@ def pOptimization(optlmn, *args):
         options.setopt(*xmltools.get_name_value(optlmn.attributes.item(i)))
 
     # objective function
-    objfcn = optlmn.getElementsByTagName("ObjectiveFunction")
+    objfcn = optlmn.getElementsByTagName(S_OBJ_FCN)
     if not objfcn:
-        fatal_inp_error("ObjectiveFunction not found")
+        fatal_inp_error("{0} not found".format(S_OBJ_FCN))
     elif len(objfcn) > 1:
-        fatal_inp_error("Only one ObjectiveFunction tag supported")
+        fatal_inp_error("Only one {0} tag supported".format(S_OBJ_FCN))
     else:
         objfcn = objfcn[0]
 
     objfile = objfcn.getAttribute("href")
     if not objfile:
-        fatal_inp_error("Expected href attribute to ObjectiveFunction")
+        fatal_inp_error("Expected href attribute to {0}".format(S_OBJ_FCN))
     elif not os.path.isfile(objfile):
         fatal_inp_error("{0}: no such file".format(objfile))
     else:
@@ -160,10 +160,10 @@ def pOptimization(optlmn, *args):
 
     # auxiliary files
     auxfiles = []
-    for item in optlmn.getElementsByTagName("AuxiliaryFile"):
+    for item in optlmn.getElementsByTagName(S_AUX_FILE):
         auxfile = item.getAttribute("href")
         if not auxfile:
-            fatal_inp_error("Expected href attribute to AuxiliaryFile")
+            fatal_inp_error("Expected href attribute to {0}".format(S_AUX_FILE))
         elif not os.path.isfile(auxfile):
             fatal_inp_error("{0}: no such file".format(auxfile))
         else:
@@ -197,7 +197,7 @@ def pOptimization(optlmn, *args):
     odict[S_DISP] = options.getopt("disp")
 
     odict[S_PARAMS] = p
-    odict[S_AUX_FILES] = auxfiles
+    odict[S_AUX_FILE] = auxfiles
     odict[S_OBJ_FCN] = objfile
 
     return odict
@@ -297,7 +297,7 @@ def optimization_namespace(optlmn, basexml):
     ns.stype = S_OPT
     ns.method = optblk[S_METHOD]
     ns.parameters = optblk[S_PARAMS]
-    ns.auxiliary_files = optblk[S_AUX_FILES]
+    ns.auxiliary_files = optblk[S_AUX_FILE]
     ns.objective_function = optblk[S_OBJ_FCN]
     ns.tolerance = optblk[S_TOL]
     ns.maxiter = optblk[S_MITER]
@@ -407,6 +407,11 @@ def parse_mtl_params(mtllmn, pdict, model):
             dbfile = node.getAttribute("db")
             if not dbfile:
                 dbfile = MTL_PARAM_DB_FILE
+            if not os.path.isfile(dbfile):
+                if not os.path.isfile(os.path.join(cfg.I, dbfile)):
+                    fatal_inp_error("{0}: no such file".format(dbfile))
+                    continue
+                dbfile = os.path.join(args.I, dbfile)
             mtl_db_params = read_material_params_from_db(val, model, dbfile)
             if mtl_db_params is None:
                 fatal_inp_error("Material: error reading parameters for "
@@ -475,7 +480,10 @@ def pFunctions(element_list, *args):
                 fatal_inp_error("function file support only for piecewise linear")
                 continue
             if not os.path.isfile(href):
-                fatal_inp_error("{0}: no such file".format(href))
+                if not os.path.isfile(os.path.join(cfg.I, href)):
+                    fatal_inp_error("{0}: no such file".format(href))
+                    continue
+                href = os.path.join(cfg.I, href)
             expr = open(href, "r").read()
 
         else:

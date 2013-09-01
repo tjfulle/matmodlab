@@ -27,10 +27,13 @@ def main(argv=None):
              "[default: %(default)s]"))
     parser.add_argument("-V", default=False, action="store_true",
        help="Launch simulation visualizer on completion [default: %(default)s]")
+    parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("sources", nargs="*", help="Source file paths")
     args = parser.parse_args(argv)
     cfg.debug = args.dbg
     cfg.sqa = args.sqa
+    # directory to look for hrefs and other files
+    cfg.I = args.I
 
     if not args.sources:
         sys.exit("GUI not yet functional")
@@ -45,10 +48,12 @@ def main(argv=None):
             source += ".xml"
             if not os.path.isfile(source):
                 logerr("{0}: no such file".format(args.source))
+                continue
 
         basename = os.path.basename(source).rstrip(".preprocessed")
         if not basename.endswith(".xml"):
             logerr("*** gmd: expected .xml file extension")
+            continue
         runid = os.path.splitext(basename)[0]
         mm_input = parse_input(source)
 
@@ -107,6 +112,11 @@ def logerr(message=None, errors=[0]):
         return errors[0]
     sys.stderr.write("*** gmd: error: {0}\n".format(message))
     errors[0] += 1
+
+
+def stop(message):
+    sys.stderr.write("*** gmd: error: {0}\n".format(message))
+    raise SystemExit(2)
 
 
 if __name__ == "__main__":

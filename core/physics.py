@@ -36,7 +36,7 @@ class PhysicsHandler(object):
 
         # set up timing
         self.timing = {}
-        self.timing["initial"] = time.time()
+        self.timing["start"] = time.time()
 
     def setup(self):
 
@@ -108,9 +108,9 @@ class PhysicsHandler(object):
 
     def finish(self):
         # udpate and close the file
-        self.timing["final"] = time.time()
+        self.timing["end"] = time.time()
         io.log_message("{0}: calculations completed ({1:.4f}s)".format(
-            self.runid, self.timing["final"] - self.timing["initial"]))
+            self.runid, self.timing["end"] - self.timing["start"]))
         self.exo.finish()
 
         if self.extract:
@@ -119,7 +119,7 @@ class PhysicsHandler(object):
                     variables=variables, ofmt=ofmt)
             self.timing["extract"] = time.time()
             io.log_message("{0}: extraction completed ({1:.4f}s)".format(
-                self.runid, self.timing["extract"] - self.timing["final"]))
+                self.runid, self.timing["extract"] - self.timing["end"]))
 
         # close the log
         io.close_and_reset_logger()

@@ -1,11 +1,13 @@
 import os
 import sys
+import time
 import subprocess
 import numpy as np
 import shutil
 import scipy.optimize
 import datetime
 
+from __config__ import cfg
 import core.io as io
 import utils.pprepro as pprepro
 
@@ -79,6 +81,7 @@ class OptimizationHandler(object):
         self.basexml = basexml
         self.auxiliary_files = auxiliary
         self.tabular_file = os.path.join(self.rootd, "gmd-tabular.dat")
+        self.timing = {}
 
     def setup(self):
         with open(self.tabular_file, "w") as fobj:
@@ -98,7 +101,8 @@ class OptimizationHandler(object):
         """
         os.chdir(self.rootd)
         cwd = os.getcwd()
-        io.log_message("starting optimization job")
+        io.log_message("{0}: starting jobs".format(self.runid))
+        self.timing["start"] = time.time()
 
         # optimization methods work best with number around 1, here we
         # normalize the optimization variables and save the multiplier to be
@@ -150,10 +154,14 @@ class OptimizationHandler(object):
 
         self.xopt = xopt * xfac
 
+        self.timing["end"] = time.time()
+
         return 0
 
     def finish(self):
         """ finish up the optimization job """
+        io.log_message("{0}: calculations completed ({1:.4f}s)".format(
+            self.runid, self.timing["end"] - self.timing["start"]))
         io.log_message("optimized parameters found in {0} iterations".format(IOPT))
         io.log_message("optimized parameters:")
         for (i, name) in enumerate(self.names):
@@ -214,7 +222,7 @@ def func(xcall, *args):
         fobj.write(xmlinp)
 
     # Run the job
-    cmd = "{0} {1}".format(exe, xmlf)
+    cmd = "{0} -I{1} {2}".format(exe, cfg.I, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
     job = subprocess.Popen(cmd.split(), stdout=out,
                            stderr=subprocess.STDOUT)
