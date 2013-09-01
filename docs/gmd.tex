@@ -91,7 +91,7 @@ reserved for the constant $1.$ function.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Examples}
-\paragraph{Analytic extression}
+\paragraph{Analytic expression}
 %
 \begin{verbatim}
 <Function id="2" type="analytic expression" var="t">
@@ -168,6 +168,7 @@ Define deformation paths.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{Examples}
+\paragraph{format: default}
 \begin{verbatim}
 <Path type="prdef" kappa="0" tstar="1" estar="-.5" amplitude="1"
       nfac="1000" ratfac="1">
@@ -190,8 +191,29 @@ Define deformation paths.
 </Path>
 \end{verbatim}
 
-\paragraph{Function Specification:}
-Function are specified as \texttt{function id[:scale]}
+\paragraph{format: table} Read legs from table. Control type is uniform for all
+legs. Specify control type as \texttt{cfmt} attribute of \tag{Path}.
+Optionally, specify the time format as \texttt{tfmt} and number of steps for
+each leg as \texttt{nfac}.
+\begin{verbatim}
+<Path type="prdef" format="table" cols="1:4" cfmt="222222" tfmt="time">
+  0 0 0 0
+  1 1 0 0
+    ...
+  n 2 0 0
+</Path>
+\end{verbatim}
+
+Read the table from a file
+\begin{verbatim}
+<Path type="prdef" format="table" cols="1 3:8" cfmt="222222" tfmt="time">
+  <include href="exmpls.tbl"/>
+</Path>
+\end{verbatim}
+
+\paragraph{format: fcnspec} Create legs from functions. Functions are specified
+as \texttt{function id[:scale]}.  Syntax is otherwise similar to table format.
+Only a single leg can be specified.
 \begin{verbatim}
 <Path type="prdef" kappa="0" tstar="1" amplitude="1" format="fcnspec"
       cfmt="222" nfac="200">
@@ -199,11 +221,6 @@ Function are specified as \texttt{function id[:scale]}
 </Path>
 \end{verbatim}
 
-\begin{verbatim}
-<Path type="prdef" format="table" cols="1 3:8" cfmt="222222" tfmt="time">
-  <include href="exmpls.tbl"/>
-</Path>
-\end{verbatim}
 
 % ----------------------------------------------------------------------------- %
 \subsection{Material}
