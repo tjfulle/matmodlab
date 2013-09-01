@@ -311,7 +311,7 @@ class SolidDriver(Driver):
         options.addopt("ndumps", "20", dtype=str)
 
         # the following options are for table formatted Path
-        options.addopt("cols", "1:7", dtype=str)
+        options.addopt("cols", None, dtype=str)
         options.addopt("tfmt", "time", dtype=str, choices=("time", "dt"))
         options.addopt("cfmt", "222222", dtype=str)
 
@@ -433,21 +433,29 @@ class SolidDriver(Driver):
         termination_time = 0.
         leg_num = 1
 
-        # Convert cols to a list
-        columns = cls.format_tbl_cols(cols)
-
         # check the control
         control = cls.format_path_control(cfmt)
 
+        tbl = []
         for line in lines:
             if not line:
                 continue
             try:
-                line = np.array([float(x) for x in line])
+                line = [float(x) for x in line]
             except ValueError:
                 fatal_inp_error("Expected floats in leg {0}, got {1}".format(
                     leg_num, line))
                 continue
+            tbl.append(line)
+        tbl = np.array(tbl)
+
+        # if cols was not specified, must want all
+        if not cols:
+            columns = range(len(tbl.shape[1]))
+        else:
+            columns = cls.format_tbl_cols(cols)
+
+        for line in tbl:
             try:
                 line = line[columns]
             except IndexError:

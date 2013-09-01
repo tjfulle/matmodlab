@@ -446,8 +446,9 @@ def pFunctions(element_list, *args):
     """
     __ae__ = "ANALYTIC EXPRESSION"
     __pwl__ = "PIECEWISE LINEAR"
+    zero_fcn_id = 0
     const_fcn_id = 1
-    functions = {const_fcn_id: lambda x: 1.}
+    functions = {zero_fcn_id: lambda x: 0., const_fcn_id: lambda x: 1.}
     if not element_list:
         return functions
 
@@ -458,7 +459,7 @@ def pFunctions(element_list, *args):
             fatal_inp_error("Function: id not found")
             continue
         fid = int(fid.value)
-        if fid == const_fcn_id:
+        if fid in (zero_fcn_id, const_fcn_id):
             fatal_inp_error("Function id {0} is reserved".format(fid))
             continue
         if fid in functions:
