@@ -51,6 +51,7 @@ Additionally, the following elements are read from anywhere in the input file
 \begin{itemize}
   \item \tag{Include}
   \item \tag{Function}
+  \item \tag{TerminationTime}
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
@@ -76,6 +77,19 @@ Specify the \tag{Material} parameter \texttt{K} and \tag{Path} parameter
     </Path>
   </Physics>
 </GMDSpec>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Include}
+\begin{verbatim}
+<Include href="str"/>
+\end{verbatim}
+%
+Path to file to be included as if its contents were inplace in the input file
+
+\subsection{Example}
+\begin{verbatim}
+<Include href="/path/to/some/file.ext"/>
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
@@ -127,16 +141,17 @@ Read a piecewise linear table from an external file using columns 1 and 3
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\section{Include}
+\section{TerminationTime}
 \begin{verbatim}
-<Include href="str"/>
+<TerminationTime> float </TerminationTime>
 \end{verbatim}
 %
-Path to file to be included as if its contents were inplace in the input file
+Termination time for simulation.  If not specified, termination time is taken
+as final time in \tag{Path}.
 
 \subsection{Example}
 \begin{verbatim}
-<Include href="/path/to/some/file.ext"/>
+<TerminationTime> 1.e-6 </TerminationTime>
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
