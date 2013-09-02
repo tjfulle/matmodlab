@@ -37,6 +37,7 @@ S_TTERM = "TerminationTime"
 S_MATERIAL = "Material"
 S_EXTRACT = "Extract"
 S_PATH = "Path"
+S_SURFACE = "Surface"
 S_DRIVER = "driver"
 
 
@@ -72,12 +73,10 @@ def parse_input(filepath):
     # ------------------------------------------ get and parse blocks --- #
     gmdblks = {}
     #           (blkname, required, remove)
-    rootblks = ((S_OPT, 0, 1),
-                (S_PERMUTATION, 0, 1),
-                (S_PHYSICS, 1, 0))
+    rootblks = ((S_OPT, 0, 1), (S_PERMUTATION, 0, 1), (S_PHYSICS, 1, 0))
+
     # find all functions first
     functions = pFunctions(gmdspec.getElementsByTagName("Function"))
-    args = (functions,)
 
     for (rootblk, reqd, rem) in rootblks:
         rootlmns = gmdspec.getElementsByTagName(rootblk)
@@ -111,7 +110,7 @@ def parse_input(filepath):
         ns = permutation_namespace(gmdblks[S_PERMUTATION], gmdspec.toxml())
 
     else:
-        ns = physics_namespace(gmdblks[S_PHYSICS], *args)
+        ns = physics_namespace(gmdblks[S_PHYSICS], functions)
 
     if input_errors():
         raise UserInputError("stopping due to previous Errors")
@@ -123,7 +122,7 @@ def parse_input(filepath):
 # Each XML block is parsed with a corresponding function 'pBlockName'
 # where BlockName is the name of the block as entered by the user in the
 # input file
-def pOptimization(optlmn, *args):
+def pOptimization(optlmn):
     """Parse the optimization block
 
     """
@@ -203,7 +202,7 @@ def pOptimization(optlmn, *args):
     return odict
 
 
-def pPermutation(permlmn, *args):
+def pPermutation(permlmn):
     """Parse the permutation block
 
     """
@@ -246,7 +245,7 @@ def pPermutation(permlmn, *args):
     return pdict
 
 
-def pExtract(extlmns, *args):
+def pExtract(extlmns):
     extlmn = extlmns[-1]
     options = OptionHolder()
     options.addopt("format", "ascii", dtype=str, choices=("ascii", "mathematica"))
@@ -257,18 +256,26 @@ def pExtract(extlmns, *args):
     for i in range(extlmn.attributes.length):
         options.setopt(*xmltools.get_name_value(extlmn.attributes.item(i)))
 
-    data = extlmn.firstChild.data.split("\n")
-    variables = [xmltools.stringify(x, "upper")
-                 for sub in data for x in sub.split()]
+    # get requested variables to extract
+    variables = []
+    for varlmn in  extlmn.getElementsByTagName("Variables"):
+        data = varlmn.firstChild.data.split("\n")
+        variables.extend([xmltools.stringify(x, "upper")
+                          for sub in data for x in sub.split()])
     if "ALL" in variables:
         variables = "ALL"
+
+    # get Paths to extract -> further parsing is handled by drivers that
+    # support extracting paths
+    paths = extlmn.getElementsByTagName("Path")
+
     return (options.getopt("format"), options.getopt("step"),
-            options.getopt("ffmt"), variables)
+            options.getopt("ffmt"), variables, paths)
 
 
-def physics_namespace(physlmn, *args):
+def physics_namespace(physlmn, functions):
 
-    simblk = pPhysics(physlmn, *args)
+    simblk = pPhysics(physlmn, functions)
     if input_errors():
         raise UserInputError("stopping due to previous errors")
 
@@ -317,7 +324,7 @@ def permutation_namespace(permlmn, basexml):
     return ns
 
 
-def pPhysics(physlmn, *args):
+def pPhysics(physlmn, functions):
     """Parse the physics tag
 
     """
@@ -343,29 +350,31 @@ def pPhysics(physlmn, *args):
             continue
         parsefcn = getattr(sys.modules[__name__],
                            "p{0}".format(sublmns[0].nodeName))
-        simblk[subblk] = parsefcn(sublmns, *args)
+        simblk[subblk] = parsefcn(sublmns)
         for sublmn in sublmns:
             p = sublmn.parentNode
             p.removeChild(sublmn)
 
     # Finally, parse the paths and surfaces
     pathlmns = physlmn.getElementsByTagName(S_PATH)
-    if not pathlmns:
-        fatal_inp_error("Physics: {0}: block missing".format(S_PATH))
-    else:
-        driver.parse_and_register_paths(pathlmns, *args)
+    surflmns = physlmn.getElementsByTagName(S_SURFACE)
+    if not pathlmns and not surflmns:
+        fatal_inp_error("Physics: must specify at least one surface or path")
+        return
+
+    driver.parse_and_register_paths_and_surfaces(pathlmns, surflmns, functions)
 
     return simblk
 
 
-def pTerminationTime(ttermlmns, *args):
+def pTerminationTime(ttermlmns):
     tlmn = physlmn.getElementsByTagName(S_TTERM)
     if tlmn:
         return float(tlmn[0].firstChild.data)
     return None
 
 
-def pMaterial(mtllmns, *args):
+def pMaterial(mtllmns):
     """Parse the material block
 
     """
@@ -411,7 +420,7 @@ def parse_mtl_params(mtllmn, pdict, model):
                 if not os.path.isfile(os.path.join(cfg.I, dbfile)):
                     fatal_inp_error("{0}: no such file".format(dbfile))
                     continue
-                dbfile = os.path.join(args.I, dbfile)
+                dbfile = os.path.join(cfg.I, dbfile)
             mtl_db_params = read_material_params_from_db(val, model, dbfile)
             if mtl_db_params is None:
                 fatal_inp_error("Material: error reading parameters for "
@@ -440,7 +449,7 @@ def parse_mtl_params(mtllmn, pdict, model):
     return params
 
 
-def pFunctions(element_list, *args):
+def pFunctions(element_list):
     """Parse the functions block
 
     """

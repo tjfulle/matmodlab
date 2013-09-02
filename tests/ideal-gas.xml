@@ -4,34 +4,23 @@
 
     <Units input="SI" output="SI"/>
 
-    <Material model="ideal_gas">
+    <Material model="idealgas">
       <!-- He -->
       <M> 4.00260 </M>
       <CV> 1.5 </CV>
     </Material>
 
-    <Path type="hugoniot" increments="100">
-      <DensityRange> (1, 100) </DensityRange>
-      <InitialTemperature> 100 </InitialTemperature>
-    </Path>
-
-    <Surface increments="10">
-      <DensityRange> (1, 100) </DensityRange>
-      <TemperatureRange> (5, 300) </TemperatureRange>
+    <Surface nfac="1">
+        0 12 1 100
+      100 12 5 300
     </Surface>
 
-    <Path type="isotherm" increments="200">
-      <DensityRange> (1, 100) </DensityRange>
-      <InitialTemperature> 225 </InitialTemperature>
-    </Path>
-
-    <Path type="prstate">
-      <!-- control 1: rho, 2: temp -->
-      12 1 100
-      12 1 101
-      12 2 102
-      12 3 103
-    </Path>
+    <Extract>
+      <Path type="isotherm" increments="200"
+	    density_range="1 3" initial_temperature="225"/>
+      <Path type="hugoniot" increments="100"
+	    density_range="1 3" initial_temperature="100"/>
+    </Extract>
 
   </Physics>
 

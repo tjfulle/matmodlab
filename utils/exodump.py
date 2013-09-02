@@ -9,7 +9,7 @@ class ExoDumpError(Exception):
     def __init__(self, message):
         raise SystemExit(message)
 
-OFMTS = {"ascii": ".out", "mathematica": ".math"}
+OFMTS = {"ascii": ".out", "mathematica": ".math", "ndarray": ".npy"}
 
 
 def main(argv=None):
@@ -53,6 +53,8 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
         stream = sys.stdout
     elif outfile in ("2", "stderr"):
         stream = sys.stderr
+    elif outfile is "return":
+        stream = None
     else:
         stream = open(outfile, "w")
 
@@ -103,11 +105,17 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
     if len(header) != data.shape[1]:
         raise ExoDumpError("inconsistent data")
 
+    if stream is None:
+        return data
+
     if ofmt == "ascii":
         asciidump(stream, ffmt, header, data)
 
     elif ofmt == "mathematica":
         mathdump(stream, ffmt, header, data)
+
+    elif ofmt == "ndarray":
+        data.tofile(stream)
 
     stream.close()
 

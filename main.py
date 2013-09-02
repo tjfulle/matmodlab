@@ -85,18 +85,8 @@ def main(argv=None):
             continue
 
         # Setup and run the problem
-        try:
-            model.setup()
-        except:
-            logerr("{0}: failed during setup".format(runid))
-            continue
-
-        try:
-            model.run()
-        except:
-            logerr("{0}: failed to run".format(runid))
-            continue
-
+        model.setup()
+        model.run()
         model.finish()
         output.append(model.output())
 

@@ -29,38 +29,38 @@ class IdealGas(Material):
         self.register_mtl_variable("DEDR", "SCALAR",
             units="SPECIFIC_ENERGY_UNITS_OVER_DENSITY_UNITS")
 
-    def update_state(self, dt, d, stress, xtra, *args, **kwargs):
-        """
-          Evaluate the eos - rho and tmpr are in CGSEV
+    def update_state(self, *args, **kwargs):
+        """Evaluate the eos - rho and tmpr are in CGSEV
 
-          By the end of this routine, the following variables should be
-          updated and stored in matdat:
+        By the end of this routine, the following variables should be
+        updated
                   density, temperature, energy, pressure
         """
-        unit_system = kwargs["UNITS"]
-        rho = kwargs.get("RHO")
-        tmpr = kwargs.get("TEMPERATURE")
-        enrgy = kwargs.get("ENERGY")
+        mode = kwargs.get("mode", 0)
+        disp = kwargs.get("disp", 0)
 
+        # unit_system = kwargs["UNITS"]
         M = self._param_vals[0]
         CV = self._param_vals[1]
 
-        R = UnitManager.transform(
-            8.3144621,
-            "ENERGY_UNITS_OVER_TEMPERATURE_UNITS_OVER_DISCRETE_AMOUNT",
-            "SI", unit_system)
+        R = 8.3144621
+        #R = UnitManager.transform(
+        #    8.3144621,
+        #    "ENERGY_UNITS_OVER_TEMPERATURE_UNITS_OVER_DISCRETE_AMOUNT",
+        #    "SI", unit_system)
 
 
-        if all((rho, tmpr)):
-            # get (pres, enrgy) as functions of (rho, tmpr)
-            pres, energy = eosigr(M, CV, R, rho, tmpr)
+        if mode == 0:
+            # get (pres, enrgy) as functions of args=(rho, tmpr)
+            rho, tmpr = args
+            pres, enrgy = eosigr(M, CV, R, rho, tmpr)
 
-        elif all((rho, enrgy)):
-            # get (pres, tmpr) as functions of (rho, enrgy)
+        elif mode == 1:
+            # get (pres, tmpr) as functions of args=(rho, enrgy)
+            rho, enrgy = args
             pres, tmpr = eosigv(M, CV, R, rho, enrgy)
-
         else:
-            log_error("IdealGas: update_state not called correctly.")
+            raise Error1("idealgas: {0}: unrecognized mode".format(mode))
 
         cs = (R * tmpr / M) ** 2
         dpdr = R * tmpr / M
@@ -69,7 +69,14 @@ class IdealGas(Material):
         dedr = CV * pres * M / rho ** 2
         scratch = np.array([cs, dpdr, dpdt, dedt, dedr])
 
-        return pres, tmpr, enrgy, scratch
+        if mode == 0:
+            retvals = [pres, enrgy]
+        else:
+            retvals = [pres, tmpr]
+        if disp:
+            retvals.append(scratch)
+
+        return retvals
 
 
 def eosigr(M, CV, R, rho, tmpr) :

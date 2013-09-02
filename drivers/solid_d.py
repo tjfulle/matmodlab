@@ -83,7 +83,7 @@ class SolidDriver(Driver):
 
         return
 
-    def process_paths(self, iomgr, *args):
+    def process_paths_and_surfaces(self, iomgr, *args):
         """Process the deformation path
 
         Parameters
@@ -255,28 +255,26 @@ class SolidDriver(Driver):
 
     # --------------------------------------------------------- Parsing methods
     @classmethod
-    def parse_and_register_paths(cls, pathlmns, *args):
+    def parse_and_register_paths_and_surfaces(cls, pathlmns, surflmns, functions):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 
         """
-        path_fcns = {"prdef": cls.pPrdef}
-
         if len(pathlmns) > 1:
             fatal_inp_error("Only 1 Path tag supported for solid driver")
             return
-
         pathlmn = pathlmns[0]
+
         ptype = pathlmn.getAttribute("type")
         if not ptype:
             fatal_inp_error("Path requires type attribute")
             return
-        pathlmn.removeAttribute("type")
-        parse_fcn = path_fcns.get(ptype.strip().lower())
-        if parse_fcn is None:
-            fatal_inp_error("{0}: unkown Path type".format(ptype))
+        if ptype.strip().lower() != "prdef":
+            fatal_inp_error("{0}: unknown Path type".format(ptype))
             return
-        items = parse_fcn(pathlmn, *args)
+        pathlmn.removeAttribute("type")
+
+        items = cls.pPrdef(pathlmn, functions)
         if input_errors():
             return
 
@@ -286,12 +284,10 @@ class SolidDriver(Driver):
         return
 
     @classmethod
-    def pPrdef(cls, pathlmn, *args):
+    def pPrdef(cls, pathlmn, functions):
         """Parse the Path block and set defaults
 
         """
-        functions = args[0]
-
         # Set up options for Path
         options = OptionHolder()
         options.addopt("kappa", 0.)
