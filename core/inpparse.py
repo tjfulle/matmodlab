@@ -411,8 +411,11 @@ def parse_mtl_params(mtllmn, pdict, model):
         if node.nodeType != node.ELEMENT_NODE:
             continue
         name = node.nodeName
-        val = node.firstChild.data.strip()
         if name.lower() == "matlabel":
+            mat = node.getAttribute("material")
+            if not mat:
+                fatal_inp_error("Matlabel: expected material attribute")
+                continue
             dbfile = node.getAttribute("db")
             if not dbfile:
                 dbfile = MTL_PARAM_DB_FILE
@@ -421,14 +424,15 @@ def parse_mtl_params(mtllmn, pdict, model):
                     fatal_inp_error("{0}: no such file".format(dbfile))
                     continue
                 dbfile = os.path.join(cfg.I, dbfile)
-            mtl_db_params = read_material_params_from_db(val, model, dbfile)
+            mtl_db_params = read_material_params_from_db(mat, model, dbfile)
             if mtl_db_params is None:
                 fatal_inp_error("Material: error reading parameters for "
-                                "{0} from database".format(val))
+                                "{0} from database".format(mat))
                 continue
             param_map.update(mtl_db_params)
 
         else:
+            val = node.firstChild.data.strip()
             param_map[name] = val
 
     # put the parameters in an array

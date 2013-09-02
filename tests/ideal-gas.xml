@@ -6,8 +6,7 @@
 
     <Material model="idealgas">
       <!-- He -->
-      <M> 4.00260 </M>
-      <CV> 1.5 </CV>
+      <Matlabel material="helium"/>
     </Material>
 
     <Surface nfac="1">

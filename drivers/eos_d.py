@@ -17,10 +17,6 @@ from materials.material import create_material
 
 np.set_printoptions(precision=4)
 
-EPSILON = np.finfo(np.float).eps
-TOL = 1.E-09
-
-
 class EOSDriver(Driver):
     name = "eos"
     surface = None
@@ -369,6 +365,7 @@ class EOSDriver(Driver):
 
         """
         from utils.exodump import exodump
+        from utils.srfdump import extract_isotherm, extract_hugoniot
         # Set up options for Path
         options = OptionHolder()
         options.addopt("type", None, dtype=str, choices=("hugoniot", "isotherm"))
@@ -390,127 +387,25 @@ class EOSDriver(Driver):
             r = density_range(options.getopt("density_range"), n)
             t = options.getopt("initial_temperature")
 
-            if not inrange(r, self.surface[:, 1]):
-                log_error("extract: {0}: density not in range "
-                          "defined by surface".format(options.getopt("type")))
-                continue
-            if not inrange(t, self.surface[:, 2]):
-                log_error("extract: {0}: temperature not in range "
-                          "defined by surface".format(options.getopt("type")))
-                continue
+            if options.getopt("type") == "hugoniot":
+                ep = extract_hugoniot(r, t, surf)
+                log_message("extracting Hugoniot path")
+                if ep is None:
+                    log_error("error extracting Hugoniot path")
+                    continue
+                log_message("Hugoniot path extracted")
+                ehug, phug = ep
 
-            fcn = getattr(self, "extract_{0}".format(options.getopt("type")))
-            fcn(r, t, surf)
+            elif options.getopt("type") == "isotherm":
+                ep = extract_isotherm(r, t, surf)
+                log_message("extracting Isotherm path")
+                if ep is None:
+                    log_error("error extracting Isotherm path")
+                    continue
+                log_message("Isotherm path extracted")
+                eiso, piso = ep
 
         pass
-
-    def extract_isotherm(self, rhorange, itmpr, surface):
-        """Extract the isotherm from the surface
-
-        """
-        import scipy.interpolate as interpolate
-        log_message("extracting isothterm")
-
-        step = np.sqrt(surface[:, 0].shape[0])
-        x, y = surface[::step, 0], surface[:step, 1]
-
-        # get energy on isotherm
-        z = surface[:, 2].reshape((step, step))
-        f = interpolate.RectBivariateSpline(x, y, z, kx=1, ky=1, s=0)
-        enrgy = np.array([f(rho, itmpr)[0, 0] for rho in rhorange])
-
-        # get pressure on isotherm
-        z = surface[:, 3].reshape((step, step))
-        f = interpolate.RectBivariateSpline(x, y, z, kx=1, ky=1, s=0)
-        pres = np.array([f(rho, itmpr)[0, 0] for rho in rhorange])
-        log_message("isotherm extracted")
-        return
-
-    def extract_hugoniot(self, rhorange, itmpr, surface):
-        """Extract the Hugoniot from the surface
-
-        """
-        log_message("extracting Hugoniot")
-        import scipy.interpolate as interpolate
-
-        step = np.sqrt(surface[:, 0].shape[0])
-
-        # density and energy
-        r = surface[::step, 0]
-        e = surface[:step, 2]
-
-        # interpolate pressure as function of density and energy
-        z = surface[:, 3].reshape((step, step))
-        f_p = interpolate.RectBivariateSpline(r, e, z, kx=1, ky=1, s=0)
-
-        # interpolate dpdt as function of density and energy
-        z = surface[:, 4].reshape((step, step))
-        f_dpdt = interpolate.RectBivariateSpline(r, e, z, kx=1, ky=1, s=0)
-
-        # interpolate dedt as function of density and energy
-        z = surface[:, 5].reshape((step, step))
-        f_dedt = interpolate.RectBivariateSpline(r, e, z, kx=1, ky=1, s=0)
-
-
-        # Inital energy and pressure
-        ri = rhorange[0]
-        t = surface[:step, 1]
-        z = surface[:, 2].reshape((step, step))
-        f = interpolate.RectBivariateSpline(r, t, z, kx=1, ky=1, s=0)
-        ei = f(ri, itmpr)[0, 0]
-        z = surface[:, 3].reshape((step, step))
-        f = interpolate.RectBivariateSpline(r, t, z, kx=1, ky=1, s=0)
-        pi = f(ri, itmpr)[0, 0]
-        del f
-
-        e = ei
-        for rho in rhorange:
-            # Here we solve the Rankine-Hugoniot equation as
-            # a function of energy with constant density:
-            #
-            # E-E0 == 0.5*[P(E,V)+P0]*(V0-V)
-            #
-            # Where V0 = 1/rho0 and V = 1/rho. We rewrite it as:
-            #
-            # 0.5*[P(E,V)+P0]*(V0-V)-E+E0 == 0.0 = f(E)
-            #
-            # The derivative is given by:
-            #
-            # df(E)/dE = 0.5*(dP/dE)*(1/rho0 - 1/rho) - 1
-            #
-            # The solution to the first equation is found by a simple
-                # application of newton's method:
-            #
-            # x_n+1 = x_n - f(E)/(df(E)/dE)
-
-            r = rho
-            a = (1. / ri - 1. / r) / 2.
-
-            maxiter = 100
-            for it in range(maxiter):
-                p = f_p(r, e)[0, 0]
-                f = (p + pi) * a - e + ei
-                dpdt = f_dpdt(r, e)[0, 0]
-                dedt = f_dedt(r, e)[0, 0]
-                df = dpdt / dedt * a - 1.0
-
-                e = e - f / df
-
-                errval = abs(f / ei)
-                if errval < TOL:
-                    break
-
-            else:
-                log_error(
-                    "Max iterations reached "
-                    "(tol={0:14.10e}).\n".format(TOL) +
-                    "rel error   = {0:14.10e}\n".format(float(errval)) +
-                    "abs error   = {0:14.10e}\n".format(float(f)) +
-                    "func val    = {0:14.10e}\n".format(float(f)) +
-                    "ei = {0:14.10e}\n".format(float(ei)))
-
-        log_message("Hugoniot extracted")
-        return
 
 
 def density_range(a, n):
