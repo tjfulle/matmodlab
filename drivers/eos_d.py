@@ -140,7 +140,7 @@ class EOSDriver(Driver):
         options.addopt("nfac", 1., test=lambda x: x > 0.)
         options.addopt("href", None, dtype=str)
         options.addopt("format", "default", dtype=str,
-                       choices=("default", "table", "fcnspec"))
+                       choices=("default", "table"))
 
         # the following options are for table formatted Path
         options.addopt("cols", "1:2", dtype=str)
