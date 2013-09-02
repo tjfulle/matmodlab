@@ -9,7 +9,8 @@ import multiprocessing as mp
 from itertools import izip, product
 
 import core.io as io
-from __config__ import cfg
+from __config__ import cfg, F_EVALDB
+from utils.gmdtab import GMDTabularWriter
 from utils.pprepro import find_and_make_subs
 
 
@@ -79,29 +80,16 @@ class PermutationHandler(object):
 
     def finish(self):
         # write the summary
-        self.tabular_file = os.path.join(self.rootd, "gmd-tabular.dat")
-        tabular = open(self.tabular_file, "w")
-        ml = 12
-        tabsfmt = lambda a, ml=ml: "{0:{1}s} ".format(a, ml)
-        tabffmt = lambda a, ml=ml: "{0: {1}.{2}e} ".format(a, ml, ml/2)
-        head = tabsfmt("Eval")
-        head += " ".join(tabsfmt(s) for s in self.names)
-        njobs = len(self.ranges)
-        tabular.write("Run ID: {0}\n".format(self.runid))
-        today = datetime.date.today().strftime("%a %b %d %Y %H:%M:%S")
-        tabular.write("Date: {0}\n".format(today))
-        tabular.write("{0}\n".format(head))
-        for (i, params) in enumerate(self.ranges):
-            tabular.write(tabsfmt(repr(i)))
-            if self.statuses[i] != 0:
-                tabular.write(tabsfmt("evaluation failed"))
+        f = os.path.join(self.rootd, F_EVALDB)
+        tabular = GMDTabularWriter(f, self.runid)
+        self.tabular_file = tabular._filepath
+        for (job_num, params) in enumerate(self.ranges):
+            status = self.statuses[job_num]
+            parameters = {}
             for iname, name in enumerate(self.names):
-                param = params[iname]
-                tabular.write(tabffmt(param))
-            tabular.write("\n")
-        tabular.flush()
+                parameters[name] = params[iname]
+            tabular.write_entry(job_num, status, parameters)
         tabular.close()
-
         # close the log
         io.log_message("{0}: calculations completed ({1:.4f}s)".format(
             self.runid, self.timing["end"] - self.timing["start"]))

@@ -9,7 +9,7 @@ if __name__ == "__main__":
     D = os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.join(D, "../"))
 
-from __config__ import cfg, MTL_PARAM_DB_FILE
+from __config__ import cfg, F_MTL_PARAM_DB
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from core.io import fatal_inp_error, input_errors
@@ -418,7 +418,7 @@ def parse_mtl_params(mtllmn, pdict, model):
                 continue
             dbfile = node.getAttribute("db")
             if not dbfile:
-                dbfile = MTL_PARAM_DB_FILE
+                dbfile = F_MTL_PARAM_DB
             if not os.path.isfile(dbfile):
                 if not os.path.isfile(os.path.join(cfg.I, dbfile)):
                     fatal_inp_error("{0}: no such file".format(dbfile))

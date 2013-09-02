@@ -7,8 +7,9 @@ import shutil
 import scipy.optimize
 import datetime
 
-from __config__ import cfg
+from __config__ import cfg, F_EVALDB
 import core.io as io
+from utils.gmdtab import GMDTabularWriter
 import utils.pprepro as pprepro
 
 IOPT = -1
@@ -80,18 +81,12 @@ class OptimizationHandler(object):
         self.disp = disp
         self.basexml = basexml
         self.auxiliary_files = auxiliary
-        self.tabular_file = os.path.join(self.rootd, "gmd-tabular.dat")
+        f = os.path.join(self.rootd, F_EVALDB)
+        self.tabular = GMDTabularWriter(f, runid)
         self.timing = {}
 
     def setup(self):
-        with open(self.tabular_file, "w") as fobj:
-            fobj.write("Run ID: {0}\n".format(self.runid))
-            today = datetime.date.today().strftime("%a %b %d %Y %H:%M:%S")
-            fobj.write("Date: {0}\n".format(today))
-            fobj.write("{0:20s} ".format("Eval"))
-            for name in self.names:
-                fobj.write("{0:20s} ".format(name))
-            fobj.write("{0:20s}\n".format("Error"))
+        pass
 
     def run(self):
         """Run the optimization job
@@ -136,7 +131,7 @@ class OptimizationHandler(object):
             cons = lcons + ucons
 
         fargs = (self.rootd, self.runid, self.names, self.basexml, self.exe,
-                 self.script, self.auxiliary_files, self.tabular_file, xfac,)
+                 self.script, self.auxiliary_files, self.tabular, xfac,)
 
         if self.method == OPT_METHODS["simplex"]:
             xopt = scipy.optimize.fmin(
@@ -160,6 +155,7 @@ class OptimizationHandler(object):
 
     def finish(self):
         """ finish up the optimization job """
+        self.tabular.close()
         io.log_message("{0}: calculations completed ({1:.4f}s)".format(
             self.runid, self.timing["end"] - self.timing["start"]))
         io.log_message("optimized parameters found in {0} iterations".format(IOPT))
@@ -171,7 +167,7 @@ class OptimizationHandler(object):
         io.close_and_reset_logger()
 
     def output(self):
-        return self.tabular_file
+        return self.tabular._filepath
 
 def func(xcall, *args):
     """Objective function
@@ -193,14 +189,10 @@ def func(xcall, *args):
     (basedir, runid, xnames, basexml, exe, script, aux, tabular, xfac) = args
 
     IOPT += 1
-    job = "eval_{0:03d}".format(IOPT)
-    evald = os.path.join(basedir, job)
+    job_num = "{0:03d}".format(IOPT)
+    evald = os.path.join(basedir, "eval_" + job_num)
     os.mkdir(evald)
     os.chdir(evald)
-
-    # tabular.dat file
-    tabobj = open(tabular, "a")
-    tabobj.write("{0:<17d} ".format(IOPT))
 
     # write the params.in for this run
     prepro = {}
@@ -211,7 +203,6 @@ def func(xcall, *args):
             prepro[name] = param
             fobj.write("{0} = {1: .18f}\n".format(name, param))
             optparams.append("{0}={1:.4e}".format(name, param))
-            tabobj.write("{0: 20.10E} ".format(param))
     optparams = ",".join(optparams)
     io.log_message("starting job {0} with {1}".format(IOPT, optparams))
 
@@ -227,12 +218,11 @@ def func(xcall, *args):
     job = subprocess.Popen(cmd.split(), stdout=out,
                            stderr=subprocess.STDOUT)
     job.wait()
+
     if job.returncode != 0:
-        opterr = np.nan
-        tabobj.write("{0: 20.10E}\n".format(opterr))
-        tabobj.close()
+        tabular.write_entry(job_num, job.returncode, prepro, {"ERR": np.nan})
         io.log_message("**** error: job {0} failed".format(IOPT))
-        return opterr
+        return np.nan
 
     # Now run the script
     # Run the job
@@ -250,8 +240,7 @@ def func(xcall, *args):
         out, err = job.communicate()
         opterr = float(out)
 
-    tabobj.write("{0: 20.10E}\n".format(opterr))
-    tabobj.close()
+    tabular.write_entry(job_num, job.returncode, prepro, {"ERR": opterr})
 
     io.log_message("finished with job {0}".format(IOPT))
 
