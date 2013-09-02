@@ -15,6 +15,7 @@ from utils.pprepro import find_and_make_subs
 
 
 PERM_METHODS = ("zip", "combine", )
+NJOBS = 0
 
 
 class PermutationHandler(object):
@@ -40,7 +41,7 @@ class PermutationHandler(object):
             self.ivalues.append(ivalue)
 
     def setup(self):
-
+        global NJOBS
         if self.method == "zip":
             if not all(len(x) == len(self.ivalues[0]) for x in self.ivalues):
                 raise io.Error1("Number of permutations must be the same for "
@@ -51,13 +52,14 @@ class PermutationHandler(object):
         elif self.method == "combine":
             self.ranges = list(product(*self.ivalues))
 
+        NJOBS = len(self.ranges)
         pass
 
     def run(self):
 
         os.chdir(self.rootd)
         cwd = os.getcwd()
-        io.log_message("{0}: starting jobs".format(self.runid))
+        io.log_message("{0}: starting {1} jobs".format(self.runid, NJOBS))
         self.timing["start"] = time.time()
 
         job_inp = ((i, self.exe, self.runid, self.names, self.basexml,
@@ -99,7 +101,6 @@ class PermutationHandler(object):
         return self.tabular_file
 
 
-
 def run_single_job(args):
     job_num, exe, runid, names, basexml, params, rootd = args
     # make and move in to the evaluation directory
@@ -126,13 +127,14 @@ def run_single_job(args):
 
     cmd = "{0} -I{1} {2}".format(exe, cfg.I, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
-    io.log_message("starting job {0} with {1}".format(job_num, pparams))
+    io.log_message("starting job {0}/{1} with {2}".format(
+        job_num + 1, NJOBS, pparams))
     job = subprocess.Popen(cmd.split(), stdout=out,
                            stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
-        io.log_message("*** error: job {0} failed".format(job_num))
+        io.log_message("*** error: job {0} failed".format(job_num + 1))
     else:
-        io.log_message("finished with job {0}".format(job_num))
+        io.log_message("finished with job {0}".format(job_num + 1))
 
     return job.returncode

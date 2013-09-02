@@ -17,7 +17,7 @@ from drivers.driver import isdriver, create_driver
 from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
 from utils.fcnbldr import build_lambda, build_interpolating_function
-from utils.opthold import OptionHolder
+from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
 from utils.mtldb import read_material_params_from_db
 from materials.material import get_material_from_db
 
@@ -138,7 +138,10 @@ def pOptimization(optlmn):
 
     # Get control terms
     for i in range(optlmn.attributes.length):
-        options.setopt(*xmltools.get_name_value(optlmn.attributes.item(i)))
+        try:
+            options.setopt(*xmltools.get_name_value(optlmn.attributes.item(i)))
+        except OptionHolderError, e:
+            fatal_inp_error(e.message)
 
     # objective function
     objfcn = optlmn.getElementsByTagName(S_OBJ_FCN)
@@ -215,7 +218,10 @@ def pPermutation(permlmn):
 
     # Get control terms
     for i in range(permlmn.attributes.length):
-        options.setopt(*xmltools.get_name_value(permlmn.attributes.item(i)))
+        try:
+            options.setopt(*xmltools.get_name_value(permlmn.attributes.item(i)))
+        except OptionHolderError, e:
+            fatal_inp_error(e.message)
 
     rstate = np.random.RandomState(options.getopt("seed"))
     gdict = {"__builtins__": None}
@@ -254,7 +260,10 @@ def pExtract(extlmns):
 
     # Get control terms
     for i in range(extlmn.attributes.length):
-        options.setopt(*xmltools.get_name_value(extlmn.attributes.item(i)))
+        try:
+            options.setopt(*xmltools.get_name_value(extlmn.attributes.item(i)))
+        except OptionHolderError, e:
+            fatal_inp_error(e.message)
 
     # get requested variables to extract
     variables = []

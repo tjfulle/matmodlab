@@ -12,6 +12,7 @@ import xml.dom.minidom as xdom
 
 import utils.xmltools as xmltools
 from utils.namespace import Namespace
+from __config__ import SPLASH
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
@@ -103,6 +104,7 @@ def main(argv=None):
         sys.exit(list_rtests(rtests))
 
     # how many did we find?
+    sys.stdout.write(SPLASH)
     log_message("Found {0} tests in {1:.2f}s".format(
         len(rtests), timing.tests_found - timing.start))
 

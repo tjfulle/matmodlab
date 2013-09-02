@@ -4,7 +4,7 @@ import sys
 import imp
 import argparse
 
-from __config__ import __version__
+from __config__ import __version__, SPLASH
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
@@ -34,6 +34,7 @@ def main(argv=None):
         help="Wipe material database before building [default: all]")
     args = parser.parse_args(argv)
 
+    sys.stdout.write(SPLASH)
     log_message("gmd {0}".format(VERSION))
     log_message("looking for makemf files")
 

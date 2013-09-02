@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 
-from __config__ import cfg
+from __config__ import cfg, SPLASH
 from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
 from core.optimize import OptimizationHandler
@@ -57,9 +57,11 @@ def main(argv=None):
         runid = os.path.splitext(basename)[0]
         mm_input = parse_input(source)
 
+        if args.v:
+            sys.stdout.write(SPLASH)
+
         if mm_input.stype == S_PHYSICS:
             opts = (mm_input.density,)
-            # set up the logger
             model = PhysicsHandler(runid, args.v, mm_input.driver, mm_input.mtlmdl,
                                    mm_input.mtlprops, mm_input.ttermination,
                                    mm_input.extract, opts)

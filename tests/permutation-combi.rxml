@@ -1,0 +1,11 @@
+<rtest name="gmd/permutation-combi">
+
+  <keywords> medium elastic permutation </keywords>
+
+  <link_files>
+    {NAME}.rxml {NAME}.xml
+  </link_files>
+
+  <execute name="gmd"> {NAME}.xml </execute>
+
+</rtest>
