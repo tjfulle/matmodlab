@@ -73,7 +73,8 @@ def main(argv=None):
                                        mm_input.response_function,
                                        mm_input.response_descriptor,
                                        mm_input.parameters, exe,
-                                       mm_input.basexml, *opts)
+                                       mm_input.basexml, mm_input.correlation,
+                                       *opts)
 
         elif mm_input.stype == S_OPT:
             exe = "{0} {1}".format(sys.executable, FILE)

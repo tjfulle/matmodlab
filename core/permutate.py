@@ -14,6 +14,7 @@ from __config__ import cfg
 from utils.gmdtab import GMDTabularWriter
 from utils.pprepro import find_and_make_subs
 from core.response_functions import evaluate_response_function, GMD_RESP_FCN_RE
+import utils.gmdtab as gmdtab
 
 
 PERM_METHODS = ("zip", "combine", )
@@ -22,7 +23,7 @@ NJOBS = 0
 
 class PermutationHandler(object):
     def __init__(self, runid, verbosity, method, respfcn, respdesc,
-                 parameters, exe, basexml, *opts):
+                 parameters, exe, basexml, correlation, *opts):
 
         self.rootd = os.path.join(os.getcwd(), runid + ".eval")
         if os.path.isdir(self.rootd):
@@ -48,6 +49,7 @@ class PermutationHandler(object):
             s = re.search(GMD_RESP_FCN_RE, self.respfcn)
             respdesc = s.group("var")
         self.respdesc = respdesc
+        self.correlation = correlation
 
     def setup(self):
         global NJOBS
@@ -96,9 +98,18 @@ class PermutationHandler(object):
     def finish(self):
         # write the summary
         self.tabular.close()
-        # close the log
+
         io.log_message("{0}: calculations completed ({1:.4f}s)".format(
             self.runid, self.timing["end"] - self.timing["start"]))
+
+        if self.respfcn and self.correlation:
+            io.log_message("{0}: creating correlation matrix".format(self.runid))
+            if "table" in self.correlation:
+                gmdtab.correlations(self.tabular._filepath)
+            if "plot" in self.correlation:
+                gmdtab.plot_correlations(self.tabular._filepath)
+
+        # close the log
         io.close_and_reset_logger()
 
     def output(self):

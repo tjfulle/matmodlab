@@ -525,7 +525,8 @@ Extract Hugoniot and Isotherm paths
 % ----------------------------------------------------------------------------- %
 \section{Permutation}
 \begin{verbatim}
-<Permutation method="str[zip]{zip, combine}" seed="real[12]">
+<Permutation method="str[zip]{zip, combine}" seed="real[12]"
+                     correlation="list[none]{plot, table, none}">
 \end{verbatim}
 %
 Permutate model input parameters to investigate sensitivities. Recognized
@@ -582,6 +583,8 @@ Built in response functions are
   \item \texttt{gmd.min}
   \item \texttt{gmd.mean}
   \item \texttt{gmd.ave}
+  \item \texttt{gmd.absmax}
+  \item \texttt{gmd.absmin}
 \end{itemize}
 %
 Built in response functions operate only on variabes in the simulation output file.

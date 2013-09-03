@@ -11,7 +11,9 @@ S_HREF = "href"
 S_RESP_DESC = "descriptor"
 S_RESP_FCN = "ResponseFunction"
 GMD_RESP_FCNS = {"max": np.amax, "min": np.amin, "mean": np.mean,
-                 "ave": np.average}
+                 "ave": np.average,
+                 "absmax": lambda a: np.amax(np.abs(a)),
+                 "absmin": lambda a: np.amax(np.abs(a))}
 GMD_RESP_FCN_RE = r"gmd\.(?P<fcn>\w+)\s*\(\s*(?P<var>\w+)\s*\)"
 
 

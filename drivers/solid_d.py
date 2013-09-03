@@ -10,7 +10,7 @@ import utils.xmltools as xmltools
 from drivers.driver import Driver
 from core.kinematics import deps2d, sig2d, update_deformation
 from utils.tensor import NSYMM, NTENS, NVEC, I9
-from utils.opthold import OptionHolder
+from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
 from core.io import fatal_inp_error, input_errors, log_message
 from materials.material import create_material
 
@@ -314,7 +314,11 @@ class SolidDriver(Driver):
 
         # Get control terms
         for i in range(pathlmn.attributes.length):
-            options.setopt(*xmltools.get_name_value(pathlmn.attributes.item(i)))
+            try:
+                options.setopt(*xmltools.get_name_value(pathlmn.attributes.item(i)))
+            except OptionHolderError, e:
+                fatal_inp_error(e.message)
+                continue
 
         # Read in the actual Path - splitting them in to lists
         href = options.getopt("href")

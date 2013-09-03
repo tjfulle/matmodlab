@@ -42,6 +42,8 @@ S_PATH = "Path"
 S_SURFACE = "Surface"
 S_DRIVER = "driver"
 S_HREF = "href"
+S_CORR = "correlation"
+S_METHOD = "method"
 
 
 class UserInputError(Exception):
@@ -133,7 +135,7 @@ def pOptimization(optlmn):
 
     # Set up options for permutation
     options = OptionHolder()
-    options.addopt("method", "simplex", dtype=str,
+    options.addopt(S_METHOD, "simplex", dtype=str,
                    choices=("simplex", "powell", "cobyla", "slsqp"))
     options.addopt("maxiter", 25, dtype=int)
     options.addopt("tolerance", 1.e-6, dtype=float)
@@ -191,7 +193,7 @@ def pOptimization(optlmn):
             continue
         p.append([var, ivalue, bounds])
 
-    odict[S_METHOD] = options.getopt("method")
+    odict[S_METHOD] = options.getopt(S_METHOD)
     odict[S_MITER] = options.getopt("maxiter")
     odict[S_TOL] = options.getopt("tolerance")
     odict[S_DISP] = options.getopt("disp")
@@ -211,8 +213,9 @@ def pPermutation(permlmn):
 
     # Set up options for permutation
     options = OptionHolder()
-    options.addopt("method", "zip", dtype=str, choices=("zip", "combine"))
+    options.addopt(S_METHOD, "zip", dtype=str, choices=("zip", "combine"))
     options.addopt("seed", 12, dtype=int)
+    options.addopt(S_CORR, "none", dtype=str)
 
     # Get control terms
     for i in range(permlmn.attributes.length):
@@ -251,8 +254,20 @@ def pPermutation(permlmn):
             fatal_inp_error("{0}: invalid expression".format(values))
             continue
 
+    if options.getopt(S_CORR) is not None:
+        corr = xmltools.str2list(options.getopt(S_CORR), dtype=str)
+        for (i, c) in enumerate(corr):
+            if c.lower() not in ("table", "plot", "none"):
+                fatal_inp_error("{0}: unrecognized correlation option".format(c))
+            corr[i] = c.lower()
+        if "none" in corr:
+            corr = None
+        options.setopt(S_CORR, corr)
+
+    pdict[S_CORR] = options.getopt(S_CORR)
     pdict[S_PARAMS] = p
-    pdict[S_METHOD] = options.getopt("method")
+    pdict[S_METHOD] = options.getopt(S_METHOD)
+
     pdict.update(response_fcn)
 
     return pdict
@@ -339,6 +354,7 @@ def permutation_namespace(permlmn, basexml):
     ns.parameters = permblk[S_PARAMS]
     ns.response_function = permblk[S_HREF]
     ns.response_descriptor = permblk[S_RESP_DESC]
+    ns.correlation = permblk[S_CORR]
     ns.basexml = basexml
     return ns
 
