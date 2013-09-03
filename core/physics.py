@@ -111,11 +111,16 @@ class PhysicsHandler(object):
     def finish(self):
         # udpate and close the file
         self.timing["end"] = time.time()
-        io.log_message("{0}: calculations completed ({1:.4f}s)".format(
-            self.runid, self.timing["end"] - self.timing["start"]))
+        if self.driver._paths_and_surfaces_processed:
+            io.log_message("{0}: calculations completed ({1:.4f}s)".format(
+                self.runid, self.timing["end"] - self.timing["start"]))
+        else:
+            io.log_error("{0}: calculations did not complete".format(self.runid),
+                         r=0)
+
         self.exo.finish()
 
-        if self.extract:
+        if self.extract and self.driver._paths_and_surfaces_processed:
             ofmt, step, ffmt, variables, paths = self.extract[:5]
             if variables:
                 exodump(self.exofilepath, step=step, ffmt=ffmt,

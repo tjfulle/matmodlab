@@ -20,6 +20,7 @@ class Driver(object):
         self._data = np.zeros(self.ndata)
         self.nglobdata = 0
         self._glob_data = np.zeros(self.nglobdata)
+        self._paths_and_surfaces_processed = False
 
     def register_variable(self, var, vtype="SCALAR", units=None):
         """Register material variable

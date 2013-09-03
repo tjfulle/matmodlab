@@ -7,7 +7,7 @@ from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
 from core.optimize import OptimizationHandler
 from core.inpparse import parse_input, S_PHYSICS, S_OPT, S_PERMUTATION
-from core.io import Error1
+from core.io import Error1 as Error1
 
 FILE = os.path.realpath(__file__)
 
@@ -91,7 +91,11 @@ def main(argv=None):
 
         # Setup and run the problem
         model.setup()
-        model.run()
+        try:
+            model.run()
+        except Error1, e:
+            logerr("{0}: failed to run with message: {1}".format(runid, e.message))
+
         model.finish()
         output.append(model.output())
 

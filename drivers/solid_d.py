@@ -244,13 +244,14 @@ class SolidDriver(Driver):
                     log_message(consfmt.format(leg_num, n + 1, t, dt))
 
                 if t > termination_time:
+                    self._paths_and_surfaces_processed = True
                     return 0
 
                 continue  # continue to next step
 
             continue # continue to next leg
 
-
+        self._paths_and_surfaces_processed = True
         return 0
 
     # --------------------------------------------------------- Parsing methods

@@ -108,6 +108,7 @@ class EOSDriver(Driver):
                          dpdt=scratch[2], dedt=scratch[3])
             iomgr(t)
             ti = t
+        self._paths_and_surfaces_processed = True
         return
 
     # --------------------------------------------------------- Parsing methods
@@ -364,6 +365,9 @@ class EOSDriver(Driver):
         """From the data in the exodus file path, extract requested information
 
         """
+        if not self._paths_and_surfaces_processed:
+            return
+
         from utils.exodump import read_vars_from_exofile
         from utils.srfdump import extract_isotherm, extract_hugoniot
         # Set up options for Path
