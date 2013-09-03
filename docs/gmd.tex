@@ -3,6 +3,7 @@
 \newcommand{\gmd}{\texttt{gmd}}
 \newcommand{\tag}[1]{\texttt{<#1>}}
 \newcommand{\gat}[1]{\texttt{<\textbackslash{}#1>}}
+\newcommand{\supporting}[1]{\textbf{Supporting Drivers: }\texttt{#1}}
 \newcommand{\element}[4][0in]{%
   \indent\hspace{#1}\tag{#2 #3}\\%
   \indent\hspace{.2in}#4\\%
@@ -26,6 +27,46 @@
 % ----------------------------------------------------------------------------- %
 \chapter{Introduction}
 \gmd{} is a Generalized Model Driver.
+
+% ----------------------------------------------------------------------------- %
+\chapter{Building \gmd}
+\gmd's code base is largely written in Python and requires no additional
+compiling.  However, the exodusII third party library and material models
+written in fortran must be built.
+
+% ----------------------------------------------------------------------------- %
+\section{Setting Up}
+Set up and build the third party libraries.
+\begin{verbatim}
+% cd GMD/toolset
+% python setup.py
+\end{verbatim}
+
+Add \texttt{GMD/toolset} to \texttt{PATH}.
+
+% ----------------------------------------------------------------------------- %
+\section{Building}
+Build the material libraries
+\begin{verbatim}
+% buildmtls
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\chapter{Running}
+Make sure \texttt{GMD/toolset} is on your \texttt{PATH}.
+\begin{verbatim}
+% gmd runid[.xml]
+\end{verbatim}
+
+The following files will be produced
+\begin{verbatim}
+% ls runid.*
+runid.exo       runid.log       runid.xml
+\end{verbatim}
+%
+\texttt{runid.exo} is the exodusII output database, \texttt{runid.log} the log
+file, and \texttt{runid.xml} the input file.
+
 
 % ----------------------------------------------------------------------------- %
 \chapter{User Input}
@@ -177,14 +218,16 @@ are
 %
 \begin{itemize}
   \item \tag{Path}
+  \item \tag{Surface}
   \item \tag{Material}
   \item \tag{Extract}
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
 \subsection{Path}
+\supporting{solid}
 \begin{verbatim}
-<Path type="str{prdef, prstate, isotherm, hugoniot}"
+<Path type="str{prdef}"
       format="str[default]{default, table, fcnspec}"
       cols="list[1, ..., n]" cfmt="str" tfmt="time"
       nfac="int[1]" kappa="real[0]"
@@ -308,6 +351,57 @@ Only a single leg can be specified.
 </Path>
 \end{verbatim}
 
+% ----------------------------------------------------------------------------- %
+\subsection{Surface}
+\supporting{eos}
+\begin{verbatim}
+<Surface format="str[default]{default, table}"
+         cols="list[1, ..., n]" cfmt="str"
+         nfac="int[1]" tstar="real[1]" rstar="real[1]"
+         amplitude="real[1]" href="str">
+\end{verbatim}
+%
+Define equaiton of state surface boundaries.  Input is similar to the
+\tag{Path} specification, but leg termination time is not specified.  Control
+parameters also differ, as shown in Table \ref{tab:cfmt-1}.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}[h]{cl}
+    \hline
+    \hline
+    \texttt{cfmt} & Variable type \\
+    \hline
+    1 & Density \\
+    2 & Temperature
+  \end{tabular}
+  \caption{Supported surface variable types and \texttt{cfmt} code}
+  \label{tab:cfmt-1}
+\end{table}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Examples}
+The following examples demonstrate the \tag{Surface} input.
+
+\paragraph{format: default}
+\begin{verbatim}
+<Surface>
+  <!-- nsteps, control, Cij -->
+  <!-- control goes as 1 -> density
+                       2 -> temperature -->
+    0 12 1 100
+  100 12 5 300
+</Surface>
+\end{verbatim}
+
+\paragraph{format: table}
+\begin{verbatim}
+<Surface format="table" cfmt="12" nfac="100">
+  <!-- Cij -->
+  1 100
+  5 300
+</Surface>
+\end{verbatim}
 
 % ----------------------------------------------------------------------------- %
 \subsection{Material}
@@ -315,17 +409,27 @@ Only a single leg can be specified.
 <Material model="str">
 \end{verbatim}
 %
-Specify the material model and parameters. Material parameters are specified
-as individual elements.
+Specify the material model and parameters. Subelements of \tag{Material} are
+%
+\begin{itemize}
+  \item \tag{Matlabel}
+  \item \tag{Key}
+\end{itemize}
+%
+Where \tag{Key} is a valid material parameter name.
 
-\subsubsection{Material database}
+\subsubsection{Matlabel}
 \begin{verbatim}
-<Matlabel db="str[MTL_PARAM_DB_FILE]">
+<Matlabel href="str[F_MTL_PARAM_DB]">
 \end{verbatim}
 %
 Insert model parameters from a database file.  The default file
-\texttt{MTL\_PARAM\_DB\_FILE} is in
-\texttt{/path/to/gmd/materials/material\_properties.db}.
+\verb|F_MTL_PARAM_DB| is in \verb|/path/to/gmd/materials/material_properties.db|.
+
+\subsubsection{Key}
+\begin{verbatim}
+<Key> float </Key>
+\end{verbatim}
 
 \subsubsection{Examples}
 \begin{verbatim}
@@ -337,7 +441,7 @@ Insert model parameters from a database file.  The default file
 
 \begin{verbatim}
 <Material model="elastic">
-  <Matlabel db="./materials.xml"> aluminum </Matlabel>
+  <Matlabel href="./materials.xml"> aluminum </Matlabel>
   <K> 124E+09 </K>
 </Material>
 \end{verbatim}
@@ -348,17 +452,44 @@ Insert model parameters from a database file.  The default file
 <Extract format="str[ascii]{ascii, mathematica}" step="int[1]" ffmt="str[.18f]">
 \end{verbatim}
 %
-Extract variables from exodus output to different formats. Variables to be
-extracted are specified children of the \tag{Extract} element. All components
-of vector and tensor variables will be extracted if only the basename is
-specified.  Time is always extracted as the first entry of the output file.
+Extract variables and paths from exodus output and (optionally) write to
+different formats. Recognized subelements of \tag{Extract} are
+%
+\begin{itemize}
+  \item \tag{Path}
+  \item \tag{Variables}
+\end{itemize}
+
+\subsubsection{Variables}
+\begin{verbatim}
+<Variables> VAR_1, ..., VAR_N </Variables>
+\end{verbatim}
+%
+Variables to extract from the exodus output database. Variables are specified
+children of the \tag{Variables} element. All components of vector and tensor
+variables will be extracted if only the basename is specified. Time is always
+extracted as the first entry of the output file.  Extracted variables are in
+\texttt{runid.out} or \texttt{runid.math} depending if the format is ascii or
+mathematica.
+
+\subsubsection{Path}
+\supporting{eos}
+\begin{verbatim}
+<Path type="str{isotherm, hugoniot}" increments="int[100]"
+      density_range="list" initial_temperature="real">
+\end{verbatim}
+%
+Extract a specified path from the equation of state surface through the
+specified density range starting at the initial temperature.
 
 \subsubsection{Examples}
 Extract all components of stress and strain
 %
 \begin{verbatim}
 <Extract format="ascii">
-  STRESS STRAIN
+  <variables>
+    STRESS STRAIN
+  </variables>
 </Extract>
 \end{verbatim}
 
@@ -366,14 +497,28 @@ Extract only the XX, YY, and ZZ components of stress
 %
 \begin{verbatim}
 <Extract format="ascii">
-  STRESS_XX STRESS_YY STRESS_ZZ
+  <variables>
+    STRESS_XX STRESS_YY STRESS_ZZ
+  </variables>
 </Extract>
 \end{verbatim}
 
-Extract everything
+Extract all variables
 \begin{verbatim}
 <Extract format="ascii">
-  ALL
+  <variables>
+    ALL
+  </variables>
+</Extract>
+\end{verbatim}
+
+Extract Hugoniot and Isotherm paths
+\begin{verbatim}
+<Extract>
+  <Path type="isotherm" increments="200"
+        density_range="1 3" initial_temperature="225"/>
+  <Path type="hugoniot" increments="100"
+        density_range="1 3" initial_temperature="100"/>
 </Extract>
 \end{verbatim}
 

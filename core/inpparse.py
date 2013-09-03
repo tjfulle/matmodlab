@@ -425,7 +425,7 @@ def parse_mtl_params(mtllmn, pdict, model):
             if not mat:
                 fatal_inp_error("Matlabel: expected material attribute")
                 continue
-            dbfile = node.getAttribute("db")
+            dbfile = node.getAttribute("href")
             if not dbfile:
                 dbfile = F_MTL_PARAM_DB
             if not os.path.isfile(dbfile):
