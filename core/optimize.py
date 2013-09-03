@@ -7,7 +7,7 @@ import shutil
 import scipy.optimize
 import datetime
 
-from __config__ import cfg, F_EVALDB
+from __config__ import cfg
 import core.io as io
 from utils.gmdtab import GMDTabularWriter
 import utils.pprepro as pprepro
@@ -81,8 +81,7 @@ class OptimizationHandler(object):
         self.disp = disp
         self.basexml = basexml
         self.auxiliary_files = auxiliary
-        f = os.path.join(self.rootd, F_EVALDB)
-        self.tabular = GMDTabularWriter(f, runid)
+        self.tabular = GMDTabularWriter(runid, self.rootd)
         self.timing = {}
 
     def setup(self):
@@ -169,6 +168,7 @@ class OptimizationHandler(object):
     def output(self):
         return self.tabular._filepath
 
+
 def func(xcall, *args):
     """Objective function
 
@@ -186,28 +186,24 @@ def func(xcall, *args):
 
     """
     global IOPT
-    (basedir, runid, xnames, basexml, exe, script, aux, tabular, xfac) = args
+    (rootd, runid, xnames, basexml, exe, script, aux, tabular, xfac) = args
 
     IOPT += 1
-    job_num = "{0:03d}".format(IOPT)
-    evald = os.path.join(basedir, "eval_" + job_num)
+    evald = os.path.join(rootd, "eval_{0}".format(IOPT))
     os.mkdir(evald)
     os.chdir(evald)
 
     # write the params.in for this run
-    prepro = {}
-    optparams = []
+    parameters = zip(xnames, xcall * xfac)
     with open("params.in", "w") as fobj:
-        for iname, name in enumerate(xnames):
-            param = xcall[iname] * xfac[iname]
-            prepro[name] = param
+        for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
-            optparams.append("{0}={1:.4e}".format(name, param))
-    optparams = ",".join(optparams)
-    io.log_message("starting job {0} with {1}".format(IOPT, optparams))
+
+    io.log_message("starting job {0} with {1}".format(
+        IOPT + 1, ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
 
     # Preprocess the input
-    xmlinp = pprepro.find_and_make_subs(basexml, prepro=prepro)
+    xmlinp = pprepro.find_and_make_subs(basexml, prepro=dict(parameters))
     xmlf = os.path.join(evald, runid + ".xml.preprocessed")
     with open(xmlf, "w") as fobj:
         fobj.write(xmlinp)
@@ -220,7 +216,8 @@ def func(xcall, *args):
     job.wait()
 
     if job.returncode != 0:
-        tabular.write_entry(job_num, job.returncode, prepro, {"ERR": np.nan})
+        tabular.write_eval_info(IOPT, job.returncode, evald,
+                                parameters, (("ERR", np.nan),))
         io.log_message("**** error: job {0} failed".format(IOPT))
         return np.nan
 
@@ -240,12 +237,13 @@ def func(xcall, *args):
         out, err = job.communicate()
         opterr = float(out)
 
-    tabular.write_entry(job_num, job.returncode, prepro, {"ERR": opterr})
+    tabular.write_eval_info(IOPT, job.returncode, evald,
+                            parameters, (("ERR", opterr),))
 
     io.log_message("finished with job {0}".format(IOPT))
 
 
-    # go back to the basedir
-    os.chdir(basedir)
+    # go back to the rootd
+    os.chdir(rootd)
 
     return opterr

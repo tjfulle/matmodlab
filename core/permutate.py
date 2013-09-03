@@ -9,7 +9,7 @@ import multiprocessing as mp
 from itertools import izip, product
 
 import core.io as io
-from __config__ import cfg, F_EVALDB
+from __config__ import cfg
 from utils.gmdtab import GMDTabularWriter
 from utils.pprepro import find_and_make_subs
 
@@ -53,6 +53,10 @@ class PermutationHandler(object):
             self.ranges = list(product(*self.ivalues))
 
         NJOBS = len(self.ranges)
+
+        # setup the gmd-evaldb file
+        self.tabular = GMDTabularWriter(self.runid, d=self.rootd)
+
         pass
 
     def run(self):
@@ -63,7 +67,7 @@ class PermutationHandler(object):
         self.timing["start"] = time.time()
 
         job_inp = ((i, self.exe, self.runid, self.names, self.basexml,
-                    params, self.rootd)
+                    params, self.rootd, self.tabular)
                    for (i, params) in enumerate(self.ranges))
 
         nproc = min(min(mp.cpu_count(), self.nproc), len(self.ranges))
@@ -82,45 +86,31 @@ class PermutationHandler(object):
 
     def finish(self):
         # write the summary
-        f = os.path.join(self.rootd, F_EVALDB)
-        tabular = GMDTabularWriter(f, self.runid)
-        self.tabular_file = tabular._filepath
-        for (job_num, params) in enumerate(self.ranges):
-            status = self.statuses[job_num]
-            parameters = {}
-            for iname, name in enumerate(self.names):
-                parameters[name] = params[iname]
-            tabular.write_entry(job_num, status, parameters)
-        tabular.close()
+        self.tabular.close()
         # close the log
         io.log_message("{0}: calculations completed ({1:.4f}s)".format(
             self.runid, self.timing["end"] - self.timing["start"]))
         io.close_and_reset_logger()
 
     def output(self):
-        return self.tabular_file
+        return self.tabular._filepath
 
 
 def run_single_job(args):
-    job_num, exe, runid, names, basexml, params, rootd = args
+    job_num, exe, runid, names, basexml, params, rootd, tabular = args
     # make and move in to the evaluation directory
     evald = os.path.join(rootd, "eval_{0}".format(job_num))
     os.makedirs(evald)
     os.chdir(evald)
 
     # write the params.in for this run
-    prepro = {}
-    pparams = []
+    parameters = zip(names, params)
     with open("params.in", "w") as fobj:
-        for iname, name in enumerate(names):
-            param = params[iname]
-            prepro[name] = param
-            pparams.append("{0}={1:.4e}".format(name, param))
+        for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
-    pparams = ",".join(pparams)
 
     # Preprocess the input
-    xmlinp = find_and_make_subs(basexml, prepro=prepro)
+    xmlinp = find_and_make_subs(basexml, prepro=dict(parameters))
     xmlf = os.path.join(evald, runid + ".xml.preprocessed")
     with open(xmlf, "w") as fobj:
         fobj.write(xmlinp)
@@ -128,13 +118,15 @@ def run_single_job(args):
     cmd = "{0} -I{1} {2}".format(exe, cfg.I, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
     io.log_message("starting job {0}/{1} with {2}".format(
-        job_num + 1, NJOBS, pparams))
-    job = subprocess.Popen(cmd.split(), stdout=out,
-                           stderr=subprocess.STDOUT)
+        job_num + 1, NJOBS,
+        ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
+    job = subprocess.Popen(cmd.split(), stdout=out, stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
         io.log_message("*** error: job {0} failed".format(job_num + 1))
     else:
         io.log_message("finished with job {0}".format(job_num + 1))
+
+    tabular.write_eval_info(job_num, job.returncode, evald, parameters)
 
     return job.returncode

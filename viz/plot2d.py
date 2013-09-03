@@ -772,8 +772,11 @@ def readtabular(source):
     """Read in the gmd-tabular.dat file
 
     """
-    from utils.gmdtab import read_gmd_index
-    return read_gmd_index(source)
+    from utils.gmdtab import read_gmd_evaldb
+    sources, paraminfo = read_gmd_evaldb(source)
+    for (i, info) in enumerate(paraminfo):
+        paraminfo[i] = ", ".join("{0}={1:.2g}".format(n, v) for (n, v) in info)
+    return sources, paraminfo
 
 
 def loadcontents(filepath):
