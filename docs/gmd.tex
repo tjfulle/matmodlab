@@ -533,6 +533,7 @@ subelements of \tag{Permutation}
 
 \begin{itemize}
   \item \tag{Permutate}
+  \item \tag{ResponseFunction}
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
@@ -565,6 +566,41 @@ specified as
 </Material>
 \end{verbatim}
 
+% ----------------------------------------------------------------------------- %
+\subsection{ResponseFunction}
+\begin{verbatim}
+<ResponseFunction href="str" descriptor="str[]"/>
+\end{verbatim}
+Name of response function that returns the response from permutation or
+optimization jobs.  \texttt{href} must either be the path to a file containing
+the response function, or the name of a builtin \gmd{} response function.
+
+Built in response functions are
+%
+\begin{itemize}
+  \item \texttt{gmd.max}
+  \item \texttt{gmd.min}
+  \item \texttt{gmd.mean}
+  \item \texttt{gmd.ave}
+\end{itemize}
+%
+Built in response functions operate only on variabes in the simulation output file.
+
+If \texttt{href} is a user defined script, the script is called from the
+command line as
+\begin{verbatim}
+% ./scriptname simulation_output.exo [auxiliary_file_1 [... auxiliary_file_n]]
+\end{verbatim}
+
+\subsubsection{Examples}
+\begin{verbatim}
+<ResponseFunction href="./scriptname" descriptor="PRES"/>
+\end{verbatim}
+
+
+\begin{verbatim}
+<ResponseFunction href="gmd.max(PRESSURE)" descriptor="PRES"/>
+\end{verbatim}
 
 % ----------------------------------------------------------------------------- %
 \section{Optimization}
@@ -579,7 +615,7 @@ Recognized subelements of \tag{Optimization}
 \begin{itemize}
   \item \tag{Optimize}
   \item \tag{AuxiliaryFile}
-  \item \tag{ObjectiveFunction}
+  \item \tag{ResponseFunction}
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
@@ -593,31 +629,22 @@ bounds.  Only the \texttt{cobyla} method accepts bounds.  Variable names should
 occur elsewhere in the input file in preprocessing braces.
 
 % ----------------------------------------------------------------------------- %
+\subsection{ResponseFunction}
+Same as for \tag{Permutation}.  The value returned from the response function
+is interpreted as the error to be minimized.
+
+% ----------------------------------------------------------------------------- %
 \subsection{AuxiliaryFile}
-Path to any auxiliary file needed by the optimization objective function.
 \begin{verbatim}
 <AuxiliaryFile href="str"/>
 \end{verbatim}
-
-% ----------------------------------------------------------------------------- %
-\subsection{ObjectiveFunction}
-Path to a user defined executable script that returns the error to the
-optimization routine.
-\begin{verbatim}
-<ObjectiveFunction href="str"/>
-\end{verbatim}
-
-An \texttt{ObjectiveFunction} given by \texttt{href} is called from the
-command line as
-\begin{verbatim}
-% ./scriptname simulation_output.exo [auxiliary_file_1 [... auxiliary_file_n]]
-\end{verbatim}
+Path to any auxiliary file needed by the optimization objective function.
 
 \subsection{Example}
 Optimize the \texttt{K} and \texttt{G} parameters
 \begin{verbatim}
 <Optimization method="simplex" maxiter="25" tolerance="1e-4" disp="0">
-  <ObjectiveFunction href="opt-sig-v-time"/>
+  <ResponseFunction href="opt-sig-v-time" descriptor="SIG_V_TIME"/>
   <AuxiliaryFile href="opt-baseline.dat"/>
   <Optimize var="opt_k" initial_value="129.e9"/>
   <Optimize var="opt_g" initial_value="54.e9"/>

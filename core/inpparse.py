@@ -13,6 +13,7 @@ from __config__ import cfg, F_MTL_PARAM_DB
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from core.io import fatal_inp_error, input_errors
+from core.response_functions import check_response_function_element
 from drivers.driver import isdriver, create_driver
 from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
@@ -29,7 +30,8 @@ S_OPT = "Optimization"
 S_AUX_FILE = "AuxiliaryFile"
 S_METHOD = "Method"
 S_PARAMS = "Parameters"
-S_OBJ_FCN = "ObjectiveFunction"
+S_RESP_FCN = "ResponseFunction"
+S_RESP_DESC = "descriptor"
 S_MITER = "Maximum Iterations"
 S_TOL = "Tolerance"
 S_DISP = "Disp"
@@ -39,12 +41,13 @@ S_EXTRACT = "Extract"
 S_PATH = "Path"
 S_SURFACE = "Surface"
 S_DRIVER = "driver"
+S_HREF = "href"
 
 
 class UserInputError(Exception):
     def __init__(self, message):
         sys.stderr.write("*** {0} ***\n".format(message))
-        sys.exit(2)
+        raise SystemExit(2)
 
 
 def parse_input(filepath):
@@ -68,7 +71,7 @@ def parse_input(filepath):
     try:
         gmdspec = doc.getElementsByTagName("GMDSpec")[0]
     except IndexError:
-        raise UserInputError("Expected Root Element 'GMDSpec'")
+        raise UserInputError("expected Root Element 'GMDSpec'")
 
     # ------------------------------------------ get and parse blocks --- #
     gmdblks = {}
@@ -86,7 +89,7 @@ def parse_input(filepath):
             continue
 
         if len(rootlmns) > 1:
-            fatal_inp_error("Expected 1 {0} block, got {1}".format(
+            fatal_inp_error("expected 1 {0} block, got {1}".format(
                 rootblk, len(rootlmns)))
             continue
 
@@ -143,29 +146,24 @@ def pOptimization(optlmn):
         except OptionHolderError, e:
             fatal_inp_error(e.message)
 
-    # objective function
-    objfcn = optlmn.getElementsByTagName(S_OBJ_FCN)
-    if not objfcn:
-        fatal_inp_error("{0} not found".format(S_OBJ_FCN))
-    elif len(objfcn) > 1:
-        fatal_inp_error("Only one {0} tag supported".format(S_OBJ_FCN))
+    # response function
+    respfcn = optlmn.getElementsByTagName(S_RESP_FCN)
+    if not respfcn:
+        fatal_inp_error("{0} not found".format(S_RESP_FCN))
+    elif len(respfcn) > 1:
+        fatal_inp_error("Only one {0} tag supported".format(S_RESP_FCN))
     else:
-        objfcn = objfcn[0]
+        respfcn = respfcn[0]
 
-    objfile = objfcn.getAttribute("href")
-    if not objfile:
-        fatal_inp_error("Expected href attribute to {0}".format(S_OBJ_FCN))
-    elif not os.path.isfile(objfile):
-        fatal_inp_error("{0}: no such file".format(objfile))
-    else:
-        objfile = os.path.realpath(objfile)
+    response_fcn = check_response_function_element(respfcn)
 
     # auxiliary files
     auxfiles = []
     for item in optlmn.getElementsByTagName(S_AUX_FILE):
-        auxfile = item.getAttribute("href")
+        auxfile = item.getAttribute(S_HREF)
         if not auxfile:
-            fatal_inp_error("Expected href attribute to {0}".format(S_AUX_FILE))
+            fatal_inp_error("pOptimization: expected {0} attribute to {1}".format(
+                S_HREF, S_AUX_FILE))
         elif not os.path.isfile(auxfile):
             fatal_inp_error("{0}: no such file".format(auxfile))
         else:
@@ -200,7 +198,7 @@ def pOptimization(optlmn):
 
     odict[S_PARAMS] = p
     odict[S_AUX_FILE] = auxfiles
-    odict[S_OBJ_FCN] = objfile
+    odict.update(response_fcn)
 
     return odict
 
@@ -234,6 +232,14 @@ def pPermutation(permlmn):
             "percentage": lambda a, b, N=N_default: (
                 np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))}
 
+    # response function
+    respfcn = permlmn.getElementsByTagName(S_RESP_FCN)
+    if len(respfcn) > 1:
+        fatal_inp_error("Only one {0} tag supported".format(S_RESP_FCN))
+    elif respfcn:
+        respfcn = respfcn[0]
+    response_fcn = check_response_function_element(respfcn)
+
     # read in permutated values
     p = []
     for items in permlmn.getElementsByTagName("Permutate"):
@@ -247,6 +253,7 @@ def pPermutation(permlmn):
 
     pdict[S_PARAMS] = p
     pdict[S_METHOD] = options.getopt("method")
+    pdict.update(response_fcn)
 
     return pdict
 
@@ -314,7 +321,8 @@ def optimization_namespace(optlmn, basexml):
     ns.method = optblk[S_METHOD]
     ns.parameters = optblk[S_PARAMS]
     ns.auxiliary_files = optblk[S_AUX_FILE]
-    ns.objective_function = optblk[S_OBJ_FCN]
+    ns.response_function = optblk[S_HREF]
+    ns.response_descriptor = optblk[S_RESP_DESC]
     ns.tolerance = optblk[S_TOL]
     ns.maxiter = optblk[S_MITER]
     ns.disp = optblk[S_DISP]
@@ -329,6 +337,8 @@ def permutation_namespace(permlmn, basexml):
     ns.stype = S_PERMUTATION
     ns.method = permblk[S_METHOD]
     ns.parameters = permblk[S_PARAMS]
+    ns.response_function = permblk[S_HREF]
+    ns.response_descriptor = permblk[S_RESP_DESC]
     ns.basexml = basexml
     return ns
 
@@ -425,7 +435,7 @@ def parse_mtl_params(mtllmn, pdict, model):
             if not mat:
                 fatal_inp_error("Matlabel: expected material attribute")
                 continue
-            dbfile = node.getAttribute("href")
+            dbfile = node.getAttribute(S_HREF)
             if not dbfile:
                 dbfile = F_MTL_PARAM_DB
             if not os.path.isfile(dbfile):
@@ -497,7 +507,7 @@ def pFunctions(element_list):
             fatal_inp_error("{0}: invalid function type".format(ftype))
             continue
 
-        href = function.getAttribute("href")
+        href = function.getAttribute(S_HREF)
         if href:
             if ftype == __ae__:
                 fatal_inp_error("function file support only for piecewise linear")

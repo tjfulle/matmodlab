@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 import shutil
@@ -12,6 +13,7 @@ import core.io as io
 from __config__ import cfg
 from utils.gmdtab import GMDTabularWriter
 from utils.pprepro import find_and_make_subs
+from core.response_functions import evaluate_response_function, GMD_RESP_FCN_RE
 
 
 PERM_METHODS = ("zip", "combine", )
@@ -19,7 +21,8 @@ NJOBS = 0
 
 
 class PermutationHandler(object):
-    def __init__(self, runid, verbosity, method, parameters, exe, basexml, *opts):
+    def __init__(self, runid, verbosity, method, respfcn, respdesc,
+                 parameters, exe, basexml, *opts):
 
         self.rootd = os.path.join(os.getcwd(), runid + ".eval")
         if os.path.isdir(self.rootd):
@@ -39,6 +42,12 @@ class PermutationHandler(object):
         for (name, ivalue) in parameters:
             self.names.append(name)
             self.ivalues.append(ivalue)
+
+        self.respfcn = None if not respfcn else respfcn
+        if self.respfcn is not None and not respdesc:
+            s = re.search(GMD_RESP_FCN_RE, self.respfcn)
+            respdesc = s.group("var")
+        self.respdesc = respdesc
 
     def setup(self):
         global NJOBS
@@ -67,7 +76,7 @@ class PermutationHandler(object):
         self.timing["start"] = time.time()
 
         job_inp = ((i, self.exe, self.runid, self.names, self.basexml,
-                    params, self.rootd, self.tabular)
+                    params, self.respfcn, self.respdesc, self.rootd, self.tabular)
                    for (i, params) in enumerate(self.ranges))
 
         nproc = min(min(mp.cpu_count(), self.nproc), len(self.ranges))
@@ -97,7 +106,8 @@ class PermutationHandler(object):
 
 
 def run_single_job(args):
-    job_num, exe, runid, names, basexml, params, rootd, tabular = args
+    (job_num, exe, runid, names, basexml, params, respfcn,
+     respdesc, rootd, tabular) = args
     # make and move in to the evaluation directory
     evald = os.path.join(rootd, "eval_{0}".format(job_num))
     os.makedirs(evald)
@@ -127,6 +137,13 @@ def run_single_job(args):
     else:
         io.log_message("finished with job {0}".format(job_num + 1))
 
-    tabular.write_eval_info(job_num, job.returncode, evald, parameters)
+    response = None
+    if respfcn is not None:
+        io.log_message("analyzing results of job {0}".format(job_num + 1))
+        outf = os.path.join(evald, runid + ".exo")
+        response = evaluate_response_function(respfcn, outf)
+        response = ((respdesc, response),)
+
+    tabular.write_eval_info(job_num, job.returncode, evald, parameters, response)
 
     return job.returncode

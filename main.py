@@ -70,13 +70,16 @@ def main(argv=None):
             opts = (args.j,)
             exe = "{0} {1}".format(sys.executable, FILE)
             model = PermutationHandler(runid, args.v, mm_input.method,
+                                       mm_input.response_function,
+                                       mm_input.response_descriptor,
                                        mm_input.parameters, exe,
                                        mm_input.basexml, *opts)
 
         elif mm_input.stype == S_OPT:
             exe = "{0} {1}".format(sys.executable, FILE)
             model = OptimizationHandler(runid, args.v, mm_input.method,
-                                        exe, mm_input.objective_function,
+                                        exe, mm_input.response_function,
+                                        mm_input.response_descriptor,
                                         mm_input.parameters,
                                         mm_input.tolerance, mm_input.maxiter,
                                         mm_input.disp, mm_input.basexml,

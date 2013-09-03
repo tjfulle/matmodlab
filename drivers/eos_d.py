@@ -364,7 +364,7 @@ class EOSDriver(Driver):
         """From the data in the exodus file path, extract requested information
 
         """
-        from utils.exodump import exodump
+        from utils.exodump import read_vars_from_exofile
         from utils.srfdump import extract_isotherm, extract_hugoniot
         # Set up options for Path
         options = OptionHolder()
@@ -374,9 +374,8 @@ class EOSDriver(Driver):
         options.addopt("initial_temperature", None,
                        dtype=float, test=lambda x: x > 0.)
 
-        surf = exodump(exofilepath, outfile="return",
-                       variables=["RHO", "TMPR", "ENRGY", "PRES",
-                                  "DPDT", "DEDT"])[:, 1:]
+        variables=["RHO", "TMPR", "ENRGY", "PRES", "DPDT", "DEDT"]
+        surf = read_vars_from_exofile(exofilepath, variables=variables, h=0)[:, 1:]
 
         # Get control terms
         for pathlmn in pathlmns:

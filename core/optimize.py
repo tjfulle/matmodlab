@@ -9,6 +9,7 @@ import datetime
 
 from __config__ import cfg
 import core.io as io
+from core.response_functions import evaluate_response_function
 from utils.gmdtab import GMDTabularWriter
 import utils.pprepro as pprepro
 
@@ -18,7 +19,7 @@ OPT_METHODS = {"simplex": "fmin", "powell": "fmin_powell",
                "cobyla": "fmin_cobyla"}
 
 class OptimizationHandler(object):
-    def __init__(self, runid, verbosity, method, exe, script,
+    def __init__(self, runid, verbosity, method, exe, script, descriptor,
                  parameters, tolerance, maxiter, disp,
                  basexml, auxiliary, *opts):
 
@@ -76,6 +77,7 @@ class OptimizationHandler(object):
         self.runid = runid
         self.exe = exe
         self.script = script
+        self.descriptor = descriptor if descriptor else "ERR"
         self.tolerance = tolerance
         self.maxiter = maxiter
         self.disp = disp
@@ -130,7 +132,8 @@ class OptimizationHandler(object):
             cons = lcons + ucons
 
         fargs = (self.rootd, self.runid, self.names, self.basexml, self.exe,
-                 self.script, self.auxiliary_files, self.tabular, xfac,)
+                 self.script, self.descriptor, self.auxiliary_files,
+                 self.tabular, xfac,)
 
         if self.method == OPT_METHODS["simplex"]:
             xopt = scipy.optimize.fmin(
@@ -186,7 +189,7 @@ def func(xcall, *args):
 
     """
     global IOPT
-    (rootd, runid, xnames, basexml, exe, script, aux, tabular, xfac) = args
+    (rootd, runid, xnames, basexml, exe, script, desc, aux, tabular, xfac) = args
 
     IOPT += 1
     evald = os.path.join(rootd, "eval_{0}".format(IOPT))
@@ -217,28 +220,16 @@ def func(xcall, *args):
 
     if job.returncode != 0:
         tabular.write_eval_info(IOPT, job.returncode, evald,
-                                parameters, (("ERR", np.nan),))
+                                parameters, ((desc, np.nan),))
         io.log_message("**** error: job {0} failed".format(IOPT))
         return np.nan
 
-    # Now run the script
-    # Run the job
-    io.log_message("analyzing results of job {0}".format(IOPT))
+    # Now the response function
+    io.log_message("analyzing results of job {0}".format(IOPT + 1))
     outf = os.path.join(evald, runid + ".exo")
-    cmd = "{0} {1} {2}".format(script, outf, " ".join(aux))
-    job = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT)
-    job.wait()
-    if job.returncode != 0:
-        io.log_message("*** error: job {0} script failed".format(IOPT))
-        opterr = np.nan
-
-    else:
-        out, err = job.communicate()
-        opterr = float(out)
-
+    opterr = evaluate_response_function(script, outf, aux)
     tabular.write_eval_info(IOPT, job.returncode, evald,
-                            parameters, (("ERR", opterr),))
+                            parameters, ((desc, opterr),))
 
     io.log_message("finished with job {0}".format(IOPT))
 

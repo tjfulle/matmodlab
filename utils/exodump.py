@@ -5,11 +5,14 @@ import numpy as np
 import argparse
 
 from exoreader import ExodusIIReader
-class ExoDumpError(Exception):
-    def __init__(self, message):
-        raise SystemExit(message)
 
 OFMTS = {"ascii": ".out", "mathematica": ".math", "ndarray": ".npy"}
+
+class ExoDumpError(Exception):
+    def __init__(self, message):
+        sys.stderr.write("*** exodump: error: {0}\n".format(message))
+        self.message = message
+        raise SystemExit(1)
 
 
 def main(argv=None):
@@ -25,9 +28,11 @@ def main(argv=None):
         help="Output floating point format [default: .18f]")
     parser.add_argument("--ofmt", default="ascii", choices=OFMTS.keys(),
         help="Output format [default: %(default)s]")
+    parser.add_argument("--step", default=1, type=int,
+        help="Step [default: %(default)s]")
     args = parser.parse_args(argv)
     return exodump(args.source, outfile=args.o, variables=args.variables,
-                   ffmt=args.ffmt, ofmt=args.ofmt)
+                   ffmt=args.ffmt, ofmt=args.ofmt, step=args.step)
 
 
 def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
@@ -38,9 +43,7 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
     """
     ofmt = ofmt.lower()
     if ofmt not in OFMTS:
-        sys.stderr.write("*** exodump: warning: {0}: unrecognized "
-                         " format\n".format(ofmt))
-        return 1
+        raise ExoDumpError("{0}: unrecognized output format\n".format(ofmt))
 
     if not os.path.isfile(filepath):
         raise ExoDumpError("{0}: no such file".format(filepath))
@@ -68,10 +71,45 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
         if "all" in [v.lower() for v in variables]:
             variables = ["ALL"]
 
+    # read the data
+    header, data = read_vars_from_exofile(filepath, variables=variables,
+                                          step=step)
+
     # Floating point format for numbers
     if ffmt is None: ffmt = ".18f"
     fmt = "{0: " + ffmt + "}"
     ffmt = lambda a, fmt=fmt: fmt.format(float(a))
+
+    if ofmt == "ascii":
+        asciidump(stream, ffmt, header, data)
+
+    elif ofmt == "mathematica":
+        mathdump(stream, ffmt, header, data)
+
+    elif ofmt == "ndarray":
+        nddump(stream, ffmt, header, data)
+
+    stream.close()
+
+    return 0
+
+
+def read_vars_from_exofile(filepath, variables=None, step=1, h=1):
+    """Read the specified variables from the exodus file in filepath
+
+    """
+    # setup variables
+    if variables is None:
+        variables = ["ALL"]
+    else:
+        if not isinstance(variables, (list, tuple)):
+            variables = [variables]
+        variables = [v.strip() for v in variables]
+        if "all" in [v.lower() for v in variables]:
+            variables = ["ALL"]
+
+    if not os.path.isfile(filepath):
+        raise ExoDumpError("{0}: no such file".format(filepath))
 
     exof = ExodusIIReader.new_from_exofile(filepath)
     glob_var_names = exof.glob_var_names()
@@ -87,8 +125,8 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
 
     # retrieve the data from the database
     header = ["TIME"]
-    header.extend([h.upper() for h in glob_var_names])
-    header.extend([h.upper() for h in elem_var_names])
+    header.extend([H.upper() for H in glob_var_names])
+    header.extend([H.upper() for H in elem_var_names])
     data = []
     for i in myrange(0, exof.num_time_steps, step):
         row = [exof.get_time(i)]
@@ -105,26 +143,19 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
     if len(header) != data.shape[1]:
         raise ExoDumpError("inconsistent data")
 
-    if stream is None:
-        return data
-
-    if ofmt == "ascii":
-        asciidump(stream, ffmt, header, data)
-
-    elif ofmt == "mathematica":
-        mathdump(stream, ffmt, header, data)
-
-    elif ofmt == "ndarray":
-        data.tofile(stream)
-
-    stream.close()
-
-    return 0
+    if h:
+        return header, data
+    return data
 
 
 def asciidump(stream, ffmt, header, data):
     stream.write("{0}\n".format(" ".join(header)))
     stream.write("\n".join(" ".join(ffmt(d) for d in row) for row in data))
+    return
+
+
+def nddump(stream, ffmt, header, data):
+    np.save(stream, data)
     return
 
 
@@ -134,6 +165,7 @@ def mathdump(stream, ffmt, header, data):
         stream.write("{0}={{{1}}}\n".format(
             name, ",".join(ffmt(d) for d in data[:, i])))
     return
+
 
 def myrange(start, end, step):
     r = [i for i in range(start, end, step)]
