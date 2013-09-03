@@ -34,8 +34,8 @@ def extract_isotherm(rhorange, itmpr, surface):
                          "defined by surface\n")
         return
     if not inrange(itmpr, surface[:, 1]):
-        sys.stderr.write("extract_isotherm: {0}: temperature not in range "
-                         "defined by surface\n".format(options.getopt("type")))
+        sys.stderr.write("extract_isotherm: temperature not in range "
+                         "defined by surface\n")
         return
 
     # grid to interpolate the isotherm
@@ -75,12 +75,12 @@ def extract_hugoniot(rhorange, itmpr, surface):
 
     """
     if not inrange(rhorange, surface[:, 0]):
-        sys.stderr.write("extract_hugoniot: {0}: density not in range "
-                         "defined by surface\n".format(options.getopt("type")))
+        sys.stderr.write("extract_hugoniot: density not in range "
+                         "defined by surface\n")
         return
     if not inrange(itmpr, surface[:, 1]):
-        sys.stderr.write("extract_hugoniot: {0}: temperature not in range "
-                         "defined by surface\n".format(options.getopt("type")))
+        sys.stderr.write("extract_hugoniot: temperature not in range "
+                         "defined by surface\n")
         return
 
     step = np.sqrt(surface[:, 0].shape[0])
