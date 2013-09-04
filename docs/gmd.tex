@@ -808,18 +808,19 @@ specified as
 <ResponseFunction href="str" descriptor="str[]"/>
 \end{verbatim}
 Name of response function that returns the response from permutation or
-optimization jobs.  \texttt{href} must either be the path to a file containing
-the response function, or the name of a builtin \gmd{} response function.
+optimization jobs. \texttt{href} must either be the path to an executable file
+script containing the response function, or the name of a builtin \gmd{}
+response function.
 
 Built in response functions are
 %
 \begin{itemize}
-  \item \texttt{gmd.max}
-  \item \texttt{gmd.min}
-  \item \texttt{gmd.mean}
-  \item \texttt{gmd.ave}
-  \item \texttt{gmd.absmax}
-  \item \texttt{gmd.absmin}
+  \item \texttt{gmd.max} maximum value of a simulation output
+  \item \texttt{gmd.min} minimum value of a simulation output
+  \item \texttt{gmd.mean} mean value of a simulation output
+  \item \texttt{gmd.ave} average value of a simulation output
+  \item \texttt{gmd.absmax} maximum absolute value of a simulation output
+  \item \texttt{gmd.absmin} minimum absolute value of a simulation output
 \end{itemize}
 %
 Built in response functions operate only on variabes in the simulation output file.
