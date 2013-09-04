@@ -53,7 +53,7 @@ class PermutationHandler(object):
 
     def setup(self):
         global NJOBS
-        if self.method == "zip":
+        if self.method in ("zip", "shotgun"):
             if not all(len(x) == len(self.ivalues[0]) for x in self.ivalues):
                 raise io.Error1("Number of permutations must be the same for "
                                 "all permutated parameters when using method: {0}"
@@ -67,6 +67,11 @@ class PermutationHandler(object):
 
         # setup the gmd-evaldb file
         self.tabular = GMDTabularWriter(self.runid, d=self.rootd)
+
+        # write to the log file the
+        io.log_debug("Permutated parameters:")
+        for name in self.names:
+            io.log_debug("  {0}".format(name))
 
         pass
 

@@ -103,7 +103,6 @@ Additionally, the following elements are read from anywhere in the input file
 \begin{itemize}
   \item \tag{Include}
   \item \tag{Function}
-  \item \tag{TerminationTime}
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
@@ -194,23 +193,9 @@ Read a piecewise linear table from an external file using columns 1 and 3
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\section{TerminationTime}
-\begin{verbatim}
-<TerminationTime> float </TerminationTime>
-\end{verbatim}
-%
-Termination time for simulation.  If not specified, termination time is taken
-as final time in \tag{Path}.
-
-\subsection{Example}
-\begin{verbatim}
-<TerminationTime> 1.e-6 </TerminationTime>
-\end{verbatim}
-
-% ----------------------------------------------------------------------------- %
 \section{Physics}
 \begin{verbatim}
-<Physics driver="str[solid]{solid, eos}">
+<Physics driver="str[solid]{solid, eos}" termination_time="real[]">
 \end{verbatim}
 %
 Define the physics of the simulation. Recognized subelements of \tag{Physics}
@@ -222,6 +207,10 @@ are
   \item \tag{Material}
   \item \tag{Extract}
 \end{itemize}
+
+If specified, \verb|termination_time| defines the termination time for the
+simulation. If not specified, termination time is taken as final time in
+\tag{Path}.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Path}
@@ -525,17 +514,31 @@ Extract Hugoniot and Isotherm paths
 % ----------------------------------------------------------------------------- %
 \section{Permutation}
 \begin{verbatim}
-<Permutation method="str[zip]{zip, combine}" seed="real[12]"
+<Permutation method="str[zip]{zip, combine, shotgun}" seed="real[12]"
                      correlation="list[none]{plot, table, none}">
 \end{verbatim}
 %
-Permutate model input parameters to investigate sensitivities. Recognized
-subelements of \tag{Permutation}
+Permutate model input parameters, running jobs with different realization of
+parameters. Good for investigating model sensitivities. Recognized subelements
+of \tag{Permutation} are
 
 \begin{itemize}
   \item \tag{Permutate}
   \item \tag{ResponseFunction}
 \end{itemize}
+
+The \texttt{method} attribute describes which method to use to determine
+parameter combinations to run.  The \texttt{zip} method runs one job for each
+set of parameters (and, thus, the number of realizations for each parameter
+must be identical), the \texttt{combine} method runs every combination of
+parameters, finally, the \texttt{shotgun} method zips a uniform distribution
+for each parameter.
+
+The \texttt{correlation} attribute is only meaningful if a
+\tag{ResponseFunction} is specified.  Also, note that issues relating to
+reading the exodusII database prevent gmd from running simultaneous
+permutation jobs that define a \tag{ResponseFunction}.
+
 
 % ----------------------------------------------------------------------------- %
 \subsection{Permutate}

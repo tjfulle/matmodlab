@@ -1,8 +1,9 @@
 import os
 import sys
+import random
 import argparse
 
-from __config__ import cfg, SPLASH
+from __config__ import cfg, SPLASH, R
 from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
 from core.optimize import OptimizationHandler
@@ -59,6 +60,7 @@ def main(argv=None):
 
         if args.v:
             sys.stdout.write(SPLASH)
+            sys.stdout.flush()
 
         if mm_input.stype == S_PHYSICS:
             opts = (mm_input.density,)
@@ -99,6 +101,11 @@ def main(argv=None):
 
         model.finish()
         output.append(model.output())
+
+        if args.v:
+            # a fun quote to end with
+            ol = open(os.path.join(R, "utils/zol")).readlines()
+            sys.stdout.write("\n" + ol[random.randint(0, len(ol)-1)])
 
         del model
 

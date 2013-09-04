@@ -28,14 +28,13 @@ S_PERMUTATION = "Permutation"
 S_OPT = "Optimization"
 
 S_AUX_FILE = "AuxiliaryFile"
-S_METHOD = "Method"
 S_PARAMS = "Parameters"
 S_RESP_FCN = "ResponseFunction"
 S_RESP_DESC = "descriptor"
 S_MITER = "Maximum Iterations"
 S_TOL = "Tolerance"
 S_DISP = "Disp"
-S_TTERM = "TerminationTime"
+S_TTERM = "termination_time"
 S_MATERIAL = "Material"
 S_EXTRACT = "Extract"
 S_PATH = "Path"
@@ -213,7 +212,8 @@ def pPermutation(permlmn):
 
     # Set up options for permutation
     options = OptionHolder()
-    options.addopt(S_METHOD, "zip", dtype=str, choices=("zip", "combine"))
+    options.addopt(S_METHOD, "zip", dtype=str,
+                   choices=("zip", "combine", "shotgun"))
     options.addopt("seed", 12, dtype=int)
     options.addopt(S_CORR, "none", dtype=str)
 
@@ -248,6 +248,14 @@ def pPermutation(permlmn):
     for items in permlmn.getElementsByTagName("Permutate"):
         var = str(items.attributes.get("var").value)
         values = str(items.attributes.get("values").value)
+        s = re.search(r"(?P<meth>\w+)\s*\(", values)
+        if s: meth = s.group("meth")
+        else: meth = ""
+        if options.getopt(S_METHOD) == "shotgun":
+            if meth != "range":
+                fatal_inp_error("shotgun: expected values=range(...")
+                continue
+            values = re.sub(meth, "uniform", values)
         try:
             p.append([var, eval(values, gdict, safe)])
         except:
@@ -366,17 +374,25 @@ def pPhysics(physlmn, functions):
     simblk = {}
 
     # Get the driver first
-    driver = physlmn.getAttribute("driver")
-    driver = "solid" if not driver else driver
+    options = OptionHolder()
+    options.addopt("driver", "solid", dtype=str, choices=("solid", "eos"))
+    options.addopt("termination_time", None, dtype=float)
+    for i in range(physlmn.attributes.length):
+        try:
+            options.setopt(*xmltools.get_name_value(physlmn.attributes.item(i)))
+        except OptionHolderError, e:
+            fatal_inp_error(e.message)
+    driver = options.getopt("driver")
     if not isdriver(driver):
         fatal_inp_error("{0}: unrecognized driver".format(driver))
         return
 
     driver = create_driver(driver)
     simblk[S_DRIVER] = driver
+    simblk[S_TTERM] = options.getopt("termination_time")
 
     # parse the sub blocks
-    subblks = ((S_MATERIAL, 1), (S_EXTRACT, 0), (S_TTERM, 0))
+    subblks = ((S_MATERIAL, 1), (S_EXTRACT, 0))
     for (subblk, reqd) in subblks:
         sublmns = physlmn.getElementsByTagName(subblk)
         if not sublmns:
@@ -400,13 +416,6 @@ def pPhysics(physlmn, functions):
     driver.parse_and_register_paths_and_surfaces(pathlmns, surflmns, functions)
 
     return simblk
-
-
-def pTerminationTime(ttermlmns):
-    tlmn = physlmn.getElementsByTagName(S_TTERM)
-    if tlmn:
-        return float(tlmn[0].firstChild.data)
-    return None
 
 
 def pMaterial(mtllmns):
