@@ -60,8 +60,13 @@ def parse_input(filepath):
     The user input
 
     """
+    # remove the shebang, if any
+    lines = open(filepath, "r").readlines()
+    if re.search("#!/", lines[0]):
+        lines = lines[1:]
+
     # find all "Include" files, and preprocess the input
-    user_input = find_and_fill_includes(open(filepath, "r").read())
+    user_input = find_and_fill_includes("\n".join(lines))
     user_input, nsubs = find_and_make_subs(user_input, disp=1)
     if nsubs:
         with open(filepath + ".preprocessed", "w") as fobj:
