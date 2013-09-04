@@ -73,6 +73,8 @@ class EOSDriver(Driver):
 
 
     def process_paths_and_surfaces(self, iomgr, *args):
+        if self.surface is None:
+            io.log_message("eos: no surface to process")
 
         K2eV = 8.617343e-5
         erg2joule = 1.0e-4
@@ -119,14 +121,18 @@ class EOSDriver(Driver):
 
         """
         if pathlmns:
-            fatal_inp_error("Paths are Extracted from EOS surfaces")
+            fatal_inp_error("EOSDriver: <Path> elements not directly supported. "
+                            "State paths are extracted from generated surfaces "
+                            "in a <Extract><Path type=.../> element")
 
         if len(surflmns) > 1:
-            fatal_inp_error("EOSDriver: expected only one surface")
+            fatal_inp_error("EOSDriver: expected at most one surface")
+            return
+        if not surflmns:
             return
         surflmn = surflmns[0]
         cls.surface = cls.pSurface(surflmns[0], functions)
-        return 0
+        return
 
     @classmethod
     def pSurface(cls, surflmn, functions):
