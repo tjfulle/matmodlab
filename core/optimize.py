@@ -1,12 +1,16 @@
 import os
 import sys
+import time
 import subprocess
 import numpy as np
 import shutil
 import scipy.optimize
 import datetime
 
+from __config__ import cfg
 import core.io as io
+from core.response_functions import evaluate_response_function
+from utils.gmdtab import GMDTabularWriter
 import utils.pprepro as pprepro
 
 IOPT = -1
@@ -15,7 +19,7 @@ OPT_METHODS = {"simplex": "fmin", "powell": "fmin_powell",
                "cobyla": "fmin_cobyla"}
 
 class OptimizationHandler(object):
-    def __init__(self, runid, verbosity, method, exe, script,
+    def __init__(self, runid, verbosity, method, exe, script, descriptor,
                  parameters, tolerance, maxiter, disp,
                  basexml, auxiliary, *opts):
 
@@ -73,22 +77,17 @@ class OptimizationHandler(object):
         self.runid = runid
         self.exe = exe
         self.script = script
+        self.descriptor = descriptor if descriptor else "ERR"
         self.tolerance = tolerance
         self.maxiter = maxiter
         self.disp = disp
         self.basexml = basexml
         self.auxiliary_files = auxiliary
-        self.tabular_file = os.path.join(self.rootd, "gmd-tabular.dat")
+        self.tabular = GMDTabularWriter(runid, self.rootd)
+        self.timing = {}
 
     def setup(self):
-        with open(self.tabular_file, "w") as fobj:
-            fobj.write("Run ID: {0}\n".format(self.runid))
-            today = datetime.date.today().strftime("%a %b %d %Y %H:%M:%S")
-            fobj.write("Date: {0}\n".format(today))
-            fobj.write("{0:20s} ".format("Eval"))
-            for name in self.names:
-                fobj.write("{0:20s} ".format(name))
-            fobj.write("{0:20s}\n".format("Error"))
+        pass
 
     def run(self):
         """Run the optimization job
@@ -98,7 +97,8 @@ class OptimizationHandler(object):
         """
         os.chdir(self.rootd)
         cwd = os.getcwd()
-        io.log_message("starting optimization job")
+        io.log_message("{0}: starting jobs".format(self.runid))
+        self.timing["start"] = time.time()
 
         # optimization methods work best with number around 1, here we
         # normalize the optimization variables and save the multiplier to be
@@ -132,7 +132,8 @@ class OptimizationHandler(object):
             cons = lcons + ucons
 
         fargs = (self.rootd, self.runid, self.names, self.basexml, self.exe,
-                 self.script, self.auxiliary_files, self.tabular_file, xfac,)
+                 self.script, self.descriptor, self.auxiliary_files,
+                 self.tabular, xfac,)
 
         if self.method == OPT_METHODS["simplex"]:
             xopt = scipy.optimize.fmin(
@@ -150,10 +151,15 @@ class OptimizationHandler(object):
 
         self.xopt = xopt * xfac
 
+        self.timing["end"] = time.time()
+
         return 0
 
     def finish(self):
         """ finish up the optimization job """
+        self.tabular.close()
+        io.log_message("{0}: calculations completed ({1:.4f}s)".format(
+            self.runid, self.timing["end"] - self.timing["start"]))
         io.log_message("optimized parameters found in {0} iterations".format(IOPT))
         io.log_message("optimized parameters:")
         for (i, name) in enumerate(self.names):
@@ -163,7 +169,8 @@ class OptimizationHandler(object):
         io.close_and_reset_logger()
 
     def output(self):
-        return self.tabular_file
+        return self.tabular._filepath
+
 
 def func(xcall, *args):
     """Objective function
@@ -182,73 +189,52 @@ def func(xcall, *args):
 
     """
     global IOPT
-    (basedir, runid, xnames, basexml, exe, script, aux, tabular, xfac) = args
+    (rootd, runid, xnames, basexml, exe, script, desc, aux, tabular, xfac) = args
 
     IOPT += 1
-    job = "eval_{0:03d}".format(IOPT)
-    evald = os.path.join(basedir, job)
+    evald = os.path.join(rootd, "eval_{0}".format(IOPT))
     os.mkdir(evald)
     os.chdir(evald)
 
-    # tabular.dat file
-    tabobj = open(tabular, "a")
-    tabobj.write("{0:<17d} ".format(IOPT))
-
     # write the params.in for this run
-    prepro = {}
-    optparams = []
+    parameters = zip(xnames, xcall * xfac)
     with open("params.in", "w") as fobj:
-        for iname, name in enumerate(xnames):
-            param = xcall[iname] * xfac[iname]
-            prepro[name] = param
+        for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
-            optparams.append("{0}={1:.4e}".format(name, param))
-            tabobj.write("{0: 20.10E} ".format(param))
-    optparams = ",".join(optparams)
-    io.log_message("starting job {0} with {1}".format(IOPT, optparams))
+
+    io.log_message("starting job {0} with {1}".format(
+        IOPT + 1, ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
 
     # Preprocess the input
-    xmlinp = pprepro.find_and_make_subs(basexml, prepro=prepro)
+    xmlinp = pprepro.find_and_make_subs(basexml, prepro=dict(parameters))
     xmlf = os.path.join(evald, runid + ".xml.preprocessed")
     with open(xmlf, "w") as fobj:
         fobj.write(xmlinp)
 
     # Run the job
-    cmd = "{0} {1}".format(exe, xmlf)
+    cmd = "{0} -I{1} {2}".format(exe, cfg.I, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
     job = subprocess.Popen(cmd.split(), stdout=out,
                            stderr=subprocess.STDOUT)
     job.wait()
+
     if job.returncode != 0:
-        opterr = np.nan
-        tabobj.write("{0: 20.10E}\n".format(opterr))
-        tabobj.close()
+        tabular.write_eval_info(IOPT, job.returncode, evald,
+                                parameters, ((desc, np.nan),))
         io.log_message("**** error: job {0} failed".format(IOPT))
-        return opterr
+        return np.nan
 
-    # Now run the script
-    # Run the job
-    io.log_message("analyzing results of job {0}".format(IOPT))
+    # Now the response function
+    io.log_message("analyzing results of job {0}".format(IOPT + 1))
     outf = os.path.join(evald, runid + ".exo")
-    cmd = "{0} {1} {2}".format(script, outf, " ".join(aux))
-    job = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT)
-    job.wait()
-    if job.returncode != 0:
-        io.log_message("*** error: job {0} script failed".format(IOPT))
-        opterr = np.nan
-
-    else:
-        out, err = job.communicate()
-        opterr = float(out)
-
-    tabobj.write("{0: 20.10E}\n".format(opterr))
-    tabobj.close()
+    opterr = evaluate_response_function(script, outf, aux)
+    tabular.write_eval_info(IOPT, job.returncode, evald,
+                            parameters, ((desc, opterr),))
 
     io.log_message("finished with job {0}".format(IOPT))
 
 
-    # go back to the basedir
-    os.chdir(basedir)
+    # go back to the rootd
+    os.chdir(rootd)
 
     return opterr

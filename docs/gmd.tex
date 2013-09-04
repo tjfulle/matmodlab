@@ -1,0 +1,908 @@
+\documentclass[11pt]{report}
+\usepackage{ifthen}
+\usepackage{nomenclature}
+\usepackage{url}
+\newcommand{\gmd}{\texttt{gmd}}
+\renewcommand{\tag}[1]{\texttt{<#1>}}
+\newcommand{\reqdtag}[1]{\Red{\texttt{<#1>}}}
+\newcommand{\gat}[1]{\texttt{<\textbackslash{}#1>}}
+\newcommand{\supporting}[1]{\texttt{Supporting Drivers: #1}}
+\newcommand{\sd}[1]{\texttt{!#1!}}
+\newcommand{\element}[4][0in]{%
+  \indent\hspace{#1}\tag{#2 #3}\\%
+  \indent\hspace{.2in}#4\\%
+  \indent\hspace{#1}\gat{#2}}
+\newcommand{\attr}[4]{%
+  \ifthenelse{\equal{#3}{}}{%
+    \ifthenelse{\equal{#4}{}}{%
+      \texttt{#1=``#2''}}{%
+      \texttt{#1=``#2\{#4\}''}}}{%
+    \ifthenelse{\equal{#4}{}}{%
+      \texttt{#1=``#2[#3]''}}{%
+      \texttt{#1=``#2[#3]\{#4\}''}}}}
+
+
+\title{\gmd{} User's Guide}
+\author{Tim Fuller}
+
+\begin{document}
+\maketitle
+
+% ----------------------------------------------------------------------------- %
+\chapter{Introduction}
+\gmd{} is an object oriented General Model Driver written in Python designed
+for rapid development and testing of material models. The core of the \gmd{}
+code base is written in Python, with the exception of many material models and
+optimization routines that are written in Fortran and wrapped by f2py. \gmd{}
+also leverages the fortran version of the ExodusII finite element databasing
+library for simulation output.
+
+\gmd{} is free software released under the MIT License.
+
+% ----------------------------------------------------------------------------- %
+
+\section{Why a Single Element Driver?}
+Due to their complexity, it is often over kill to use a finite element code
+for constitutive model development. In addition, features such as artificial
+viscosity can mask the actual material response from constitutive model
+development. Single element drivers allow the constituive model developer to
+concentrate on model development and not the finite element response. Other
+advantages of the \gmd{} (or, more generally, of any stand-alone
+constitutive model driver) are
+
+\begin{itemize}
+  \item \gmd{} is a very small, special purpose, code. Thus, maintaining and
+  adding new features to \gmd{} is very easy.
+
+  \item Simulations are not affected by irrelevant artifacts such as
+  artificial viscosity or uncertainty in the handling of boundary conditions.
+
+  \item It is straightforward to produce supplemental output for deep analysis
+  of the results that would otherwise constitute an unnecessary overhead in a
+  finite element code.
+
+  \item Specific material benchmarks may be developed and automatically run
+  quickly any time the model is changed.
+
+  \item Specific features of a material model may be exercised easily by the
+  model developer by prescribing strains, strain rates, stresses, stress
+  rates, and deformation gradients as functions of time.
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\section{Why Python?}
+Python is an interpreted, high level object oriented language. It allows for
+writing programs rapidly and, because it is an interpreted language, does not
+require a compiling step. While this might make programs written in python
+slower than those written in a compiled language, modern packages and
+computers make the speed up difference between python and a compiled language
+for single element problems almost insignificant.
+
+For numeric computations, the NumPy and SciPy modules allow programs written
+in Python to leverage a large set of numerical routines provided by LAPACK,
+BLASPACK, EIGPACK, etc. Python's APIs also allow for calling subroutines
+written in C or Fortran (in addition to a number of other languages), a
+prerequisite for model development as most legacy material models are written
+in Fortran. In fact, most modern material models are still written in Fortran
+to this day.
+
+Python's object oriented nature allows for rapid installation of new material
+models.
+
+% ----------------------------------------------------------------------------- %
+\section{Historical Background}
+\gmd{} is the successor the \texttt{payette} material model.
+
+% ----------------------------------------------------------------------------- %
+\section{Simulation Approach}
+\gmd{} exercises a material model directly by ``driving'' it through user
+specified mechanical and electrical paths.
+
+% ----------------------------------------------------------------------------- %
+\section{Supported Drivers}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Solid}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Direct}
+\begin{itemize}
+  \item Strain rate
+  \item Strain
+  \item Deformation gradient
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Inverse}
+\begin{itemize}
+  \item Stress
+  \item Stress rate
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Electrical}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Direct}
+
+\begin{itemize}
+  \item Electric field
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\section{Obtaining \gmd{}}
+\gmd{} is an open source project licensed under the MIT license. A copy of may
+be obtained from \url{https://github.com/tjfulle/gmd}
+
+
+
+% ----------------------------------------------------------------------------- %
+\chapter{Building \gmd}
+\gmd's code base is largely written in Python and requires no additional
+compiling.  However, the ExodusII third party library and material models
+written in fortran must be built.
+
+% ----------------------------------------------------------------------------- %
+\section{System Requirements}
+\gmd{} has been built and tested extensively on several versions of linux and
+the Apple Mac OSX operating systems. It is unknown whether or not \gmd{}
+will run on Windows.
+
+
+% ----------------------------------------------------------------------------- %
+\section{Required Software}
+\gmd{} requires the following software installed for your platform:
+
+\begin{itemize}
+  \item Python 2.7
+  \item NumPy 1.6
+  \item SciPy 0.9
+  \item A fortran compiler
+\end{itemize}
+
+The required software may be obtained in several ways, though all development
+has been made using Enthought Canopy (\url{http://http://www.enthought.com}).
+
+% ----------------------------------------------------------------------------- %
+\section{Installation}
+\begin{enumerate}
+  \item Make sure that all \gmd{} prerequisites are installed and working properly.
+  \item Add \verb|GMD/toolset| to your \texttt{PATH} environment variable
+  \item (Optional) Set the \texttt{GMDMTLS} environment variable to point to
+  directories containing additional material models (user developed, not part
+  of \gmd{}). See Section \ref{sec:install} for additional instructions on
+  installing user developed material models.
+  \item) (Optional) Set the \texttt{GMDTESTS} environment variable to point to
+  directories containing additional tests.
+\end{enumerate}
+
+% ----------------------------------------------------------------------------- %
+\section{Setting Up}
+Set up and build the third party libraries.
+\begin{verbatim}
+% cd GMD/toolset
+% python setup.py
+\end{verbatim}
+
+Add \texttt{GMD/toolset} to your \texttt{PATH} environment variable.
+
+% ----------------------------------------------------------------------------- %
+\section{Building}
+Build the material libraries
+\begin{verbatim}
+% buildmtls
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Testing the Installation}
+To test \gmd{} after installation, execute
+
+\begin{verbatim}
+% runtests
+\end{verbatim}
+
+which will run the \gmd{} regression tests.
+
+% ----------------------------------------------------------------------------- %
+\section{Troubleshooting}
+If you experience problems when building/installing/testing \gmd{}, you can
+ask help from the \gmd{} developers. Please include the following information
+in your message:
+
+\begin{itemize}
+  \item Platform information OS, its distribution name and version information
+  etc.
+\begin{verbatim}
+% python -c 'import os,sys;print os.name,sys.platform'
+% uname -a
+\end{verbatim}
+
+  \item Information about C,C++,Fortran compilers/linkers as reported by the
+  compilers when requesting their version information, e.g., the output of
+\begin{verbatim}
+% gcc -v
+% gfortran --version
+\end{verbatim}
+
+  \item Python version
+\begin{verbatim}
+% python -c 'import sys;print sys.version'
+\end{verbatim}
+
+\item NumPy version
+\begin{verbatim}
+% python -c 'import numpy;print numpy.__version__'
+\end{verbatim}
+
+\item SciPy version
+\begin{verbatim}
+% python -c 'import scipy;print scipy.__version__'
+\end{verbatim}
+
+\item Feel free to add any other relevant information.
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\chapter{Running}
+Make sure \texttt{GMD/toolset} is on your \texttt{PATH}.
+\begin{verbatim}
+% gmd runid[.xml]
+\end{verbatim}
+
+The following files will be produced
+\begin{verbatim}
+% ls runid.*
+runid.exo       runid.log       runid.xml
+\end{verbatim}
+%
+\texttt{runid.exo} is the ExodusII output database, \texttt{runid.log} the log
+file, and \texttt{runid.xml} the input file.
+
+
+% ----------------------------------------------------------------------------- %
+\chapter{User Input}
+User input is via xml control files. In general, tags use CamelCase and
+attributes lower case.  Attributes are described in this document as
+%
+\begin{verbatim}
+attr="type[default]{choices}"
+\end{verbatim}
+%
+where \texttt{default} is the default value (if any) and \texttt{\{choices\}}
+are valid choices (if any). Any attribute not having a default value is
+required. Types are \texttt{str}, \texttt{int}, \texttt{real}, \texttt{list}.
+Lists are given as space separated lists (e.g., ``1 2 3'').
+
+
+% ----------------------------------------------------------------------------- %
+\section{GMDSpec}
+\begin{verbatim}
+<GMDSpec>
+\end{verbatim}
+%
+All input files must have as their root element \reqdtag{GMDSpec}. Recognized
+subelements of \reqdtag{GMDSpec} are
+%
+\begin{itemize}
+  \item \reqdtag{Physics}
+  \item \tag{Permutation}
+  \item \tag{Optimization}
+\end{itemize}
+
+Elements shown in \Red{red} are required input. Additionally, the following
+elements are read from any scope in the input file
+%
+\begin{itemize}
+  \item \tag{Include}
+  \item \tag{Function}
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\section{Preprocessing}
+Preprocessing allows specifying variables in the input inside of comment tags
+for use in other parts of the input. Syntax mirrors that of \texttt{aprepro}.
+
+\subsection{Example}
+Specify the \reqdtag{Material} parameter \texttt{K} and \tag{Path} parameter
+\texttt{estar} as variables
+\begin{verbatim}
+<GMDSpec>
+  <!-- {K = 23e9}
+       {estar = -.05}
+  -->
+  <Physics>
+    <Material model="elastic">
+      <K> {K} </K>
+      <G> 54e9 </G>
+    </Material>
+    <Path type="prdef" estar="{estar}">
+      ...
+    </Path>
+  </Physics>
+</GMDSpec>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Include}
+\begin{verbatim}
+<Include href="str"/>
+\end{verbatim}
+%
+Path to file to be included as if its contents were inplace in the input file
+
+\subsection{Example}
+\begin{verbatim}
+<Include href="/path/to/some/file.ext"/>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Function}
+\begin{verbatim}
+<Function id="int"
+          type="str{analytic expression, piecewise linear}"
+          var="str[x]" href="str[]" cols="list[1 2]">
+\end{verbatim}
+%
+Define functions to be used elsewhere in input. \texttt{id=0} and
+\texttt{id=1} are reserved for the constant $0$ and $1$ functions,
+respectively. \texttt{href} is the path to a file containing the function
+definition (useful when the function is a large piecewise linear table).
+\texttt{cols} specifies the columns in which data is located in a piecewise
+linear table.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Examples}
+\paragraph{Analytic expression}
+%
+\begin{verbatim}
+<Function id="2" type="analytic expression" var="t">
+  sin(t)
+</Function>
+\end{verbatim}
+
+\paragraph{Piecewise linear table}
+%
+\begin{verbatim}
+<Function id="2" type="piecewise linear">
+  1 2
+  2 3
+  3 5
+</Function>
+\end{verbatim}
+%
+Read a piecewise linear table from an external file using columns 1 and 3
+%
+\begin{verbatim}
+<Function id="2" type="piecewise linear" href="./file.dat" cols="1 3"/>
+\end{verbatim}
+
+\begin{verbatim}
+% cat file.dat
+# Column1 Column2 Column3
+1 1 4
+2 3 7
+.
+.
+.
+100 4.2 1.43
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Physics}
+\begin{verbatim}
+<Physics driver="str[solid]{solid, eos}" termination_time="real[]">
+\end{verbatim}
+%
+Define the physics of the simulation. Recognized subelements of
+\reqdtag{Physics} are
+%
+\begin{itemize}
+  \item \reqdtag{Path\sd{solid}}
+  \item \reqdtag{Surface\sd{eos}}
+  \item \reqdtag{Material}
+  \item \tag{Extract}
+\end{itemize}
+
+If specified, \verb|termination_time| defines the termination time for the
+simulation. If not specified, termination time is taken as final time in
+\reqdtag{Path}. \sd{driver} indicates that the containing element is valid for
+that driver type only.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Path}
+%\supporting{solid}
+\begin{verbatim}
+<Path type="str{prdef}"
+      format="str[default]{default, table, fcnspec}"
+      cols="list[1, ..., n]" cfmt="str" tfmt="str[time]{time,dt}"
+      nfac="int[1]" kappa="real[0]"
+      tstar="real[1]" estar="real[1]" sstar="real[1]"
+      amplitude="real[1]" ratfac="real[1]" href="str">
+\end{verbatim}
+%
+Define deformation paths. The jth leg of \reqdtag{Path} is sent to the driver
+in form \texttt{[tf, n, cfmt, Cij]}, where \texttt{tf}, \texttt{n},
+\texttt{cfmt}, and \texttt{Cij} are the termination time, number of steps,
+control format, and control values.  Methods of inputing legs depends on the
+attributes of \reqdtag{Path} and will be shown in examples to follow.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{A note on \texttt{cfmt} and \texttt{Cij}}
+\texttt{cfmt} is concatenated integer list specifying in its $i^\text{ith}$
+component the $i^\text{th}$ component of deformation, i.e., \texttt{cfmt[i]}
+instructs the driver as to the type of deformation represented by
+\texttt{Cij[i]}.  Types of deformation represented by \texttt{cfmt} are shown
+in Table \ref{tab:cfmt}.
+
+For example, the following \texttt{cfmt} instructs the driver that the
+components of \texttt{Cij} represent [stress, strain, stress rate, strain
+rate, strain, strain], respectively: \verb|cfmt="423122"|. Mixed modes are
+allowed only for components of strain rate, strain, stress rate, and stress.
+Electric field components can be included with any deformation type.
+
+The components \texttt{Cij} take the following order
+
+\textbf{Vectors:} [X, Y, Z]
+
+\textbf{Symmetric tensors:} [XX, YY, ZZ, XY, YZ, XZ]
+
+\textbf{Tensors:} [XX, XY, XZ, YX, YY, YZ ZX, ZY, ZZ]
+
+If \texttt{len(Cij) $\neq$ 6} (or 9 for deformation gradient), the missing
+components are assumed to be zero strain.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}[h]{cl}
+    \hline
+    \hline
+    \texttt{cfmt} & Deformation type \\
+    \hline
+    1 & Strain rate \\
+    2 & Strain \\
+    3 & Stress rate \\
+    4 & Stress \\
+    5 & Deformation gradient \\
+    6 & Electric field
+  \end{tabular}
+  \caption{Supported deformation types and \texttt{cfmt} code}
+  \label{tab:cfmt}
+\end{table}
+
+\subsubsection{kappa}
+The attribute \texttt{kappa} is only used/defined for the purposes of strain
+or strain rate control. It refers to the coefficient used in the Seth-Hill
+generalized strain definition
+
+\begin{equation}
+  \Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)
+\end{equation}
+
+
+Where $\kappa$ is the keyword \texttt{kappa}, $\Strain$ is the strain tensor,
+$\RightStretch$ is the right Cauchy stretch tensor, and $\SOIdentity$ is the
+second order identity tensor. Common values of $\kappa$ and the associated
+common names for each (there is some ambiguity in the names) are:
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{ll}
+    \hline
+    $\kappa$ &  Name(s) \\
+    \hline
+    -2 & Green \\
+    -1 & True, Cauchy \\
+     0 & Logarithmic, Hencky, True \\
+     1 & Engineering, Swainger \\
+     2 & Lagrange, Almansi \\
+     \hline
+  \end{tabular}
+\end{table}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Examples}
+The following examples will help clarify the \reqdtag{Path} input syntax
+
+\paragraph{format: default} Uniaxial strain, all six components of strain prescribed
+\begin{verbatim}
+<Path type="prdef" kappa="0" tstar="1" estar="-.5" amplitude="1" ratfac="1">
+  <!-- termination time, number of steps, cfmt, Cij -->
+  0   0 222222 0 0 0 0 0 0
+  1 100 222222 1 0 0 0 0 0
+  2 100 222222 2 0 0 0 0 0
+  3 100 222222 1 0 0 0 0 0
+  4 100 222222 0 0 0 0 0 0
+</Path>
+\end{verbatim}
+
+\paragraph{format: default} Uniaxial strain, stress controlled
+\begin{verbatim}
+<Path type="prdef" nfac="100">
+  0 0 444 0 0 0
+  1 1 444 -7490645504 -3739707392 -3739707392
+  2 1 444 -14981291008 -7479414784 -7479414784
+  3 1 444 -7490645504 -3739707392 -3739707392
+  4 1 444 0 0 0
+</Path>
+\end{verbatim}
+
+\paragraph{format: default} Uniaxial stress, mixed mode
+\begin{verbatim}
+<Path type="prdef" nfac="100">
+  0 0 222 0 0 0
+  1 1 244 {epsmax} 0 0
+  4 1 244 0 0 0
+</Path>
+\end{verbatim}
+
+\paragraph{format: table} Read entries from table. Control type is uniform for
+all legs. Specify control type as \texttt{cfmt} attribute of \reqdtag{Path}.
+Optionally, specify the time format as \texttt{tfmt} and number of steps for
+each leg as \texttt{nfac}.
+\begin{verbatim}
+<Path type="prdef" format="table" cols="1:4" cfmt="222" tfmt="time">
+  0 0 0 0
+  1 1 0 0
+    ...
+  n 2 0 0
+</Path>
+\end{verbatim}
+
+\paragraph{format: table} Read the table from a file, first by the
+\tag{Include} element and then the \texttt{href} attribute.
+\begin{verbatim}
+<Path type="prdef" format="table" cols="1 3:8" cfmt="222222" tfmt="time">
+  <include href="exmpls.tbl"/>
+</Path>
+\end{verbatim}
+
+\begin{verbatim}
+<Path type="prdef" format="table" cols="1 3:8" cfmt="222222" tfmt="time"
+      href="exmpls.tbl"/>
+\end{verbatim}
+
+\paragraph{format: fcnspec} Create legs from functions. Functions are specified
+as \texttt{function id[:scale]}.  Syntax is otherwise similar to table format.
+Only a single leg can be specified.
+\begin{verbatim}
+<Path type="prdef" kappa="0" tstar="1" amplitude="1" format="fcnspec"
+      cfmt="222" nfac="200">
+  {2 * pi} 2:1.e-1 1:0 1:0
+</Path>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Surface}
+%\supporting{eos}
+\begin{verbatim}
+<Surface format="str[default]{default, table}"
+         cols="list[1, ..., n]" cfmt="str"
+         nfac="int[1]" tstar="real[1]" rstar="real[1]"
+         amplitude="real[1]" href="str">
+\end{verbatim}
+%
+Define equaiton of state surface boundaries. Input is similar to the
+\reqdtag{Path} specification, but leg termination time is not specified.
+Control parameters also differ, as shown in Table \ref{tab:cfmt-1}.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}[h]{cl}
+    \hline
+    \hline
+    \texttt{cfmt} & Variable type \\
+    \hline
+    1 & Density \\
+    2 & Temperature
+  \end{tabular}
+  \caption{Supported surface variable types and \texttt{cfmt} code}
+  \label{tab:cfmt-1}
+\end{table}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Examples}
+The following examples demonstrate the \reqdtag{Surface} input.
+
+\paragraph{format: default}
+\begin{verbatim}
+<Surface>
+  <!-- nsteps, control, Cij -->
+  <!-- control goes as 1 -> density
+                       2 -> temperature -->
+    0 12 1 100
+  100 12 5 300
+</Surface>
+\end{verbatim}
+
+\paragraph{format: table}
+\begin{verbatim}
+<Surface format="table" cfmt="12" nfac="100">
+  <!-- Cij -->
+  1 100
+  5 300
+</Surface>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Material}
+\begin{verbatim}
+<Material model="str">
+\end{verbatim}
+%
+Specify the material model and parameters. Subelements of \reqdtag{Material}
+are
+%
+\begin{itemize}
+  \item \tag{Matlabel}
+  \item \tag{Key}
+\end{itemize}
+%
+Where \tag{Key} is a valid material parameter name.
+
+\subsubsection{Matlabel}
+\begin{verbatim}
+<Matlabel href="str[F_MTL_PARAM_DB]">
+\end{verbatim}
+%
+Insert model parameters from a database file.  The default file
+\verb|F_MTL_PARAM_DB| is in \verb|/path/to/gmd/materials/material_properties.db|.
+
+\subsubsection{Key}
+\begin{verbatim}
+<Key> float </Key>
+\end{verbatim}
+
+\subsubsection{Examples}
+\begin{verbatim}
+<Material model="elastic">
+  <G>  54E+09 </G>
+  <K> 124E+09 </K>
+</Material>
+\end{verbatim}
+
+\begin{verbatim}
+<Material model="elastic">
+  <Matlabel href="./materials.xml"> aluminum </Matlabel>
+  <K> 124E+09 </K>
+</Material>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Extract}
+\begin{verbatim}
+<Extract format="str[ascii]{ascii, mathematica}" step="int[1]" ffmt="str[.18f]">
+\end{verbatim}
+%
+Extract variables and paths from ExodusII output and (optionally) write to
+different formats. Recognized subelements of \tag{Extract} are
+%
+\begin{itemize}
+  \item \tag{Path\sd{eos}}
+  \item \tag{Variables}
+\end{itemize}
+
+\subsubsection{Variables}
+\begin{verbatim}
+<Variables> VAR_1, ..., VAR_N </Variables>
+\end{verbatim}
+%
+Variables to extract from the ExodusII output database. Variables are specified
+children of the \tag{Variables} element. All components of vector and tensor
+variables will be extracted if only the basename is specified. Time is always
+extracted as the first entry of the output file.  Extracted variables are in
+\texttt{runid.out} or \texttt{runid.math} depending if the format is ascii or
+mathematica.
+
+\subsubsection{Path}
+%\supporting{eos}
+\begin{verbatim}
+<Path type="str{isotherm, hugoniot}" increments="int[100]"
+      density_range="list" initial_temperature="real">
+\end{verbatim}
+%
+Extract a specified path from the equation of state surface through the
+specified density range starting at the initial temperature.
+
+\subsubsection{Examples}
+Extract all components of stress and strain
+%
+\begin{verbatim}
+<Extract format="ascii">
+  <variables>
+    STRESS STRAIN
+  </variables>
+</Extract>
+\end{verbatim}
+
+Extract only the XX, YY, and ZZ components of stress
+%
+\begin{verbatim}
+<Extract format="ascii">
+  <variables>
+    STRESS_XX STRESS_YY STRESS_ZZ
+  </variables>
+</Extract>
+\end{verbatim}
+
+Extract all variables
+\begin{verbatim}
+<Extract format="ascii">
+  <variables>
+    ALL
+  </variables>
+</Extract>
+\end{verbatim}
+
+Extract Hugoniot and Isotherm paths
+\begin{verbatim}
+<Extract>
+  <Path type="isotherm" increments="200"
+        density_range="1 3" initial_temperature="225"/>
+  <Path type="hugoniot" increments="100"
+        density_range="1 3" initial_temperature="100"/>
+</Extract>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Permutation}
+\begin{verbatim}
+<Permutation method="str[zip]{zip, combine, shotgun}" seed="real[12]"
+                     correlation="list[none]{plot, table, none}">
+\end{verbatim}
+%
+Permutate model input parameters, running jobs with different realization of
+parameters. Good for investigating model sensitivities. Recognized subelements
+of \tag{Permutation} are
+
+\begin{itemize}
+  \item \tag{Permutate}
+  \item \tag{ResponseFunction}
+\end{itemize}
+
+The \texttt{method} attribute describes which method to use to determine
+parameter combinations to run.  The \texttt{zip} method runs one job for each
+set of parameters (and, thus, the number of realizations for each parameter
+must be identical), the \texttt{combine} method runs every combination of
+parameters, finally, the \texttt{shotgun} method zips a uniform distribution
+for each parameter.
+
+The \texttt{correlation} attribute is only meaningful if a
+\tag{ResponseFunction} is specified.  Also, note that issues relating to
+reading the ExodusII database prevent gmd from running simultaneous
+permutation jobs that define a \tag{ResponseFunction}.
+
+
+% ----------------------------------------------------------------------------- %
+\subsection{Permutate}
+\begin{verbatim}
+<Permutate var="str"
+           values="str{range, list, weibull, uniform, normal, percentage}"
+\end{verbatim}
+%
+Specify the paramaters to permutate. Variable names should occur elsewhere in
+the input file in preprocessing braces.
+
+\subsection{Example}
+Permutate the \texttt{K} and \texttt{G} parameters
+%
+\begin{verbatim}
+<Permutation method="zip" seed="12">
+  <Permutate var="K" values="weibull(125.e9, 14, 3)"/>
+  <Permutate var="G" values="percentage(45.e9, 10, 3)"/>
+</Permutation>
+\end{verbatim}
+
+In the \tag{Material} element, the \texttt{K} and \texttt{G} parameters are
+specified as
+%
+\begin{verbatim}
+<Material model="elastic">
+  <K> {K} </K>
+  <G> {G} </G>
+</Material>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\subsection{ResponseFunction}
+\begin{verbatim}
+<ResponseFunction href="str" descriptor="str[]"/>
+\end{verbatim}
+Name of response function that returns the response from permutation or
+optimization jobs. \texttt{href} must either be the path to an executable file
+script containing the response function, or the name of a builtin \gmd{}
+response function.
+
+Built in response functions are
+%
+\begin{itemize}
+  \item \texttt{gmd.max} maximum value of a simulation output
+  \item \texttt{gmd.min} minimum value of a simulation output
+  \item \texttt{gmd.mean} mean value of a simulation output
+  \item \texttt{gmd.ave} average value of a simulation output
+  \item \texttt{gmd.absmax} maximum absolute value of a simulation output
+  \item \texttt{gmd.absmin} minimum absolute value of a simulation output
+\end{itemize}
+%
+Built in response functions operate only on variabes in the simulation output file.
+
+If \texttt{href} is a user defined script, the script is called from the
+command line as
+\begin{verbatim}
+% ./scriptname simulation_output.exo [auxiliary_file_1 [... auxiliary_file_n]]
+\end{verbatim}
+
+\subsubsection{Examples}
+\begin{verbatim}
+<ResponseFunction href="./scriptname" descriptor="PRES"/>
+\end{verbatim}
+
+
+\begin{verbatim}
+<ResponseFunction href="gmd.max(PRESSURE)" descriptor="PRES"/>
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Optimization}
+\begin{verbatim}
+<Optimization method="str[simplex]{simplex, powell, cobyla}"
+              maxiter="int[25]" tolerance="real[1e-6]">
+\end{verbatim}
+%
+Optimize specified parameters against user specified objective function.
+Recognized subelements of \tag{Optimization}
+
+\begin{itemize}
+  \item \tag{Optimize}
+  \item \tag{AuxiliaryFile}
+  \item \tag{ResponseFunction}
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Optimize}
+\begin{verbatim}
+<Optimize var="str" initial_value="real" bounds="list[]"/>
+\end{verbatim}
+%
+Specify the variable to be optimized, giving initial value and, optionally,
+bounds.  Only the \texttt{cobyla} method accepts bounds.  Variable names should
+occur elsewhere in the input file in preprocessing braces.
+
+% ----------------------------------------------------------------------------- %
+\subsection{ResponseFunction}
+Same as for \tag{Permutation}.  The value returned from the response function
+is interpreted as the error to be minimized.
+
+% ----------------------------------------------------------------------------- %
+\subsection{AuxiliaryFile}
+\begin{verbatim}
+<AuxiliaryFile href="str"/>
+\end{verbatim}
+Path to any auxiliary file needed by the optimization objective function.
+
+\subsection{Example}
+Optimize the \texttt{K} and \texttt{G} parameters
+\begin{verbatim}
+<Optimization method="simplex" maxiter="25" tolerance="1e-4" disp="0">
+  <ResponseFunction href="opt-sig-v-time" descriptor="SIG_V_TIME"/>
+  <AuxiliaryFile href="opt-baseline.dat"/>
+  <Optimize var="opt_k" initial_value="129.e9"/>
+  <Optimize var="opt_g" initial_value="54.e9"/>
+</Optimization>
+\end{verbatim}
+
+In the \reqdtag{Material} element, the \texttt{K} and \texttt{G} parameters
+are specified as
+%
+\begin{verbatim}
+<Material model="elastic">
+  <K> {opt_k} </K>
+  <G> {opt_g} </G>
+</Material>
+\end{verbatim}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

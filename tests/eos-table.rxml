@@ -1,0 +1,12 @@
+<rtest name="gmd/eos-table">
+
+  <keywords> medium elastic eos </keywords>
+
+  <link_files>
+    {NAME}.rxml {NAME}.xml {NAME}.base_exo
+  </link_files>
+
+  <execute name="gmd"> {NAME}.xml </execute>
+  <execute name="gmddiff"> {NAME}.exo {NAME}.base_exo </execute>
+
+</rtest>

@@ -9,7 +9,6 @@ from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
 MTL_MODEL_DB_FILE = os.path.join(D, "material_models.db")
-MTL_PARAM_DB_FILE = os.path.join(D, "material_properties.db")
 
 
 def get_material_from_db(matname, mtldb=[None]):
@@ -90,40 +89,3 @@ def write_mtldb(mtldict, wipe=False):
         root.appendChild(child)
     doc.writexml(open(MTL_MODEL_DB_FILE, "w"), addindent="  ", newl="\n")
     doc.unlink()
-
-
-def get_material_params_from_db(matname, mdlname, dbfile=None):
-    def logerr(m): sys.stderr.write("*** error: {0}\n".format(m))
-    if not dbfile:
-        doc = xdom.parse(MTL_PARAM_DB_FILE)
-    else:
-        if not os.path.isfile(dbfile):
-            logerr("{0}: material db file not found".format(dbfile))
-            return
-        doc = xdom.parse(dbfile)
-    materials = doc.getElementsByTagName("Materials")[0]
-    materials = materials.getElementsByTagName("Material")
-    for material in materials:
-        if material.getAttribute("name") == matname:
-            break
-    else:
-        logerr("{0}: material not defined in database".format(matname))
-        return
-
-    for parameters in material.getElementsByTagName("Parameters"):
-        if parameters.getAttribute("model") == mdlname:
-            break
-    else:
-        logerr("material {0} does not define parameters "
-               "for model {1}".format(matname, mdlname))
-        return
-
-    params = {}
-    for node in parameters.childNodes:
-        if node.nodeType != node.ELEMENT_NODE:
-            continue
-        name = node.nodeName
-        val = float(node.firstChild.data)
-        params[name] = val
-        continue
-    return params

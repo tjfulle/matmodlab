@@ -9,40 +9,46 @@ if __name__ == "__main__":
     D = os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.join(D, "../"))
 
-from __config__ import cfg
+from __config__ import cfg, F_MTL_PARAM_DB
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from core.io import fatal_inp_error, input_errors
+from core.response_functions import check_response_function_element
 from drivers.driver import isdriver, create_driver
 from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes
 from utils.fcnbldr import build_lambda, build_interpolating_function
-from utils.opthold import OptionHolder
-from materials.material import get_material_from_db, get_material_params_from_db
+from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
+from utils.mtldb import read_material_params_from_db
+from materials.material import get_material_from_db
 
 
 S_PHYSICS = "Physics"
 S_PERMUTATION = "Permutation"
 S_OPT = "Optimization"
 
-S_AUX_FILES = "Auxiliary Files"
-S_METHOD = "Method"
+S_AUX_FILE = "AuxiliaryFile"
 S_PARAMS = "Parameters"
-S_OBJ_FCN = "Objective Function"
+S_RESP_FCN = "ResponseFunction"
+S_RESP_DESC = "descriptor"
 S_MITER = "Maximum Iterations"
 S_TOL = "Tolerance"
 S_DISP = "Disp"
-S_TTERM = "TerminationTime"
+S_TTERM = "termination_time"
 S_MATERIAL = "Material"
 S_EXTRACT = "Extract"
 S_PATH = "Path"
+S_SURFACE = "Surface"
 S_DRIVER = "driver"
+S_HREF = "href"
+S_CORR = "correlation"
+S_METHOD = "method"
 
 
 class UserInputError(Exception):
     def __init__(self, message):
         sys.stderr.write("*** {0} ***\n".format(message))
-        sys.exit(2)
+        raise SystemExit(2)
 
 
 def parse_input(filepath):
@@ -54,8 +60,13 @@ def parse_input(filepath):
     The user input
 
     """
-    # find all "include" files, and preprocess the input
-    user_input = find_and_fill_includes(open(filepath, "r").read())
+    # remove the shebang, if any
+    lines = open(filepath, "r").readlines()
+    if re.search("#!/", lines[0]):
+        lines = lines[1:]
+
+    # find all "Include" files, and preprocess the input
+    user_input = find_and_fill_includes("\n".join(lines))
     user_input, nsubs = find_and_make_subs(user_input, disp=1)
     if nsubs:
         with open(filepath + ".preprocessed", "w") as fobj:
@@ -66,17 +77,15 @@ def parse_input(filepath):
     try:
         gmdspec = doc.getElementsByTagName("GMDSpec")[0]
     except IndexError:
-        raise UserInputError("Expected Root Element 'GMDSpec'")
+        raise UserInputError("expected Root Element 'GMDSpec'")
 
     # ------------------------------------------ get and parse blocks --- #
     gmdblks = {}
     #           (blkname, required, remove)
-    rootblks = ((S_OPT, 0, 1),
-                (S_PERMUTATION, 0, 1),
-                (S_PHYSICS, 1, 0))
+    rootblks = ((S_OPT, 0, 1), (S_PERMUTATION, 0, 1), (S_PHYSICS, 1, 0))
+
     # find all functions first
     functions = pFunctions(gmdspec.getElementsByTagName("Function"))
-    args = (functions,)
 
     for (rootblk, reqd, rem) in rootblks:
         rootlmns = gmdspec.getElementsByTagName(rootblk)
@@ -86,7 +95,7 @@ def parse_input(filepath):
             continue
 
         if len(rootlmns) > 1:
-            fatal_inp_error("Expected 1 {0} block, got {1}".format(
+            fatal_inp_error("expected 1 {0} block, got {1}".format(
                 rootblk, len(rootlmns)))
             continue
 
@@ -98,7 +107,7 @@ def parse_input(filepath):
             p.removeChild(rootlmn)
 
     if input_errors():
-        raise UserInputError("Stopping due to previous Errors")
+        raise UserInputError("stopping due to previous Errors")
 
     if S_OPT in gmdblks and S_PERMUTATION in gmdblks:
         raise UserInputError("Incompatible blocks: [Optimzation, Permutation]")
@@ -110,10 +119,10 @@ def parse_input(filepath):
         ns = permutation_namespace(gmdblks[S_PERMUTATION], gmdspec.toxml())
 
     else:
-        ns = physics_namespace(gmdblks[S_PHYSICS], *args)
+        ns = physics_namespace(gmdblks[S_PHYSICS], functions)
 
     if input_errors():
-        raise UserInputError("Stopping due to previous Errors")
+        raise UserInputError("stopping due to previous Errors")
 
     return ns
 
@@ -122,7 +131,7 @@ def parse_input(filepath):
 # Each XML block is parsed with a corresponding function 'pBlockName'
 # where BlockName is the name of the block as entered by the user in the
 # input file
-def pOptimization(optlmn, *args):
+def pOptimization(optlmn):
     """Parse the optimization block
 
     """
@@ -130,7 +139,7 @@ def pOptimization(optlmn, *args):
 
     # Set up options for permutation
     options = OptionHolder()
-    options.addopt("method", "simplex", dtype=str,
+    options.addopt(S_METHOD, "simplex", dtype=str,
                    choices=("simplex", "powell", "cobyla", "slsqp"))
     options.addopt("maxiter", 25, dtype=int)
     options.addopt("tolerance", 1.e-6, dtype=float)
@@ -138,31 +147,29 @@ def pOptimization(optlmn, *args):
 
     # Get control terms
     for i in range(optlmn.attributes.length):
-        options.setopt(*xmltools.get_name_value(optlmn.attributes.item(i)))
+        try:
+            options.setopt(*xmltools.get_name_value(optlmn.attributes.item(i)))
+        except OptionHolderError, e:
+            fatal_inp_error(e.message)
 
-    # objective function
-    objfcn = optlmn.getElementsByTagName("ObjectiveFunction")
-    if not objfcn:
-        fatal_inp_error("ObjectiveFunction not found")
-    elif len(objfcn) > 1:
-        fatal_inp_error("Only one ObjectiveFunction tag supported")
+    # response function
+    respfcn = optlmn.getElementsByTagName(S_RESP_FCN)
+    if not respfcn:
+        fatal_inp_error("{0} not found".format(S_RESP_FCN))
+    elif len(respfcn) > 1:
+        fatal_inp_error("Only one {0} tag supported".format(S_RESP_FCN))
     else:
-        objfcn = objfcn[0]
+        respfcn = respfcn[0]
 
-    objfile = objfcn.getAttribute("href")
-    if not objfile:
-        fatal_inp_error("Expected href attribute to ObjectiveFunction")
-    elif not os.path.isfile(objfile):
-        fatal_inp_error("{0}: no such file".format(objfile))
-    else:
-        objfile = os.path.realpath(objfile)
+    response_fcn = check_response_function_element(respfcn)
 
     # auxiliary files
     auxfiles = []
-    for item in optlmn.getElementsByTagName("AuxiliaryFile"):
-        auxfile = item.getAttribute("href")
+    for item in optlmn.getElementsByTagName(S_AUX_FILE):
+        auxfile = item.getAttribute(S_HREF)
         if not auxfile:
-            fatal_inp_error("Expected href attribute to AuxiliaryFile")
+            fatal_inp_error("pOptimization: expected {0} attribute to {1}".format(
+                S_HREF, S_AUX_FILE))
         elif not os.path.isfile(auxfile):
             fatal_inp_error("{0}: no such file".format(auxfile))
         else:
@@ -190,19 +197,19 @@ def pOptimization(optlmn, *args):
             continue
         p.append([var, ivalue, bounds])
 
-    odict[S_METHOD] = options.getopt("method")
+    odict[S_METHOD] = options.getopt(S_METHOD)
     odict[S_MITER] = options.getopt("maxiter")
     odict[S_TOL] = options.getopt("tolerance")
     odict[S_DISP] = options.getopt("disp")
 
     odict[S_PARAMS] = p
-    odict[S_AUX_FILES] = auxfiles
-    odict[S_OBJ_FCN] = objfile
+    odict[S_AUX_FILE] = auxfiles
+    odict.update(response_fcn)
 
     return odict
 
 
-def pPermutation(permlmn, *args):
+def pPermutation(permlmn):
     """Parse the permutation block
 
     """
@@ -210,42 +217,76 @@ def pPermutation(permlmn, *args):
 
     # Set up options for permutation
     options = OptionHolder()
-    options.addopt("method", "zip", dtype=str, choices=("zip", "combine"))
+    options.addopt(S_METHOD, "zip", dtype=str,
+                   choices=("zip", "combine", "shotgun"))
     options.addopt("seed", 12, dtype=int)
+    options.addopt(S_CORR, "none", dtype=str)
 
     # Get control terms
     for i in range(permlmn.attributes.length):
-        options.setopt(*xmltools.get_name_value(permlmn.attributes.item(i)))
+        try:
+            options.setopt(*xmltools.get_name_value(permlmn.attributes.item(i)))
+        except OptionHolderError, e:
+            fatal_inp_error(e.message)
 
     rstate = np.random.RandomState(options.getopt("seed"))
     gdict = {"__builtins__": None}
     N_default = 10
     safe = {"range": lambda a, b, N=N_default: np.linspace(a, b, N),
-            "sequence": lambda a: np.array(a),
+            "list": lambda a: np.array(a),
             "weibull": lambda a, b, N=N_default: a * rstate.weibull(b, N),
             "uniform": lambda a, b, N=N_default: rstate.uniform(a, b, N),
             "normal": lambda a, b, N=N_default: rstate.normal(a, b, N),
             "percentage": lambda a, b, N=N_default: (
                 np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))}
 
+    # response function
+    respfcn = permlmn.getElementsByTagName(S_RESP_FCN)
+    if len(respfcn) > 1:
+        fatal_inp_error("Only one {0} tag supported".format(S_RESP_FCN))
+    elif respfcn:
+        respfcn = respfcn[0]
+    response_fcn = check_response_function_element(respfcn)
+
     # read in permutated values
     p = []
     for items in permlmn.getElementsByTagName("Permutate"):
         var = str(items.attributes.get("var").value)
         values = str(items.attributes.get("values").value)
+        s = re.search(r"(?P<meth>\w+)\s*\(", values)
+        if s: meth = s.group("meth")
+        else: meth = ""
+        if options.getopt(S_METHOD) == "shotgun":
+            if meth != "range":
+                fatal_inp_error("shotgun: expected values=range(...")
+                continue
+            values = re.sub(meth, "uniform", values)
         try:
             p.append([var, eval(values, gdict, safe)])
         except:
             fatal_inp_error("{0}: invalid expression".format(values))
             continue
 
+    if options.getopt(S_CORR) is not None:
+        corr = xmltools.str2list(options.getopt(S_CORR), dtype=str)
+        for (i, c) in enumerate(corr):
+            if c.lower() not in ("table", "plot", "none"):
+                fatal_inp_error("{0}: unrecognized correlation option".format(c))
+            corr[i] = c.lower()
+        if "none" in corr:
+            corr = None
+        options.setopt(S_CORR, corr)
+
+    pdict[S_CORR] = options.getopt(S_CORR)
     pdict[S_PARAMS] = p
-    pdict[S_METHOD] = options.getopt("method")
+    pdict[S_METHOD] = options.getopt(S_METHOD)
+
+    pdict.update(response_fcn)
 
     return pdict
 
 
-def pExtract(extlmns, *args):
+def pExtract(extlmns):
     extlmn = extlmns[-1]
     options = OptionHolder()
     options.addopt("format", "ascii", dtype=str, choices=("ascii", "mathematica"))
@@ -254,23 +295,33 @@ def pExtract(extlmns, *args):
 
     # Get control terms
     for i in range(extlmn.attributes.length):
-        options.setopt(*xmltools.get_name_value(extlmn.attributes.item(i)))
+        try:
+            options.setopt(*xmltools.get_name_value(extlmn.attributes.item(i)))
+        except OptionHolderError, e:
+            fatal_inp_error(e.message)
 
+    # get requested variables to extract
     variables = []
-    for item in extlmn.getElementsByTagName("Variables"):
-        data = item.firstChild.data.split("\n")
-        data = [xmltools.stringify(x, "upper")
-                for sub in data for x in sub.split()]
-        if "ALL" in data:
-            variables = "ALL"
-            break
-        variables.extend(data)
+    for varlmn in  extlmn.getElementsByTagName("Variables"):
+        data = varlmn.firstChild.data.split("\n")
+        variables.extend([xmltools.stringify(x, "upper")
+                          for sub in data for x in sub.split()])
+    if "ALL" in variables:
+        variables = "ALL"
+
+    # get Paths to extract -> further parsing is handled by drivers that
+    # support extracting paths
+    paths = extlmn.getElementsByTagName("Path")
+
     return (options.getopt("format"), options.getopt("step"),
-            options.getopt("ffmt"), variables)
+            options.getopt("ffmt"), variables, paths)
 
 
-def physics_namespace(physlmn, *args):
-    simblk = pPhysics(physlmn, *args)
+def physics_namespace(physlmn, functions):
+
+    simblk = pPhysics(physlmn, functions)
+    if input_errors():
+        raise UserInputError("stopping due to previous errors")
 
     # set up the namespace to return
     ns = Namespace()
@@ -297,8 +348,9 @@ def optimization_namespace(optlmn, basexml):
     ns.stype = S_OPT
     ns.method = optblk[S_METHOD]
     ns.parameters = optblk[S_PARAMS]
-    ns.auxiliary_files = optblk[S_AUX_FILES]
-    ns.objective_function = optblk[S_OBJ_FCN]
+    ns.auxiliary_files = optblk[S_AUX_FILE]
+    ns.response_function = optblk[S_HREF]
+    ns.response_descriptor = optblk[S_RESP_DESC]
     ns.tolerance = optblk[S_TOL]
     ns.maxiter = optblk[S_MITER]
     ns.disp = optblk[S_DISP]
@@ -313,28 +365,39 @@ def permutation_namespace(permlmn, basexml):
     ns.stype = S_PERMUTATION
     ns.method = permblk[S_METHOD]
     ns.parameters = permblk[S_PARAMS]
+    ns.response_function = permblk[S_HREF]
+    ns.response_descriptor = permblk[S_RESP_DESC]
+    ns.correlation = permblk[S_CORR]
     ns.basexml = basexml
     return ns
 
 
-def pPhysics(physlmn, *args):
+def pPhysics(physlmn, functions):
     """Parse the physics tag
 
     """
     simblk = {}
 
     # Get the driver first
-    driver = physlmn.getAttribute("driver")
-    driver = "solid" if not driver else driver
+    options = OptionHolder()
+    options.addopt("driver", "solid", dtype=str, choices=("solid", "eos"))
+    options.addopt("termination_time", None, dtype=float)
+    for i in range(physlmn.attributes.length):
+        try:
+            options.setopt(*xmltools.get_name_value(physlmn.attributes.item(i)))
+        except OptionHolderError, e:
+            fatal_inp_error(e.message)
+    driver = options.getopt("driver")
     if not isdriver(driver):
         fatal_inp_error("{0}: unrecognized driver".format(driver))
         return
 
     driver = create_driver(driver)
     simblk[S_DRIVER] = driver
+    simblk[S_TTERM] = options.getopt("termination_time")
 
     # parse the sub blocks
-    subblks = ((S_MATERIAL, 1), (S_EXTRACT, 0), (S_TTERM, 0))
+    subblks = ((S_MATERIAL, 1), (S_EXTRACT, 0))
     for (subblk, reqd) in subblks:
         sublmns = physlmn.getElementsByTagName(subblk)
         if not sublmns:
@@ -343,31 +406,24 @@ def pPhysics(physlmn, *args):
             continue
         parsefcn = getattr(sys.modules[__name__],
                            "p{0}".format(sublmns[0].nodeName))
-        simblk[subblk] = parsefcn(sublmns, *args)
+        simblk[subblk] = parsefcn(sublmns)
         for sublmn in sublmns:
             p = sublmn.parentNode
             p.removeChild(sublmn)
 
     # Finally, parse the paths and surfaces
     pathlmns = physlmn.getElementsByTagName(S_PATH)
-    if not pathlmns:
-        fatal_inp_error("Physics: {0}: block missing".format(S_PATH))
-    else:
-        error = driver.parse_and_register_paths(pathlmns, *args)
-        if error:
-            fatal_inp_error("Physics: error parsing {0}".format(S_PATH))
+    surflmns = physlmn.getElementsByTagName(S_SURFACE)
+    if not pathlmns and not surflmns:
+        fatal_inp_error("Physics: must specify at least one surface or path")
+        return
+
+    driver.parse_and_register_paths_and_surfaces(pathlmns, surflmns, functions)
 
     return simblk
 
 
-def pTerminationTime(ttermlmns, *args):
-    tlmn = physlmn.getElementsByTagName(S_TTERM)
-    if tlmn:
-        return float(tlmn[0].firstChild.data)
-    return None
-
-
-def pMaterial(mtllmns, *args):
+def pMaterial(mtllmns):
     """Parse the material block
 
     """
@@ -404,17 +460,28 @@ def parse_mtl_params(mtllmn, pdict, model):
         if node.nodeType != node.ELEMENT_NODE:
             continue
         name = node.nodeName
-        val = node.firstChild.data.strip()
         if name.lower() == "matlabel":
-            dbfile = node.getAttribute("db")
-            mtl_db_params = get_material_params_from_db(val, model, dbfile=dbfile)
+            mat = node.getAttribute("material")
+            if not mat:
+                fatal_inp_error("Matlabel: expected material attribute")
+                continue
+            dbfile = node.getAttribute(S_HREF)
+            if not dbfile:
+                dbfile = F_MTL_PARAM_DB
+            if not os.path.isfile(dbfile):
+                if not os.path.isfile(os.path.join(cfg.I, dbfile)):
+                    fatal_inp_error("{0}: no such file".format(dbfile))
+                    continue
+                dbfile = os.path.join(cfg.I, dbfile)
+            mtl_db_params = read_material_params_from_db(mat, model, dbfile)
             if mtl_db_params is None:
                 fatal_inp_error("Material: error reading parameters for "
-                                "{0} from database".format(val))
+                                "{0} from database".format(mat))
                 continue
             param_map.update(mtl_db_params)
 
         else:
+            val = node.firstChild.data.strip()
             param_map[name] = val
 
     # put the parameters in an array
@@ -435,14 +502,15 @@ def parse_mtl_params(mtllmn, pdict, model):
     return params
 
 
-def pFunctions(element_list, *args):
+def pFunctions(element_list):
     """Parse the functions block
 
     """
     __ae__ = "ANALYTIC EXPRESSION"
     __pwl__ = "PIECEWISE LINEAR"
+    zero_fcn_id = 0
     const_fcn_id = 1
-    functions = {const_fcn_id: lambda x: 1.}
+    functions = {zero_fcn_id: lambda x: 0., const_fcn_id: lambda x: 1.}
     if not element_list:
         return functions
 
@@ -452,13 +520,10 @@ def pFunctions(element_list, *args):
         if fid is None:
             fatal_inp_error("Function: id not found")
             continue
-
         fid = int(fid.value)
-
-        if fid == const_fcn_id:
+        if fid in (zero_fcn_id, const_fcn_id):
             fatal_inp_error("Function id {0} is reserved".format(fid))
             continue
-
         if fid in functions:
             fatal_inp_error("{0}: duplicate function definition".format(fid))
             continue
@@ -467,21 +532,30 @@ def pFunctions(element_list, *args):
         if ftype is None:
             fatal_inp_error("Functions.Function: type not found")
             continue
-
         ftype = " ".join(ftype.value.split()).upper()
-
         if ftype not in (__ae__, __pwl__):
             fatal_inp_error("{0}: invalid function type".format(ftype))
             continue
 
-        expr = function.firstChild.data.strip()
+        href = function.getAttribute(S_HREF)
+        if href:
+            if ftype == __ae__:
+                fatal_inp_error("function file support only for piecewise linear")
+                continue
+            if not os.path.isfile(href):
+                if not os.path.isfile(os.path.join(cfg.I, href)):
+                    fatal_inp_error("{0}: no such file".format(href))
+                    continue
+                href = os.path.join(cfg.I, href)
+            expr = open(href, "r").read()
+
+        else:
+            expr = function.firstChild.data.strip()
 
         if ftype == __ae__:
-            var = function.attributes.get("var")
+            var = function.getAttribute("var")
             if not var:
                 var = "x"
-            else:
-                var = var.value.strip()
             func, err = build_lambda(expr, var=var, disp=1)
             if err:
                 fatal_inp_error("{0}: in analytic expression in "
@@ -490,31 +564,33 @@ def pFunctions(element_list, *args):
 
         elif ftype == __pwl__:
             # parse the table in expr
-
-            try:
-                columns = xmltools.str2list(
-                    function.attributes.get("columns").value, dtype=str)
-            except AttributeError:
-                columns = ["x", "y"]
-
-            except TypeError:
-                columns = ["x", "y"]
+            cols = function.getAttribute("cols")
+            if not cols:
+                cols = np.arange(2)
+            else:
+                cols = np.array(xmltools.str2list(cols, dtype=int)) - 1
+                if len(cols) != 2:
+                    fatal_inp_error("len(cols) != 2")
+                    continue
 
             table = []
-            ncol = len(columns)
+            nc = 0
             for line in expr.split("\n"):
-                line = [float(x) for x in line.split()]
+                line = line.split("#", 1)[0].split()
                 if not line:
                     continue
-                if len(line) != ncol:
-                    nl = len(line)
-                    fatal_inp_error("Expected {0} columns in function "
-                                    "{1}, got {2}".format(ncol, fid, nl))
+                line = [float(x) for x in line]
+                if not nc: nc = len(line)
+                if len(line) != nc:
+                    fatal_inp_error("Inconsistent table data")
                     continue
-
+                if len(line) < np.amax(cols):
+                    fatal_inp_error("Note enought columns in table data")
+                    continue
                 table.append(line)
+            table = np.array(table)[cols]
 
-            func, err = build_interpolating_function(np.array(table), disp=1)
+            func, err = build_interpolating_function(table, disp=1)
             if err:
                 fatal_inp_error("{0}: in piecwise linear table in "
                                 "function {1}".format(err, fid))

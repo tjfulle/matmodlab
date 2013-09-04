@@ -36,7 +36,7 @@ class PhysicsHandler(object):
 
         # set up timing
         self.timing = {}
-        self.timing["initial"] = time.time()
+        self.timing["start"] = time.time()
 
     def setup(self):
 
@@ -76,6 +76,7 @@ class PhysicsHandler(object):
         self.exo = io.ExoManager(self.runid, self.num_dim, self.coords, connect,
                                  glob_var_data, elem_blks,
                                  all_element_data, title)
+        self.exofilepath = self.runid + ".exo"
 
         # write to the log file the material props
         L = max(max(len(n) for n in ele_var_names), 10)
@@ -103,26 +104,37 @@ class PhysicsHandler(object):
         """
         io.log_message("{0}: starting calculations".format(self.runid))
         run_opts = (self.tterm, )
-        retcode = self.driver.process_paths(self.dump_state, *run_opts)
+        retcode = self.driver.process_paths_and_surfaces(
+            self.dump_state, *run_opts)
         return retcode
 
     def finish(self):
         # udpate and close the file
-        self.timing["final"] = time.time()
-        io.log_message("{0}: calculations completed ({1:.4f}s)".format(
-            self.runid, self.timing["final"] - self.timing["initial"]))
+        self.timing["end"] = time.time()
+        if self.driver._paths_and_surfaces_processed:
+            io.log_message("{0}: calculations completed ({1:.4f}s)".format(
+                self.runid, self.timing["end"] - self.timing["start"]))
+        else:
+            io.log_error("{0}: calculations did not complete".format(self.runid),
+                         r=0)
+
         self.exo.finish()
+
+        if self.extract and self.driver._paths_and_surfaces_processed:
+            ofmt, step, ffmt, variables, paths = self.extract[:5]
+            if variables:
+                exodump(self.exofilepath, step=step, ffmt=ffmt,
+                        variables=variables, ofmt=ofmt)
+            if paths:
+                self.driver.extract_paths(self.exofilepath, paths)
+
+            self.timing["extract"] = time.time()
+            io.log_message("{0}: extraction completed ({1:.4f}s)".format(
+                self.runid, self.timing["extract"] - self.timing["end"]))
 
         # close the log
         io.close_and_reset_logger()
 
-        if self.extract:
-            ofmt, step, ffmt, variables = self.extract
-            exodump(self.runid + ".exo", step=step, ffmt=ffmt,
-                    variables=variables, ofmt=ofmt)
-            self.timing["extract"] = time.time()
-            io.log_message("{0}: extraction completed ({1:.4f}s)".format(
-                self.runid, self.timing["extract"] - self.timing["final"]))
         return
 
     def dump_state(self, time_end):

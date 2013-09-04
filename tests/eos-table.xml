@@ -1,0 +1,27 @@
+<GMDSpec>
+
+  <Physics driver="eos">
+
+    <Units input="SI" output="SI"/>
+
+    <Material model="idealgas">
+      <!-- He -->
+      <Matlabel material="helium"/>
+    </Material>
+
+    <Surface format="table" cfmt="12" nfac="100">
+      <!-- Cij -->
+      1 100
+      5 300
+    </Surface>
+
+    <Extract>
+      <Path type="isotherm" increments="200"
+	    density_range="1 3" initial_temperature="225"/>
+      <Path type="hugoniot" increments="100"
+	    density_range="1 3" initial_temperature="100"/>
+    </Extract>
+
+  </Physics>
+
+</GMDSpec>

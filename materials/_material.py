@@ -20,7 +20,7 @@ class Material(object):
             self.param_map[name] = idx
             setattr(self, name, idx)
 
-    def register_mtl_variable(self, var, vtype):
+    def register_mtl_variable(self, var, vtype, units=None):
         self.mtl_variables.append((var, vtype))
 
     def register_xtra_variables(self, keys, mig=False):
