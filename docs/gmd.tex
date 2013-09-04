@@ -1,9 +1,13 @@
 \documentclass[11pt]{report}
 \usepackage{ifthen}
+\usepackage{nomenclature}
+\usepackage{url}
 \newcommand{\gmd}{\texttt{gmd}}
-\newcommand{\tag}[1]{\texttt{<#1>}}
+\renewcommand{\tag}[1]{\texttt{<#1>}}
+\newcommand{\reqdtag}[1]{\Red{\texttt{<#1>}}}
 \newcommand{\gat}[1]{\texttt{<\textbackslash{}#1>}}
-\newcommand{\supporting}[1]{\textbf{Supporting Drivers: }\texttt{#1}}
+\newcommand{\supporting}[1]{\texttt{Supporting Drivers: #1}}
+\newcommand{\sd}[1]{\texttt{!#1!}}
 \newcommand{\element}[4][0in]{%
   \indent\hspace{#1}\tag{#2 #3}\\%
   \indent\hspace{.2in}#4\\%
@@ -26,13 +30,151 @@
 
 % ----------------------------------------------------------------------------- %
 \chapter{Introduction}
-\gmd{} is a Generalized Model Driver.
+\gmd{} is an object oriented General Model Driver written in Python designed
+for rapid development and testing of material models. The core of the \gmd{}
+code base is written in Python, with the exception of many material models and
+optimization routines that are written in Fortran and wrapped by f2py. \gmd{}
+also leverages the fortran version of the ExodusII finite element databasing
+library for simulation output.
+
+\gmd{} is free software released under the MIT License.
+
+% ----------------------------------------------------------------------------- %
+
+\section{Why a Single Element Driver?}
+Due to their complexity, it is often over kill to use a finite element code
+for constitutive model development. In addition, features such as artificial
+viscosity can mask the actual material response from constitutive model
+development. Single element drivers allow the constituive model developer to
+concentrate on model development and not the finite element response. Other
+advantages of the \gmd{} (or, more generally, of any stand-alone
+constitutive model driver) are
+
+\begin{itemize}
+  \item \gmd{} is a very small, special purpose, code. Thus, maintaining and
+  adding new features to \gmd{} is very easy.
+
+  \item Simulations are not affected by irrelevant artifacts such as
+  artificial viscosity or uncertainty in the handling of boundary conditions.
+
+  \item It is straightforward to produce supplemental output for deep analysis
+  of the results that would otherwise constitute an unnecessary overhead in a
+  finite element code.
+
+  \item Specific material benchmarks may be developed and automatically run
+  quickly any time the model is changed.
+
+  \item Specific features of a material model may be exercised easily by the
+  model developer by prescribing strains, strain rates, stresses, stress
+  rates, and deformation gradients as functions of time.
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\section{Why Python?}
+Python is an interpreted, high level object oriented language. It allows for
+writing programs rapidly and, because it is an interpreted language, does not
+require a compiling step. While this might make programs written in python
+slower than those written in a compiled language, modern packages and
+computers make the speed up difference between python and a compiled language
+for single element problems almost insignificant.
+
+For numeric computations, the NumPy and SciPy modules allow programs written
+in Python to leverage a large set of numerical routines provided by LAPACK,
+BLASPACK, EIGPACK, etc. Python's APIs also allow for calling subroutines
+written in C or Fortran (in addition to a number of other languages), a
+prerequisite for model development as most legacy material models are written
+in Fortran. In fact, most modern material models are still written in Fortran
+to this day.
+
+Python's object oriented nature allows for rapid installation of new material
+models.
+
+% ----------------------------------------------------------------------------- %
+\section{Historical Background}
+\gmd{} is the successor the \texttt{payette} material model.
+
+% ----------------------------------------------------------------------------- %
+\section{Simulation Approach}
+\gmd{} exercises a material model directly by ``driving'' it through user
+specified mechanical and electrical paths.
+
+% ----------------------------------------------------------------------------- %
+\section{Supported Drivers}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Solid}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Direct}
+\begin{itemize}
+  \item Strain rate
+  \item Strain
+  \item Deformation gradient
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Inverse}
+\begin{itemize}
+  \item Stress
+  \item Stress rate
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Electrical}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Direct}
+
+\begin{itemize}
+  \item Electric field
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\section{Obtaining \gmd{}}
+\gmd{} is an open source project licensed under the MIT license. A copy of may
+be obtained from \url{https://github.com/tjfulle/gmd}
+
+
 
 % ----------------------------------------------------------------------------- %
 \chapter{Building \gmd}
 \gmd's code base is largely written in Python and requires no additional
-compiling.  However, the exodusII third party library and material models
+compiling.  However, the ExodusII third party library and material models
 written in fortran must be built.
+
+% ----------------------------------------------------------------------------- %
+\section{System Requirements}
+\gmd{} has been built and tested extensively on several versions of linux and
+the Apple Mac OSX operating systems. It is unknown whether or not \gmd{}
+will run on Windows.
+
+
+% ----------------------------------------------------------------------------- %
+\section{Required Software}
+\gmd{} requires the following software installed for your platform:
+
+\begin{itemize}
+  \item Python 2.7
+  \item NumPy 1.6
+  \item SciPy 0.9
+  \item A fortran compiler
+\end{itemize}
+
+The required software may be obtained in several ways, though all development
+has been made using Enthought Canopy (\url{http://http://www.enthought.com}).
+
+% ----------------------------------------------------------------------------- %
+\section{Installation}
+\begin{enumerate}
+  \item Make sure that all \gmd{} prerequisites are installed and working properly.
+  \item Add \verb|GMD/toolset| to your \texttt{PATH} environment variable
+  \item (Optional) Set the \texttt{GMDMTLS} environment variable to point to
+  directories containing additional material models (user developed, not part
+  of \gmd{}). See Section \ref{sec:install} for additional instructions on
+  installing user developed material models.
+  \item) (Optional) Set the \texttt{GMDTESTS} environment variable to point to
+  directories containing additional tests.
+\end{enumerate}
 
 % ----------------------------------------------------------------------------- %
 \section{Setting Up}
@@ -42,7 +184,7 @@ Set up and build the third party libraries.
 % python setup.py
 \end{verbatim}
 
-Add \texttt{GMD/toolset} to \texttt{PATH}.
+Add \texttt{GMD/toolset} to your \texttt{PATH} environment variable.
 
 % ----------------------------------------------------------------------------- %
 \section{Building}
@@ -50,6 +192,55 @@ Build the material libraries
 \begin{verbatim}
 % buildmtls
 \end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Testing the Installation}
+To test \gmd{} after installation, execute
+
+\begin{verbatim}
+% runtests
+\end{verbatim}
+
+which will run the \gmd{} regression tests.
+
+% ----------------------------------------------------------------------------- %
+\section{Troubleshooting}
+If you experience problems when building/installing/testing \gmd{}, you can
+ask help from the \gmd{} developers. Please include the following information
+in your message:
+
+\begin{itemize}
+  \item Platform information OS, its distribution name and version information
+  etc.
+\begin{verbatim}
+% python -c 'import os,sys;print os.name,sys.platform'
+% uname -a
+\end{verbatim}
+
+  \item Information about C,C++,Fortran compilers/linkers as reported by the
+  compilers when requesting their version information, e.g., the output of
+\begin{verbatim}
+% gcc -v
+% gfortran --version
+\end{verbatim}
+
+  \item Python version
+\begin{verbatim}
+% python -c 'import sys;print sys.version'
+\end{verbatim}
+
+\item NumPy version
+\begin{verbatim}
+% python -c 'import numpy;print numpy.__version__'
+\end{verbatim}
+
+\item SciPy version
+\begin{verbatim}
+% python -c 'import scipy;print scipy.__version__'
+\end{verbatim}
+
+\item Feel free to add any other relevant information.
+\end{itemize}
 
 % ----------------------------------------------------------------------------- %
 \chapter{Running}
@@ -64,7 +255,7 @@ The following files will be produced
 runid.exo       runid.log       runid.xml
 \end{verbatim}
 %
-\texttt{runid.exo} is the exodusII output database, \texttt{runid.log} the log
+\texttt{runid.exo} is the ExodusII output database, \texttt{runid.log} the log
 file, and \texttt{runid.xml} the input file.
 
 
@@ -78,9 +269,9 @@ attr="type[default]{choices}"
 \end{verbatim}
 %
 where \texttt{default} is the default value (if any) and \texttt{\{choices\}}
-are valid choices (if any). Any attribute not having a default value are
+are valid choices (if any). Any attribute not having a default value is
 required. Types are \texttt{str}, \texttt{int}, \texttt{real}, \texttt{list}.
-Lists are given as space separated lists (i.e., ``1 2 3'').
+Lists are given as space separated lists (e.g., ``1 2 3'').
 
 
 % ----------------------------------------------------------------------------- %
@@ -89,16 +280,17 @@ Lists are given as space separated lists (i.e., ``1 2 3'').
 <GMDSpec>
 \end{verbatim}
 %
-All input files must have as their root element \tag{GMDSpec}. Recognized
-subelements of \tag{GMDSpec} are
+All input files must have as their root element \reqdtag{GMDSpec}. Recognized
+subelements of \reqdtag{GMDSpec} are
 %
 \begin{itemize}
-  \item \tag{Physics}
+  \item \reqdtag{Physics}
   \item \tag{Permutation}
   \item \tag{Optimization}
 \end{itemize}
 
-Additionally, the following elements are read from anywhere in the input file
+Elements shown in \Red{red} are required input. Additionally, the following
+elements are read from any scope in the input file
 %
 \begin{itemize}
   \item \tag{Include}
@@ -111,7 +303,7 @@ Preprocessing allows specifying variables in the input inside of comment tags
 for use in other parts of the input. Syntax mirrors that of \texttt{aprepro}.
 
 \subsection{Example}
-Specify the \tag{Material} parameter \texttt{K} and \tag{Path} parameter
+Specify the \reqdtag{Material} parameter \texttt{K} and \tag{Path} parameter
 \texttt{estar} as variables
 \begin{verbatim}
 <GMDSpec>
@@ -148,12 +340,15 @@ Path to file to be included as if its contents were inplace in the input file
 \begin{verbatim}
 <Function id="int"
           type="str{analytic expression, piecewise linear}"
-          var="str[x]" href="str" cols="list[1 2]">
+          var="str[x]" href="str[]" cols="list[1 2]">
 \end{verbatim}
 %
 Define functions to be used elsewhere in input. \texttt{id=0} and
 \texttt{id=1} are reserved for the constant $0$ and $1$ functions,
-respectively.
+respectively. \texttt{href} is the path to a file containing the function
+definition (useful when the function is a large piecewise linear table).
+\texttt{cols} specifies the columns in which data is located in a piecewise
+linear table.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Examples}
@@ -198,45 +393,52 @@ Read a piecewise linear table from an external file using columns 1 and 3
 <Physics driver="str[solid]{solid, eos}" termination_time="real[]">
 \end{verbatim}
 %
-Define the physics of the simulation. Recognized subelements of \tag{Physics}
-are
+Define the physics of the simulation. Recognized subelements of
+\reqdtag{Physics} are
 %
 \begin{itemize}
-  \item \tag{Path}
-  \item \tag{Surface}
-  \item \tag{Material}
+  \item \reqdtag{Path\sd{solid}}
+  \item \reqdtag{Surface\sd{eos}}
+  \item \reqdtag{Material}
   \item \tag{Extract}
 \end{itemize}
 
 If specified, \verb|termination_time| defines the termination time for the
 simulation. If not specified, termination time is taken as final time in
-\tag{Path}.
+\reqdtag{Path}. \sd{driver} indicates that the containing element is valid for
+that driver type only.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Path}
-\supporting{solid}
+%\supporting{solid}
 \begin{verbatim}
 <Path type="str{prdef}"
       format="str[default]{default, table, fcnspec}"
-      cols="list[1, ..., n]" cfmt="str" tfmt="time"
+      cols="list[1, ..., n]" cfmt="str" tfmt="str[time]{time,dt}"
       nfac="int[1]" kappa="real[0]"
       tstar="real[1]" estar="real[1]" sstar="real[1]"
       amplitude="real[1]" ratfac="real[1]" href="str">
 \end{verbatim}
 %
-Define deformation paths. The jth leg of \tag{Path} is sent to the driver in
-form \texttt{[tf, n, cfmt, Cij]}, where \texttt{tf}, \texttt{n},
+Define deformation paths. The jth leg of \reqdtag{Path} is sent to the driver
+in form \texttt{[tf, n, cfmt, Cij]}, where \texttt{tf}, \texttt{n},
 \texttt{cfmt}, and \texttt{Cij} are the termination time, number of steps,
-control format, and control values.
+control format, and control values.  Methods of inputing legs depends on the
+attributes of \reqdtag{Path} and will be shown in examples to follow.
 
-A note on \texttt{cfmt} and \texttt{Cij}. \texttt{cfmt[i]} instructs the
-driver as to the type of deformation represented by \texttt{Cij[i]}. Supported
-\texttt{cfmt} are described in Table \ref{tab:cfmt}. For example, the
-following \texttt{cfmt} instructs the driver that the components of
-\texttt{Cij} represent [stress, strain, stress rate, strain rate, strain,
-strain], respectively: \texttt{cfmt = 423122}.  Mixed modes are allowed only
-for components of strain rate, strain, stress rate, and stress.  Electric
-field components can be included with any deformation type.
+% ----------------------------------------------------------------------------- %
+\subsubsection{A note on \texttt{cfmt} and \texttt{Cij}}
+\texttt{cfmt} is concatenated integer list specifying in its $i^\text{ith}$
+component the $i^\text{th}$ component of deformation, i.e., \texttt{cfmt[i]}
+instructs the driver as to the type of deformation represented by
+\texttt{Cij[i]}.  Types of deformation represented by \texttt{cfmt} are shown
+in Table \ref{tab:cfmt}.
+
+For example, the following \texttt{cfmt} instructs the driver that the
+components of \texttt{Cij} represent [stress, strain, stress rate, strain
+rate, strain, strain], respectively: \verb|cfmt="423122"|. Mixed modes are
+allowed only for components of strain rate, strain, stress rate, and stress.
+Electric field components can be included with any deformation type.
 
 The components \texttt{Cij} take the following order
 
@@ -267,10 +469,39 @@ components are assumed to be zero strain.
   \label{tab:cfmt}
 \end{table}
 
+\subsubsection{kappa}
+The attribute \texttt{kappa} is only used/defined for the purposes of strain
+or strain rate control. It refers to the coefficient used in the Seth-Hill
+generalized strain definition
+
+\begin{equation}
+  \Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)
+\end{equation}
+
+
+Where $\kappa$ is the keyword \texttt{kappa}, $\Strain$ is the strain tensor,
+$\RightStretch$ is the right Cauchy stretch tensor, and $\SOIdentity$ is the
+second order identity tensor. Common values of $\kappa$ and the associated
+common names for each (there is some ambiguity in the names) are:
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{ll}
+    \hline
+    $\kappa$ &  Name(s) \\
+    \hline
+    -2 & Green \\
+    -1 & True, Cauchy \\
+     0 & Logarithmic, Hencky, True \\
+     1 & Engineering, Swainger \\
+     2 & Lagrange, Almansi \\
+     \hline
+  \end{tabular}
+\end{table}
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{Examples}
-The following examples will help clarify the \tag{Path} input syntax
+The following examples will help clarify the \reqdtag{Path} input syntax
 
 \paragraph{format: default} Uniaxial strain, all six components of strain prescribed
 \begin{verbatim}
@@ -304,8 +535,8 @@ The following examples will help clarify the \tag{Path} input syntax
 </Path>
 \end{verbatim}
 
-\paragraph{format: table} Read legs from table. Control type is uniform for all
-legs. Specify control type as \texttt{cfmt} attribute of \tag{Path}.
+\paragraph{format: table} Read entries from table. Control type is uniform for
+all legs. Specify control type as \texttt{cfmt} attribute of \reqdtag{Path}.
 Optionally, specify the time format as \texttt{tfmt} and number of steps for
 each leg as \texttt{nfac}.
 \begin{verbatim}
@@ -342,7 +573,7 @@ Only a single leg can be specified.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Surface}
-\supporting{eos}
+%\supporting{eos}
 \begin{verbatim}
 <Surface format="str[default]{default, table}"
          cols="list[1, ..., n]" cfmt="str"
@@ -350,9 +581,9 @@ Only a single leg can be specified.
          amplitude="real[1]" href="str">
 \end{verbatim}
 %
-Define equaiton of state surface boundaries.  Input is similar to the
-\tag{Path} specification, but leg termination time is not specified.  Control
-parameters also differ, as shown in Table \ref{tab:cfmt-1}.
+Define equaiton of state surface boundaries. Input is similar to the
+\reqdtag{Path} specification, but leg termination time is not specified.
+Control parameters also differ, as shown in Table \ref{tab:cfmt-1}.
 
 \begin{table}[h!]
   \centering
@@ -370,7 +601,7 @@ parameters also differ, as shown in Table \ref{tab:cfmt-1}.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{Examples}
-The following examples demonstrate the \tag{Surface} input.
+The following examples demonstrate the \reqdtag{Surface} input.
 
 \paragraph{format: default}
 \begin{verbatim}
@@ -398,7 +629,8 @@ The following examples demonstrate the \tag{Surface} input.
 <Material model="str">
 \end{verbatim}
 %
-Specify the material model and parameters. Subelements of \tag{Material} are
+Specify the material model and parameters. Subelements of \reqdtag{Material}
+are
 %
 \begin{itemize}
   \item \tag{Matlabel}
@@ -441,11 +673,11 @@ Insert model parameters from a database file.  The default file
 <Extract format="str[ascii]{ascii, mathematica}" step="int[1]" ffmt="str[.18f]">
 \end{verbatim}
 %
-Extract variables and paths from exodus output and (optionally) write to
+Extract variables and paths from ExodusII output and (optionally) write to
 different formats. Recognized subelements of \tag{Extract} are
 %
 \begin{itemize}
-  \item \tag{Path}
+  \item \tag{Path\sd{eos}}
   \item \tag{Variables}
 \end{itemize}
 
@@ -454,7 +686,7 @@ different formats. Recognized subelements of \tag{Extract} are
 <Variables> VAR_1, ..., VAR_N </Variables>
 \end{verbatim}
 %
-Variables to extract from the exodus output database. Variables are specified
+Variables to extract from the ExodusII output database. Variables are specified
 children of the \tag{Variables} element. All components of vector and tensor
 variables will be extracted if only the basename is specified. Time is always
 extracted as the first entry of the output file.  Extracted variables are in
@@ -462,7 +694,7 @@ extracted as the first entry of the output file.  Extracted variables are in
 mathematica.
 
 \subsubsection{Path}
-\supporting{eos}
+%\supporting{eos}
 \begin{verbatim}
 <Path type="str{isotherm, hugoniot}" increments="int[100]"
       density_range="list" initial_temperature="real">
@@ -536,7 +768,7 @@ for each parameter.
 
 The \texttt{correlation} attribute is only meaningful if a
 \tag{ResponseFunction} is specified.  Also, note that issues relating to
-reading the exodusII database prevent gmd from running simultaneous
+reading the ExodusII database prevent gmd from running simultaneous
 permutation jobs that define a \tag{ResponseFunction}.
 
 
@@ -657,8 +889,8 @@ Optimize the \texttt{K} and \texttt{G} parameters
 </Optimization>
 \end{verbatim}
 
-In the \tag{Material} element, the \texttt{K} and \texttt{G} parameters are
-specified as
+In the \reqdtag{Material} element, the \texttt{K} and \texttt{G} parameters
+are specified as
 %
 \begin{verbatim}
 <Material model="elastic">
