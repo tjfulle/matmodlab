@@ -30,12 +30,12 @@
 
 % ----------------------------------------------------------------------------- %
 \chapter{Introduction}
-\gmd{} is an object oriented General Model Driver written in Python designed
-for rapid development and testing of material models. The core of the \gmd{}
-code base is written in Python, with the exception of many material models and
-optimization routines that are written in Fortran and wrapped by f2py. \gmd{}
-also leverages the fortran version of the ExodusII finite element databasing
-library for simulation output.
+\gmd{} is an object oriented \textbf{G}eneral \textbf{M}aterial model
+\textbf{D}river designed for rapid development and testing of material models.
+The core of the \gmd{} code base is written in Python, with the exception of
+many material models and optimization routines that are written in Fortran and
+wrapped by f2py. \gmd{} also leverages the fortran version of the ExodusII
+finite element databasing library for simulation output.
 
 \gmd{} is free software released under the MIT License.
 
@@ -91,7 +91,10 @@ models.
 
 % ----------------------------------------------------------------------------- %
 \section{Historical Background}
-\gmd{} is the successor the \texttt{payette} material model.
+\gmd{} is the successor the \texttt{payette} material model,
+(\url{github.com/Payette/Payette}) which is itself an outgrowth of Tom Pucick's
+\texttt{MMD} and Rebecca Brannon's (\url{http://www.mech.utah.edu/~brannon}
+\texttt{MED} drivers.
 
 % ----------------------------------------------------------------------------- %
 \section{Simulation Approach}
@@ -156,12 +159,15 @@ will run on Windows.
 \begin{itemize}
   \item Python 2.7
   \item NumPy 1.6
-  \item SciPy 0.9
+  \item SciPy 0.10
   \item A fortran compiler
 \end{itemize}
 
 The required software may be obtained in several ways, though all development
 has been made using Enthought Canopy (\url{http://http://www.enthought.com}).
+
+A note on the fortran compiler.  It is recommended to use the same fortran
+compiler to build the \gmd{} components that was used to build SciPy.
 
 % ----------------------------------------------------------------------------- %
 \section{Installation}
@@ -172,12 +178,12 @@ has been made using Enthought Canopy (\url{http://http://www.enthought.com}).
   directories containing additional material models (user developed, not part
   of \gmd{}). See Section \ref{sec:install} for additional instructions on
   installing user developed material models.
-  \item) (Optional) Set the \texttt{GMDTESTS} environment variable to point to
+  \item (Optional) Set the \texttt{GMDTESTS} environment variable to point to
   directories containing additional tests.
 \end{enumerate}
 
 % ----------------------------------------------------------------------------- %
-\section{Setting Up}
+\subsection{Setting Up}
 Set up and build the third party libraries.
 \begin{verbatim}
 % cd GMD/toolset
@@ -187,14 +193,14 @@ Set up and build the third party libraries.
 Add \texttt{GMD/toolset} to your \texttt{PATH} environment variable.
 
 % ----------------------------------------------------------------------------- %
-\section{Building}
+\subsection{Building}
 Build the material libraries
 \begin{verbatim}
 % buildmtls
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\section{Testing the Installation}
+\subsection{Testing the Installation}
 To test \gmd{} after installation, execute
 
 \begin{verbatim}
@@ -204,7 +210,7 @@ To test \gmd{} after installation, execute
 which will run the \gmd{} regression tests.
 
 % ----------------------------------------------------------------------------- %
-\section{Troubleshooting}
+\subsection{Troubleshooting}
 If you experience problems when building/installing/testing \gmd{}, you can
 ask help from the \gmd{} developers. Please include the following information
 in your message:
@@ -273,6 +279,8 @@ are valid choices (if any). Any attribute not having a default value is
 required. Types are \texttt{str}, \texttt{int}, \texttt{real}, \texttt{list}.
 Lists are given as space separated lists (e.g., ``1 2 3'').
 
+In the following, elements shown in \Red{red} are required input.
+Additionally, the following
 
 % ----------------------------------------------------------------------------- %
 \section{GMDSpec}
@@ -289,8 +297,7 @@ subelements of \reqdtag{GMDSpec} are
   \item \tag{Optimization}
 \end{itemize}
 
-Elements shown in \Red{red} are required input. Additionally, the following
-elements are read from any scope in the input file
+Additionally, the following elements are read from any scope in the input file
 %
 \begin{itemize}
   \item \tag{Include}
@@ -393,7 +400,9 @@ Read a piecewise linear table from an external file using columns 1 and 3
 <Physics driver="str[solid]{solid, eos}" termination_time="real[]">
 \end{verbatim}
 %
-Define the physics of the simulation. Recognized subelements of
+Define the physics of the simulation. If specified, \verb|termination_time|
+defines the termination time for the simulation. If not specified, termination
+time is taken as final time in \reqdtag{Path}. Recognized subelements of
 \reqdtag{Physics} are
 %
 \begin{itemize}
@@ -403,9 +412,7 @@ Define the physics of the simulation. Recognized subelements of
   \item \tag{Extract}
 \end{itemize}
 
-If specified, \verb|termination_time| defines the termination time for the
-simulation. If not specified, termination time is taken as final time in
-\reqdtag{Path}. \sd{driver} indicates that the containing element is valid for
+\sd{driver} indicates that the containing element is valid for
 that driver type only.
 
 % ----------------------------------------------------------------------------- %

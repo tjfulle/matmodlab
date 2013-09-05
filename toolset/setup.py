@@ -187,7 +187,8 @@ def main(argv=None):
     pyopts = "" if not sys.dont_write_bytecode else "-B"
 
     write_exe("gmd", tools, os.path.join(root, "main.py"),
-              pyexe, pyopts, {"PYTHONPATH": pypath})
+              pyexe, pyopts,
+              {"PYTHONPATH": pypath, "FC": gfortran, "GMDSETUPMTLDIR": mtldirs})
 
     write_exe("buildmtls", tools, os.path.join(core, "build.py"),
               pyexe, pyopts,
