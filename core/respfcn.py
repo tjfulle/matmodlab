@@ -35,7 +35,6 @@ def evaluate_response_function(respfcn, outfile, auxfiles=[]):
                            stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
-        io.log_message("*** error: job {0} script failed".format(IOPT + 1))
         response = np.nan
 
     else:
