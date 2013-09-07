@@ -70,7 +70,7 @@ class SolidDriver(Driver):
         # initialize material
         sig = np.zeros(6)
         xtra = self.mtlmdl.initial_state()
-        args = (I9, np.zeros(3))
+        args = (I9, np.zeros(3), 0.)
 
         sig, xtra = self.mtlmdl.call_material_zero_state(sig, xtra, *args)
 
@@ -200,11 +200,12 @@ class SolidDriver(Driver):
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
 
                 # --- find current value of d: sym(velocity gradient)
+                margs = (f, ef, t)
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    d = sig2d(self.mtlmdl, dt, depsdt,
-                              sig, xtra, v, sigspec[2], self.proportional)
+                    d = sig2d(self.mtlmdl, dt, depsdt, sig, xtra, v,
+                              sigspec[2], self.proportional, *margs)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
@@ -213,7 +214,7 @@ class SolidDriver(Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.mtlmdl.update_state(dt, d, sig, xtra, f, ef)
+                sig, xtra = self.mtlmdl.update_state(dt, d, sig, xtra, *margs)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)

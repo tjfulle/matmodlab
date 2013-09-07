@@ -9,7 +9,7 @@ import datetime
 
 from __config__ import cfg
 import core.io as io
-from core.response_functions import evaluate_response_function
+from core.respfcn import evaluate_response_function
 from utils.gmdtab import GMDTabularWriter
 import utils.pprepro as pprepro
 
@@ -228,6 +228,9 @@ def func(xcall, *args):
     io.log_message("analyzing results of job {0}".format(IOPT + 1))
     outf = os.path.join(evald, runid + ".exo")
     opterr = evaluate_response_function(script, outf, aux)
+    if opterr == np.nan:
+        io.log_message("*** error: job {0} response function "
+                       "failed".format(IOPT + 1))
     tabular.write_eval_info(IOPT, job.returncode, evald,
                             parameters, ((desc, opterr),))
 

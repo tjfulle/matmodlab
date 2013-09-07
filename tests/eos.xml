@@ -19,9 +19,9 @@
 
     <Extract>
       <Path type="isotherm" increments="200"
-	    density_range="1 3" initial_temperature="225"/>
+    	    density_range="1 3" initial_temperature="225"/>
       <Path type="hugoniot" increments="100"
-	    density_range="1 3" initial_temperature="100"/>
+    	    density_range="1 3" initial_temperature="100"/>
     </Extract>
 
   </Physics>

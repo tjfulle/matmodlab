@@ -5,7 +5,7 @@ import time
 import shutil
 import subprocess
 import datetime
-import xml.dom.minidom as xdom
+import numpy as np
 import multiprocessing as mp
 from itertools import izip, product
 
@@ -13,7 +13,7 @@ import core.io as io
 from __config__ import cfg
 from utils.gmdtab import GMDTabularWriter
 from utils.pprepro import find_and_make_subs
-from core.response_functions import evaluate_response_function, GMD_RESP_FCN_RE
+from core.respfcn import evaluate_response_function, GMD_RESP_FCN_RE
 import utils.gmdtab as gmdtab
 
 
@@ -158,8 +158,11 @@ def run_single_job(args):
         io.log_message("analyzing results of job {0}".format(job_num + 1))
         outf = os.path.join(evald, runid + ".exo")
         response = evaluate_response_function(respfcn, outf)
-        response = ((respdesc, response),)
+        if response == np.nan:
+            io.log_message("*** error: job {0} response function "
+                           "failed".format(job_num + 1))
 
-    tabular.write_eval_info(job_num, job.returncode, evald, parameters, response)
+    tabular.write_eval_info(job_num, job.returncode, evald,
+                            parameters, ((respdesc, response),))
 
     return job.returncode

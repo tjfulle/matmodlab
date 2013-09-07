@@ -13,7 +13,7 @@ from __config__ import cfg, F_MTL_PARAM_DB
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from core.io import fatal_inp_error, input_errors
-from core.response_functions import check_response_function_element
+from core.respfcn import check_response_function_element
 from drivers.driver import isdriver, create_driver
 from utils.namespace import Namespace
 from utils.pprepro import find_and_make_subs, find_and_fill_includes

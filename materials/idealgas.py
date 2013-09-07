@@ -67,7 +67,7 @@ class IdealGas(Material):
         dpdt = R * rho / M
         dedt = CV * R
         dedr = CV * pres * M / rho ** 2
-        scratch = np.array([cs, dpdr, dpdt, dedt, dedr])
+        scratch = np.array([cs, dedt, dedr, dpdt, dpdr])
 
         if mode == 0:
             retvals = [pres, enrgy]

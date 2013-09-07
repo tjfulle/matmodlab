@@ -3,7 +3,7 @@ import re
 import sys
 import math
 import numpy as np
-from itertools import izip, product
+from itertools import product
 
 from __config__ import cfg
 import utils.tensor as tensor
@@ -62,17 +62,18 @@ class EOSDriver(Driver):
 
         # get initial pressure, energy, and set initial state
         self._data[self.defgrad_slice] = I9
-        rho = self.surface[0, 1]
-        tmpr = self.surface[0, 2]
-        pres, enrgy, scratch = self.mtlmdl.update_state(self.surface[0, 1],
-                                                        self.surface[0, 2], disp=1)
-        self.setvars(rho=rho, tmpr=tmpr, enrgy=enrgy, pres=pres,
-                     dpdt=scratch[2], dedt=scratch[3])
+        rho = self.surface[0, 0]
+        tmpr = self.surface[1, 0]
+        pres, e, s = self.mtlmdl.update_state(rho, tmpr, disp=1)
+        self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=pres,
+                     dpdt=s[3], dedt=s[1])
 
         return
 
 
     def process_paths_and_surfaces(self, iomgr, *args):
+        if self.surface is None:
+            io.log_message("eos: no surface to process")
 
         K2eV = 8.617343e-5
         erg2joule = 1.0e-4
@@ -93,22 +94,27 @@ class EOSDriver(Driver):
         #    pu.report_and_raise_error(
         #        "Output unit system '{0}' is not a valid unit system"
         #        .format(output_unit_system))
-        ti = 0.
+        t = 0.
+        nprints = 10
         step_num = 0
-        r0 = self.surface[0, 1]
-        for (t, rho, tmpr) in self.surface:
-            dt = t - ti
-            if not dt:
-                continue
-            pres, enrgy, scratch = self.mtlmdl.update_state(rho, tmpr, disp=1)
-            step_num += 1
-            self.setglobvars(step_num=step_num, time_step=dt)
-            F = rho / r0 * I9
-            self.setvars(rho=rho, tmpr=tmpr, enrgy=enrgy, pres=pres, defgrad=F,
-                         dpdt=scratch[2], dedt=scratch[3])
-            iomgr(t)
-            ti = t
-        self._paths_and_surfaces_processed = True
+        num_steps = len(self.surface[0]) * len(self.surface[1])
+        dt = 1. / self.surface.shape[0] / self.surface.shape[1]
+        for rho in self.surface[0]:
+            for tmpr in self.surface[1]:
+                step_num += 1
+                if step_num == 1:
+                    # initial state used to initialize output file
+                    continue
+                t += dt
+                p, e, s = self.mtlmdl.update_state(rho, tmpr, disp=1)
+                F = rho / self.surface[0, 0] * I9
+                self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=p, defgrad=F,
+                             dpdt=s[3], dedt=s[1])
+                self.setglobvars(step_num=step_num, time_step=dt)
+                iomgr(t)
+                if step_num % int(num_steps / float(nprints)) == 0:
+                    log_message("surface step {0}/{1}".format(step_num, num_steps))
+            self._paths_and_surfaces_processed = True
         return
 
     # --------------------------------------------------------- Parsing methods
@@ -119,14 +125,18 @@ class EOSDriver(Driver):
 
         """
         if pathlmns:
-            fatal_inp_error("Paths are Extracted from EOS surfaces")
+            fatal_inp_error("EOSDriver: <Path> elements not directly supported. "
+                            "State paths are extracted from generated surfaces "
+                            "in a <Extract><Path type=.../> element")
 
         if len(surflmns) > 1:
-            fatal_inp_error("EOSDriver: expected only one surface")
+            fatal_inp_error("EOSDriver: expected at most one surface")
+            return
+        if not surflmns:
             return
         surflmn = surflmns[0]
         cls.surface = cls.pSurface(surflmns[0], functions)
-        return 0
+        return
 
     @classmethod
     def pSurface(cls, surflmn, functions):
@@ -279,10 +289,7 @@ class EOSDriver(Driver):
             (_, rhoi, tmpri) = surf[isurf]
             rho.extend(np.linspace(rhoi, rhof, n).tolist())
             tmpr.extend(np.linspace(tmpri, tmprf, n).tolist())
-        surface = np.array(list(product(rho, tmpr)))
-        time = np.linspace(0, 1, len(surface))
-        surface = np.column_stack((time, surface[:, 0], surface[:, 1]))
-        return surface
+        return np.array([rho, tmpr])
 
     @classmethod
     def parse_surf_default(cls, lines):
@@ -378,7 +385,7 @@ class EOSDriver(Driver):
         options.addopt("initial_temperature", None,
                        dtype=float, test=lambda x: x > 0.)
 
-        variables=["RHO", "TMPR", "ENRGY", "PRES", "DPDT", "DEDT"]
+        variables=["RHO", "TMPR", "ENRGY", "PRES", "DEDT", "DPDT"]
         surf = read_vars_from_exofile(exofilepath, variables=variables, h=0)[:, 1:]
 
         # Get control terms
@@ -391,21 +398,21 @@ class EOSDriver(Driver):
             t = options.getopt("initial_temperature")
 
             if options.getopt("type") == "hugoniot":
+                log_message("extracting Hugoniot from EOS surface")
                 ep = extract_hugoniot(r, t, surf)
-                log_message("extracting Hugoniot path")
                 if ep is None:
-                    log_error("error extracting Hugoniot path")
+                    log_error("unable to extract Hugoniot form EOS surface", r=0)
                     continue
-                log_message("Hugoniot path extracted")
-                ehug, phug = ep
+                log_message("Hugoniot extracted from EOS surface")
+                ehug, phug, thug = ep
 
             elif options.getopt("type") == "isotherm":
+                log_message("extracting Isotherm from EOS surface")
                 ep = extract_isotherm(r, t, surf)
-                log_message("extracting Isotherm path")
                 if ep is None:
-                    log_error("error extracting Isotherm path")
+                    log_error("unable to extract Isotherm form EOS surface", r=0)
                     continue
-                log_message("Isotherm path extracted")
+                log_message("Isotherm extracted from EOS surface")
                 eiso, piso = ep
 
         pass
