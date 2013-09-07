@@ -7,21 +7,35 @@ import xml.dom.minidom as xdom
 
 
 # safe values to be used in eval
-RAND = np.random.RandomState(17)
 GDICT = {"__builtins__": None}
+DEBUG = False
+WARNINGS = 0
+RAND = np.random.RandomState()
 SAFE = {"np": np,
         "sqrt": np.sqrt, "max": np.amax, "min": np.amin,
         "stdev": np.std, "std": np.std,
         "abs": np.abs, "ave": np.average, "average": np.average,
         "sin": np.sin, "cos": np.cos, "tan": np.tan,
         "asin": np.arcsin, "acos": np.arccos,
-        "atan": np.arctan, "atan2": np.arctan2,
+        "atan2": np.arctan, "atan2": np.arctan2,
         "log": np.log, "exp": np.exp,
         "floor": np.floor, "ceil": np.ceil,
         "pi": math.pi, "G": 9.80665, "inf": np.inf, "nan": np.nan,
-        "random": RAND.random_sample, }
-DEBUG = False
-WARNINGS = 0
+        "random": RAND.random_sample, "randreal": RAND.random_sample(),}
+
+
+def update_safe(update_to_safe):
+    """Update the SAFE dictionary for using in eval statments
+
+    """
+    global SAFE
+    SAFE.update(update_to_safe)
+
+
+def set_random_seed(seed):
+    global RAND
+    RAND = np.random.RandomState(seed)
+    update_safe({"random": RAND.random_sample, "randreal": RAND.random_sample()})
 
 
 def find_vars_to_sub(lines):
@@ -38,7 +52,6 @@ def find_vars_to_sub(lines):
         dictionary of found variables
 
     """
-    global SAFE
     vars_to_sub = {}
     hold = []
     regex = r"(?i)\{\s*[\w]+[\w\d]*\s*=.*?\}"
@@ -49,7 +62,9 @@ def find_vars_to_sub(lines):
         hold.append(key)
         expr = vsplit[1].strip()
         var_to_sub = eval(expr, GDICT, SAFE)
-        SAFE[key] = var_to_sub
+        if key.lower() == "random_seed":
+            set_random_seed(var_to_sub)
+        update_safe({key: var_to_sub})
         vars_to_sub[key] = repr(var_to_sub)
 
     # replace value
@@ -82,9 +97,8 @@ def find_and_make_subs(lines, prepro=None, disp=0):
         preprocessed user input
 
     """
-    global SAFE
     if prepro is not None:
-        SAFE.update(prepro)
+        update_safe(prepro)
     lines, vars_to_sub = find_vars_to_sub(lines)
     if not vars_to_sub and prepro is None:
         if disp:
@@ -110,7 +124,7 @@ def make_var_subs(lines, vars_to_sub, disp=0):
             # Check that each preprocessor variable is used somewhere else in
             # the file. Issue a warning if not. It is done here outside of the
             # replacement loop to be sure that we can check all variables.
-            # Because variables in the preprocessor block were put in the SAFE
+            # Because variables in the preprocessor block were put in the safe
             # it is possible for, say, var_2 to be replaced when replacing
             # var_1 if the user specified something like
             #          param = {var_1 * var_2}

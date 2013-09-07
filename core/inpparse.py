@@ -10,13 +10,13 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.join(D, "../"))
 
 from __config__ import cfg, F_MTL_PARAM_DB
+import utils.pprepro as pp
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from core.io import fatal_inp_error, input_errors
 from core.respfcn import check_response_function_element
 from drivers.driver import isdriver, create_driver
 from utils.namespace import Namespace
-from utils.pprepro import find_and_make_subs, find_and_fill_includes
 from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
 from utils.mtldb import read_material_params_from_db
@@ -66,8 +66,8 @@ def parse_input(filepath):
         lines = lines[1:]
 
     # find all "Include" files, and preprocess the input
-    user_input = find_and_fill_includes("\n".join(lines))
-    user_input, nsubs = find_and_make_subs(user_input, disp=1)
+    user_input = pp.find_and_fill_includes("\n".join(lines))
+    user_input, nsubs = pp.find_and_make_subs(user_input, disp=1)
     if nsubs:
         with open(filepath + ".preprocessed", "w") as fobj:
             fobj.write(user_input)
@@ -219,7 +219,7 @@ def pPermutation(permlmn):
     options = OptionHolder()
     options.addopt(S_METHOD, "zip", dtype=str,
                    choices=("zip", "combine", "shotgun"))
-    options.addopt("seed", 12, dtype=int)
+    options.addopt("seed", None, dtype=int)
     options.addopt(S_CORR, "none", dtype=str)
 
     # Get control terms
@@ -229,16 +229,17 @@ def pPermutation(permlmn):
         except OptionHolderError, e:
             fatal_inp_error(e.message)
 
-    rstate = np.random.RandomState(options.getopt("seed"))
-    gdict = {"__builtins__": None}
+    seed = options.getopt("seed")
+    if seed is not None:
+        pp.set_random_seed(seed)
     N_default = 10
-    safe = {"range": lambda a, b, N=N_default: np.linspace(a, b, N),
-            "list": lambda a: np.array(a),
-            "weibull": lambda a, b, N=N_default: a * rstate.weibull(b, N),
-            "uniform": lambda a, b, N=N_default: rstate.uniform(a, b, N),
-            "normal": lambda a, b, N=N_default: rstate.normal(a, b, N),
-            "percentage": lambda a, b, N=N_default: (
-                np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))}
+    pp.update_safe({"range": lambda a, b, N=N_default: np.linspace(a, b, N),
+                    "list": lambda a: np.array(a),
+                    "weibull": lambda a, b, N=N_default: a * pp.RAND.weibull(b, N),
+                    "uniform": lambda a, b, N=N_default: pp.RAND.uniform(a, b, N),
+                    "normal": lambda a, b, N=N_default: pp.RAND.normal(a, b, N),
+                    "percentage": lambda a, b, N=N_default: (
+                        np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))})
 
     # response function
     respfcn = permlmn.getElementsByTagName(S_RESP_FCN)
@@ -262,7 +263,7 @@ def pPermutation(permlmn):
                 continue
             values = re.sub(meth, "uniform", values)
         try:
-            p.append([var, eval(values, gdict, safe)])
+            p.append([var, eval(values, pp.GDICT, pp.SAFE)])
         except:
             fatal_inp_error("{0}: invalid expression".format(values))
             continue
