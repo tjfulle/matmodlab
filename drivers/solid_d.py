@@ -10,7 +10,7 @@ import utils.xmltools as xmltools
 from drivers.driver import Driver
 from core.kinematics import deps2d, sig2d, update_deformation
 from utils.tensor import NSYMM, NTENS, NVEC, I9
-from utils.opthold import OptionHolder
+from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
 from core.io import fatal_inp_error, input_errors, log_message
 from materials.material import create_material
 
@@ -70,7 +70,7 @@ class SolidDriver(Driver):
         # initialize material
         sig = np.zeros(6)
         xtra = self.mtlmdl.initial_state()
-        args = (I9, np.zeros(3))
+        args = (I9, np.zeros(3), 0.)
 
         sig, xtra = self.mtlmdl.call_material_zero_state(sig, xtra, *args)
 
@@ -83,7 +83,7 @@ class SolidDriver(Driver):
 
         return
 
-    def process_paths(self, iomgr, *args):
+    def process_paths_and_surfaces(self, iomgr, *args):
         """Process the deformation path
 
         Parameters
@@ -200,11 +200,12 @@ class SolidDriver(Driver):
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
 
                 # --- find current value of d: sym(velocity gradient)
+                margs = (f, ef, t)
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    d = sig2d(self.mtlmdl, dt, depsdt,
-                              sig, xtra, v, sigspec[2], self.proportional)
+                    d = sig2d(self.mtlmdl, dt, depsdt, sig, xtra, v,
+                              sigspec[2], self.proportional, *margs)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
@@ -213,7 +214,7 @@ class SolidDriver(Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.mtlmdl.update_state(dt, d, sig, xtra, f, ef)
+                sig, xtra = self.mtlmdl.update_state(dt, d, sig, xtra, *margs)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)
@@ -244,54 +245,51 @@ class SolidDriver(Driver):
                     log_message(consfmt.format(leg_num, n + 1, t, dt))
 
                 if t > termination_time:
+                    self._paths_and_surfaces_processed = True
                     return 0
 
                 continue  # continue to next step
 
             continue # continue to next leg
 
-
+        self._paths_and_surfaces_processed = True
         return 0
 
     # --------------------------------------------------------- Parsing methods
     @classmethod
-    def parse_and_register_paths(cls, pathlmns, *args):
+    def parse_and_register_paths_and_surfaces(cls, pathlmns, surflmns, functions):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 
         """
-        path_fcns = {"prdef": cls.pPrdef}
-
         if len(pathlmns) > 1:
             fatal_inp_error("Only 1 Path tag supported for solid driver")
-            return 1
-
+            return
         pathlmn = pathlmns[0]
+
         ptype = pathlmn.getAttribute("type")
         if not ptype:
             fatal_inp_error("Path requires type attribute")
-            return 1
+            return
+        if ptype.strip().lower() != "prdef":
+            fatal_inp_error("{0}: unknown Path type".format(ptype))
+            return
         pathlmn.removeAttribute("type")
-        parse_fcn = path_fcns.get(ptype.strip().lower())
-        if parse_fcn is None:
-            fatal_inp_error("{0}: unkown Path type".format(ptype))
-            return 1
-        items = parse_fcn(pathlmn, *args)
+
+        items = cls.pPrdef(pathlmn, functions)
         if input_errors():
-            return 1
+            return
 
         path, cls.kappa, cls.proportional = items
         cls.paths = {"prdef": path}
 
-        return 0
+        return
 
     @classmethod
-    def pPrdef(cls, pathlmn, *args):
+    def pPrdef(cls, pathlmn, functions):
         """Parse the Path block and set defaults
 
         """
-        functions = args[0]
-
         # Set up options for Path
         options = OptionHolder()
         options.addopt("kappa", 0.)
@@ -304,27 +302,42 @@ class SolidDriver(Driver):
         options.addopt("fstar", 1.)
         options.addopt("efstar", 1.)
         options.addopt("dstar", 1.)
+        options.addopt("href", None, dtype=str)
         options.addopt("format", "default", dtype=str,
                        choices=("default", "table", "fcnspec"))
         options.addopt("proportional", 0, dtype=mybool)
         options.addopt("ndumps", "20", dtype=str)
 
         # the following options are for table formatted Path
-        options.addopt("tblcols", "1:7", dtype=str)
-        options.addopt("tbltfmt", "time", dtype=str, choices=("time", "dt"))
-        options.addopt("tblcfmt", "222222", dtype=str)
+        options.addopt("cols", None, dtype=str)
+        options.addopt("tfmt", "time", dtype=str, choices=("time", "dt"))
+        options.addopt("cfmt", "222222", dtype=str)
 
         # Get control terms
         for i in range(pathlmn.attributes.length):
-            options.setopt(*xmltools.get_name_value(pathlmn.attributes.item(i)))
+            try:
+                options.setopt(*xmltools.get_name_value(pathlmn.attributes.item(i)))
+            except OptionHolderError, e:
+                fatal_inp_error(e.message)
+                continue
 
         # Read in the actual Path - splitting them in to lists
-        lines = []
-        for node in pathlmn.childNodes:
-            if node.nodeType == node.COMMENT_NODE:
-                continue
-            lines.extend([" ".join(xmltools.uni2str(item).split())
-                          for item in node.nodeValue.splitlines() if item.split()])
+        href = options.getopt("href")
+        if href:
+            if not os.path.isfile(href):
+                if not os.path.isfile(os.path.join(cfg.I, href)):
+                    fatal_inp_error("{0}: no such file".format(href))
+                    return
+                href = os.path.join(cfg.I, href)
+            lines = open(href, "r").readlines()
+        else:
+            lines = []
+            for node in pathlmn.childNodes:
+                if node.nodeType == node.COMMENT_NODE:
+                    continue
+                lines.extend([" ".join(xmltools.uni2str(item).split())
+                              for item in node.nodeValue.splitlines()
+                              if item.split()])
         lines = [xmltools.str2list(line, dtype=str) for line in lines]
 
         # parse the Path depending on type
@@ -333,15 +346,21 @@ class SolidDriver(Driver):
             path = cls.parse_path_default(lines)
 
         elif pformat == "table":
-            path = cls.parse_path_table(lines, options.getopt("tbltfmt"),
-                                        options.getopt("tblcols"),
-                                        options.getopt("tblcfmt"))
+            path = cls.parse_path_table(lines, options.getopt("tfmt"),
+                                        options.getopt("cols"),
+                                        options.getopt("cfmt"))
 
         elif pformat == "fcnspec":
-            path = cls.parse_path_cijfcn(lines, functions)
+            path = cls.parse_path_cijfcn(lines, functions,
+                                         options.getopt("nfac"),
+                                         options.getopt("cfmt"))
+            options.setopt("nfac", 1)
 
         else:
             fatal_inp_error("Path: {0}: invalid format".format(pformat))
+            return
+
+        if input_errors():
             return
 
         # store relevant info to the class
@@ -407,7 +426,7 @@ class SolidDriver(Driver):
         return path
 
     @classmethod
-    def parse_path_table(cls, lines, tbltfmt, tblcols, tblcfmt):
+    def parse_path_table(cls, lines, tfmt, cols, cfmt):
         """Parse the path table
 
         """
@@ -416,21 +435,29 @@ class SolidDriver(Driver):
         termination_time = 0.
         leg_num = 1
 
-        # Convert tblcols to a list
-        columns = cls.format_tbl_cols(tblcols)
-
         # check the control
-        control = cls.format_path_control(tblcfmt)
+        control = cls.format_path_control(cfmt)
 
+        tbl = []
         for line in lines:
             if not line:
                 continue
             try:
-                line = np.array([float(x) for x in line])
+                line = [float(x) for x in line]
             except ValueError:
                 fatal_inp_error("Expected floats in leg {0}, got {1}".format(
                     leg_num, line))
                 continue
+            tbl.append(line)
+        tbl = np.array(tbl)
+
+        # if cols was not specified, must want all
+        if not cols:
+            columns = range(len(tbl.shape[1]))
+        else:
+            columns = cls.format_tbl_cols(cols)
+
+        for line in tbl:
             try:
                 line = line[columns]
             except IndexError:
@@ -438,7 +465,7 @@ class SolidDriver(Driver):
                                 "{0}".format(leg_num))
                 continue
 
-            if tbltfmt == "dt":
+            if tfmt == "dt":
                 termination_time += line[0]
             else:
                 termination_time = line[0]
@@ -468,7 +495,7 @@ class SolidDriver(Driver):
         return path
 
     @classmethod
-    def parse_path_cijfcn(cls, lines, functions):
+    def parse_path_cijfcn(cls, lines, functions, num_steps, cfmt):
         """Parse the path given by functions
 
         """
@@ -476,31 +503,26 @@ class SolidDriver(Driver):
         leg_num = 1
 
         if not lines:
-            fatal_inp_error("No table functions defined")
+            fatal_inp_error("Empty path encountered")
             return
         elif len(lines) > 1:
             fatal_inp_error("Only one line of table functions allowed, "
                             "got {0}".format(len(lines)))
             return
 
-        termination_time, num_steps, control_hold = lines[0][:3]
-        cijfcns = lines[0][3:]
+        termination_time = lines[0][0]
+        cijfcns = lines[0][1:]
 
         # check entries
         # --- termination time
-        termination_time = format_termination_time(1, termination_time, 1.e99)
+        termination_time = format_termination_time(1, termination_time, -1)
         if termination_time is None:
             # place holder, just to check rest of input
             termination_time = 1.e99
         final_time = termination_time
 
-        # --- number of steps
-        num_steps = format_num_steps(1, num_steps)
-        if num_steps is None:
-            num_steps = 10000
-
         # --- control
-        control = cls.format_path_control(control_hold, leg_num=leg_num)
+        control = cls.format_path_control(cfmt, leg_num=leg_num)
 
         # --- get the actual functions
         Cij = []
@@ -589,16 +611,16 @@ class SolidDriver(Driver):
 
 
     @staticmethod
-    def format_tbl_cols(tblcols):
+    def format_tbl_cols(cols):
         columns = []
         for item in [x.split(":")
                      for x in xmltools.str2list(
-                             re.sub(r"\s*:\s*", ":", tblcols), dtype=str)]:
+                             re.sub(r"\s*:\s*", ":", cols), dtype=str)]:
             try:
                 item = [int(x) for x in item]
             except ValueError:
-                fatal_inp_error("Path: expected integer tblcols, got "
-                                "{0}".format(tblcols))
+                fatal_inp_error("Path: expected integer cols, got "
+                                "{0}".format(cols))
                 continue
             item[0] -= 1
 
@@ -606,7 +628,7 @@ class SolidDriver(Driver):
                 columns.append(item[0])
 
             elif len(item) not in (2, 3):
-                fatal_inp_error("Path: expected tblcfmt range to be specified as "
+                fatal_inp_error("Path: expected cfmt range to be specified as "
                                 "start:end:[step], got {0}".format(
                                     ":".join(str(x) for x in item)))
                 continue

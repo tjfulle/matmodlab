@@ -18,10 +18,10 @@ LEVELS = {2: logging.DEBUG,
 
 class Error1(Exception):
     def __init__(self, message):
-        logging.exception(message)
-        if cfg.debug:
-            raise Exception("*** gmd: error: {0}".format(message))
-        raise SystemExit(2)
+        self.message = message
+        try: LOGGER.exception(message)
+        except: pass
+        super(Error1, self).__init__(message)
 
 
 def fatal_inp_error(message):
@@ -86,8 +86,11 @@ def log_warning(message):
     LOGGER.warning(message)
 
 
-def log_error(message):
-    raise Error1(message)
+def log_error(message, r=1):
+    if r:
+        raise Error1(message)
+    else:
+        LOGGER.error(message)
 
 
 def increment_warning():

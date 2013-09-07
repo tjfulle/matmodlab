@@ -62,4 +62,65 @@
       <XSAT>1.000000E+00</XSAT>
     </Parameters>
   </Material>
+  <Material name="helium">
+    <Parameters model="idealgas">
+      <M>4.00260</M>
+      <CV>1.5</CV>
+    </Parameters>
+  </Material>
+  <Material name="neon">
+    <Parameters model="idealgas">
+      <M>20.1797</M>
+      <CV>1.5</CV>
+    </Parameters>
+  </Material>
+  <Material name="argon">
+    <Parameters model="idealgas">
+      <M>39.9480</M>
+      <CV>1.5</CV>
+    </Parameters>
+  </Material>
+  <Material name="krypton">
+    <Parameters model="idealgas">
+      <M>83.8000</M>
+      <CV>1.5</CV>
+    </Parameters>
+  </Material>
+  <Material name="xenon">
+    <Parameters model="idealgas">
+      <M>131.290</M>
+      <CV>1.5</CV>
+    </Parameters>
+  </Material>
+  <!-- DIATOMIC GASSES -->
+  <Material name="hydrogen">
+    <Parameters model="idealgas">
+      <M>2.01588</M>
+      <CV>2.427</CV>
+    </Parameters>
+  </Material>
+  <Material name="carbon">
+    <Parameters model="idealgas">
+      <M>28.0101</M>
+      <CV>2.430</CV>
+    </Parameters>
+  </Material>
+  <Material name="nigtrogen">
+    <Parameters model="idealgas">
+      <M>28.0134</M>
+      <CV>2.39</CV>
+    </Parameters>
+  </Material>
+  <Material name="chlorine">
+    <Parameters model="idealgas">
+      <M>70.9045</M>
+      <CV>3.06</CV>
+    </Parameters>
+  </Material>
+  <Material name="broming">
+    <Parameters model="idealgas">
+      <M>159.808</M>
+      <CV>3.39</CV>
+    </Parameters>
+  </Material>
 </Materials>

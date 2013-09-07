@@ -166,11 +166,11 @@ def find_and_fill_includes(lines):
 
     """
     #doc = xdom.parseString(lines)
-    #includes = doc.getElementsByTagName("include")
+    #includes = doc.getElementsByTagName("Include")
     #print dir(includes[0])
     #print includes
     #sys.exit('check include')
-    regex = r"<include\s(?P<include>.*)/>"
+    regex = r"(?i)<include\s(?P<include>.*)/>"
     _lines = []
     for line in lines.split("\n"):
         if not line.split():

@@ -15,7 +15,7 @@ fpath = os.path.realpath(__file__)
 fdir, fnam = os.path.split(fpath)
 root = os.path.dirname(fdir)
 sys.path.insert(0, root)
-from __config__ import __version__
+from __config__ import __version__, SPLASH
 version = ".".join(str(x) for x in __version__)
 
 def log_message(message, end="\n"):
@@ -53,6 +53,8 @@ def main(argv=None):
     parser.add_argument("--testdirs", default=[], action="append",
         help="Additional directories to find test files [default: None]")
     args = parser.parse_args(argv)
+
+    log_message(SPLASH)
 
     build_tpls = not args.Ntpl
     make_exowrap = True
@@ -185,7 +187,8 @@ def main(argv=None):
     pyopts = "" if not sys.dont_write_bytecode else "-B"
 
     write_exe("gmd", tools, os.path.join(root, "main.py"),
-              pyexe, pyopts, {"PYTHONPATH": pypath})
+              pyexe, pyopts,
+              {"PYTHONPATH": pypath, "FC": gfortran, "GMDSETUPMTLDIR": mtldirs})
 
     write_exe("buildmtls", tools, os.path.join(core, "build.py"),
               pyexe, pyopts,

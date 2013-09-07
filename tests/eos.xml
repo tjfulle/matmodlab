@@ -1,0 +1,29 @@
+<GMDSpec>
+
+  <Physics driver="eos">
+
+    <Units input="SI" output="SI"/>
+
+    <Material model="idealgas">
+      <!-- He -->
+      <Matlabel material="helium"/>
+    </Material>
+
+    <Surface nfac="1">
+      <!-- nsteps, control, Cij -->
+      <!-- control goes as 1 -> density
+                           2 -> temperature -->
+        0 12 1 100
+      100 12 5 300
+    </Surface>
+
+    <Extract>
+      <Path type="isotherm" increments="200"
+	    density_range="1 3" initial_temperature="225"/>
+      <Path type="hugoniot" increments="100"
+	    density_range="1 3" initial_temperature="100"/>
+    </Extract>
+
+  </Physics>
+
+</GMDSpec>

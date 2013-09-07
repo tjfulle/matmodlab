@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+import os
+import glob
+import shutil
+exts = ("log", "math", "out", "eval", "exo", "preprocessed")
+for ext in exts:
+    files = glob.glob("*.{0}".format(ext))
+    for f in files:
+        if os.path.isfile(f):
+            os.remove(f)
+        elif os.path.isdir(f):
+            shutil.rmtree(f)

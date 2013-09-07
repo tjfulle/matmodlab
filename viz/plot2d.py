@@ -30,7 +30,7 @@ GDICT = {"__builtins__": None}
 EPSILON = np.finfo(np.float).eps
 SIZE = (700, 600)
 LS = ['dot dash', 'dash', 'dot', 'long dash']
-S_TABDAT = "gmd-tabular.dat"
+F_EVALDB = "gmd-evaldb.xml"
 L_EXO_EXT = [".exo", ".base_exo", ".e"]
 L_DAT_EXT = [".out",]
 L_REC_EXT = L_EXO_EXT + L_DAT_EXT
@@ -689,9 +689,9 @@ def create_model_plot(sources, handler=None, metadata=None):
         metadata.plot.configure_traits(view=view)
         return
 
-    if [source for source in sources if S_TABDAT in os.path.basename(source)]:
+    if [source for source in sources if F_EVALDB in os.path.basename(source)]:
         if len(sources) > 1:
-            stop("*** error: only one source allowed with {0}".format(S_TABDAT))
+            stop("*** error: only one source allowed with {0}".format(F_EVALDB))
         source = sources[0]
         if not os.path.isfile(source):
             stop("*** error: {0}: no such file".format(source))
@@ -772,24 +772,11 @@ def readtabular(source):
     """Read in the gmd-tabular.dat file
 
     """
-    lines = [" ".join(line.split()) for line in open(source, "r").readlines()
-             if line.split()]
-    runid = lines[0].split(":")[1].strip()
-
-    dirname = os.path.dirname(source)
-    eval_dirs = [os.path.join(dirname, d) for d in os.listdir(dirname)
-                 if d.startswith("eval_")]
-    sources = [os.path.join(d, runid + ".exo") for d in eval_dirs]
-    if not all(os.path.isfile(f) for f in sources):
-        stop("1 or more output files not found")
-    variables = []
-    var_names = lines[2].split()[1:]
-    for line in lines[3:]:
-        s = ", ".join("{0}={1:.2g}".format(a, float(b))
-                      for (a, b) in zip(var_names, line.split()[1:]))
-        variables.append(s)
-
-    return sources, variables
+    from utils.gmdtab import read_gmd_evaldb
+    sources, paraminfo, _ = read_gmd_evaldb(source)
+    for (i, info) in enumerate(paraminfo):
+        paraminfo[i] = ", ".join("{0}={1:.2g}".format(n, v) for (n, v) in info)
+    return sources, paraminfo
 
 
 def loadcontents(filepath):

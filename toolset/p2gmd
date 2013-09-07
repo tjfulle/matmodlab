@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
-import sys
 import re
+import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
@@ -28,7 +28,7 @@ def p2gmd(filepath):
     lines = "\n".join(pretty_list(lines))
 
     root = doc.createElement("GMDSpec")
-    xsim = doc.createElement("Simulation")
+    xsim = doc.createElement("Physics")
 
     # --- find boundary
     boundary = re.search(r"(?is)begin boundary.*end boundary", lines)
@@ -41,7 +41,8 @@ def p2gmd(filepath):
     boundary = pretty_list(re.sub(legs, "", boundary))[1:-1]
     legs = pretty_list(legs)[1:-1]
 
-    xlegs = doc.createElement("Legs")
+    xlegs = doc.createElement("Path")
+    xlegs.setAttribute("type", "prdef")
     lchanges = {"ampl": "amplitude", "stepstar": "nfac"}
     for line in boundary:
         line = [x.strip() for x in re.split(r"[ ,=]", line) if x.split()]

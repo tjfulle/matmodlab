@@ -4,7 +4,7 @@ import sys
 import imp
 import argparse
 
-from __config__ import __version__
+from __config__ import __version__, SPLASH
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
@@ -34,6 +34,7 @@ def main(argv=None):
         help="Wipe material database before building [default: all]")
     args = parser.parse_args(argv)
 
+    sys.stdout.write(SPLASH)
     log_message("gmd {0}".format(VERSION))
     log_message("looking for makemf files")
 
@@ -41,31 +42,36 @@ def main(argv=None):
     mtldict = {}
     allfailed = []
     allbuilt = []
+    retcode = []
     for dirpath in MTLDIRS:
         for (d, dirs, files) in os.walk(dirpath):
-            if "makemf.py" in files:
-                f = os.path.join(d, "makemf.py")
-                log_message("building makemf in {0}".format(d), end="... ")
-                makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
-                made = makemf.makemf(**kwargs)
-                failed = made.get("FAILED")
-                built = made.get("BUILT")
-                skipped = made.get("SKIPPED")
+            if "makemf.py" not in files:
+                continue
 
-                if failed:
-                    log_message("no", pre="")
-                    allfailed.extend(failed)
+            f = os.path.join(d, "makemf.py")
+            log_message("building makemf in {0}".format(d), end="... ")
+            makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
+            made = makemf.makemf(**kwargs)
+            failed = made.get("FAILED")
+            built = made.get("BUILT")
+            skipped = made.get("SKIPPED")
 
-                if skipped:
-                    if not failed and not built:
-                        log_message("skipped", pre="")
+            if failed:
+                log_message("no", pre="")
+                allfailed.extend(failed)
 
+            if skipped:
+                if not failed and not built:
+                    log_message("skipped", pre="")
+
+            if built:
+                if not failed:
+                    log_message("yes", pre="")
                 if built:
-                    if not failed:
-                        log_message("yes", pre="")
-                    if built:
-                        mtldict.update(built)
-                        allbuilt.extend(built.keys())
+                    mtldict.update(built)
+                    allbuilt.extend(built.keys())
+
+            retcode.append({True: 1, False: 0}[any(failed)])
 
     if allfailed:
         log_message("the following materials failed to build: "
@@ -78,6 +84,6 @@ def main(argv=None):
     if mtldict:
         write_mtldb(mtldict, wipe=args.w)
 
-    return
+    return max(retcode)
 if __name__ == "__main__":
     main()

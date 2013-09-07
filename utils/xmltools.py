@@ -3,11 +3,6 @@ import re
 import sys
 import xml.dom.minidom as xdom
 
-def str2list(string, dtype=str):
-    string = re.sub(r"[, ]", " ", string)
-    return [dtype(x) for x in string.split()]
-
-
 def child2list(item_list, action=None):
     child_list = []
     for item in item_list:

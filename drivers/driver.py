@@ -20,8 +20,9 @@ class Driver(object):
         self._data = np.zeros(self.ndata)
         self.nglobdata = 0
         self._glob_data = np.zeros(self.nglobdata)
+        self._paths_and_surfaces_processed = False
 
-    def register_variable(self, var, vtype="SCALAR"):
+    def register_variable(self, var, vtype="SCALAR", units=None):
         """Register material variable
 
         """
@@ -124,6 +125,9 @@ class Driver(object):
     def setglobvars(self, **kwargs):
         for (kw, arg) in kwargs.items():
             self._glob_data[self.getslice(kw)] = arg
+
+    def extract_paths(self, exofilepath, paths):
+        pass
 
 
 # --- Driver database access functions

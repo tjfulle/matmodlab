@@ -12,6 +12,7 @@ import xml.dom.minidom as xdom
 
 import utils.xmltools as xmltools
 from utils.namespace import Namespace
+from __config__ import SPLASH
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
@@ -103,6 +104,7 @@ def main(argv=None):
         sys.exit(list_rtests(rtests))
 
     # how many did we find?
+    sys.stdout.write(SPLASH)
     log_message("Found {0} tests in {1:.2f}s".format(
         len(rtests), timing.tests_found - timing.start))
 
@@ -550,11 +552,11 @@ def write_html_summary(testd, tests_to_summarize):
     fobj.write("<li> Date: {0} </li>\n".format(now.ctime()))
     options = " ".join(arg for arg in sys.argv[1:] if not arg.endswith(".rxml"))
     fobj.write("<li> Options: {0} </li>\n".format(options))
-    fobj.write("<li> ")
+    groups = []
     for (code, group) in rtests:
         if group:
-            fobj.write("{0} {1}".format(len(group), rtest_statuses(code)))
-    fobj.write(" </li>\n")
+            groups.append("{0} {1}".format(len(group), rtest_statuses(code)))
+    fobj.write("<li> {0} </li>\n".format(", ".join(groups)))
     fobj.write("</ul>\n")
 
     # write out tests by test status
@@ -584,12 +586,8 @@ def generate_rtest_html_summary(rtest, details, testd):
     tcompletion = "{0:.2f}s".format(details[S_TIME])
 
     # look for post processing link
-    try:
-        plotd = [d for d in os.listdir(rtestd)
-                 if os.path.isdir(d) and d.endswith(E_POST)][0]
-        html_link = os.path.join(rtestd, plotd, F_POST)
-    except IndexError:
-        html_link = None
+    html_link = os.path.join(rtestd, rtest + E_POST, F_POST)
+    if not os.path.isfile(html_link): html_link = None
 
     rtest_html_summary = []
     rtest_html_summary.append("<ul>\n")

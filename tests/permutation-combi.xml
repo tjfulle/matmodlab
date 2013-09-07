@@ -1,14 +1,14 @@
 <GMDSpec>
 
-  <Permutation method="zip" seed="12" correlation="table plot">
-    <ResponseFunction href="gmd.max(PRESSURE)" descriptor="PRES"/>
+  <Permutation method="combine" seed="12">
     <Permutate var="K" values="weibull(125.e9, 14, 3)"/>
     <Permutate var="G" values="percentage(45.e9, 10, 3)"/>
   </Permutation>
 
   <Physics>
 
-    <Path type="prdef" kappa="0" tstar="1" estar="-.5" amplitude="1" nfac="1000" ratfac="1">
+    <Path type="prdef" kappa="0" tstar="1" estar="-.5"
+	  amplitude="1" nfac="1000" ratfac="1">
       <!-- termination time, number of steps, control, Cij -->
       0 0 222222 0 0 0 0 0 0
       1 1 222222 1 0 0 0 0 0
