@@ -382,7 +382,7 @@ def find_rtests(search_dirs, include, exclude, tests=None):
             Ndigits = len("{0:d}".format(Nrepeat))
             for idx in range(1, Nrepeat + 1):
                 suffix = "_{0:0{1}d}".format(idx, Ndigits)
-                rtests[name + suffix] = {S_BDIR: bdir + suffix,
+                rtests[name + suffix] = {S_BDIR: bdir,
                                          S_EXEC: execute, S_LNFL: link_files,
                                          S_KWS: keywords}
         doc.unlink()
