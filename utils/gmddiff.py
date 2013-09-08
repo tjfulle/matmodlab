@@ -10,8 +10,8 @@ from exoreader import ExodusIIReader
 class Logger(object):
     def __init__(self):
         self.log = sys.stdout
-    def info(self, message):
-        self.log.write(message + "\n")
+    def info(self, message, end="\n"):
+        self.log.write(str(message) + end)
     def warning(self, message):
         self.log.write("*** warning: {0}\n".format(message))
     def error(self, message):
@@ -59,11 +59,11 @@ def main(argv=None):
     status = diff_files(H1, D1, H2, D2, variables, interp=args.interp)
 
     if status == 0:
-        LOG.info("Files are the same")
+        LOG.info("\nFiles are the same")
     elif status == 1:
-        LOG.info("Files diffed")
+        LOG.info("\nFiles diffed")
     else:
-        LOG.info("Files are different")
+        LOG.info("\nFiles are different")
     return status
 
 
@@ -156,6 +156,7 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
             return 2
 
     status = []
+    bad = [[], []]
     for (var, dtol, ftol, floor) in vars_to_compare:
 
         if var == "TIME":
@@ -163,42 +164,55 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
 
         try:
             i1 = head1.index(var)
-        except IndexError:
-            LOG.warning("{0}: not in File1")
+        except ValueError:
+            LOG.warning("{0}: not in File1\n".format(var))
             continue
 
         try:
             i2 = head2.index(var)
-        except IndexError:
-            LOG.warning("{0}: not in File2")
+        except ValueError:
+            LOG.warning("{0}: not in File2\n".format(var))
             continue
 
         d1 = afloor(data1[:, i1], floor)
         d2 = afloor(data2[:, i2], floor)
 
-        LOG.info("Comparing {0}".format(var))
+        LOG.info("Comparing {0}".format(var), end="." * (40 - len(var)))
 
         if not interp:
             if np.allclose(d1, d2, atol=ftol, rtol=ftol):
+                LOG.info(" pass")
                 LOG.info("File1.{0} := File2.{0}\n".format(var))
                 status.append(0)
                 continue
 
         rms, nrms = rms_error(t1, d1, t2, d2)
         if nrms < dtol:
+            LOG.info(" pass")
             LOG.info("File1.{0} == File2.{0}".format(var))
             status.append(0)
 
         elif nrms < ftol:
-            LOG.info("File1.{0} ~= File2.{0}".format(var))
+            LOG.info(" diff")
+            LOG.warning("File1.{0} ~= File2.{0}".format(var))
             status.append(1)
+            bad[1].append(var)
 
         else:
-            LOG.info("File1.{0} != File2.{0}".format(var))
+            LOG.info(" fail")
+            LOG.error("File1.{0} != File2.{0}".format(var))
             status.append(2)
+            bad[0].append(var)
 
         LOG.info("NRMS(File.{0}, File2.{0}) = {1: 12.6E}\n".format(var, nrms))
         continue
+
+    failed = ", ".join("{0}".format(f) for f in bad[0])
+    diffed = ", ".join("{0}".format(f) for f in bad[1])
+    if failed:
+        LOG.info("Variabes that failed: {0}".format(failed))
+    if diffed:
+        LOG.info("Variabes that diffed: {0}".format(diffed))
 
     return max(status)
 

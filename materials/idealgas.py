@@ -37,7 +37,6 @@ class IdealGas(Material):
                   density, temperature, energy, pressure
         """
         mode = kwargs.get("mode", 0)
-        disp = kwargs.get("disp", 0)
 
         # unit_system = kwargs["UNITS"]
         M = self._param_vals[0]
@@ -59,6 +58,7 @@ class IdealGas(Material):
             # get (pres, tmpr) as functions of args=(rho, enrgy)
             rho, enrgy = args
             pres, tmpr = eosigv(M, CV, R, rho, enrgy)
+
         else:
             raise Error1("idealgas: {0}: unrecognized mode".format(mode))
 
@@ -67,16 +67,11 @@ class IdealGas(Material):
         dpdt = R * rho / M
         dedt = CV * R
         dedr = CV * pres * M / rho ** 2
-        scratch = np.array([cs, dedt, dedr, dpdt, dpdr])
+        scratch = np.array([dpdr, dpdt, dedt, dedr])
 
         if mode == 0:
-            retvals = [pres, enrgy]
-        else:
-            retvals = [pres, tmpr]
-        if disp:
-            retvals.append(scratch)
-
-        return retvals
+            return pres, enrgy, cs, scratch
+        return pres, tmpr, cs, scratch
 
 
 def eosigr(M, CV, R, rho, tmpr) :

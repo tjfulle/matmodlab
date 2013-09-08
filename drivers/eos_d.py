@@ -42,8 +42,12 @@ class EOSDriver(Driver):
                                units="SPECIFIC_ENERGY_UNITS")
         self.register_variable("PRES", vtype="SCALAR",
                                units="PRESSURE_UNITS")
+        self.register_variable("CS", vtype="SCALAR",
+                               units="VELOCITY_UNITS")
+        self.register_variable("DPDR", vtype="SCALAR")
         self.register_variable("DPDT", vtype="SCALAR")
         self.register_variable("DEDT", vtype="SCALAR")
+        self.register_variable("DEDR", vtype="SCALAR")
 
         # Setup
         self.mtlmdl.setup(material[1])
@@ -64,9 +68,9 @@ class EOSDriver(Driver):
         self._data[self.defgrad_slice] = I9
         rho = self.surface[0, 0]
         tmpr = self.surface[1, 0]
-        pres, e, s = self.mtlmdl.update_state(rho, tmpr, disp=1)
-        self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=pres,
-                     dpdt=s[3], dedt=s[1])
+        pres, e, cs, s = self.mtlmdl.update_state(rho, tmpr)
+        self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=pres, cs=cs,
+                     dpdr=s[0], dpdt=s[1], dedt=s[2], dedr=s[3])
 
         return
 
@@ -106,10 +110,10 @@ class EOSDriver(Driver):
                     # initial state used to initialize output file
                     continue
                 t += dt
-                p, e, s = self.mtlmdl.update_state(rho, tmpr, disp=1)
+                p, e, cs, s = self.mtlmdl.update_state(rho, tmpr)
                 F = rho / self.surface[0, 0] * I9
-                self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=p, defgrad=F,
-                             dpdt=s[3], dedt=s[1])
+                self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=p, cs=cs,
+                             dpdr=s[0], dpdt=s[1], dedt=s[2], dedr=s[3], defgrad=F)
                 self.setglobvars(step_num=step_num, time_step=dt)
                 iomgr(t)
                 if step_num % int(num_steps / float(nprints)) == 0:
@@ -385,7 +389,7 @@ class EOSDriver(Driver):
         options.addopt("initial_temperature", None,
                        dtype=float, test=lambda x: x > 0.)
 
-        variables=["RHO", "TMPR", "ENRGY", "PRES", "DEDT", "DPDT"]
+        variables=["RHO", "TMPR", "ENRGY", "PRES", "DPDR", "DPDT", "DEDT", "DEDR"]
         surf = read_vars_from_exofile(exofilepath, variables=variables, h=0)[:, 1:]
 
         # Get control terms

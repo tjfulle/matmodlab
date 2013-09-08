@@ -74,8 +74,10 @@ def extract_hugoniot(rhorange, itmpr, srf):
         srf[:, 1] -> temperature
         srf[:, 2] -> energy
         srf[:, 3] -> pressure
-        srf[:, 4] -> dedt
+        srf[:, 4] -> dpdr
         srf[:, 5] -> dpdt
+        srf[:, 6] -> dedt
+        srf[:, 7] -> dedr
 
     Returns
     -------
@@ -105,8 +107,8 @@ def extract_hugoniot(rhorange, itmpr, srf):
     x, y = srf[:, 0], srf[:, 2]
     f_t = SmoothBivariateSpline(x, y, srf[:, 1])
     f_p = SmoothBivariateSpline(x, y, srf[:, 3])
-    f_dedt = SmoothBivariateSpline(x, y, srf[:, 4])
     f_dpdt = SmoothBivariateSpline(x, y, srf[:, 5])
+    f_dedt = SmoothBivariateSpline(x, y, srf[:, 6])
 
     e = ei
     enrgy = []
@@ -141,7 +143,7 @@ def extract_hugoniot(rhorange, itmpr, srf):
 
             e = e - f / df
 
-            if abs(f) < TOL:
+            if abs(f / ei) < TOL:
                 break
 
         else:
@@ -187,7 +189,7 @@ def read_from_command_line(argv=None):
     args = parser.parse_args(argv)
     assert os.path.isfile(args.source)
 
-    variables=["RHO", "TMPR", "ENRGY", "PRES", "DEDT", "DPDT"]
+    variables=["RHO", "TMPR", "ENRGY", "PRES", "DPDR", "DPDT", "DEDT", "DEDR"]
     surface = read_vars_from_exofile(args.source, variables=variables, h=0)[:, 1:]
     step = np.sqrt(surface[:, 0].shape[0])
     r = surface[::step, 0]
