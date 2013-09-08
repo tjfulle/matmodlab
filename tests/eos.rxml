@@ -1,6 +1,6 @@
 <rtest name="gmd/eos">
 
-  <keywords> medium elastic eos </keywords>
+  <keywords> fast elastic eos </keywords>
 
   <link_files>
     {NAME}.rxml {NAME}.xml {NAME}.base_exo

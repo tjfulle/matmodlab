@@ -395,14 +395,29 @@ def filter_rtests(rtests, include, exclude):
 
     """
     skip = []
+    #        long, medium, short
+    order = [[], [], []]
     for key, val in rtests.items():
         keywords = val[S_KWS]
         if any(kw in exclude for kw in keywords):
             skip.append(key)
         if include and not all(kw in keywords for kw in include):
             skip.append(key)
+        # set the order to run the tests.  put long tests first
+        if "long" in keywords:
+            order[0].append(key)
+        elif "medium" in keywords:
+            order[1].append(key)
+        elif "fast" in keywords:
+            order[2].append(key)
+        else:
+            log_warning("{0}: expected one of [long, medium, fast] speed keywords")
     for key in list(set(skip)):
         del rtests[key]
+    order = [key for speedlist in order for key in speedlist]
+    for key in rtests:
+        rtests[key]["order"] = order.index(key)
+
     return rtests
 
 
@@ -413,8 +428,8 @@ def run_rtests(testd, rtests, nproc):
     if not os.path.isdir(testd):
         os.makedirs(testd)
 
-    test_inp = ((testd, rtest, details)
-                for (rtest, details) in rtests.items())
+    test_inp = ((testd, rtest, rtests[rtest])
+                for rtest in sorted(rtests, key=lambda x: rtests[x]["order"]))
     nproc = min(min(mp.cpu_count(), nproc), len(rtests))
     if nproc == 1:
         statuses = [run_rtest(job) for job in test_inp]

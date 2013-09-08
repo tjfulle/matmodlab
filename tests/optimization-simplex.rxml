@@ -1,6 +1,6 @@
 <rtest name="gmd/optimization-simplex">
 
-  <keywords> medium elastic optimization </keywords>
+  <keywords> long elastic optimization </keywords>
 
   <link_files>
     {NAME}.rxml {NAME}.xml exmpls.tbl opt-pres-v-evol opt-baseline.dat

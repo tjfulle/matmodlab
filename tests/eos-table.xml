@@ -9,7 +9,7 @@
       <Matlabel material="helium"/>
     </Material>
 
-    <Surface format="table" cfmt="12" nfac="100">
+    <Surface format="table" cfmt="12" nfac="10">
       <!-- Cij -->
       1 100
       5 300

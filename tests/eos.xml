@@ -14,7 +14,7 @@
       <!-- control goes as 1 -> density
                            2 -> temperature -->
         0 12 1 100
-      100 12 5 300
+       10 12 5 300
     </Surface>
 
     <Extract>
