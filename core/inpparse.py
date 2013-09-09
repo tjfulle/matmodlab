@@ -469,11 +469,18 @@ def parse_mtl_params(mtllmn, pdict, model):
             dbfile = node.getAttribute(S_HREF)
             if not dbfile:
                 dbfile = F_MTL_PARAM_DB
+
+            found = False
             if not os.path.isfile(dbfile):
-                if not os.path.isfile(os.path.join(cfg.I, dbfile)):
+                if os.path.isfile(os.path.join(cfg.I, dbfile)):
+                    found = True
+                    dbfile = os.path.join(cfg.I, dbfile)
+                elif os.path.isfile(os.path.join(cfg.MTL_LIB, dbfile)):
+                    found = True
+                    dbfile = os.path.join(cfg.MTL_LIB, dbfile)
+                if not found:
                     fatal_inp_error("{0}: no such file".format(dbfile))
                     continue
-                dbfile = os.path.join(cfg.I, dbfile)
             mtl_db_params = read_material_params_from_db(mat, model, dbfile)
             if mtl_db_params is None:
                 fatal_inp_error("Material: error reading parameters for "

@@ -1,0 +1,468 @@
+<?xml version="1.0" ?>
+<Material name="PZT 52/48">
+
+  <Description>
+    ALEGRA EMMA parameters for PZT 52/48 for the Domain Switching
+    Ferroelectric and Piezoelectricity material models. Parameters not
+    referenced are standard textbook values and should be documented.
+
+    Most of the parameters are orientation dependent and are described as if
+    the material polarization is directed along the -Z direction. Meaning, if
+    you change the values of Mij for your problem, you must change parameters
+    in a corresponding manner.
+  </Description>
+
+  <MaterialProperties>
+
+    <!-- Density -->
+    <Property name="DENSITY"
+	      desc="Material density"
+	      units="MASS_OVER_VOLUME"
+	      reference="Textbook">
+      7.750000E+03
+    </Property>
+
+    <!-- C11 -->
+    <Property name="C11"
+	      desc="11 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      1.210000E+11
+    </Property>
+
+    <!-- C22 -->
+    <Property name="C22"
+	      desc="22 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      1.210000E+11
+    </Property>
+
+    <!-- C33 -->
+    <Property name="C33"
+	      desc="33 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      1.110000E+11
+    </Property>
+
+    <!-- C12 -->
+    <Property name="C12"
+	      desc="12 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      7.540000E+10
+    </Property>
+
+    <!-- C13 -->
+    <Property name="C13"
+	      desc="13 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      7.520000E+10
+    </Property>
+
+    <!-- C23 -->
+    <Property name="C23"
+	      desc="23 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      7.520000E+10
+    </Property>
+
+    <!-- C44 -->
+    <Property name="C44"
+	      desc="44 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      2.110000E+10
+    </Property>
+
+    <!-- C55 -->
+    <Property name="C55"
+	      desc="55 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      2.110000E+10
+    </Property>
+
+    <!-- C66 -->
+    <Property name="C66"
+	      desc="66 component of elastic stiffness"
+	      units="PRESSURE_UNITS"
+	      reference="Textbook">
+      2.280000E+10
+    </Property>
+
+    <!-- Piezoelectric coupling constants - dependent on orientation -->
+    <!-- E311 -->
+    <Property name="E311"
+	      desc="311 component of piezoelectric coupling tensor"
+	      units=""
+	      reference="Montgomery">
+      -5.400000E+00
+    </Property>
+
+    <!-- E322 -->
+    <Property name="E322"
+	      desc="322 component of piezoelectric coupling tensor"
+	      units=""
+	      reference="Montgomery">
+      -5.400000E+00
+    </Property>
+
+    <!-- E113 -->
+    <Property name="E113"
+	      desc="113 component of piezoelectric coupling tensor"
+	      units=""
+	      reference="Montgomery">
+      1.230000E+01
+    </Property>
+
+    <!-- E223 -->
+    <Property name="E223"
+	      desc="223 component of piezoelectric coupling tensor"
+	      units=""
+	      reference="Montgomery">
+      1.230000E+01
+    </Property>
+
+    <!-- E333 -->
+    <Property name="E333"
+	      desc="333 component of piezoelectric coupling tensor"
+	      units=""
+	      reference="Montgomery">
+      1.580000E+01
+    </Property>
+
+    <!-- Q11 -->
+    <Property name="Q11"
+	      desc="11 component of the electrostriction"
+	      units="INV_POLARIZATION_UNITS_SQ"
+	      reference="Amin_1985">
+      6.600000E-02
+    </Property>
+
+    <!-- Q12 -->
+    <Property name="Q12"
+	      desc="12 component of the electrostriction"
+	      units="INV_POLARIZATION_UNITS_SQ"
+	      reference="Amin_1985">
+      -3.300000E-02
+    </Property>
+
+    <!-- Q44 -->
+    <Property name="Q44"
+	      desc="44 component of the electrostriction"
+	      units="INV_POLARIZATION_UNITS_SQ"
+	      reference="Amin_1985">
+      1.500000E-02
+    </Property>
+
+    <!-- PERMTV11 -->
+    <Property name="PERMTV11"
+	      desc="11 component of the permittivity - orthogonal to
+		    direction of polarization"
+	      units="PERMITTIVITY_UNITS"
+	      refence="Montgomery">
+      8.110000E-09
+    </Property>
+
+    <!-- PERMTV22 -->
+    <Property name="PERMTV22"
+	      desc="22 component of the permittivity - orthogonal to
+		    direction of polarization"
+	      units="PERMITTIVITY_UNITS"
+	      refence="Montgomery">
+      8.110000E-09
+    </Property>
+
+    <!-- PERMTV33 -->
+    <Property name="PERMTV33"
+	      desc="33 component of the permittivity - in direction of
+		    polarization"
+	      units="PERMITTIVITY_UNITS"
+	      refence="Montgomery">
+      7.350000E-09
+    </Property>
+
+    <!-- CF -->
+    <Property name="CF"
+	      desc="Coercive field"
+	      units="ELECTRIC_FIELD_UNITS"
+	      reference="Amin_1985">
+      1.000000E+06
+    </Property>
+
+    <!-- A[XYZ]P -->
+    <Property name="AXP"
+	      desc="X component of polarization"
+	      units="NO_UNITS"
+	      reference="">
+      0.000000E+00
+    </Property>
+
+    <Property name="AYP"
+	      desc="Y component of polarization"
+	      units="NO_UNITS"
+	      reference="">
+      0.000000E+00
+    </Property>
+
+    <Property name="AZP"
+	      desc="Z component of polarization"
+	      units="NO_UNITS"
+	      reference="">
+      -1.000000E+00
+    </Property>
+
+    <!-- P0 -->
+    <Property name="P0"
+	      desc="Magnitude of spontanious polarization"
+	      units="POLARIZATION_UNITS"
+	      reference="Amin_1985">
+      4.798990E-01
+    </Property>
+
+    <!-- XSAT -->
+    <Property name="XSAT"
+	      desc="Polarization saturation"
+	      units="NO_UNITS"
+	      reference="Fuller_2013">
+      1.000000E+00
+    </Property>
+
+    <!-- A1 -->
+    <Property name="A1"
+	      desc="Isotropic component dielectric compliance"
+	      units="NOT_SPECIFIED"
+	      reference="Amin_1985">
+      -2.662000E+07
+    </Property>
+
+    <!-- G11 -->
+    <Property name="G11"
+	      desc="11 component of 4th order dielectric compliance"
+	      units="NOT_SPECIFIED"
+	      reference="Amin_1985">
+      -1.489000E+07
+    </Property>
+
+    <!-- G12 -->
+    <Property name="G12"
+	      desc="12 component of 4th order dielectric compliance"
+	      units="NOT_SPECIFIED"
+	      reference="Amin_1985">
+      1.019000E+07
+    </Property>
+
+    <!-- H111 -->
+    <!-- Amin_1985: 1.450000E+08 -->
+    <Property name="H111"
+	      desc="111 component of 6th order dielectric compliance"
+	      units="NOT_SPECIFIED"
+	      reference="Fuller_2013">
+      3.000000E+08
+    </Property>
+
+    <!-- H112 -->
+    <Property name="H112"
+	      desc="111 component of 6th order dielectric compliance"
+	      units="NOT_SPECIFIED"
+	      reference="Amin_1985">
+      1.188000E+09
+    </Property>
+
+    <!-- H123 -->
+    <Property name="H123"
+	      desc="111 component of 6th order dielectric compliance"
+	      units="NOT_SPECIFIED"
+	      reference="Amin_1985">
+      -4.898000E+09
+    </Property>
+
+    <!-- MUFAC -->
+    <Property name="MUFAC"
+	      desc="Multiplier on shear modulus of isotropic surrogate"
+	      units="NO_UNITS"
+	      reference="Fuller_2013">
+      1.000000E+00
+    </Property>
+
+    <!-- Mij
+	 Note, the Mij are assigned with the assumption that the material is
+	 polarized in the -Z direction
+    -->
+    <Property name="M11"
+	      desc="11 component of material axes"
+	      units="NO_UNITS"
+	      reference="">
+      0.000000E+00
+    </Property>
+
+    <Property name="M12"
+	      desc="12 component of material axes"
+	      units="NO_UNITS"
+	      reference="">
+      1.000000E+00
+    </Property>
+
+    <Property name="M13"
+	      desc="13 component of material axes"
+	      units="NO_UNITS"
+	      reference="">
+      0.000000E+00
+    </Property>
+
+    <Property name="M21"
+	      desc="21 component of material axes"
+	      units="NO_UNITS"
+	      reference="">
+      1.000000E+00
+    </Property>
+
+    <Property name="M22"
+	      desc="22 component of material axes"
+	      units="NO_UNITS"
+	      reference="">
+      0.000000E+00
+    </Property>
+
+    <Property name="M23"
+	      desc="23 component of material axes"
+	      units="NO_UNITS"
+	      reference="">
+      0.000000E+00
+    </Property>
+
+    <!-- PTP -->
+    <Property name="PTP"
+	      desc="Phase transition pressure"
+	      units="PRESSURE_UNITS"
+	      reference="">
+      0.000000E+00
+    </Property>
+
+    <!-- PTS -->
+    <Property name="PTS"
+	      desc="Phase transition shape"
+	      units="NO_UNITS"
+	      reference="">
+      0.000000E+00
+    </Property>
+
+    <!-- PHASE_RATIO -->
+    <Property name="PHASE_RATIO"
+	       desc="Ratio of tetragonal phase to rhombohedral phase"
+	       units="NO_UNITS"
+	       reference="">
+      1.000000E+00
+    </Property>
+
+    <Property name="DEV"
+	      desc="Debug flag"
+	      units="NO_UNITS"
+	      reference="DeveloperParameter">
+      0.000000E+00
+    </Property>
+
+    <!-- Derived constants -->
+    <Property name="MU"
+	      desc="Shear modulus of isotropic surrogate"
+	      units="PRESSURE_UNITS"
+	      reference="DerivedConstant">
+      0.000000E+00
+    </Property>
+
+    <Property name="NU"
+	      desc="Poisson's ratio of isotropic surrogate"
+	      units="NO_UNITS"
+	      reference="DerivedConstant">
+      0.000000E+00
+    </Property>
+
+    <Property name="BETA"
+	      desc="Impermeability of isotropic surrogate"
+	      units="INV_PERMITTIVITY_UNITS"
+	      reference="DerivedConstant">
+      0.000000E+00
+    </Property>
+
+    <!-- Free parameters -->
+    <Property name="FREE0"
+	      desc="Free parameter 0"
+	      units="NO_UNITS"
+	      reference="DeveloperParameter">
+      0.000000E+00
+    </Property>
+
+    <Property name="FREE1"
+	      desc="Free parameter 1"
+	      units="NO_UNITS"
+	      reference="DeveloperParameter">
+      0.000000E+00
+    </Property>
+
+  </MaterialProperties>
+
+  <References>
+    <!-- References for the material parameters given above -->
+    <Amin_1985>
+      A. Amin, M. J. Haun, B. Badger, H. McKinstry, and L. E. Cross. A
+      phenomenological gibbs function for the single cell region of the
+      PbZrO3:PbTiO3 solid solution system. Ferroelectrics, 65(1):107–130,
+      1985.
+    </Amin_1985>
+
+    <Fuller_2013>
+      Parameters come from model testing using Alegra-EMMA-Dakota by Tim
+      Fuller in 2013
+    </Fuller_2013>
+
+    <Textbook>
+      Parameters listed as "Textbook" have an unknown pedigree.
+    </Textbook>
+
+    <Montgomery>
+      Parameters used by Steve Montgomery.  Exact pedigree unknown.
+    </Montgomery>
+
+    <DerivedConstant>
+      Parameters derived internally in the model
+    </DerivedConstant>
+
+    <DeveloperParameter> </DeveloperParameter>
+  </References>
+
+  <MaterialModels>
+    <!-- List of material models for the material with names of model
+         parameters mapped to the names given for the material parameters in
+         the MaterialParameters element
+    -->
+    <Model name="dsf">
+
+      <Parameters
+	  C11="C11" C12="C12" C44="C44" Q11="Q11" Q12="Q12" Q44="Q44"
+          EPSC="PERMTV33" EPSA="PERMTV11" CF="CF"
+          AXP="AXP" AYP="AYP" AZP="AZP"
+          P0="P0" XSAT="XSAT"
+          A1="A1" G11="G11" G12="G12" H111="H111" H112="H112" H123="H123"
+          MUFAC="MUFAC"
+          M11="M11" M12="M12" M13="M13" M21="M21" M22="M22" M23="M23"
+          PTP="PTP" PTS="PTS" PR="PHASE_RATIO" DEV="DEV"
+          FREE0="FREE0" FREE1="FREE1"/>
+    </Model>
+
+    <Model name="piezoelectricity">
+      <Parameters
+	  DENSITY="DENSITY"
+	  C11="C11" C12="C12" C13="C13" C22="C22" C23="C23"
+	  C33="C33" C44="C44" C55="C55" C66="C66"
+	  E311="E311" E322="E322" E113="E113" E223="E223" E333="E333"
+	  EP11="PERMTV11" EP22="PERMTV22" EP33="PERMTV33"
+	  M11="M11" M12="M12" M13="M13" M21="M21" M22="M22" M23="M23"/>
+    </Model>
+
+  </MaterialModels>
+
+</Material>

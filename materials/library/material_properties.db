@@ -1,0 +1,213 @@
+<?xml version="1.0" ?>
+<Materials>
+  <Material name="helium">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+	4.00260
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+	1.5
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="neon">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+	20.1797
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+	1.5
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="argon">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+        39.948
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+        1.5
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="krypton">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+        83.8
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+        1.5
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="xenon">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+        131.290
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+        1.5
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="hydrogen">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+        2.01588
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+        2.427
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="carbon">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+        28.0101
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+        2.430
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="nitrogen">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+        28.0134
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+        2.39
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="chlorine">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+        70.9045
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+        3.06
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+  <Material name="broming">
+    <MaterialProperties>
+      <Property name="MOLAR_MASS"
+		desc="Molar mass"
+		units=""
+		reference="Textbook">
+        159.808
+      </Property>
+      <Property name="SPECIFIC_HEAT"
+		desc="Specific heat"
+		units=""
+		reference="Textbook">
+        3.39
+      </Property>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="idealgas">
+	<Parameters M="MOLAR_MASS" CV="SPECIFIC_HEAT"/>
+      </Model>
+    </MaterialModels>
+  </Material>
+</Materials>

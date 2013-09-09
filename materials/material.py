@@ -3,12 +3,12 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
+from __config__ import F_MTL_MODEL_DB
 from core.io import Error1
 from utils.impmod import load_file
 from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
-MTL_MODEL_DB_FILE = os.path.join(D, "material_models.db")
 
 
 def get_material_from_db(matname, mtldb=[None]):
@@ -34,16 +34,16 @@ def create_material(matname):
 
 
 def read_mtldb():
-    """Read the MTL_MODEL_DB_FILE database file
+    """Read the F_MTL_MODEL_DB database file
 
     """
-    if not os.path.isfile(MTL_MODEL_DB_FILE):
+    if not os.path.isfile(F_MTL_MODEL_DB):
         return None
 
     try:
-        doc = xdom.parse(MTL_MODEL_DB_FILE)
+        doc = xdom.parse(F_MTL_MODEL_DB)
     except ExpatError:
-        os.remove(MTL_MODEL_DB_FILE)
+        os.remove(F_MTL_MODEL_DB)
         return None
 
     mtldb = {}
@@ -66,11 +66,11 @@ def read_mtldb():
 
 
 def write_mtldb(mtldict, wipe=False):
-    """Write the MTL_MODEL_DB_FILE database file
+    """Write the F_MTL_MODEL_DB database file
 
     """
-    if wipe and os.path.isfile(MTL_MODEL_DB_FILE):
-        os.remove(MTL_MODEL_DB_FILE)
+    if wipe and os.path.isfile(F_MTL_MODEL_DB):
+        os.remove(F_MTL_MODEL_DB)
     mtldb = read_mtldb()
     if mtldb is None:
         mtldb = {}
@@ -87,5 +87,5 @@ def write_mtldb(mtldict, wipe=False):
         for (aname, aval) in ns.items():
             child.setAttribute(aname, str(aval))
         root.appendChild(child)
-    doc.writexml(open(MTL_MODEL_DB_FILE, "w"), addindent="  ", newl="\n")
+    doc.writexml(open(F_MTL_MODEL_DB, "w"), addindent="  ", newl="\n")
     doc.unlink()

@@ -173,7 +173,7 @@ compiler to build the \gmd{} components that was used to build SciPy.
 \section{Installation}
 \begin{enumerate}
   \item Make sure that all \gmd{} prerequisites are installed and working properly.
-  \item Add \verb|GMD/toolset| to your \texttt{PATH} environment variable
+  \item Add \verb:GMD/toolset: to your \texttt{PATH} environment variable
   \item (Optional) Set the \texttt{GMDMTLS} environment variable to point to
   directories containing additional material models (user developed, not part
   of \gmd{}). See Section \ref{sec:install} for additional instructions on
@@ -308,6 +308,15 @@ Additionally, the following elements are read from any scope in the input file
 \section{Preprocessing}
 Preprocessing allows specifying variables in the input inside of comment tags
 for use in other parts of the input. Syntax mirrors that of \texttt{aprepro}.
+Preprocessor also evaluates (nearly) any Python expression.
+
+\subsection{Random Numbers}
+The \texttt{random()} expression generates a random number.
+
+\subsubsection{Random State Seed}
+The \verb:random_seed: variable sets the random state seed.  Note, expressions
+are evaluated in order, therefore, if setting the \verb:random_seed: it should
+occur early.
 
 \subsection{Example}
 Specify the \reqdtag{Material} parameter \texttt{K} and \tag{Path} parameter
@@ -400,7 +409,7 @@ Read a piecewise linear table from an external file using columns 1 and 3
 <Physics driver="str[solid]{solid, eos}" termination_time="real[]">
 \end{verbatim}
 %
-Define the physics of the simulation. If specified, \verb|termination_time|
+Define the physics of the simulation. If specified, \verb:termination_time:
 defines the termination time for the simulation. If not specified, termination
 time is taken as final time in \reqdtag{Path}. Recognized subelements of
 \reqdtag{Physics} are
@@ -443,7 +452,7 @@ in Table \ref{tab:cfmt}.
 
 For example, the following \texttt{cfmt} instructs the driver that the
 components of \texttt{Cij} represent [stress, strain, stress rate, strain
-rate, strain, strain], respectively: \verb|cfmt="423122"|. Mixed modes are
+rate, strain, strain], respectively: \verb:cfmt="423122":. Mixed modes are
 allowed only for components of strain rate, strain, stress rate, and stress.
 Electric field components can be included with any deformation type.
 
@@ -652,7 +661,7 @@ Where \tag{Key} is a valid material parameter name.
 \end{verbatim}
 %
 Insert model parameters from a database file.  The default file
-\verb|F_MTL_PARAM_DB| is in \verb|/path/to/gmd/materials/material_properties.db|.
+\verb:F_MTL_PARAM_DB: is in \verb:/path/to/gmd/materials/material_properties.db:.
 
 \subsubsection{Key}
 \begin{verbatim}

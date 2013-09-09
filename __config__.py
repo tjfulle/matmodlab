@@ -2,7 +2,9 @@ import os
 __version__ = (1, 0, 0)
 ROOT_D = os.path.dirname(os.path.realpath(__file__))
 LIB_D = os.path.join(ROOT_D, "lib")
-F_MTL_PARAM_DB = os.path.join(ROOT_D, "materials/material_properties.db")
+MTL_LIB_D = os.path.join(ROOT_D, "materials/library")
+F_MTL_PARAM_DB = os.path.join(MTL_LIB_D, "material_properties.db")
+F_MTL_MODEL_DB = os.path.join(ROOT_D, "lib/material_models.db")
 F_EVALDB = "gmd-evaldb.xml"
 from utils.namespace import Namespace
 cfg = Namespace()
