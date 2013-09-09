@@ -21,6 +21,7 @@ TESTS.extend([x for x in os.getenv("GMDSETUPTSTDIR", "").split(os.pathsep) if x]
 PATH = os.getenv("PATH", "").split(os.pathsep)
 PLATFORM = sys.platform.lower()
 PATH.append(os.path.join(R, "tpl/exowrap/Build_{0}/bin".format(PLATFORM)))
+D_TESTS =  os.path.join(os.getcwd(), "TestResults.{0}".format(PLATFORM))
 NOTRUN_STATUS = -1
 PASS_STATUS = 0
 DIFF_STATUS = 1
@@ -51,7 +52,6 @@ class Error(Exception):
         sys.stderr.write(message + "\n")
         raise SystemExit(2)
 
-
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
@@ -73,6 +73,8 @@ def main(argv=None):
         help="List matching tests and exit [default: %(default)s]")
     parser.add_argument("--testdirs", action="append", default=[],
         help="Additional directories to find tests [default: %(default)s]")
+    parser.add_argument("-D", default=D_TESTS,
+        help="Directory to run tests [default: %(default)s]")
     parser.add_argument("tests", nargs="*",
         help="Specific tests to run [default: %(default)s]")
     args = parser.parse_args(argv)
@@ -88,7 +90,7 @@ def main(argv=None):
         dirs.append(d)
 
     # --- root directory to run tests
-    testd = os.path.join(os.getcwd(), "TestResults.{0}".format(PLATFORM))
+    testd = args.D
 
     # --- timer
     timing = Namespace()
