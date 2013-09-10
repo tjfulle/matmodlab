@@ -19,6 +19,7 @@ RETCODES = {-1: "NOT RUN", 0: "PASS", 1: "DIFF",
 LOG = None
 DRYRUN = False
 NOCLONE = False
+NOBUILD = False
 ENV = {"PATH": "/usr/local/bin:"
        "/usr/bin:/bin:/opt/epd/bin:"
        "/opt/local/sbin:/sbin:/usr/sbin"}
@@ -34,7 +35,7 @@ class Logger(object):
         self.email_to = email_to
         self.errors = 0
         if self.email_to:
-            self.email_to = email_to[0]
+            self.email_to = [email_to[0]]
             self.email_to.append(email_to[1:])
 
     def write(self, text, fill="", setapart=False):
@@ -57,23 +58,23 @@ class Logger(object):
         retcode = RETCODES.get(retval, "FAIL")
 
         self.stream.write("\nStatus: {0}\n".format(retcode))
+        self.stream.flush()
         self.stream.close()
 
         # mail the log file
         if not self.email_to:
             return
 
-        subj = '"[gmd Nightly: {0} - {1}]"'.format(PLATFORM, retcode)
         rec, cc = self.email_to
         cc = ",".join(cc)
         if cc: cc = "-c {0}".format(cc)
-        log = open(self.filepath).read()
-        cmd = "cat {0} | mail -s {1} {2} {3}".format(log, subj, cc, rec)
-        call(cmd, subprocess.PIPE)
+        subj = "[gmd Nightly: {0} - {1}]".format(PLATFORM, retcode)
+        cmd = "mail -s '{1}' {2} {3} < {0}".format(self.filepath, subj, rec, cc)
+        call(cmd)
 
 
 def main(argv):
-    global LOG, DRYRUN, ENV, NOCLONE
+    global LOG, DRYRUN, ENV, NOCLONE, NOBUILD
     # Option parsing
     usage = "usage: runNightly <-Xpython> <-Sscratch> <-Ggit> [options]"
     parser = argparse.ArgumentParser(usage=usage)
@@ -100,9 +101,12 @@ def main(argv):
         help="Dry run [default: %(default)s]")
     parser.add_argument("--no-clone", action="store_true", default=False,
         help=argparse.SUPPRESS)
+    parser.add_argument("--no-build", action="store_true", default=False,
+        help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     DRYRUN = args.dryrun
-    NOCLONE = args.no_clone
+    NOBUILD = args.no_build
+    NOCLONE = NOBUILD or args.no_clone
 
     t0 = time.time()
 
@@ -169,7 +173,7 @@ def main(argv):
     cmd = "{0} {1}/toolset/setup.py {2} {3}".format(args.X, gmd_d,
         " ".join("--mtldirs={0}".format(m) for m in mtldirs),
         " ".join("--testdirs={0}".format(t) for t in args.tests))
-    setup = call(cmd, LOG)
+    setup = call(cmd, stream=LOG)
     if setup != 0:
         LOG.error("failed to setup gmd with {0}".format(args.X))
         LOG.finish(2)
@@ -180,7 +184,7 @@ def main(argv):
     text = "Building gmd with {0}".format(args.X)
     LOG.write(text, fill="*", setapart=True)
     cmd = os.path.join(gmd_d, "toolset/buildmtls")
-    build = call(cmd, LOG)
+    build = call(cmd, stream=LOG)
     if build != 0:
         LOG.error("failed to build with {0}".format(args.X))
         LOG.finish(2)
@@ -195,7 +199,7 @@ def main(argv):
     cmd = "{0} -F -D{1} {2} -j{3}".format(
         os.path.join(gmd_d, "toolset/runtests"), d,
         " ".join("-k{0}".format(k) for k in args.k), args.j)
-    runtests = call(cmd, LOG)
+    runtests = call(cmd, stream=LOG)
 
     retcode = RETCODES.get(runtests, "FAIL")
     LOG.write("Testing completed with return code: {0}\n".format(retcode))
@@ -252,7 +256,7 @@ def clone_git_repos(gmd_repo, mtls, tests, rootd, git):
     LOG.write("\n\n")
     text = "Cloning from {0}".format(gmd_repo)
     LOG.write(text, fill="*", setapart=True)
-    clone = call(cmd.format(git, gmd_repo, name), LOG)
+    clone = call(cmd.format(git, gmd_repo, name), stream=LOG)
     if clone != 0:
         LOG.error("failed to clone {0}\n".format(git_repo))
         finish(2)
@@ -264,7 +268,7 @@ def clone_git_repos(gmd_repo, mtls, tests, rootd, git):
         LOG.write("\n\n")
         text = "Cloning from {0}".format(git_repo)
         LOG.write(text, fill="*", setapart=True)
-        clone = call(cmd.format(git, git_repo, name), LOG)
+        clone = call(cmd.format(git, git_repo, name), stream=LOG)
         if clone != 0:
             LOG.error("failed to clone {0}\n".format(git_repo))
             finish(2)
@@ -277,7 +281,7 @@ def clone_git_repos(gmd_repo, mtls, tests, rootd, git):
         LOG.write("\n\n")
         text = "Cloning from {0}".format(git_repo)
         LOG.write(text, fill="*", setapart=True)
-        clone = call(cmd.format(git, git_repo, name), LOG)
+        clone = call(cmd.format(git, git_repo, name), stream=LOG)
         if clone != 0:
             LOG.error("failed to clone {0}\n".format(git_repo))
             finish(2)
@@ -289,16 +293,18 @@ def clone_git_repos(gmd_repo, mtls, tests, rootd, git):
     return
 
 
-def call(cmd, stream):
+def call(cmd, stream=None):
     if DRYRUN:
         print cmd
         return 0
     if NOCLONE and "clone" in cmd:
         return 0
-    job = subprocess.Popen(cmd.split(), stdout=stream, stderr=subprocess.STDOUT,
-                           env=ENV)
-    job.wait()
-    return job.returncode
+    if NOBUILD and "buildmtls" in cmd:
+        return 0
+    if stream is None:
+        stream = subprocess.PIPE
+    return subprocess.call(cmd, shell=True, env=ENV,
+                           stdout=stream, stderr=subprocess.STDOUT)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
