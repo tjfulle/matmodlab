@@ -85,5 +85,7 @@ def main(argv=None):
         write_mtldb(mtldict, wipe=args.w)
 
     return max(retcode)
+
+
 if __name__ == "__main__":
     main()
