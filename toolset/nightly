@@ -271,8 +271,8 @@ def clone_git_repos(git_repos, rootd, git):
 
 
 def call(cmd, stream=None):
-    print cmd
     if DRYRUN:
+        print cmd
         return 0
     if NOCLONE and "clone" in cmd:
         return 0
