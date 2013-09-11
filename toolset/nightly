@@ -235,7 +235,7 @@ def error(message=None, errors=[0], stop_if_error=False):
 
 
 def which(name):
-    for d in os.getenv("PATH", "").split(os.pathsep):
+    for d in ENV["PATH"].split(os.pathsep):
         exe = os.path.join(d, name)
         if os.path.isfile(exe):
             return exe
