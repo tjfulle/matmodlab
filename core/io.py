@@ -320,16 +320,19 @@ class ExoManager(object):
             [info.extend(s) for s in dsurfaces[K_RTSPC]]
 
         info.append("EXTRACT")
-        ofmt, step, ffmt, variables, paths = extract[:5]
-        info.append(ofmt)
-        info.append(step)
-        info.append(ffmt)
-        info.append("EXTRACT VARIABLES")
-        info.append(len(variables))
-        info.extend(variables)
-        info.append("EXTRACT PATHS")
-        info.append(len(paths))
-        info.extend([p.toxml() for p in paths])
+        if not extract:
+            info.append(0)
+        else:
+            ofmt, step, ffmt, variables, paths = extract[:5]
+            info.append(ofmt)
+            info.append(step)
+            info.append(ffmt)
+            info.append("EXTRACT VARIABLES")
+            info.append(len(variables))
+            info.extend(variables)
+            info.append("EXTRACT PATHS")
+            info.append(len(paths))
+            info.extend([p.toxml() for p in paths])
 
         return [str(x) for x in info]
 
