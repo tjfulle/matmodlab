@@ -18,18 +18,22 @@ def read_material_params_from_db(matname, mdlname, dbfile):
     doc = xdom.parse(dbfile)
 
     # check if material in database
-    materials = doc.getElementsByTagName("Material")
-    for material in materials:
-        if material.getAttribute("name") == matname:
+    defined = []
+    for material in doc.getElementsByTagName("Material"):
+        defined.append(material.getAttribute("name"))
+        if defined[-1] == matname:
+            matname = defined[-1]
             break
     else:
-        log_error("{0}: material not defined in database".format(matname))
+        log_error("{0}: material not defined in database, defined "
+                  "materials are:\n  {1}".format(matname, ", ".join(defined)))
         return
 
     # check if material defines parameters for requested model
     models = material.getElementsByTagName("MaterialModels")[0]
     for model in models.getElementsByTagName("Model"):
-        if model.getAttribute("name") == mdlname:
+        if mdlname in [model.getAttribute(s) for s in ("name", "short_name")]:
+            mdlname = model.getAttribute("name")
             break
     else:
         log_error("material {0} does not define parameters "
