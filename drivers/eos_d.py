@@ -17,9 +17,10 @@ from materials.material import create_material
 
 np.set_printoptions(precision=4)
 
+K_RTSPC = 0
+
 class EOSDriver(Driver):
     name = "eos"
-    surface = None
     def __init__(self):
         super(EOSDriver, self).__init__()
         pass
@@ -66,8 +67,8 @@ class EOSDriver(Driver):
 
         # get initial pressure, energy, and set initial state
         self._data[self.defgrad_slice] = I9
-        rho = self.surface[0, 0]
-        tmpr = self.surface[1, 0]
+        rho = self.surfaces[K_RTSPC][0, 0]
+        tmpr = self.surfaces[K_RTSPC][1, 0]
         pres, e, cs, s = self.mtlmdl.update_state(rho, tmpr)
         self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=pres, cs=cs,
                      dpdr=s[0], dpdt=s[1], dedt=s[2], dedr=s[3])
@@ -76,8 +77,8 @@ class EOSDriver(Driver):
 
 
     def process_paths_and_surfaces(self, iomgr, *args):
-        if self.surface is None:
-            io.log_message("eos: no surface to process")
+        if self.surfaces is None:
+            io.log_message("eos: no surfaces to process")
 
         K2eV = 8.617343e-5
         erg2joule = 1.0e-4
@@ -101,17 +102,18 @@ class EOSDriver(Driver):
         t = 0.
         nprints = 10
         step_num = 0
-        num_steps = len(self.surface[0]) * len(self.surface[1])
-        dt = 1. / self.surface.shape[0] / self.surface.shape[1]
-        for rho in self.surface[0]:
-            for tmpr in self.surface[1]:
+        surface = self.surfaces[K_RTSPC]
+        num_steps = len(surface[0]) * len(surface[1])
+        dt = 1. / surface.shape[0] / surface.shape[1]
+        for rho in surface[0]:
+            for tmpr in surface[1]:
                 step_num += 1
                 if step_num == 1:
                     # initial state used to initialize output file
                     continue
                 t += dt
                 p, e, cs, s = self.mtlmdl.update_state(rho, tmpr)
-                F = rho / self.surface[0, 0] * I9
+                F = rho / surface[0, 0] * I9
                 self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=p, cs=cs,
                              dpdr=s[0], dpdt=s[1], dedt=s[2], dedr=s[3], defgrad=F)
                 self.setglobvars(step_num=step_num, time_step=dt)
@@ -123,7 +125,8 @@ class EOSDriver(Driver):
 
     # --------------------------------------------------------- Parsing methods
     @classmethod
-    def parse_and_register_paths_and_surfaces(cls, pathlmns, surflmns, functions):
+    def parse_and_register_paths_and_surfaces(cls, pathlmns, surflmns, functions,
+                                              tterm):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 
@@ -138,8 +141,7 @@ class EOSDriver(Driver):
             return
         if not surflmns:
             return
-        surflmn = surflmns[0]
-        cls.surface = cls.pSurface(surflmns[0], functions)
+        cls.surfaces = {K_RTSPC: cls.pSurface(surflmns[0], functions)}
         return
 
     @classmethod

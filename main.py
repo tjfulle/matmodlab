@@ -75,8 +75,7 @@ def main(argv=None):
         if mm_input.stype == inp.S_PHYSICS:
             opts = (mm_input.density,)
             model = PhysicsHandler(runid, args.v, mm_input.driver, mm_input.mtlmdl,
-                                   mm_input.mtlprops, mm_input.ttermination,
-                                   mm_input.extract, opts)
+                                   mm_input.mtlprops, mm_input.extract, opts)
 
         elif mm_input.stype == inp.S_PERMUTATION:
             opts = (args.j,)

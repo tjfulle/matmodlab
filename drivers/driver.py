@@ -12,7 +12,9 @@ DRIVER_DB = None
 
 
 class Driver(object):
-
+    name = None
+    paths = None
+    surfaces = None
     def __init__(self):
         self._elem_variables = []
         self._glob_variables = []

@@ -16,9 +16,11 @@ from materials.material import create_material
 
 np.set_printoptions(precision=4)
 
+K_PRDEF = 0
+S_PRDEF = "prdef"
+
 class SolidDriver(Driver):
     name = "solid"
-    paths = None
     proportional = None
     kappa = None
     def __init__(self):
@@ -93,11 +95,7 @@ class SolidDriver(Driver):
         -------
 
         """
-        legs = self.paths["prdef"]
-        termination_time = args[0]
-        if termination_time is None:
-            termination_time = legs[-1][0] + 1.e-06
-
+        legs = self.paths[K_PRDEF]
         kappa = self.kappa
 
         # initial leg
@@ -244,10 +242,6 @@ class SolidDriver(Driver):
                 if n == 0 or round(nsteps / 2.) == n or endstep:
                     log_message(consfmt.format(leg_num, n + 1, t, dt))
 
-                if t > termination_time:
-                    self._paths_and_surfaces_processed = True
-                    return 0
-
                 continue  # continue to next step
 
             continue # continue to next leg
@@ -257,36 +251,37 @@ class SolidDriver(Driver):
 
     # --------------------------------------------------------- Parsing methods
     @classmethod
-    def parse_and_register_paths_and_surfaces(cls, pathlmns, surflmns, functions):
+    def parse_and_register_paths_and_surfaces(cls, pathlmns, surflmns, functions,
+                                              tterm):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 
         """
         if len(pathlmns) > 1:
-            fatal_inp_error("Only 1 Path tag supported for solid driver")
+            fatal_inp_error("expected only 1 Path tag")
             return
         pathlmn = pathlmns[0]
 
         ptype = pathlmn.getAttribute("type")
         if not ptype:
-            fatal_inp_error("Path requires type attribute")
+            fatal_inp_error("expected 'type' Path attribute")
             return
-        if ptype.strip().lower() != "prdef":
+        if ptype.strip().lower() != S_PRDEF:
             fatal_inp_error("{0}: unknown Path type".format(ptype))
             return
         pathlmn.removeAttribute("type")
 
-        items = cls.pPrdef(pathlmn, functions)
+        items = cls.pPrdef(pathlmn, functions, tterm)
         if input_errors():
             return
 
         path, cls.kappa, cls.proportional = items
-        cls.paths = {"prdef": path}
+        cls.paths = {K_PRDEF: path}
 
         return
 
     @classmethod
-    def pPrdef(cls, pathlmn, functions):
+    def pPrdef(cls, pathlmn, functions, tterm):
         """Parse the Path block and set defaults
 
         """
@@ -364,7 +359,7 @@ class SolidDriver(Driver):
             return
 
         # store relevant info to the class
-        path = cls.format_path(path, options)
+        path = cls.format_path(path, options, tterm)
         kappa = options.getopt("kappa")
         proportional = options.getopt("proportional")
 
@@ -642,7 +637,7 @@ class SolidDriver(Driver):
         return columns
 
     @staticmethod
-    def format_path(path, options):
+    def format_path(path, options, tterm):
         """Format the path by applying multipliers
 
         """
@@ -675,6 +670,8 @@ class SolidDriver(Driver):
         Rij = np.reshape(np.eye(3), (9,))
 
         # format each leg
+        if not tterm:
+            tterm = 1.e80
         for ileg, (termination_time, num_steps, control, Cij) in enumerate(path):
 
             leg_num = ileg + 1
@@ -796,12 +793,16 @@ class SolidDriver(Driver):
             # legs[ileg].append(Rij)
             path[ileg].append(efcomp)
 
+            if termination_time > tterm:
+                del path[ileg+1:]
+                break
+
             continue
 
         return path
 
 def mybool(a):
-    if str(a).lower().strip() in ("false", "no", "0"):
+    if str(a).lower().strip() in ("false", "no", "0", "none"):
         return 0
     else:
         return 1

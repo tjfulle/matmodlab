@@ -103,7 +103,7 @@ class ExoManager(object):
 
     """
     def __init__(self, runid, num_dim, coords, conn, glob_var_data,
-                 elem_blks, all_element_data, title):
+                 elem_blks, all_element_data, title, info):
         """Instantiate a IOManager object
 
         runid : str
@@ -131,9 +131,7 @@ class ExoManager(object):
                    element block data is of the form:
                    data[k] -> average element data for kth element
 
-
         """
-
         # create new file
         self.runid = runid
         self.num_dim = num_dim
@@ -179,6 +177,9 @@ class ExoManager(object):
         qa_title = "Wasatch finite element simulation"
         qa_record = np.array([[qa_title, runid, day, hour]])
         self.exofile.put_qa(num_qa_rec, qa_record)
+
+        # information records
+        mtlname, mtlparams, dname, dpaths, dsurfaces, extract = info
 
         # write results variables parameters and names
         glob_var_names = glob_var_data[0]

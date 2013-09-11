@@ -4,7 +4,7 @@
   <!-- {K = 10.e9} -->
   <!-- {G = 3.75e9} -->
 
-  <Physics>
+  <Physics driver="solid" termination_time="{1.8 * pi}">
 
     <Function id="2" type="analytic expression" var="t">
       sin(t)

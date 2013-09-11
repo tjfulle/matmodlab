@@ -9,7 +9,7 @@ from utils.exodump import exodump
 
 class PhysicsHandler(object):
 
-    def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops, tterm,
+    def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops,
                  extract, driver_opts):
         """Initialize the PhysicsHandler object
 
@@ -30,7 +30,6 @@ class PhysicsHandler(object):
         self.driver = driver()
         self.material = (mtlmdl, mtlprops)
         self.mtlprops = np.array(mtlprops)
-        self.tterm = tterm
         self.extract = extract
         self.driver_opts = driver_opts
 
@@ -73,9 +72,12 @@ class PhysicsHandler(object):
         all_element_data = [[elem_blk_id, num_elem_this_blk, elem_blk_data]]
         title = "gmd {0} simulation".format(self.driver.name)
 
+        info = [self.driver.mtlmdl.name, self.driver.mtlmdl._param_vals,
+                self.driver.name, self.driver.paths, self.driver.surfaces,
+                self.extract]
         self.exo = io.ExoManager(self.runid, self.num_dim, self.coords, connect,
                                  glob_var_data, elem_blks,
-                                 all_element_data, title)
+                                 all_element_data, title, info)
         self.exofilepath = self.runid + ".exo"
 
         # write to the log file the material props
@@ -103,9 +105,7 @@ class PhysicsHandler(object):
 
         """
         io.log_message("{0}: starting calculations".format(self.runid))
-        run_opts = (self.tterm, )
-        retcode = self.driver.process_paths_and_surfaces(
-            self.dump_state, *run_opts)
+        retcode = self.driver.process_paths_and_surfaces(self.dump_state)
         return retcode
 
     def finish(self):

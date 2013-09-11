@@ -24,25 +24,40 @@ from materials.material import get_material_from_db
 
 
 S_PHYSICS = "Physics"
-S_PERMUTATION = "Permutation"
-S_OPT = "Optimization"
-
-S_AUX_FILE = "AuxiliaryFile"
-S_PARAMS = "Parameters"
-S_RESP_FCN = "ResponseFunction"
-S_RESP_DESC = "descriptor"
-S_MITER = "Maximum Iterations"
-S_TOL = "Tolerance"
-S_DISP = "Disp"
 S_TTERM = "termination_time"
+S_DRIVER = "driver"
+T_DRIVER_TYPES = ("solid", "eos")
 S_MATERIAL = "Material"
+S_MODEL = "model"
+S_RHO = "density"
+S_PARAMS = "Parameters"
+
 S_EXTRACT = "Extract"
+S_EXFORMAT = "format"
+T_EXFORMATS = ("ascii", "mathematica")
+S_STEP = "step"
+S_FFMT = "ffmt"
+
 S_PATH = "Path"
 S_SURFACE = "Surface"
-S_DRIVER = "driver"
+
 S_HREF = "href"
-S_CORR = "correlation"
+
+S_PERMUTATION = "Permutation"
+S_PERMUTATE = "Permutate"
+T_PERM_METHODS = ("zip", "combine", "shotgun")
+
+S_OPT = "Optimization"
+T_OPT_METHODS = ("simplex", "cobyla", "powell")
+S_MITER = "maxiter"
+S_TOL = "tolerance"
+S_DISP = "disp"
+S_RESP_FCN = "ResponseFunction"
+S_RESP_DESC = "descriptor"
+S_AUX_FILE = "AuxiliaryFile"
 S_METHOD = "method"
+S_CORR = "correlation"
+S_SEED = "seed"
 
 
 class UserInputError(Exception):
@@ -139,11 +154,10 @@ def pOptimization(optlmn):
 
     # Set up options for permutation
     options = OptionHolder()
-    options.addopt(S_METHOD, "simplex", dtype=str,
-                   choices=("simplex", "powell", "cobyla", "slsqp"))
-    options.addopt("maxiter", 25, dtype=int)
-    options.addopt("tolerance", 1.e-6, dtype=float)
-    options.addopt("disp", 0, dtype=int)
+    options.addopt(S_METHOD, T_OPT_METHODS[0], dtype=str, choices=T_OPT_METHODS)
+    options.addopt(S_MITER, 25, dtype=int)
+    options.addopt(S_TOL, 1.e-6, dtype=float)
+    options.addopt(S_DISP, 0, dtype=int)
 
     # Get control terms
     for i in range(optlmn.attributes.length):
@@ -198,9 +212,9 @@ def pOptimization(optlmn):
         p.append([var, ivalue, bounds])
 
     odict[S_METHOD] = options.getopt(S_METHOD)
-    odict[S_MITER] = options.getopt("maxiter")
-    odict[S_TOL] = options.getopt("tolerance")
-    odict[S_DISP] = options.getopt("disp")
+    odict[S_MITER] = options.getopt(S_MITER)
+    odict[S_TOL] = options.getopt(S_TOL)
+    odict[S_DISP] = options.getopt(S_DISP)
 
     odict[S_PARAMS] = p
     odict[S_AUX_FILE] = auxfiles
@@ -217,9 +231,8 @@ def pPermutation(permlmn):
 
     # Set up options for permutation
     options = OptionHolder()
-    options.addopt(S_METHOD, "zip", dtype=str,
-                   choices=("zip", "combine", "shotgun"))
-    options.addopt("seed", None, dtype=int)
+    options.addopt(S_METHOD, T_PERM_METHODS[0], dtype=str, choices=T_PERM_METHODS)
+    options.addopt(S_SEED, None, dtype=int)
     options.addopt(S_CORR, "none", dtype=str)
 
     # Get control terms
@@ -251,7 +264,7 @@ def pPermutation(permlmn):
 
     # read in permutated values
     p = []
-    for items in permlmn.getElementsByTagName("Permutate"):
+    for items in permlmn.getElementsByTagName(S_PERMUTATE):
         var = str(items.attributes.get("var").value)
         values = str(items.attributes.get("values").value)
         s = re.search(r"(?P<meth>\w+)\s*\(", values)
@@ -290,9 +303,9 @@ def pPermutation(permlmn):
 def pExtract(extlmns):
     extlmn = extlmns[-1]
     options = OptionHolder()
-    options.addopt("format", "ascii", dtype=str, choices=("ascii", "mathematica"))
-    options.addopt("step", 1, dtype=int)
-    options.addopt("ffmt", ".18f", dtype=str)
+    options.addopt(S_EXFORMAT, T_EXFORMATS[0], dtype=str, choices=T_EXFORMATS)
+    options.addopt(S_STEP, 1, dtype=int)
+    options.addopt(S_FFMT, ".18f", dtype=str)
 
     # Get control terms
     for i in range(extlmn.attributes.length):
@@ -314,8 +327,8 @@ def pExtract(extlmns):
     # support extracting paths
     paths = extlmn.getElementsByTagName("Path")
 
-    return (options.getopt("format"), options.getopt("step"),
-            options.getopt("ffmt"), variables, paths)
+    return (options.getopt(S_EXFORMAT), options.getopt(S_STEP),
+            options.getopt(S_FFMT), variables, paths)
 
 
 def physics_namespace(physlmn, functions):
@@ -328,8 +341,6 @@ def physics_namespace(physlmn, functions):
     ns = Namespace()
 
     ns.stype = S_PHYSICS
-
-    ns.ttermination = simblk.get(S_TTERM)
 
     ns.mtlmdl = simblk[S_MATERIAL][0]
     ns.mtlprops = simblk[S_MATERIAL][1]
@@ -381,21 +392,20 @@ def pPhysics(physlmn, functions):
 
     # Get the driver first
     options = OptionHolder()
-    options.addopt("driver", "solid", dtype=str, choices=("solid", "eos"))
-    options.addopt("termination_time", None, dtype=float)
+    options.addopt(S_DRIVER, T_DRIVER_TYPES[0], dtype=str, choices=T_DRIVER_TYPES)
+    options.addopt(S_TTERM, None, dtype=float)
     for i in range(physlmn.attributes.length):
         try:
             options.setopt(*xmltools.get_name_value(physlmn.attributes.item(i)))
         except OptionHolderError, e:
             fatal_inp_error(e.message)
-    driver = options.getopt("driver")
+    driver = options.getopt(S_DRIVER)
     if not isdriver(driver):
         fatal_inp_error("{0}: unrecognized driver".format(driver))
         return
 
     driver = create_driver(driver)
     simblk[S_DRIVER] = driver
-    simblk[S_TTERM] = options.getopt("termination_time")
 
     # parse the sub blocks
     subblks = ((S_MATERIAL, 1), (S_EXTRACT, 0))
@@ -419,7 +429,8 @@ def pPhysics(physlmn, functions):
         fatal_inp_error("Physics: must specify at least one surface or path")
         return
 
-    driver.parse_and_register_paths_and_surfaces(pathlmns, surflmns, functions)
+    driver.parse_and_register_paths_and_surfaces(pathlmns, surflmns, functions,
+                                                 options.getopt(S_TTERM))
 
     return simblk
 
@@ -429,13 +440,13 @@ def pMaterial(mtllmns):
 
     """
     mtllmn = mtllmns[-1]
-    model = mtllmn.attributes.get("model")
+    model = mtllmn.attributes.get(S_MODEL)
     if model is None:
-        fatal_inp_error("Material: model not found")
+        fatal_inp_error("expeced 'model' Material attribute")
         return
     model = str(model.value.lower())
 
-    density = mtllmn.attributes.get("density")
+    density = mtllmn.attributes.get(S_RHO)
     if density is None:
         density = 1.
     else:
