@@ -129,14 +129,20 @@ class SolidDriver(Driver):
             if nv:
                 sigdum[0, v] = sigspec[1]
 
-            tleg[1], nsteps, control, c, ndumps, ef = leg
+            tleg[1] = leg[0]
+            nsteps = leg[1]
+            control = leg[2:7]
+            c = leg[8:13]
+            ndumps = leg[14]
+            ef = leg[15:]
+
             delt = tleg[1] - tleg[0]
             if delt == 0.:
                 continue
 
             # ndumps_per_leg is the number of times to write to the output
             # file in this leg
-            dump_interval = max(1, int(float(nsteps / ndumps)))
+            dump_interval = max(1, int(nsteps / ndumps))
             lsn = len(str(nsteps))
             consfmt = ("leg {{0:{0}d}}, step {{1:{1}d}}, time {{2:.4E}}, "
                        "dt {{3:.4E}}".format(lsl, lsn))
@@ -187,7 +193,7 @@ class SolidDriver(Driver):
                     depsdt[v] -= lstsq(Jsub, (sigspec[1] - sigspec[0]) / delt)[0]
 
             # process this leg
-            for n in range(nsteps):
+            for n in range(int(nsteps)):
 
                 # increment time
                 t += dt
@@ -784,14 +790,12 @@ class SolidDriver(Driver):
                     fatal_inp_error("Mixed initial state not allowed")
 
             # Replace leg with modfied values
-            path[ileg][0] = termination_time
-            path[ileg][1] = num_steps
-            path[ileg][2] = control
-            path[ileg][3] = Cij
-            path[ileg].append(ndumps)
-
-            # legs[ileg].append(Rij)
-            path[ileg].append(efcomp)
+            leg = [termination_time, num_steps]
+            leg.extend(control)
+            leg.extend(Cij)
+            leg.append(ndumps)
+            leg.extend(efcomp)
+            path[ileg] = leg
 
             if termination_time > tterm:
                 del path[ileg+1:]
@@ -799,7 +803,7 @@ class SolidDriver(Driver):
 
             continue
 
-        return path
+        return np.array(path)
 
 def mybool(a):
     if str(a).lower().strip() in ("false", "no", "0", "none"):

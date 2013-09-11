@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 import logging
 
-from __config__ import cfg
+from __config__ import cfg, __version__
 import exowriter as exo
 
 
@@ -174,12 +174,13 @@ class ExoManager(object):
         day = now.strftime("%m/%d/%y")
         hour = now.strftime("%H:%M:%S")
         num_qa_rec = 1
-        qa_title = "Wasatch finite element simulation"
+        vers = ".".join(str(x) for x in __version__)
+        qa_title = "GMD {0} simulation".format(vers)
         qa_record = np.array([[qa_title, runid, day, hour]])
         self.exofile.put_qa(num_qa_rec, qa_record)
 
         # information records
-        mtlname, mtlparams, dname, dpaths, dsurfaces, extract = info
+        self.exofile.put_info(self.format_ex_info(info))
 
         # write results variables parameters and names
         glob_var_names = glob_var_data[0]
@@ -285,6 +286,52 @@ class ExoManager(object):
         self.exofile.update()
 
         return
+
+    @staticmethod
+    def format_ex_info(info):
+        from drivers.solid_d import K_PRDEF
+        from drivers.eos_d import K_RTSPC
+        mtlname, mtlparams, dname, dpaths, dsurfaces, extract = info
+        info = []
+
+        info.append("MATERIAL")
+        info.append(mtlname)
+        info.append("MATERIAL PARAMETERS")
+        info.append(len(mtlparams))
+        info.extend(mtlparams)
+
+        info.append("DRIVER")
+        info.append(dname)
+
+        info.append("PATHS")
+        if not dpaths:
+            info.append(0)
+        else:
+            info.append(len(dpaths[K_PRDEF]))
+            info.append(len(dpaths[K_PRDEF][0]))
+            [info.extend(p) for p in dpaths[K_PRDEF]]
+
+        info.append("SURFACES")
+        if not dsurfaces:
+            info.append(0)
+        else:
+            info.append(len(dsurfaces[K_RTSPC]))
+            info.append(len(dsurfaces[K_RTSPC][0]))
+            [info.extend(s) for s in dsurfaces[K_RTSPC]]
+
+        info.append("EXTRACT")
+        ofmt, step, ffmt, variables, paths = extract[:5]
+        info.append(ofmt)
+        info.append(step)
+        info.append(ffmt)
+        info.append("EXTRACT VARIABLES")
+        info.append(len(variables))
+        info.extend(variables)
+        info.append("EXTRACT PATHS")
+        info.append(len(paths))
+        info.extend([p.toxml() for p in paths])
+
+        return [str(x) for x in info]
 
     def finish(self):
         # udpate and close the file
