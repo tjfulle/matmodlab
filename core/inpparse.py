@@ -5,6 +5,7 @@ import math
 import numpy as np
 import xml.dom.minidom as xdom
 
+
 if __name__ == "__main__":
     D = os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.join(D, "../"))
@@ -15,6 +16,7 @@ import utils.tensor as tensor
 import utils.xmltools as xmltools
 from core.io import fatal_inp_error, input_errors
 from core.respfcn import check_response_function_element
+from core.restart import read_exrestart_info
 from drivers.driver import isdriver, create_driver
 from utils.namespace import Namespace
 from utils.fcnbldr import build_lambda, build_interpolating_function
@@ -66,7 +68,7 @@ class UserInputError(Exception):
         raise SystemExit(2)
 
 
-def parse_input(filepath):
+def parse_xml_input(filepath):
     """Parse input file contents
 
     Parameters
@@ -138,6 +140,32 @@ def parse_input(filepath):
 
     if input_errors():
         raise UserInputError("stopping due to previous Errors")
+
+    return ns
+
+
+def parse_exo_input(filepath, time=-1):
+    """Parse the exodus output file for simulation definitions and run to
+       completion
+
+    """
+    # read in the simulation definition
+    ex_info = read_exrestart_info(filepath, time=time)
+    (mtlmdl, mtlprops, driver, kappa, extract, leg_num,
+     time, glob_data, elem_data) = ex_info
+
+    ns = Namespace()
+    ns.stype = S_PHYSICS
+    ns.mtlmdl = mtlmdl
+    ns.mtlprops = mtlprops
+    ns.density = 1.
+    ns.extract = extract
+    ns.driver = driver
+    ns.leg_num = leg_num
+    ns.time = time
+    ns.glob_data = glob_data
+    ns.elem_data = elem_data
+    ns.kappa = kappa
 
     return ns
 

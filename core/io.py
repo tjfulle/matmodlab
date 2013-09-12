@@ -4,8 +4,10 @@ import numpy as np
 import datetime
 import logging
 
+from exowriter import ExodusIIWriter
+
 from __config__ import cfg, __version__
-import exowriter as exo
+from core.restart import format_exrestart_info
 
 
 INP_ERRORS = 0
@@ -36,7 +38,7 @@ def input_errors():
     return INP_ERRORS
 
 
-def setup_logger(runid, verbosity, d=None):
+def setup_logger(runid, verbosity, d=None, mode="w"):
     global LOGGER
     if LOGGER is not None:
         raise Error1("Logger already setup")
@@ -49,7 +51,7 @@ def setup_logger(runid, verbosity, d=None):
 
     logging.basicConfig(level=logging.DEBUG,
         format="gmd: %(asctime)s %(levelname)s: %(message)s",
-        datefmt="%b %d %Y, %H:%M:%S", filename=logfile, filemode='w')
+        datefmt="%b %d %Y, %H:%M:%S", filename=logfile, filemode=mode)
 
     # console logging
     ch = logging.StreamHandler()
@@ -102,72 +104,66 @@ class ExoManager(object):
     """The main IO manager
 
     """
-    def __init__(self, runid, num_dim, coords, conn, glob_var_data,
-                 elem_blks, all_element_data, title, info):
+    time_step = 0
+    num_dim = 3
+    num_nodes = 8
+    num_elem = 1
+    coords = np.array([[-1, -1, -1], [ 1, -1, -1],
+                       [ 1,  1, -1], [-1,  1, -1],
+                       [-1, -1,  1], [ 1, -1,  1],
+                       [ 1,  1,  1], [-1,  1,  1]],
+                      dtype=np.float64) * .5
+
+    def __init__(self, runid, filepath=None):
         """Instantiate a IOManager object
 
         runid : str
             The simulation ID
 
-        num_dim : int
-            Number of spatial dimensions of problem
+        """
+        self.runid = runid
+        if filepath is not None:
+            self.exofile = ExodusIIWriter.from_existing(filepath)
+            self.filepath = filepath
+        else:
+            self.exofile = ExodusIIWriter.new_from_runid(runid)
+            self.filepath = self.exofile.filename
 
-        coords : array_like, (num_node, 3)
-            Coordinates of the num_nodeth node
-
-        conn : array_like
-            Connectivity array
-
-        elem_blks : array_like, (num_elem_blk, 5)
-            Element block information
-            elem_blks[i] -> [ID, [ELS IN BLK], ETYPE, NNODES, VARS]
-
-        all_element_data : list
-            Initial data for each element
-            all_element_data[i]:
-              0 -> element block id
-              1 -> number of elements in block
-              2 -> element block data
-                   element block data is of the form:
-                   data[k] -> average element data for kth element
+    def setup_new(self, title, glob_var_names, elem_var_names, info):
+        """Set up the exodus file
 
         """
-        # create new file
-        self.runid = runid
-        self.num_dim = num_dim
-        self.exofile = exo.ExodusIIWriter.new_from_runid(runid)
-
-        # initialize file with parameters
-        self.elem_blks = elem_blks
-        self.num_nodes = len(coords)
-        self.num_elem = len(conn)
-        self.num_elem_blk = len(self.elem_blks)
+        # "mesh" information
+        conn = np.array([range(8)], dtype=np.int)
+        num_elem_blk = 1
         num_node_sets = 0
         num_side_sets = 0
-        title = title.format(str(self.num_dim) + "D")
 
-        self.exofile.put_init(title, self.num_dim, self.num_nodes, self.num_elem,
-                              self.num_elem_blk, num_node_sets, num_side_sets)
+        # initialize file with parameters
+        title = title.format(str(self.num_dim) + "D")
+        self.exofile.put_init(title, self.num_dim, self.num_nodes,
+                              self.num_elem, num_elem_blk, num_node_sets,
+                              num_side_sets)
 
         # write nodal coordinates values and names to database
         coord_names = np.array(["COORDX", "COORDY", "COORDZ"])
         self.exofile.put_coord_names(coord_names)
-        self.exofile.put_coord(coords[:, 0], coords[:, 1], coords[:, 2])
+        self.exofile.put_coord(self.coords[:, 0], self.coords[:, 1],
+                               self.coords[:, 2])
 
         # write element block parameters
-        for item in self.elem_blks:
-            (elem_blk_id, elem_blk_els, elem_type,
-             num_nodes_per_elem, ele_var_names) = item
-            # for now, we do not use attributes
-            num_attr = 0
-            num_elem_this_blk = len(elem_blk_els)
-            self.exofile.put_elem_block(elem_blk_id, elem_type, num_elem_this_blk,
-                                        num_nodes_per_elem, num_attr)
+        num_attr = 0 # for now, we do not use attributes
+        elem_blk_id = 1
+        elem_blk_els = [0]
+        num_elem_this_blk = 1
+        elem_type = "HEX"
+        num_nodes_per_elem = self.num_nodes
+        self.exofile.put_elem_block(elem_blk_id, elem_type, num_elem_this_blk,
+                                    num_nodes_per_elem, num_attr)
 
-            # write element connectivity for each element block
-            blk_conn = conn[elem_blk_els][:, :num_nodes_per_elem]
-            self.exofile.put_elem_conn(elem_blk_id, blk_conn)
-            continue
+        # write element connectivity for each element block
+        blk_conn = conn[elem_blk_els][:, :num_nodes_per_elem]
+        self.exofile.put_elem_conn(elem_blk_id, blk_conn)
 
         # write QA records
         now = datetime.datetime.now()
@@ -176,67 +172,49 @@ class ExoManager(object):
         num_qa_rec = 1
         vers = ".".join(str(x) for x in __version__)
         qa_title = "GMD {0} simulation".format(vers)
-        qa_record = np.array([[qa_title, runid, day, hour]])
+        qa_record = np.array([[qa_title, self.runid, day, hour]])
         self.exofile.put_qa(num_qa_rec, qa_record)
 
         # information records
-        self.exofile.put_info(self.format_ex_info(info))
+        self.exofile.put_info(format_exrestart_info(*info))
 
         # write results variables parameters and names
-        glob_var_names = glob_var_data[0]
-        self.num_glob_vars = len(glob_var_names)
-        self.exofile.put_var_param("g", self.num_glob_vars)
-        self.exofile.put_var_names("g", self.num_glob_vars, glob_var_names)
+        num_glob_vars = len(glob_var_names)
+        self.exofile.put_var_param("g", num_glob_vars)
+        self.exofile.put_var_names("g", num_glob_vars, glob_var_names)
 
         nod_var_names = ["DISPLX", "DISPLY", "DISPLZ"]
-        if self.num_dim == 3:
-            nod_var_names.append("DISPLZ")
-        self.num_nod_vars = len(nod_var_names)
-        self.exofile.put_var_param("n", self.num_nod_vars)
-        self.exofile.put_var_names("n", self.num_nod_vars, nod_var_names)
+        num_nod_vars = len(nod_var_names)
+        self.exofile.put_var_param("n", num_nod_vars)
+        self.exofile.put_var_names("n", num_nod_vars, nod_var_names)
 
-        self.num_elem_vars = len(ele_var_names)
-        self.exofile.put_var_param("e", self.num_elem_vars)
-        self.exofile.put_var_names("e", self.num_elem_vars, ele_var_names)
+        num_elem_vars = len(elem_var_names)
+        self.exofile.put_var_param("e", num_elem_vars)
+        self.exofile.put_var_names("e", num_elem_vars, elem_var_names)
 
         # write element variable truth table
-        truth_tab = np.empty((self.num_elem_blk, self.num_elem_vars), dtype=np.int)
-        for i in range(self.num_elem_blk):
-            for j in range(self.num_elem_vars):
+        truth_tab = np.empty((num_elem_blk, num_elem_vars), dtype=np.int)
+        for i in range(num_elem_blk):
+            for j in range(num_elem_vars):
                 truth_tab[i, j] = 1
-        self.exofile.put_elem_var_tab(self.num_elem_blk, self.num_elem_vars,
-                                      truth_tab)
-
-        # write first step
-        time_val = 0.
-        self.time_step = 0
-        self.exofile.put_time(self.time_step, time_val)
-
-        # global values
-        glob_var_vals = glob_var_data[1]
-        self.exofile.put_glob_vars(self.time_step, self.num_glob_vars,
-                                   glob_var_vals)
-
-        # nodal values
-        nodal_var_vals = np.zeros(self.num_nodes)
-        for k in range(self.num_nod_vars):
-            self.exofile.put_nodal_var(self.time_step, k, self.num_nodes,
-                                       nodal_var_vals)
-            continue
-
-        # element values
-        for (elem_blk_id, num_elem_this_blk, elem_blk_data) in all_element_data:
-            for k in range(self.num_elem_vars):
-                self.exofile.put_elem_var(
-                    self.time_step, k, elem_blk_id,
-                    num_elem_this_blk, elem_blk_data.T[k])
-            continue
+        self.exofile.put_elem_var_tab(num_elem_blk, num_elem_vars, truth_tab)
 
         self.exofile.update()
-        self.time_step += 1
         pass
 
-    def write_data(self, time, glob_var_vals, all_element_data, u):
+    def setup_existing(self, time, time_step, glob_var_vals, elem_var_vals):
+        """Initialize some setup
+
+        """
+        self.time_step = time_step
+
+    def finish(self):
+        # udpate and close the file
+        self.exofile.update()
+        self.exofile.close()
+        return
+
+    def write_data(self, time, glob_var_vals, elem_var_vals, u):
         """Dump information from current time step to results file
 
         Parameters
@@ -247,38 +225,36 @@ class ExoManager(object):
         dt : float
             Time step
 
-        all_element_data : list
-            Data for each element
-            all_element_data[i]:
-              0 -> element block id
-              1 -> number of elements in block
-              2 -> element block data
-                   element block data is of the form:
-                   data[k] -> average element data for kth element
+        glob_var_vals : ndarray
+           global variable values
+
+        elem_var_vals : ndarray
+           global variable values
 
         u : array_like
             Nodal displacements
 
         """
-
         # write time value
         self.exofile.put_time(self.time_step, time)
 
         # write global variables
-        assert len(glob_var_vals) == self.num_glob_vars
-        self.exofile.put_glob_vars(self.time_step, self.num_glob_vars,
-                                   glob_var_vals)
+        num_glob_vars = len(glob_var_vals)
+        self.exofile.put_glob_vars(self.time_step, num_glob_vars, glob_var_vals)
 
         # write nodal variables
-        for k in range(self.num_nod_vars):
+        num_nod_vars = 3
+        for k in range(num_nod_vars):
             self.exofile.put_nodal_var(self.time_step, k, self.num_nodes,
                                        u[k::self.num_dim])
 
         # write element variables
-        for (elem_blk_id, num_elem_this_blk, elem_blk_data) in all_element_data:
-            for k in range(self.num_elem_vars):
-                self.exofile.put_elem_var(self.time_step, k, elem_blk_id,
-                                          num_elem_this_blk, elem_blk_data.T[k])
+        elem_blk_id = 1
+        num_elem_this_blk = 1
+        num_elem_vars = len(elem_var_vals)
+        for k in range(num_elem_vars):
+            self.exofile.put_elem_var(self.time_step, k, elem_blk_id,
+                                      num_elem_this_blk, elem_var_vals.T[k])
             continue
 
         # udpate and close the file
@@ -287,57 +263,14 @@ class ExoManager(object):
 
         return
 
-    @staticmethod
-    def format_ex_info(info):
-        from drivers.solid_d import K_PRDEF
-        from drivers.eos_d import K_RTSPC
-        mtlname, mtlparams, dname, dpaths, dsurfaces, extract = info
-        info = []
+    @classmethod
+    def from_existing(cls, runid, filepath, time_step):
+        exof = cls(runid, filepath=filepath)
+        exof.time_step = time_step
+        return exof
 
-        info.append("MATERIAL")
-        info.append(mtlname)
-        info.append("MATERIAL PARAMETERS")
-        info.append(len(mtlparams))
-        info.extend(mtlparams)
-
-        info.append("DRIVER")
-        info.append(dname)
-
-        info.append("PATHS")
-        if not dpaths:
-            info.append(0)
-        else:
-            info.append(len(dpaths[K_PRDEF]))
-            info.append(len(dpaths[K_PRDEF][0]))
-            [info.extend(p) for p in dpaths[K_PRDEF]]
-
-        info.append("SURFACES")
-        if not dsurfaces:
-            info.append(0)
-        else:
-            info.append(len(dsurfaces[K_RTSPC]))
-            info.append(len(dsurfaces[K_RTSPC][0]))
-            [info.extend(s) for s in dsurfaces[K_RTSPC]]
-
-        info.append("EXTRACT")
-        if not extract:
-            info.append(0)
-        else:
-            ofmt, step, ffmt, variables, paths = extract[:5]
-            info.append(ofmt)
-            info.append(step)
-            info.append(ffmt)
-            info.append("EXTRACT VARIABLES")
-            info.append(len(variables))
-            info.extend(variables)
-            info.append("EXTRACT PATHS")
-            info.append(len(paths))
-            info.extend([p.toxml() for p in paths])
-
-        return [str(x) for x in info]
-
-    def finish(self):
-        # udpate and close the file
-        self.exofile.update()
-        self.exofile.close()
-        return
+    @classmethod
+    def new_from_runid(cls, runid, title, glob_var_names, elem_var_names, info):
+        exof = cls(runid)
+        exof.setup_new(title, glob_var_names, elem_var_names, info)
+        return exof

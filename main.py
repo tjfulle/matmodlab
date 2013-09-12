@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import random
 import argparse
@@ -31,6 +32,8 @@ def main(argv=None):
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("-B", metavar="material",
         help="Build material model before running [default: %(default)s]")
+    parser.add_argument("--restart", const=-1, default=False, nargs="?",
+        help=argparse.SUPPRESS)
     parser.add_argument("sources", nargs="*", help="Source file paths")
     args = parser.parse_args(argv)
     cfg.debug = args.dbg
@@ -54,28 +57,39 @@ def main(argv=None):
 
     output = []
     for (i, source) in enumerate(args.sources):
-        # parse the user input
-        if not os.path.isfile(source):
-            source += ".xml"
-            if not os.path.isfile(source):
-                logerr("{0}: no such file".format(args.source))
-                continue
 
-        basename = os.path.basename(source).rstrip(".preprocessed")
-        if not basename.endswith(".xml"):
-            logerr("*** gmd: expected .xml file extension")
-            continue
+        # parse the user input
+        basename = re.sub(".preprocessed$", "", os.path.basename(source))
         runid = os.path.splitext(basename)[0]
-        mm_input = inp.parse_input(source)
+
+        if args.restart:
+            source = runid + ".exo"
+            mm_input = inp.parse_exo_input(source, time=float(args.restart))
+            restart_info = [mm_input.kappa, mm_input.leg_num, mm_input.time,
+                            mm_input.glob_data, mm_input.elem_data]
+
+        else:
+            if not os.path.isfile(source):
+                source += ".xml"
+                if not os.path.isfile(source):
+                    logerr("{0}: no such file".format(args.source))
+                    continue
+
+            if os.path.splitext(basename)[1] != ".xml":
+                logerr("*** gmd: expected .xml file extension")
+                continue
+            mm_input = inp.parse_xml_input(source)
+            restart_info = None
 
         if args.v:
             sys.stdout.write(SPLASH)
             sys.stdout.flush()
 
         if mm_input.stype == inp.S_PHYSICS:
-            opts = (mm_input.density,)
+            opts = (mm_input.density, )
             model = PhysicsHandler(runid, args.v, mm_input.driver, mm_input.mtlmdl,
-                                   mm_input.mtlprops, mm_input.extract, opts)
+                                   mm_input.mtlprops, mm_input.extract,
+                                   restart_info, opts)
 
         elif mm_input.stype == inp.S_PERMUTATION:
             opts = (args.j,)

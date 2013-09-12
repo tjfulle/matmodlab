@@ -32,8 +32,8 @@ class SolidDriver(Driver):
 
         """
         self.runid = runid
-        self.mtlmdl = create_material(material[0])
         self.density = opts[0]
+        setup_restart = opts[1]
 
         # register variables
         self.register_glob_variable("TIME_STEP")
@@ -50,7 +50,8 @@ class SolidDriver(Driver):
         self.register_variable("PRESSURE", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
 
-        # Setup
+        # Setup material
+        self.mtlmdl = create_material(material[0])
         self.mtlmdl.setup(material[1])
 
         # register material variables
@@ -65,23 +66,37 @@ class SolidDriver(Driver):
         # allocate storage
         self.allocd()
 
-        # initialize nonzero data
-        self._data[self.defgrad_slice] = I9
-        self._data[self.density_slice] = self.density
+        if setup_restart:
+            kappa, start_leg, time, glob_data, elem_data = setup_restart
+            self._glob_data[:] = glob_data
+            self._data[:] = elem_data
+            self.start_leg = start_leg
+            self.step_num = glob_data[1]
+            self.time = time
+            self.kappa = kappa
 
-        # initialize material
-        sig = np.zeros(6)
-        xtra = self.mtlmdl.initial_state()
-        args = (I9, np.zeros(3), 0.)
+        else:
+            # initialize nonzero data
+            self._data[self.defgrad_slice] = I9
+            self._data[self.density_slice] = self.density
 
-        sig, xtra = self.mtlmdl.call_material_zero_state(sig, xtra, *args)
+            # initialize material
+            sig = np.zeros(6)
+            xtra = self.mtlmdl.initial_state()
+            args = (I9, np.zeros(3), 0.)
 
-        # -------------------------- quantities derived from final state
-        pres = -np.sum(sig[:3]) / 3.
+            sig, xtra = self.mtlmdl.call_material_zero_state(sig, xtra, *args)
 
-        xtra = self.mtlmdl.adjust_initial_state(xtra)
+            # -------------------------- quantities derived from final state
+            pres = -np.sum(sig[:3]) / 3.
 
-        self.setvars(stress=sig, pressure=pres, xtra=xtra)
+            xtra = self.mtlmdl.adjust_initial_state(xtra)
+
+            self.setvars(stress=sig, pressure=pres, xtra=xtra)
+
+            self.start_leg = 0
+            self.step_num = 0
+            self.time = 0.
 
         return
 
@@ -95,11 +110,11 @@ class SolidDriver(Driver):
         -------
 
         """
-        legs = self.paths[K_PRDEF]
+        legs = self.paths[K_PRDEF][self.start_leg:]
         kappa = self.kappa
 
         # initial leg
-        glob_step_num = 0
+        glob_step_num = self.step_num
         rho = self.elem_var_vals("DENSITY")[0]
         xtra = self.elem_var_vals("XTRA")
         sig = self.elem_var_vals("STRESS")
@@ -122,8 +137,8 @@ class SolidDriver(Driver):
         # Process each leg
         nlegs = len(legs)
         lsl = len(str(nlegs))
-        for leg_num, leg in enumerate(legs):
-
+        for (ileg, leg) in enumerate(legs):
+            leg_num = self.start_leg + ileg
             tleg[0] = tleg[1]
             sigdum[0] = sig[:]
             if nv:
@@ -197,6 +212,7 @@ class SolidDriver(Driver):
 
                 # increment time
                 t += dt
+                self.time = t
 
                 # interpolate values to the target values for this step
                 a1 = float(nsteps - (n + 1)) / nsteps
@@ -282,9 +298,16 @@ class SolidDriver(Driver):
             return
 
         path, cls.kappa, cls.proportional = items
-        cls.paths = {K_PRDEF: path}
+        cls.register_paths_and_surfaces(paths={K_PRDEF: path})
 
         return
+
+    @classmethod
+    def register_paths_and_surfaces(cls, **kwargs):
+        """Register the formatted paths to the class
+
+        """
+        cls.paths = kwargs["paths"]
 
     @classmethod
     def pPrdef(cls, pathlmn, functions, tterm):

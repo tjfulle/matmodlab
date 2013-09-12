@@ -15,6 +15,7 @@ class Driver(object):
     name = None
     paths = None
     surfaces = None
+    kappa = 0
     def __init__(self):
         self._elem_variables = []
         self._glob_variables = []
