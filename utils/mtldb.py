@@ -45,8 +45,11 @@ def read_material_params_from_db(matname, mdlname, dbfile):
     mtlprops = material.getElementsByTagName("MaterialProperties")[0]
     for prop in mtlprops.getElementsByTagName("Property"):
         name = prop.getAttribute("name")
-        val = float(prop.firstChild.data)
-        props[name] = val
+        val = prop.getAttribute("value")
+        if not val:
+            # old way
+            val = prop.firstChild.data
+        props[name] = float(val)
         continue
 
     # get the mapping from the material parameter to property

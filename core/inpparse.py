@@ -44,6 +44,7 @@ S_PATH = "Path"
 S_SURFACE = "Surface"
 
 S_HREF = "href"
+S_MTL = "material"
 
 S_PERMUTATION = "Permutation"
 S_PERMUTATE = "Permutate"
@@ -501,6 +502,12 @@ def parse_mtl_params(mtllmn, pdict, model):
             continue
         name = node.nodeName
         if name.lower() == "matlabel":
+            for i in range(node.attributes.length):
+                attr = node.attributes.item(i)
+                if attr.name not in (S_MTL, S_HREF):
+                    fatal_inp_error("{0}: unrecognized Matlabel "
+                                    "attribute".format(attr.name))
+                    continue
             mat = node.getAttribute("material")
             if not mat:
                 fatal_inp_error("Matlabel: expected material attribute")
