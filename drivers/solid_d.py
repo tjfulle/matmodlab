@@ -5,6 +5,7 @@ import numpy as np
 from numpy.linalg import solve, lstsq
 
 from __config__ import cfg
+from core.inpkws import *
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from drivers.driver import Driver
@@ -15,9 +16,6 @@ from core.io import fatal_inp_error, input_errors, log_message
 from materials.material import create_material
 
 np.set_printoptions(precision=4)
-
-K_PRDEF = 0
-S_PRDEF = "prdef"
 
 class SolidDriver(Driver):
     name = "solid"
@@ -316,26 +314,26 @@ class SolidDriver(Driver):
         """
         # Set up options for Path
         options = OptionHolder()
-        options.addopt("kappa", 0.)
-        options.addopt("amplitude", 1.)
-        options.addopt("ratfac", 1.)
-        options.addopt("nfac", 1.)
-        options.addopt("tstar", 1., test=lambda x: x > 0.)
-        options.addopt("estar", 1.)
-        options.addopt("sstar", 1.)
-        options.addopt("fstar", 1.)
-        options.addopt("efstar", 1.)
-        options.addopt("dstar", 1.)
-        options.addopt("href", None, dtype=str)
-        options.addopt("format", "default", dtype=str,
-                       choices=("default", "table", "fcnspec"))
-        options.addopt("proportional", 0, dtype=mybool)
-        options.addopt("ndumps", "20", dtype=str)
+        options.addopt(S_KAPPA, 0.)
+        options.addopt(S_AMPLITUDE, 1.)
+        options.addopt(S_RATFAC, 1.)
+        options.addopt(S_NFAC, 1.)
+        options.addopt(S_TSTAR, 1., test=lambda x: x > 0.)
+        options.addopt(S_ESTAR, 1.)
+        options.addopt(S_SSTAR, 1.)
+        options.addopt(S_FSTAR, 1.)
+        options.addopt(S_EFSTAR, 1.)
+        options.addopt(S_DSTAR, 1.)
+        options.addopt(S_HREF, None, dtype=str)
+        options.addopt(S_FORMAT, S_DEFAULT, dtype=str,
+                       choices=(S_DEFAULT, S_TBL, "fcnspec"))
+        options.addopt(S_PROPORTIONAL, 0, dtype=mybool)
+        options.addopt(S_NDUMPS, "20", dtype=str)
 
         # the following options are for table formatted Path
-        options.addopt("cols", None, dtype=str)
-        options.addopt("tfmt", "time", dtype=str, choices=("time", "dt"))
-        options.addopt("cfmt", "222222", dtype=str)
+        options.addopt(S_COLS, None, dtype=str)
+        options.addopt(S_TFMT, S_TIME, dtype=str, choices=(S_TIME, S_DT))
+        options.addopt(S_CFMT, "222222", dtype=str)
 
         # Get control terms
         for i in range(pathlmn.attributes.length):
@@ -346,7 +344,7 @@ class SolidDriver(Driver):
                 continue
 
         # Read in the actual Path - splitting them in to lists
-        href = options.getopt("href")
+        href = options.getopt(S_HREF)
         if href:
             if not os.path.isfile(href):
                 if not os.path.isfile(os.path.join(cfg.I, href)):
@@ -365,19 +363,19 @@ class SolidDriver(Driver):
         lines = [xmltools.str2list(line, dtype=str) for line in lines]
 
         # parse the Path depending on type
-        pformat = options.getopt("format")
-        if pformat == "default":
+        pformat = options.getopt(S_FORMAT)
+        if pformat == S_DEFAULT:
             path = cls.parse_path_default(lines)
 
-        elif pformat == "table":
-            path = cls.parse_path_table(lines, options.getopt("tfmt"),
-                                        options.getopt("cols"),
-                                        options.getopt("cfmt"))
+        elif pformat == S_TBL:
+            path = cls.parse_path_table(lines, options.getopt(S_TFMT),
+                                        options.getopt(S_COLS),
+                                        options.getopt(S_CFMT))
 
         elif pformat == "fcnspec":
             path = cls.parse_path_cijfcn(lines, functions,
-                                         options.getopt("nfac"),
-                                         options.getopt("cfmt"))
+                                         options.getopt(S_NFAC),
+                                         options.getopt(S_CFMT))
             options.setopt("nfac", 1)
 
         else:
@@ -389,8 +387,8 @@ class SolidDriver(Driver):
 
         # store relevant info to the class
         path = cls.format_path(path, options, tterm)
-        kappa = options.getopt("kappa")
-        proportional = options.getopt("proportional")
+        kappa = options.getopt(S_KAPPA)
+        proportional = options.getopt(S_PROPORTIONAL)
 
         return path, kappa, proportional
 
@@ -489,7 +487,7 @@ class SolidDriver(Driver):
                                 "{0}".format(leg_num))
                 continue
 
-            if tfmt == "dt":
+            if tfmt == S_DT:
                 termination_time += line[0]
             else:
                 termination_time = line[0]
@@ -672,28 +670,28 @@ class SolidDriver(Driver):
         """
         # stress control if any of the control types are 3 or 4
         stress_control = any(c in (3, 4) for leg in path for c in leg[2])
-        kappa = options.getopt("kappa")
+        kappa = options.getopt(S_KAPPA)
         if stress_control and kappa != 0.:
             fatal_inp_error("kappa must be 0 with stress control option")
 
         # From these formulas, note that AMPL may be used to increase or
         # decrease the peak strain without changing the strain rate. ratfac is
         # the multiplier on strain rate and stress rate.
-        amplitude = options.getopt("amplitude")
-        ratfac = options.getopt("ratfac")
-        nfac = options.getopt("nfac")
-        ndumps = options.getopt("ndumps")
+        amplitude = options.getopt(S_AMPLITUDE)
+        ratfac = options.getopt(S_RATFAC)
+        nfac = options.getopt(S_NFAC)
+        ndumps = options.getopt(S_NDUMPS)
         if ndumps == "all":
             ndumps = 100000000
         ndumps= int(ndumps)
 
         # factors to be applied to deformation types
-        efac = amplitude * options.getopt("estar")
-        tfac = abs(amplitude) * options.getopt("tstar") / ratfac
-        sfac = amplitude * options.getopt("sstar")
-        ffac = amplitude * options.getopt("fstar")
-        effac = amplitude * options.getopt("efstar")
-        dfac = amplitude * options.getopt("dstar")
+        efac = amplitude * options.getopt(S_ESTAR)
+        tfac = abs(amplitude) * options.getopt(S_TSTAR) / ratfac
+        sfac = amplitude * options.getopt(S_SSTAR)
+        ffac = amplitude * options.getopt(S_FSTAR)
+        effac = amplitude * options.getopt(S_EFSTAR)
+        dfac = amplitude * options.getopt(S_DSTAR)
 
         # for now unit tensor for rotation
         Rij = np.reshape(np.eye(3), (9,))

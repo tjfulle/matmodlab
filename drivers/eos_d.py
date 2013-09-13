@@ -6,6 +6,7 @@ import numpy as np
 from itertools import product
 
 from __config__ import cfg
+from core.inpkws import *
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from drivers.driver import Driver
@@ -16,8 +17,6 @@ from core.io import fatal_inp_error, input_errors, log_message, log_error
 from materials.material import create_material
 
 np.set_printoptions(precision=4)
-
-K_RTSPC = 0
 
 class EOSDriver(Driver):
     name = "eos"
@@ -151,24 +150,24 @@ class EOSDriver(Driver):
         """
         # Set up options for Path
         options = OptionHolder()
-        options.addopt("amplitude", 1.)
-        options.addopt("rstar", 1., test=lambda x: x > 0.)
-        options.addopt("tstar", 1., test=lambda x: x > 0.)
-        options.addopt("nfac", 1., test=lambda x: x > 0.)
-        options.addopt("href", None, dtype=str)
-        options.addopt("format", "default", dtype=str,
-                       choices=("default", "table"))
+        options.addopt(S_AMPLITUDE, 1.)
+        options.addopt(S_RSTAR, 1., test=lambda x: x > 0.)
+        options.addopt(S_TSTAR, 1., test=lambda x: x > 0.)
+        options.addopt(S_NFAC, 1., test=lambda x: x > 0.)
+        options.addopt(S_HREF, None, dtype=str)
+        options.addopt(S_FORMAT, S_DEFAULT, dtype=str,
+                       choices=(S_DEFAULT, S_TBL))
 
         # the following options are for table formatted Path
-        options.addopt("cols", "1:2", dtype=str)
-        options.addopt("cfmt", "12", dtype=str)
+        options.addopt(S_COLS, "1:2", dtype=str)
+        options.addopt(S_CFMT, "12", dtype=str)
 
         # Get control terms
         for i in range(surflmn.attributes.length):
             options.setopt(*xmltools.get_name_value(surflmn.attributes.item(i)))
 
         # Read in the actual Path - splitting them in to lists
-        href = options.getopt("href")
+        href = options.getopt(S_HREF)
         if href:
             if not os.path.isfile(href):
                 if not os.path.isfile(os.path.join(cfg.I, href)):
@@ -187,14 +186,14 @@ class EOSDriver(Driver):
         lines = [xmltools.str2list(line, dtype=str) for line in lines]
 
         # parse the Surface depending on type
-        pformat = options.getopt("format")
-        if pformat == "default":
+        pformat = options.getopt(S_FORMAT)
+        if pformat == S_DEFAULT:
             surface = cls.parse_surf_default(lines)
 
-        elif pformat == "table":
+        elif pformat == S_TBL:
             surface = cls.parse_surf_table(lines,
-                                           options.getopt("cols"),
-                                           options.getopt("cfmt"))
+                                           options.getopt(S_COLS),
+                                           options.getopt(S_CFMT))
 
         else:
             fatal_inp_error("Path: {0}: invalid format".format(pformat))
@@ -275,12 +274,12 @@ class EOSDriver(Driver):
         """Format the surface by applying multipliers
 
         """
-        amplitude = options.getopt("amplitude")
-        nfac = options.getopt("nfac")
+        amplitude = options.getopt(S_AMPLITUDE)
+        nfac = options.getopt(S_NFAC)
 
         # factors to be applied to deformation types
-        rfac = amplitude * options.getopt("rstar")
-        tfac = amplitude * options.getopt("tstar")
+        rfac = amplitude * options.getopt(S_RSTAR)
+        tfac = amplitude * options.getopt(S_TSTAR)
 
         # format each leg
         ndindex = lambda a, i: np.where(a == i)[0][0]
@@ -385,10 +384,10 @@ class EOSDriver(Driver):
         from utils.srfdump import extract_isotherm, extract_hugoniot
         # Set up options for Path
         options = OptionHolder()
-        options.addopt("type", None, dtype=str, choices=("hugoniot", "isotherm"))
-        options.addopt("increments", 100, dtype=int, test=lambda x: x > 0.)
-        options.addopt("density_range", None, dtype=str)
-        options.addopt("initial_temperature", None,
+        options.addopt(S_TYPE, None, dtype=str, choices=(S_HUGONIOT, S_ISOTHERM))
+        options.addopt(S_INCREMENTS, 100, dtype=int, test=lambda x: x > 0.)
+        options.addopt(S_DENSITY_RANGE, None, dtype=str)
+        options.addopt(S_INITIAL_TEMPERATURE, None,
                        dtype=float, test=lambda x: x > 0.)
 
         variables=["RHO", "TMPR", "ENRGY", "PRES", "DPDR", "DPDT", "DEDT", "DEDR"]
@@ -399,11 +398,11 @@ class EOSDriver(Driver):
             for i in range(pathlmn.attributes.length):
                 options.setopt(*xmltools.get_name_value(pathlmn.attributes.item(i)))
 
-            n = options.getopt("increments")
-            r = density_range(options.getopt("density_range"), n)
-            t = options.getopt("initial_temperature")
+            n = options.getopt(S_INCREMENTS)
+            r = density_range(options.getopt(S_DENSITY_RANGE), n)
+            t = options.getopt(S_INITIAL_TEMPERATURE)
 
-            if options.getopt("type") == "hugoniot":
+            if options.getopt(S_TYPE) == S_HUGONIOT:
                 log_message("extracting Hugoniot from EOS surface")
                 ep = extract_hugoniot(r, t, surf)
                 if ep is None:
@@ -412,7 +411,7 @@ class EOSDriver(Driver):
                 log_message("Hugoniot extracted from EOS surface")
                 ehug, phug, thug = ep
 
-            elif options.getopt("type") == "isotherm":
+            elif options.getopt(S_TYPE) == S_ISOTHERM:
                 log_message("extracting Isotherm from EOS surface")
                 ep = extract_isotherm(r, t, surf)
                 if ep is None:

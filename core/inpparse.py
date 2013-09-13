@@ -56,14 +56,14 @@ def parse_xml_input(filepath):
     # Parse the xml document, the root element is always "GMDSpec"
     doc = xdom.parseString(user_input)
     try:
-        gmdspec = doc.getElementsByTagName("GMDSpec")[0]
+        gmdspec = doc.getElementsByTagName(S_GMD)[0]
     except IndexError:
-        raise UserInputError("expected Root Element 'GMDSpec'")
+        raise UserInputError("expected Root Element '{0}'".format(S_GMD))
 
     # ------------------------------------------ get and parse blocks --- #
     gmdblks = {}
     #           (blkname, required, remove)
-    rootblks = ((S_OPT, 0, 1), (S_PERMUTATION, 0, 1), (S_PHYSICS, 1, 0))
+    rootblks = ((S_OPTIMIZATION, 0, 1), (S_PERMUTATION, 0, 1), (S_PHYSICS, 1, 0))
 
     # find all functions first
     functions = pFunctions(gmdspec.getElementsByTagName(S_FCN))
@@ -72,7 +72,7 @@ def parse_xml_input(filepath):
         rootlmns = gmdspec.getElementsByTagName(rootblk)
         if not rootlmns:
             if reqd:
-                fatal_inp_error("GMDSpec: {0}: block missing".format(rootblk))
+                fatal_inp_error("{0}: {1}: block missing".format(S_GMD, rootblk))
             continue
 
         if len(rootlmns) > 1:
@@ -90,11 +90,12 @@ def parse_xml_input(filepath):
     if input_errors():
         raise UserInputError("stopping due to previous Errors")
 
-    if S_OPT in gmdblks and S_PERMUTATION in gmdblks:
-        raise UserInputError("Incompatible blocks: [Optimzation, Permutation]")
+    if S_OPTIMIZATION in gmdblks and S_PERMUTATION in gmdblks:
+        raise UserInputError("Incompatible blocks: [{0}, {1}]".format(
+            S_OPTIMIZATION, S_PERMUTATION))
 
-    if S_OPT in gmdblks:
-        ns = optimization_namespace(gmdblks[S_OPT], gmdspec.toxml())
+    if S_OPTIMIZATION in gmdblks:
+        ns = optimization_namespace(gmdblks[S_OPTIMIZATION], gmdspec.toxml())
 
     elif S_PERMUTATION in gmdblks:
         ns = permutation_namespace(gmdblks[S_PERMUTATION], gmdspec.toxml())
@@ -183,10 +184,10 @@ def pOptimization(optlmn):
 
     # read in optimization parameters
     p = []
-    for items in optlmn.getElementsByTagName("Optimize"):
-        var = str(items.attributes.get("var").value)
+    for items in optlmn.getElementsByTagName(S_OPTMZ):
+        var = str(items.attributes.get(S_VAR).value)
 
-        ivalue = items.attributes.get("initial_value")
+        ivalue = items.attributes.get(S_IVAL)
         if not ivalue:
             fatal_inp_error("{0}: no initial value given".format(var))
             continue
@@ -238,12 +239,12 @@ def pPermutation(permlmn):
     if seed is not None:
         pp.set_random_seed(seed)
     N_default = 10
-    pp.update_safe({"range": lambda a, b, N=N_default: np.linspace(a, b, N),
-                    "list": lambda a: np.array(a),
-                    "weibull": lambda a, b, N=N_default: a * pp.RAND.weibull(b, N),
-                    "uniform": lambda a, b, N=N_default: pp.RAND.uniform(a, b, N),
-                    "normal": lambda a, b, N=N_default: pp.RAND.normal(a, b, N),
-                    "percentage": lambda a, b, N=N_default: (
+    pp.update_safe({S_RANGE: lambda a, b, N=N_default: np.linspace(a, b, N),
+                    S_LIST: lambda a: np.array(a),
+                    S_WEIBULL: lambda a, b, N=N_default: a * pp.RAND.weibull(b, N),
+                    S_UNIFORM: lambda a, b, N=N_default: pp.RAND.uniform(a, b, N),
+                    S_NORMAL: lambda a, b, N=N_default: pp.RAND.normal(a, b, N),
+                    S_PERC: lambda a, b, N=N_default: (
                         np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))})
 
     # response function
@@ -257,16 +258,16 @@ def pPermutation(permlmn):
     # read in permutated values
     p = []
     for items in permlmn.getElementsByTagName(S_PERMUTATE):
-        var = str(items.attributes.get("var").value)
-        values = str(items.attributes.get("values").value)
+        var = str(items.attributes.get(S_VAR).value)
+        values = str(items.attributes.get(S_VALS).value)
         s = re.search(r"(?P<meth>\w+)\s*\(", values)
         if s: meth = s.group("meth")
         else: meth = ""
-        if options.getopt(S_METHOD) == "shotgun":
-            if meth != "range":
-                fatal_inp_error("shotgun: expected values=range(...")
+        if options.getopt(S_METHOD) == S_SHOTGUN:
+            if meth != S_RANGE:
+                fatal_inp_error("{0}: expected values=range(...".format(S_SHOTGUN))
                 continue
-            values = re.sub(meth, "uniform", values)
+            values = re.sub(meth, S_UNIFORM, values)
         try:
             p.append([var, eval(values, pp.GDICT, pp.SAFE)])
         except:
@@ -276,7 +277,7 @@ def pPermutation(permlmn):
     if options.getopt(S_CORR) is not None:
         corr = xmltools.str2list(options.getopt(S_CORR), dtype=str)
         for (i, c) in enumerate(corr):
-            if c.lower() not in ("table", "plot", "none"):
+            if c.lower() not in (S_TBL, S_PLOT, S_NONE):
                 fatal_inp_error("{0}: unrecognized correlation option".format(c))
             corr[i] = c.lower()
         if "none" in corr:
@@ -349,7 +350,7 @@ def optimization_namespace(optlmn, basexml):
     optblk = pOptimization(optlmn)
     # set up the namespace to return
     ns = Namespace()
-    ns.stype = S_OPT
+    ns.stype = S_OPTIMIZATION
     ns.method = optblk[S_METHOD]
     ns.parameters = optblk[S_PARAMS]
     ns.auxiliary_files = optblk[S_AUX_FILE]
@@ -570,7 +571,7 @@ def pFunctions(element_list):
             expr = function.firstChild.data.strip()
 
         if ftype == S_ANAEXPR:
-            var = function.getAttribute("var")
+            var = function.getAttribute(S_VAR)
             if not var:
                 var = "x"
             func, err = build_lambda(expr, var=var, disp=1)
