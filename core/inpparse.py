@@ -14,6 +14,7 @@ from __config__ import cfg, F_MTL_PARAM_DB
 import utils.pprepro as pp
 import utils.tensor as tensor
 import utils.xmltools as xmltools
+from core.inpkws import *
 from core.io import fatal_inp_error, input_errors
 from core.respfcn import check_response_function_element
 from core.restart import read_exrestart_info
@@ -23,44 +24,6 @@ from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
 from utils.mtldb import read_material_params_from_db
 from materials.material import get_material_from_db
-
-
-S_PHYSICS = "Physics"
-S_TTERM = "termination_time"
-S_DRIVER = "driver"
-T_DRIVER_TYPES = ("solid", "eos")
-S_MATERIAL = "Material"
-S_MODEL = "model"
-S_RHO = "density"
-S_PARAMS = "Parameters"
-
-S_EXTRACT = "Extract"
-S_EXFORMAT = "format"
-T_EXFORMATS = ("ascii", "mathematica")
-S_STEP = "step"
-S_FFMT = "ffmt"
-
-S_PATH = "Path"
-S_SURFACE = "Surface"
-
-S_HREF = "href"
-S_MTL = "material"
-
-S_PERMUTATION = "Permutation"
-S_PERMUTATE = "Permutate"
-T_PERM_METHODS = ("zip", "combine", "shotgun")
-
-S_OPT = "Optimization"
-T_OPT_METHODS = ("simplex", "cobyla", "powell")
-S_MITER = "maxiter"
-S_TOL = "tolerance"
-S_DISP = "disp"
-S_RESP_FCN = "ResponseFunction"
-S_RESP_DESC = "descriptor"
-S_AUX_FILE = "AuxiliaryFile"
-S_METHOD = "method"
-S_CORR = "correlation"
-S_SEED = "seed"
 
 
 class UserInputError(Exception):
@@ -103,7 +66,7 @@ def parse_xml_input(filepath):
     rootblks = ((S_OPT, 0, 1), (S_PERMUTATION, 0, 1), (S_PHYSICS, 1, 0))
 
     # find all functions first
-    functions = pFunctions(gmdspec.getElementsByTagName("Function"))
+    functions = pFunctions(gmdspec.getElementsByTagName(S_FCN))
 
     for (rootblk, reqd, rem) in rootblks:
         rootlmns = gmdspec.getElementsByTagName(rootblk)
@@ -495,7 +458,14 @@ def pMaterial(mtllmns):
 
 
 def parse_mtl_params(mtllmn, pdict, model):
-    # create a mapping of (name, value) pairs
+    """create a mapping of (name, value) pairs
+
+    """
+    # option holder for Matlabel
+    mtlbl = OptionHolder()
+    mtlbl.addopt(S_HREF, F_MTL_PARAM_DB, dtype=str)
+    mtlbl.addopt(S_MTL, None, dtype=str)
+
     param_map = {}
     for node in mtllmn.childNodes:
         if node.nodeType != node.ELEMENT_NODE:
@@ -503,19 +473,16 @@ def parse_mtl_params(mtllmn, pdict, model):
         name = node.nodeName
         if name.lower() == "matlabel":
             for i in range(node.attributes.length):
-                attr = node.attributes.item(i)
-                if attr.name not in (S_MTL, S_HREF):
-                    fatal_inp_error("{0}: unrecognized Matlabel "
-                                    "attribute".format(attr.name))
+                try:
+                    mtlbl.setopt(*xmltools.get_name_value(node.attributes.item(i)))
+                except OptionHolderError, e:
+                    fatal_inp_error(e.message)
                     continue
-            mat = node.getAttribute("material")
+            mat = mtlbl.getopt(S_MTL)
             if not mat:
                 fatal_inp_error("Matlabel: expected material attribute")
                 continue
-            dbfile = node.getAttribute(S_HREF)
-            if not dbfile:
-                dbfile = F_MTL_PARAM_DB
-
+            dbfile = mtlbl.getopt(S_HREF)
             found = False
             if not os.path.isfile(dbfile):
                 if os.path.isfile(os.path.join(cfg.I, dbfile)):
@@ -560,11 +527,7 @@ def pFunctions(element_list):
     """Parse the functions block
 
     """
-    __ae__ = "ANALYTIC EXPRESSION"
-    __pwl__ = "PIECEWISE LINEAR"
-    zero_fcn_id = 0
-    const_fcn_id = 1
-    functions = {zero_fcn_id: lambda x: 0., const_fcn_id: lambda x: 1.}
+    functions = {ZERO_FCN_ID: lambda x: 0., CONST_FCN_ID: lambda x: 1.}
     if not element_list:
         return functions
 
@@ -575,7 +538,7 @@ def pFunctions(element_list):
             fatal_inp_error("Function: id not found")
             continue
         fid = int(fid.value)
-        if fid in (zero_fcn_id, const_fcn_id):
+        if fid in (ZERO_FCN_ID, CONST_FCN_ID):
             fatal_inp_error("Function id {0} is reserved".format(fid))
             continue
         if fid in functions:
@@ -587,13 +550,13 @@ def pFunctions(element_list):
             fatal_inp_error("Functions.Function: type not found")
             continue
         ftype = " ".join(ftype.value.split()).upper()
-        if ftype not in (__ae__, __pwl__):
+        if ftype not in (S_ANAEXPR, S_PWLIN):
             fatal_inp_error("{0}: invalid function type".format(ftype))
             continue
 
         href = function.getAttribute(S_HREF)
         if href:
-            if ftype == __ae__:
+            if ftype == S_ANAEXPR:
                 fatal_inp_error("function file support only for piecewise linear")
                 continue
             if not os.path.isfile(href):
@@ -606,7 +569,7 @@ def pFunctions(element_list):
         else:
             expr = function.firstChild.data.strip()
 
-        if ftype == __ae__:
+        if ftype == S_ANAEXPR:
             var = function.getAttribute("var")
             if not var:
                 var = "x"
@@ -616,7 +579,7 @@ def pFunctions(element_list):
                                 "function {1}".format(err, fid))
                 continue
 
-        elif ftype == __pwl__:
+        elif ftype == S_PWLIN:
             # parse the table in expr
             cols = function.getAttribute("cols")
             if not cols:
