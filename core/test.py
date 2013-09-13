@@ -368,6 +368,13 @@ def find_rtests(search_dirs, include, exclude, tests=None):
                 raise Error("{0}: execute: name attribute "
                             "required".format(name))
             exe = exe.value.strip()
+            if "$" in exe:
+                # Expand environmental variables
+                exe = exe.split()
+                for idx in range(0, len(exe)):
+                    if exe[idx].startswith("$"):
+                        exe[idx] = os.environ[exe[idx].lstrip("$")]
+                exe = " ".join(exe)
             x = which(exe)
             if x is None:
                 raise Error("{0}: {1}: executable not found".format(name, exe))
@@ -503,12 +510,15 @@ def list_rtests(rtests):
 
 
 def which(exe):
-    if exe.startswith("./"):
-        return exe
+    # Allow for exe = '/path/to/python pyfile.py --opts' and not choke.
+    tmpexe = exe.split(None, 1)
+    opts = "" if len(tmpexe) == 1 else " " + tmpexe[1]
+    if tmpexe[0].startswith("./"):
+        return tmpexe[0] + opts
     for d in PATH:
-        x = os.path.join(d, exe)
+        x = os.path.join(d, tmpexe[0])
         if os.path.isfile(x):
-            return x
+            return x + opts
     return
 
 

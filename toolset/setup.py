@@ -241,7 +241,7 @@ def write_exe(name, destd, pyfile, pyexe, pyopts, env):
     with open(exe, "w") as fobj:
         fobj.write("#!/bin/sh -f\n")
         fobj.write("{0}\n".format(env))
-        fobj.write("PYTHON={0}\n".format(pyexe))
+        fobj.write("export PYTHON={0}\n".format(pyexe))
         fobj.write("PYFILE={0}\n".format(pyfile))
         fobj.write('$PYTHON {0} $PYFILE "$@"\n'.format(pyopts))
     os.chmod(exe, 0o750)
