@@ -1,0 +1,121 @@
+<Root name="GMDSpec">
+
+  <!-- Keyword definitions for gmd input decks
+
+       Element - Recognized input tags
+       ...............................
+          name: Tag name
+             n: Number of occurences
+	        Special values
+       	         *   0 or more
+	 	 ?   0 or 1
+		 +   1 or more
+       content: Where to find content
+
+       Attribute - Recognized attributes of parent Element
+       ...................................................
+       name: attribute name
+       type: attribute type
+       default: default value [UNSPECIFIED]
+       choices: valid choices
+       test: function that must return true [True]
+
+  -->
+
+  <Element name="Function" n="*" content="href then text">
+    <Attribute name="id" type="integer" test="not reservedfid"/>
+    <Attribute name="type" type="string"
+	       choices="analytic_expression piecewise_linear"/>
+    <Attribute name="href" type="string" default="none" test="isfile"/>
+    <Attribute name="var" type="string" default="x"/>
+    <Attribute name="cols" type="indices" default="1 2" len="2"/>
+  </Element>
+
+  <Element name="Physics" n="1">
+    <Attribute name="driver" default="solid" type="string"
+	       choices="solid eos"/>
+    <Attribute name="termination_time" default="inf" type="real"
+	       test="ispositive"/>
+
+    <Element name="Material" n="1" content="children">
+      <Attribute name="model" type="string"/>
+    </Element>
+
+    <Element name="Path" n="1" content="href then text">
+      <Attribute name="type" type="string" choices="prdef surface"/>
+      <Attribute name="format" type="string" default="None"
+		 choices="table default fcnspec"/>
+      <Attribute name="kappa" type="real" default="0"/>
+      <Attribute name="amplitude" type="real" default="1"/>
+      <Attribute name="ratfac" type="real" default="1"/>
+      <Attribute name="nfac" type="real" default="1"/>
+      <Attribute name="tstar" type="real" default="1" test="ispositive"/>
+      <Attribute name="rstar" type="real" default="1" test="ispositive"/>
+      <Attribute name="estar" type="real" default="1"/>
+      <Attribute name="sstar" type="real" default="1"/>
+      <Attribute name="fstar" type="real" default="1"/>
+      <Attribute name="efstar" type="real" default="1"/>
+      <Attribute name="dstar" type="real" default="1"/>
+      <Attribute name="href" type="string" default="none" test="isfile"/>
+      <Attribute name="format" type="string" default="default"
+                 choices="default tbl fcnspec"/>
+      <Attribute name="proportional" default="false" type="boolean"/>
+      <Attribute name="ndumps" default="20" type="string"/>
+      <Attribute name="cols" default="None" type="string"/>
+      <Attribute name="tfmt" default="time" type="string"
+		 choices="time dt"/>
+      <Attribute name="cfmt" default="222222" type="string"/>
+    </Element>
+
+    <Element name="Extract" n="?">
+      <Attribute name="format" type="string" default="ascii"
+		 choices="ascii mathematica"/>
+      <Attribute name="step" type="integer" default="1" test="ispositive"/>
+      <Attribute name="ffmt" type="string" default=".18f"/>
+      <Element name="Variables" n="?" content="text">
+      </Element>
+      <Element name="Path" n="*">
+	<Attribute name="type" type="string" choices="hugoniot isotherm"/>
+	<Attribute name="increments" type="integer" test="ispositive"/>
+	<Attribute name="density_range" type="array"/>
+	<Attribute name="initial_temperature" type="float" test="ispositive"/>
+      </Element>
+    </Element>
+  </Element>
+
+  <Element name="Permutation" n="?" conflict="Optimization">
+    <Attribute name="method" default="zip" type="string"
+	       choices="zip combine shotgun"/>
+    <Element name="Permutate" n="+">
+      <Attribute name="var" type="string"/>
+      <Attribute name="values" type="permfcn"/>
+      <Attribute name="seed" default="None" type="int" test="ispositive"/>
+    </Element>
+    <Element name="ResponseFunction" n="?">
+      <Attribute name="href" default="None" type="string" test="isfile"/>
+      <Attribute name="builtin" default="None" type="gmdfcn"/>
+      <Attribute name="descriptor" default="VAR_{N}" type="string"/>
+    </Element>
+  </Element>
+
+  <Element name="Optimization" n="?" conflict="Permutation">
+    <Attribute name="method" default="simplex" type="string"
+	       choices="simplex cobyla powell"/>
+    <Attribute name="maxiter" default="25" type="integer" test="ispositive"/>
+    <Attribute name="tolerance" default="1e-6" type="real" test="ispositive"/>
+    <Element name="Optimize" n="+">
+      <Attribute name="var" type="string"/>
+      <Attribute name="initial_value" type="real"/>
+      <Attribute name="bounds" type="array" default="-inf inf" len="2"/>
+    </Element>
+    <Element name="ResponseFunction" n="?">
+      <Attribute name="href" default="None" type="string" test="isfile"/>
+      <Attribute name="builtin" default="None" type="gmdfcn"/>
+      <Attribute name="descriptor" default="VAR_{N}" type="string"/>
+    </Element>
+    <Element name="AuxiliaryFile" n="+">
+      <Attribute name="href" type="string" test="isfile"/>
+    </Element>
+  </Element>
+
+</Root>
