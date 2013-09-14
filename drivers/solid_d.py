@@ -19,19 +19,17 @@ np.set_printoptions(precision=4)
 
 class SolidDriver(Driver):
     name = "solid"
-    proportional = None
-    kappa = None
-    def __init__(self):
+    def __init__(self, kappa, proportional, path, material, mtlparams):
         super(SolidDriver, self).__init__()
-        pass
+        self.kappa = kappa
+        self.proportional = proportional
+        self.path = path
 
-    def setup(self, runid, material, *opts):
-        """Setup the driver object
+        # Create material
+        self.material = create_material(material, mtlparams)
 
-        """
-        self.runid = runid
-        self.density = opts[0]
-        setup_restart = opts[1]
+#        setup_restart = opts[1]
+        setup_restart = False
 
         # register variables
         self.register_glob_variable("TIME_STEP")
@@ -44,17 +42,12 @@ class SolidDriver(Driver):
         self.register_variable("EFIELD", vtype="VECTOR")
         self.register_variable("EQSTRAIN", vtype="SCALAR")
         self.register_variable("VSTRAIN", vtype="SCALAR")
-        self.register_variable("DENSITY", vtype="SCALAR")
         self.register_variable("PRESSURE", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
 
-        # Setup material
-        self.mtlmdl = create_material(material[0])
-        self.mtlmdl.setup(material[1])
-
         # register material variables
         self.xtra_start = self.ndata
-        for (var, vtype) in self.mtlmdl.material_variables():
+        for (var, vtype) in self.material.material_variables():
             self.register_variable(var, vtype=vtype)
 
         nxtra = self.ndata - self.xtra_start
@@ -76,19 +69,18 @@ class SolidDriver(Driver):
         else:
             # initialize nonzero data
             self._data[self.defgrad_slice] = I9
-            self._data[self.density_slice] = self.density
 
             # initialize material
             sig = np.zeros(6)
-            xtra = self.mtlmdl.initial_state()
+            xtra = self.material.initial_state()
             args = (I9, np.zeros(3), 0.)
 
-            sig, xtra = self.mtlmdl.call_material_zero_state(sig, xtra, *args)
+            sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
 
             # -------------------------- quantities derived from final state
             pres = -np.sum(sig[:3]) / 3.
 
-            xtra = self.mtlmdl.adjust_initial_state(xtra)
+            xtra = self.material.adjust_initial_state(xtra)
 
             self.setvars(stress=sig, pressure=pres, xtra=xtra)
 
@@ -108,12 +100,11 @@ class SolidDriver(Driver):
         -------
 
         """
-        legs = self.paths[K_PRDEF][self.start_leg:]
+        legs = self.path[self.start_leg:]
         kappa = self.kappa
 
         # initial leg
         glob_step_num = self.step_num
-        rho = self.elem_var_vals("DENSITY")[0]
         xtra = self.elem_var_vals("XTRA")
         sig = self.elem_var_vals("STRESS")
         tleg = np.zeros(2)
@@ -125,7 +116,7 @@ class SolidDriver(Driver):
         sigdum = np.zeros((2, NSYMM))
 
         # compute the initial jacobian
-        J0 = self.mtlmdl.constant_jacobian()
+        J0 = self.material.constant_jacobian()
 
         # v array is an array of integers that contains the rows and columns of
         # the slice needed in the jacobian subroutine.
@@ -222,7 +213,7 @@ class SolidDriver(Driver):
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    d = sig2d(self.mtlmdl, dt, depsdt, sig, xtra, v,
+                    d = sig2d(self.material, dt, depsdt, sig, xtra, v,
                               sigspec[2], self.proportional, *margs)
 
                 # compute the current deformation gradient and strain from
@@ -232,13 +223,12 @@ class SolidDriver(Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.mtlmdl.update_state(dt, d, sig, xtra, *margs)
+                sig, xtra = self.material.update_state(dt, d, sig, xtra, *margs)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)
                                            + 2. * np.sum(eps[3:] ** 2)))
                 epsv = np.sum(eps[:3])
-                rho = rho * np.exp(-np.sum(d[:3]) * dt)
 
                 pres = -np.sum(sig[:3]) / 3.
                 dstress = (sig - sigsave) / dt
@@ -250,7 +240,7 @@ class SolidDriver(Driver):
 
                 self.setvars(stress=sig, strain=eps, defgrad=f,
                              symm_l=d, efield=ef, eqstrain=eqeps,
-                             vstrain=epsv, density=rho, pressure=pres,
+                             vstrain=epsv, pressure=pres,
                              dstress=dstress, xtra=xtra)
 
 
@@ -271,32 +261,17 @@ class SolidDriver(Driver):
 
     # --------------------------------------------------------- Parsing methods
     @classmethod
-    def parse_and_register_paths_and_surfaces(cls, pathlmns, surflmns, functions,
-                                              tterm):
+    def format_path(cls, pathdict, surflmns, functions, tterm):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 
         """
-        if len(pathlmns) > 1:
-            fatal_inp_error("expected only 1 Path tag")
-            return
-        pathlmn = pathlmns[0]
-
-        ptype = pathlmn.getAttribute("type")
-        if not ptype:
-            fatal_inp_error("expected 'type' Path attribute")
-            return
-        if ptype.strip().lower() != S_PRDEF:
-            fatal_inp_error("{0}: unknown Path type".format(ptype))
-            return
-        pathlmn.removeAttribute("type")
-
-        items = cls.pPrdef(pathlmn, functions, tterm)
+        path = cls.pPrdef(pathdict, functions, tterm)
         if input_errors():
             return
-
-        path, cls.kappa, cls.proportional = items
-        cls.register_paths_and_surfaces(paths={K_PRDEF: path})
+        cls.kappa, cls.proportional = pathdict["kappa"], pathdict["proportional"]
+        return [pathdict["kappa"], pathdict["proportional"], path]
+#        cls.register_paths_and_surfaces(paths={K_PRDEF: path})
 
         return
 
@@ -308,75 +283,27 @@ class SolidDriver(Driver):
         cls.paths = kwargs["paths"]
 
     @classmethod
-    def pPrdef(cls, pathlmn, functions, tterm):
+    def pPrdef(cls, pathdict, functions, tterm):
         """Parse the Path block and set defaults
 
         """
-        # Set up options for Path
-        options = OptionHolder()
-        options.addopt(S_KAPPA, 0.)
-        options.addopt(S_AMPLITUDE, 1.)
-        options.addopt(S_RATFAC, 1.)
-        options.addopt(S_NFAC, 1.)
-        options.addopt(S_TSTAR, 1., test=lambda x: x > 0.)
-        options.addopt(S_ESTAR, 1.)
-        options.addopt(S_SSTAR, 1.)
-        options.addopt(S_FSTAR, 1.)
-        options.addopt(S_EFSTAR, 1.)
-        options.addopt(S_DSTAR, 1.)
-        options.addopt(S_HREF, None, dtype=str)
-        options.addopt(S_FORMAT, S_DEFAULT, dtype=str,
-                       choices=(S_DEFAULT, S_TBL, "fcnspec"))
-        options.addopt(S_PROPORTIONAL, 0, dtype=mybool)
-        options.addopt(S_NDUMPS, "20", dtype=str)
-
-        # the following options are for table formatted Path
-        options.addopt(S_COLS, None, dtype=str)
-        options.addopt(S_TFMT, S_TIME, dtype=str, choices=(S_TIME, S_DT))
-        options.addopt(S_CFMT, "222222", dtype=str)
-
-        # Get control terms
-        for i in range(pathlmn.attributes.length):
-            try:
-                options.setopt(*xmltools.get_name_value(pathlmn.attributes.item(i)))
-            except OptionHolderError, e:
-                fatal_inp_error(e.message)
-                continue
-
-        # Read in the actual Path - splitting them in to lists
-        href = options.getopt(S_HREF)
-        if href:
-            if not os.path.isfile(href):
-                if not os.path.isfile(os.path.join(cfg.I, href)):
-                    fatal_inp_error("{0}: no such file".format(href))
-                    return
-                href = os.path.join(cfg.I, href)
-            lines = open(href, "r").readlines()
-        else:
-            lines = []
-            for node in pathlmn.childNodes:
-                if node.nodeType == node.COMMENT_NODE:
-                    continue
-                lines.extend([" ".join(xmltools.uni2str(item).split())
-                              for item in node.nodeValue.splitlines()
-                              if item.split()])
-        lines = [xmltools.str2list(line, dtype=str) for line in lines]
+        lines = [line.split() for line in pathdict.pop("Content") if line.split()]
 
         # parse the Path depending on type
-        pformat = options.getopt(S_FORMAT)
+        pformat = pathdict["format"]
         if pformat == S_DEFAULT:
             path = cls.parse_path_default(lines)
 
         elif pformat == S_TBL:
-            path = cls.parse_path_table(lines, options.getopt(S_TFMT),
-                                        options.getopt(S_COLS),
-                                        options.getopt(S_CFMT))
+            path = cls.parse_path_table(lines, pathdict["tfmt"],
+                                        pathdict["cols"],
+                                        pathdict["cfmt"])
 
         elif pformat == "fcnspec":
             path = cls.parse_path_cijfcn(lines, functions,
-                                         options.getopt(S_NFAC),
-                                         options.getopt(S_CFMT))
-            options.setopt("nfac", 1)
+                                         pathdict["nfac"],
+                                         pathdict["cfmt"])
+            pathdict["nfac"] = 1
 
         else:
             fatal_inp_error("Path: {0}: invalid format".format(pformat))
@@ -386,11 +313,9 @@ class SolidDriver(Driver):
             return
 
         # store relevant info to the class
-        path = cls.format_path(path, options, tterm)
-        kappa = options.getopt(S_KAPPA)
-        proportional = options.getopt(S_PROPORTIONAL)
+        path = cls._format_path(path, pathdict, tterm)
 
-        return path, kappa, proportional
+        return path
 
     @classmethod
     def parse_path_default(cls, lines):
@@ -664,34 +589,34 @@ class SolidDriver(Driver):
         return columns
 
     @staticmethod
-    def format_path(path, options, tterm):
+    def _format_path(path, pathdict, tterm):
         """Format the path by applying multipliers
 
         """
         # stress control if any of the control types are 3 or 4
         stress_control = any(c in (3, 4) for leg in path for c in leg[2])
-        kappa = options.getopt(S_KAPPA)
+        kappa = pathdict["kappa"]
         if stress_control and kappa != 0.:
             fatal_inp_error("kappa must be 0 with stress control option")
 
         # From these formulas, note that AMPL may be used to increase or
         # decrease the peak strain without changing the strain rate. ratfac is
         # the multiplier on strain rate and stress rate.
-        amplitude = options.getopt(S_AMPLITUDE)
-        ratfac = options.getopt(S_RATFAC)
-        nfac = options.getopt(S_NFAC)
-        ndumps = options.getopt(S_NDUMPS)
+        amplitude = pathdict["amplitude"]
+        ratfac = pathdict["ratfac"]
+        nfac = pathdict["nfac"]
+        ndumps = pathdict["ndumps"]
         if ndumps == "all":
             ndumps = 100000000
         ndumps= int(ndumps)
 
         # factors to be applied to deformation types
-        efac = amplitude * options.getopt(S_ESTAR)
-        tfac = abs(amplitude) * options.getopt(S_TSTAR) / ratfac
-        sfac = amplitude * options.getopt(S_SSTAR)
-        ffac = amplitude * options.getopt(S_FSTAR)
-        effac = amplitude * options.getopt(S_EFSTAR)
-        dfac = amplitude * options.getopt(S_DSTAR)
+        efac = amplitude * pathdict["estar"]
+        tfac = abs(amplitude) * pathdict["tstar"] / ratfac
+        sfac = amplitude * pathdict["sstar"]
+        ffac = amplitude * pathdict["fstar"]
+        effac = amplitude * pathdict["efstar"]
+        dfac = amplitude * pathdict["dstar"]
 
         # for now unit tensor for rotation
         Rij = np.reshape(np.eye(3), (9,))

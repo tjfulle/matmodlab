@@ -132,6 +132,11 @@ class Driver(object):
     def extract_paths(self, exofilepath, paths):
         pass
 
+    @classmethod
+    def format_path_extraction(self, *args):
+        if any(x for l in args for x in l if x):
+            fatal_inp_error("driver does not support Path extraction")
+        return []
 
 # --- Driver database access functions
 def isdriver(drivername):
@@ -147,7 +152,12 @@ def getdriver(drivername):
     return DRIVER_DB.get(" ".join(drivername.split()).lower())
 
 
-def create_driver(drivername):
+def create_driver(drivername, *driveropts):
+    drvcls = getdrvcls(drivername)
+    return drvcls(*driveropts)
+
+
+def getdrvcls(drivername):
     """Create a material object from the material name
 
     """

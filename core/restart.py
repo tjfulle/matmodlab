@@ -23,8 +23,7 @@ class RestartError(Exception):
         super(RestartError, self).__init__(message)
 
 
-def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpaths, dsurfaces,
-                          extract):
+def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpath, extract):
     """Format information records to be written to exodus database for reading in
     later
 
@@ -36,10 +35,8 @@ def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpaths, dsurfaces,
         Array of material parameters
     driver : string
         Name of driver
-    paths : dict
-        Dictionary of deformation paths
-    surfaces : dict
-        Dictionary of EOS surface definitions
+    paths : list
+        list holding driver paths
     extract : list
         List of extraction info
 
@@ -49,9 +46,6 @@ def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpaths, dsurfaces,
         Formatted list of strings to put in exodus file
 
     """
-    from drivers.solid_d import K_PRDEF
-    from drivers.eos_d import K_RTSPC
-
     ex_info = []
     ex_info.append(S_GMD_DECL)
     ex_info.append(S_REST_VERS)
@@ -69,28 +63,9 @@ def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpaths, dsurfaces,
     ex_info.append(kappa)
 
     ex_info.append(S_PATHS)
-    if not dpaths:
-        ex_info.append(0)
-    else:
-        ex_info.append(len(dpaths))
-        for (key, val) in dpaths.items():
-            # save key, nrows, ncols
-            ex_info.append(key)
-            ex_info.append(len(val))
-            ex_info.append(len(val[0]))
-            [ex_info.extend(x) for x in val]
-
-    ex_info.append(S_SURFS)
-    if not dsurfaces:
-        ex_info.append(0)
-    else:
-        ex_info.append(len(dsurfaces))
-        for (key, val) in dsurfaces.items():
-            # save key, nrows, ncols
-            ex_info.append(key)
-            ex_info.append(len(val))
-            ex_info.append(len(val[0]))
-            [ex_info.extend(x) for x in val]
+    ex_info.append(dpath.shape[0])
+    ex_info.append(dpath.shape[1])
+    [ex_info.extend(line) for line in dpath]
 
     ex_info.append(S_EXREQ)
     if not extract:

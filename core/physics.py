@@ -6,50 +6,32 @@ import numpy as np
 from __config__ import cfg
 import core.io as io
 from utils.exodump import exodump
+from drivers.driver import create_driver
 
 class PhysicsHandler(object):
 
-    def __init__(self, runid, verbosity, driver, mtlmdl, mtlprops,
-                 extract, restart, driver_opts):
+    def __init__(self, runid, verbosity, driver, material, extract):
         """Initialize the PhysicsHandler object
 
-        Parameters
-        ----------
-        mtlmdl : str
-            Name of material model
-
-        mtlprops : ndarray
-            The (unchecked) material properties
-
         """
-        mode = "a" if restart else "w"
-        io.setup_logger(runid, verbosity, mode=mode)
-
         self.runid = runid
 
-        self.driver = driver()
-        self.material = (mtlmdl, mtlprops)
-        self.mtlprops = np.array(mtlprops)
+#        mode = "a" if restart else "w"
+        mode = "w"
+        io.setup_logger(runid, verbosity, mode=mode)
+        io.log_message("{0}: setting up".format(self.runid))
+
+        self.driver = create_driver(*(driver + material))
+        self.mtlprops = np.array(material[1])
         self.extract = extract
-        self.driver_opts = [driver_opts, restart]
-        self.setup_restart = bool(restart)
 
         # set up timing
         self.timing = {}
         self.timing["start"] = time.time()
 
-    def setup(self):
-        """Setup the run
-
-        """
-        io.log_message("{0}: setting up".format(self.runid))
-
-        # set up the driver
-        self.driver.setup(self.runid, self.material, *self.driver_opts)
-
-        if self.setup_restart:
+        restart = False
+        if restart:
             return self._setup_restart_io()
-
         else:
             return self._setup_new_io()
 
@@ -64,9 +46,9 @@ class PhysicsHandler(object):
         glob_var_names = self.driver.glob_vars()
         ele_var_names = self.driver.elem_vars()
         title = "gmd {0} simulation".format(self.driver.name)
-        info = [self.driver.mtlmdl.name, self.driver.mtlmdl._param_vals,
+        info = [self.driver.material.name, self.driver.material._param_vals,
                 self.driver.name, self.driver.kappa,
-                self.driver.paths, self.driver.surfaces, self.extract]
+                self.driver.path, self.extract]
         self.exo = io.ExoManager.new_from_runid(
             self.runid, title, glob_var_names, ele_var_names, info)
 
@@ -80,8 +62,8 @@ class PhysicsHandler(object):
         # write to the log file the material props
         L = max(max(len(n) for n in ele_var_names), 10)
         param_ivals = self.mtlprops
-        param_names = self.driver.mtlmdl.params()
-        param_vals = self.driver.mtlmdl.param_vals()
+        param_names = self.driver.material.params()
+        param_vals = self.driver.material.param_vals()
         io.log_debug("Material Parameters")
         io.log_debug("  {1:{0}s}  {2:12}  {3:12}".format(
             L, "Name", "iValue", "Value"))

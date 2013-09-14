@@ -20,7 +20,7 @@ def get_material_from_db(matname, mtldb=[None]):
     return mtldb[0].get(matname)
 
 
-def create_material(matname):
+def create_material(matname, matparams):
     """Create a material object from the material name
 
     """
@@ -30,7 +30,9 @@ def create_material(matname):
         return None
     mtlmod = load_file(model.filepath)
     mclass = getattr(mtlmod, model.mclass)
-    return mclass()
+    material = mclass()
+    material.setup(matparams)
+    return material
 
 
 def read_mtldb():
@@ -60,7 +62,7 @@ def read_mtldb():
         ns.nparam = len(p)
         ns.filepath = filepath
         ns.mclass = str(mtl.attributes.getNamedItem("mclass").value)
-        ns.parameters = ", ".join(str(x.strip().lower()) for x in p)
+        ns.parameters = ",".join(str(x.strip().lower()) for x in p)
         mtldb[name] = ns
     return mtldb
 

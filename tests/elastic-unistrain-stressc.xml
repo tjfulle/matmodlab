@@ -15,7 +15,7 @@
       4 1 444     0 0 0
     </Path>
 
-    <Material density="5" model="elastic">
+    <Material model="elastic">
       <K> {K} </K>
       <G> {G} </G>
     </Material>

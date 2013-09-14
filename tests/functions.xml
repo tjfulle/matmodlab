@@ -6,11 +6,11 @@
 
   <Physics driver="solid" termination_time="{1.8 * pi}">
 
-    <Function id="2" type="analytic expression" var="t">
+    <Function id="2" type="analytic_expression" var="t">
       sin(t)
     </Function>
 
-    <Function id="3" type="piecewise linear">
+    <Function id="3" type="piecewise_linear">
       0. 2.
       1. 3.
       2. 4.
@@ -22,7 +22,7 @@
       {2 * pi} 2:1.e-1 0 0
     </Path>
 
-    <Material density="5" model="elastic">
+    <Material model="elastic">
       <K> {K} </K>
       <G> {G} </G>
     </Material>

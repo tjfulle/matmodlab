@@ -6,7 +6,7 @@ import argparse
 
 from __config__ import cfg, SPLASH, ROOT_D, LIB_D
 from core.inpkws import *
-from core.inpparse import parse_exo_input, parse_xml_input
+from core.inpparse import parse_input
 from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
 from core.optimize import OptimizationHandler
@@ -79,18 +79,16 @@ def main(argv=None):
             if os.path.splitext(basename)[1] != ".xml":
                 logerr("*** gmd: expected .xml file extension")
                 continue
-            mm_input = parse_xml_input(source)
+            mm_input = parse_input(source)
             restart_info = None
 
         if args.v:
             sys.stdout.write(SPLASH)
             sys.stdout.flush()
 
-        if mm_input.stype == S_PHYSICS:
-            opts = (mm_input.density, )
-            model = PhysicsHandler(runid, args.v, mm_input.driver, mm_input.mtlmdl,
-                                   mm_input.mtlprops, mm_input.extract,
-                                   restart_info, opts)
+        stype = mm_input[0]
+        if stype == "Physics":
+            model = PhysicsHandler(runid, args.v, *mm_input[1:])
 
         elif mm_input.stype == S_PERMUTATION:
             opts = (args.j,)
@@ -116,13 +114,7 @@ def main(argv=None):
             logerr("{0}: unrecognized simulation type".format(mm_input.stype))
             continue
 
-        # Setup and run the problem
-        try:
-            model.setup()
-        except Error1, e:
-            logerr("{0}: setup failed with: {1}".format(runid, e.message))
-            continue
-
+        # Run the problem
         try:
             model.run()
         except Error1, e:

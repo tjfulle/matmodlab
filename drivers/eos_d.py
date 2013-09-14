@@ -373,6 +373,29 @@ class EOSDriver(Driver):
 
         return columns
 
+    @classmethod
+    def format_path_extraction(pdict):
+        """Format the path extraction request
+
+        """
+
+        isotherm = []
+        isodict = [d for d in pdict if d["type"] == "isotherm"]
+        if isodict:
+            isotherm.append(isodict["increments"])
+            isotherm.append(isodict["density_range"])
+            isotherm.append(isodict["initial_temperature"])
+
+        hugoniot = []
+        hugdict = [d for d in pdict if d["type"] == "hugoniot"]
+        if hugdict:
+            hugoniot.append(isodict["increments"])
+            hugoniot.append(isodict["density_range"])
+            hugoniot.append(isodict["initial_temperature"])
+
+        return isotherm, hugoniot
+
+
     def extract_paths(self, exofilepath, pathlmns):
         """From the data in the exodus file path, extract requested information
 
