@@ -9,11 +9,11 @@
       <Matlabel material="helium"/>
     </Material>
 
-    <Surface format="table" cfmt="12" nfac="10">
+    <Path type="surface" format="table" cfmt="12" nfac="10">
       <!-- Cij -->
       1 100
       5 300
-    </Surface>
+    </Path>
 
     <Extract>
       <Path type="isotherm" increments="200"

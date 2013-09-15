@@ -261,7 +261,7 @@ class SolidDriver(Driver):
 
     # --------------------------------------------------------- Parsing methods
     @staticmethod
-    def format_path(pathdict, surflmns, functions, tterm):
+    def format_path(pathdict, functions, tterm):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 

@@ -9,13 +9,13 @@
       <Matlabel material="helium"/>
     </Material>
 
-    <Surface nfac="1">
+    <Path type="surface" nfac="1">
       <!-- nsteps, control, Cij -->
       <!-- control goes as 1 -> density
                            2 -> temperature -->
         0 12 1 100
        10 12 5 300
-    </Surface>
+    </Path>
 
     <Extract>
       <Path type="isotherm" increments="200"

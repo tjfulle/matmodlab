@@ -12,6 +12,7 @@ from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
 from core.respfcn import check_response_function, GMD_RESP_FCN_RE
+from core.io import fatal_inp_error
 from materials.material import get_material_from_db
 
 _D = os.path.dirname(os.path.realpath(__file__))
@@ -25,7 +26,8 @@ RAND = np.random.RandomState()
 
 class UserInputError(Exception):
     def __init__(self, message):
-        raise Exception(message)
+        if cfg.debug:
+            raise Exception(message)
         sys.stderr.write("*** user input error: {0}\n".format(message))
         raise SystemExit(2)
 
@@ -410,15 +412,6 @@ def nandv(item):
     return name, value
 
 
-INP_ERRORS = 0
-def fatal_inp_error(message):
-    global INP_ERRORS
-    INP_ERRORS += 1
-    sys.stderr.write("*** error: {0}\n".format(message))
-    if INP_ERRORS > 5:
-        raise SystemExit("*** error: maximum number of input errors exceeded")
-
-
 def inp_warning(message):
     sys.stderr.write("*** warning: {0}\n".format(message))
 
@@ -582,7 +575,7 @@ def pPhysics(physdict, functions):
     material = pMaterial(physdict["Elements"].pop("Material"))
     dcls = getdrvcls(physdict["driver"])
     driver = [physdict["driver"]]
-    driver.extend(dcls.format_path(physdict["Elements"]["Path"], None, functions,
+    driver.extend(dcls.format_path(physdict["Elements"]["Path"], functions,
                                    physdict["termination_time"]))
     extract = pExtract(physdict["Elements"].pop("Extract"), dcls)
 

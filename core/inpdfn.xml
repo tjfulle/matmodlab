@@ -78,7 +78,7 @@
 	<Attribute name="type" type="string" choices="hugoniot isotherm"/>
 	<Attribute name="increments" type="integer" test="ispositive"/>
 	<Attribute name="density_range" type="array"/>
-	<Attribute name="initial_temperature" type="float" test="ispositive"/>
+	<Attribute name="initial_temperature" type="real" test="ispositive"/>
       </Element>
     </Element>
   </Element>

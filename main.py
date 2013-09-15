@@ -9,7 +9,7 @@ import core.inpparse as inp
 from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
 from core.optimize import OptimizationHandler
-from core.io import Error1 as Error1
+from core.io import Error1 as Error1, input_errors
 
 FILE = os.path.realpath(__file__)
 
@@ -85,7 +85,7 @@ def main(argv=None):
             sys.stdout.write(SPLASH)
             sys.stdout.flush()
 
-        if inp.INP_ERRORS:
+        if input_errors():
             raise SystemExit("stopping due to input errors")
 
         stype = mm_input[0]
