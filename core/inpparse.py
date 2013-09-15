@@ -5,15 +5,13 @@ import numpy as np
 from xml.etree.ElementTree import iterparse
 import xml.dom.minidom as xdom
 
-if __name__ == "__main__":
-    _D = os.path.dirname(os.path.realpath(__file__))
-    sys.path.insert(0, os.path.dirname(_D))
 from __config__ import cfg, F_MTL_PARAM_DB
 import utils.pprepro as pp
 from utils.mtldb import read_material_params_from_db
 from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
+from core.respfcn import check_response_function, GMD_RESP_FCN_RE
 from materials.material import get_material_from_db
 
 _D = os.path.dirname(os.path.realpath(__file__))
@@ -22,10 +20,12 @@ F_INP_DFNS = os.path.join(_D, "inpdfn.xml")
 assert os.path.exists(F_INP_DFNS)
 ZERO_FCN_ID = 0
 CONST_FCN_ID = 1
+RAND = np.random.RandomState()
 
 
 class UserInputError(Exception):
     def __init__(self, message):
+        raise Exception(message)
         sys.stderr.write("*** user input error: {0}\n".format(message))
         raise SystemExit(2)
 
@@ -88,14 +88,15 @@ class Element(object):
         err, value = myattrib[0].test(value)
         if err != 0:
             fatal_inp_error("{0}: {1}".format(self.name, err))
+
         else:
             value = myattrib[0].dtype(value)
             l = self.getattrib("len")
             if l is not None:
-                if len(val) != l:
+                if len(value) != l:
                     err = "expected {0} to be length {1}".format(attrib, l)
                     fatal_inp_error("{0}: {1}".format(self.name, err))
-            self.attribs[attrib][1] = myattrib[0].dtype(value)
+            self.attribs[attrib][1] = value
 
     def getattrib(self, attrib):
         theattrib = self.attribs.get(attrib)
@@ -113,7 +114,7 @@ class Element(object):
         return self.elmnts.values()
 
     def attributes(self):
-        return dict((attrib[0].name, attrib[0].dtype(attrib[1]))
+        return dict((attrib[0].name, attrib[1])
                     for _, attrib in self.attribs.items())
 
     def getcontent(self, dom):
@@ -149,7 +150,6 @@ class Element(object):
                                     node.data.split("\n") if s.strip()])
                 return content
 
-
         return
 
 
@@ -162,11 +162,19 @@ class Attribute(object):
             self.__dict__.update({key: val})
         if not self.__dict__.get("name"):
             raise AttributeError("expected name kwarg")
-        self.__dict__.setdefault("default", NOT_SPECIFIED)
-        if self.default == "none": self.default = None
         self.choices = aslist(self.__dict__.get("choices"))
         self.testmeth = self.__dict__.pop("test", "always")
         self.typeconv = self.__dict__.pop("type", "string")
+
+        # set a default value
+        default = self.__dict__.get("default")
+        if default is None:
+            default = NOT_SPECIFIED
+        elif default.lower() == "none":
+            default = None
+        else:
+            default = eval("{0}('{1}')".format(self.typeconv, default))
+        self.default = default
 
     def __repr__(self):
         string = ", ".join("{0}={1}".format(k, repr(v)) for (k, v) in
@@ -210,7 +218,7 @@ class Attribute(object):
         try:
             return eval("{0}('{1}')".format(self.typeconv, a),
                         {"__builtins__": None}, DTYPES)
-        except:
+        except AttributeError:
             return NOT_SPECIFIED
 
 
@@ -251,6 +259,14 @@ def defntree(filepath=None):
     return Tree
 
 
+def set_random_seed(seed, seedset=[0]):
+    if seedset[0]:
+        inp_warning("random seed already set")
+    global RAND
+    RAND = np.random.RandomState(seed)
+    seedset[0] = 1
+
+
 # recognized types
 def boolean(a):
     if re.search(r"no|0|none|false", a.lower()): return False
@@ -264,8 +280,30 @@ def indices(a):
 def array(a):
     a = aslist(a, dtype=float)
     return np.array(a, dtype=np.float64)
+def responsefcn(a):
+    return check_response_function(a)
+def npalias(a):
+    N_default = 10
+    s = {"range": lambda a, b, N=N_default: np.linspace(a, b, N),
+         "list": lambda a: np.array(a),
+         "weibull": lambda a, b, N=N_default: a * RAND.weibull(b, N),
+         "uniform": lambda a, b, N=N_default: RAND.uniform(a, b, N),
+         "normal": lambda a, b, N=N_default: RAND.normal(a, b, N),
+         "percentage": lambda a, b, N=N_default: (
+             np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))}
+    # look for function and args
+    match = re.search(r"(?P<fcn>\w+)\((?P<args>.*)\)", a)
+    if not match:
+        raise UserInputError("{0}: badly formated function".format(a))
+    fcn, args = match.group("fcn", "args")
+    try:
+        return s[fcn](*aslist(args, dtype=float))
+    except KeyError:
+        raise UserInputError("{0}: unrecognized function".format(fcn))
+
 DTYPES = {"boolean": boolean, "real": real, "integer": integer, "string": string,
-          "array": array, "indices": indices}
+          "array": array, "indices": indices, "responsefcn": responsefcn,
+          "npalias": npalias}
 
 # tests
 def always(a): return True
@@ -298,10 +336,6 @@ def aslist(string, dtype=string):
     string = re.sub(r"[\)\]\}]$", " ", string.strip())
     string = re.sub(r"[, ]", " ", string)
     return [dtype(x) for x in string.split()]
-
-def gmdfcn(a):
-    pass
-
 
 def inp2dict(parent, dom):
 
@@ -351,6 +385,8 @@ def inp2dict(parent, dom):
             for a in range(el.attributes.length):
                 n, v = nandv(el.attributes.item(a))
                 child[i].setattrib(n, v)
+                if n == "seed":
+                    set_random_seed(int(v))
 
             child_elements[name][-1].update(child[i].attributes())
 
@@ -381,6 +417,10 @@ def fatal_inp_error(message):
     sys.stderr.write("*** error: {0}\n".format(message))
     if INP_ERRORS > 5:
         raise SystemExit("*** error: maximum number of input errors exceeded")
+
+
+def inp_warning(message):
+    sys.stderr.write("*** warning: {0}\n".format(message))
 
 
 def get_content_from_children(lmn):
@@ -430,6 +470,7 @@ def read_matlabel(dom, model):
         return
     return ["{0} = {1}".format(k, v) for k, v in mtl_db_params.items()]
 
+
 def parse_input(filepath):
     """Parse the input
 
@@ -456,12 +497,16 @@ def parse_input(filepath):
     # get functions first
     functions = pFunction(els.pop("Function"))
 
-    prmargs = pPermutation(els.pop("Permutation"), functions)
-    if prmargs:
-        return prmargs
-    optargs = pOptimization(els.pop("Optimization"), functions)
-    if optargs:
-        return optargs
+    permdict = els.pop("Permutation")
+    if permdict:
+        root[0].removeChild(root[0].getElementsByTagName("Permutation")[0])
+        return pPermutation(permdict, root[0].toxml())
+
+    optdict = els.pop("Optimization")
+    if optdict:
+        root[0].removeChild(root[0].getElementsByTagName("Permutation")[0])
+        return pOptimization(optdict, functions, root[0])
+
     return pPhysics(els.pop("Physics"), functions)
 
 
@@ -590,66 +635,34 @@ def pOptimization(optdict, *args):
     if not optdict: return
 
 
-def pPermutation(permdict, *args):
+def pPermutation(permdict, basexml):
     """Parse the permutation block
 
     """
-    return
-    pdict = {}
-
-    # Set up options for permutation
-    options = OptionHolder()
-    options.addopt(S_METHOD, T_PERM_METHODS[0], dtype=str, choices=T_PERM_METHODS)
-    options.addopt(S_SEED, None, dtype=int)
-    options.addopt(S_CORR, "none", dtype=str)
-
-    # Get control terms
-    for i in range(permlmn.attributes.length):
-        try:
-            options.setopt(*xmltools.get_name_value(permlmn.attributes.item(i)))
-        except OptionHolderError, e:
-            fatal_inp_error(e.message)
-
-    seed = permdict["seed"]
-    if seed is not None:
-        pp.set_random_seed(seed)
-    N_default = 10
-    pp.update_safe({S_RANGE: lambda a, b, N=N_default: np.linspace(a, b, N),
-                    S_LIST: lambda a: np.array(a),
-                    S_WEIBULL: lambda a, b, N=N_default: a * pp.RAND.weibull(b, N),
-                    S_UNIFORM: lambda a, b, N=N_default: pp.RAND.uniform(a, b, N),
-                    S_NORMAL: lambda a, b, N=N_default: pp.RAND.normal(a, b, N),
-                    S_PERC: lambda a, b, N=N_default: (
-                        np.linspace(a-(b/100.)*a, a+(b/100.)* a, N))})
+    if not permdict:
+        return
+    permdict.pop("seed")
 
     # response function
-    respfcn = permdict["ResponseFunction"]
-    if len(respfcn) > 1:
-        fatal_inp_error("Only one {0} tag supported".format(S_RESP_FCN))
-    elif respfcn:
-        respfcn = respfcn[0]
-    response_fcn = check_response_function_element(respfcn)
+    elements = permdict.pop("Elements")
+    respfcn = elements.pop("ResponseFunction", None)
+    if respfcn:
+        fcn = respfcn["function"]
+        dsc = respfcn["descriptor"]
+        if dsc is None:
+            s = re.search(GMD_RESP_FCN_RE, fcn)
+            dsc = s.group("var")
+        respfcn = (dsc, fcn)
 
     # read in permutated values
     p = []
-    for items in permdict["Permutate"]:
-        var = str(items.attributes.get(S_VAR).value)
-        values = str(items.attributes.get(S_VALS).value)
-        s = re.search(r"(?P<meth>\w+)\s*\(", values)
-        if s: meth = s.group("meth")
-        else: meth = ""
-        if permdict["method"] == "shotgun":
-            if meth != S_RANGE:
-                fatal_inp_error("{0}: expected values=range(...".format(S_SHOTGUN))
-                continue
-            values = re.sub(meth, S_UNIFORM, values)
-        try:
-            p.append([var, eval(values, pp.GDICT, pp.SAFE)])
-        except:
-            fatal_inp_error("{0}: invalid expression".format(values))
-            continue
+    for items in elements.pop("Permutate", []):
+        var = items["var"]
+        values = items["values"]
+        p.append([var, values])
 
-    if permdict["correlations"] is not None:
+    correlations = None
+    if permdict.get("correlations") is not None:
         corr = xmltools.str2list(permdict["correlations"], dtype=str)
         for (i, c) in enumerate(corr):
             if c.lower() not in (S_TBL, S_PLOT, S_NONE):
@@ -659,13 +672,8 @@ def pPermutation(permdict, *args):
             corr = None
         permdict["correlation"] = corr
 
-    pdict["correlation"] = permdict["correlation"]
-    pdict["parameters"] = p
-    pdict["method"] = permdict["method"]
-
-    pdict.update(response_fcn)
-
-    return pdict
+    return ("Permutation", permdict["method"], respfcn, p,
+            basexml, correlations)
 
 
 def pExtract(extdict, driver):
@@ -696,37 +704,3 @@ def pExtract(extdict, driver):
     # get Paths to extract -> further parsing is handled by drivers that
     # support extracting paths
     return extdict["format"], extdict["step"], extdict["ffmt"], variables, paths
-
-
-if __name__ == "__main__":
-    test = """\
-<GMDSpec>
-    <Function id="2" type="analytic_expression" var="t">
-      sin(t)
-    </Function>
-    <Function id="3" type="piecewise_linear" var="t" href="test.fcn"/>
-    <Function id="4" type="piecewise_linear" var="t" href="test.fcn">
-      2 4
-      4 6
-    </Function>
-    <Physics driver="solid">
-        <Material model="elastic">
-            <K> 10 </K>
-            <G> 8 </G>
-        </Material>
-        <Path type="prdef">
-            0 10 222222 0 0 0 0 0 0
-            1 10 222222 1 0 0 0 0 0
-        </Path>
-    </Physics>
-    <Extract>
-    </Extract>
-<!--    <Optimization>
-        <AuxiliaryFile>
-        </AuxiliaryFile>
-        <Optimize var="B" initial_value="23"/>
-    </Optimization> -->
-</GMDSpec>
-"""
-    parsed_input = parse_input(test)
-    print parsed_input

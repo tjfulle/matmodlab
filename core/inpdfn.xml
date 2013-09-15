@@ -26,7 +26,7 @@
     <Attribute name="id" type="integer" test="not reservedfid"/>
     <Attribute name="type" type="string"
 	       choices="analytic_expression piecewise_linear"/>
-    <Attribute name="href" type="string" default="none" test="isfile"/>
+    <Attribute name="href" type="string" default="None" test="isfile"/>
     <Attribute name="var" type="string" default="x"/>
     <Attribute name="cols" type="indices" default="1 2" len="2"/>
   </Element>
@@ -56,7 +56,7 @@
       <Attribute name="fstar" type="real" default="1"/>
       <Attribute name="efstar" type="real" default="1"/>
       <Attribute name="dstar" type="real" default="1"/>
-      <Attribute name="href" type="string" default="none" test="isfile"/>
+      <Attribute name="href" type="string" default="None" test="isfile"/>
       <Attribute name="format" type="string" default="default"
                  choices="default tbl fcnspec"/>
       <Attribute name="proportional" default="false" type="boolean"/>
@@ -86,15 +86,14 @@
   <Element name="Permutation" n="?" conflict="Optimization">
     <Attribute name="method" default="zip" type="string"
 	       choices="zip combine shotgun"/>
+    <Attribute name="seed" default="None" type="integer" test="ispositive"/>
     <Element name="Permutate" n="+">
       <Attribute name="var" type="string"/>
-      <Attribute name="values" type="permfcn"/>
-      <Attribute name="seed" default="None" type="int" test="ispositive"/>
+      <Attribute name="values" type="npalias"/>
     </Element>
     <Element name="ResponseFunction" n="?">
-      <Attribute name="href" default="None" type="string" test="isfile"/>
-      <Attribute name="builtin" default="None" type="gmdfcn"/>
-      <Attribute name="descriptor" default="VAR_{N}" type="string"/>
+      <Attribute name="function" default="None" type="responsefcn"/>
+      <Attribute name="descriptor" default="None" type="string"/>
     </Element>
   </Element>
 
@@ -109,8 +108,7 @@
       <Attribute name="bounds" type="array" default="-inf inf" len="2"/>
     </Element>
     <Element name="ResponseFunction" n="?">
-      <Attribute name="href" default="None" type="string" test="isfile"/>
-      <Attribute name="builtin" default="None" type="gmdfcn"/>
+      <Attribute name="function" default="None" type="string"/>
       <Attribute name="descriptor" default="VAR_{N}" type="string"/>
     </Element>
     <Element name="AuxiliaryFile" n="+">

@@ -260,496 +260,16 @@ class SolidDriver(Driver):
         return 0
 
     # --------------------------------------------------------- Parsing methods
-    @classmethod
-    def format_path(cls, pathdict, surflmns, functions, tterm):
+    @staticmethod
+    def format_path(pathdict, surflmns, functions, tterm):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 
         """
-        path = cls.pPrdef(pathdict, functions, tterm)
+        path = pPrdef(pathdict, functions, tterm)
         if input_errors():
             return
-        cls.kappa, cls.proportional = pathdict["kappa"], pathdict["proportional"]
         return [pathdict["kappa"], pathdict["proportional"], path]
-#        cls.register_paths_and_surfaces(paths={K_PRDEF: path})
-
-        return
-
-    @classmethod
-    def register_paths_and_surfaces(cls, **kwargs):
-        """Register the formatted paths to the class
-
-        """
-        cls.paths = kwargs["paths"]
-
-    @classmethod
-    def pPrdef(cls, pathdict, functions, tterm):
-        """Parse the Path block and set defaults
-
-        """
-        lines = [line.split() for line in pathdict.pop("Content") if line.split()]
-
-        # parse the Path depending on type
-        pformat = pathdict["format"]
-        if pformat == S_DEFAULT:
-            path = cls.parse_path_default(lines)
-
-        elif pformat == S_TBL:
-            path = cls.parse_path_table(lines, pathdict["tfmt"],
-                                        pathdict["cols"],
-                                        pathdict["cfmt"])
-
-        elif pformat == "fcnspec":
-            path = cls.parse_path_cijfcn(lines, functions,
-                                         pathdict["nfac"],
-                                         pathdict["cfmt"])
-            pathdict["nfac"] = 1
-
-        else:
-            fatal_inp_error("Path: {0}: invalid format".format(pformat))
-            return
-
-        if input_errors():
-            return
-
-        # store relevant info to the class
-        path = cls._format_path(path, pathdict, tterm)
-
-        return path
-
-    @classmethod
-    def parse_path_default(cls, lines):
-        """Parse the individual path
-
-        """
-        path = []
-        final_time = 0.
-        leg_num = 1
-        for line in lines:
-            if not line:
-                continue
-            termination_time, num_steps, control_hold = line[:3]
-            Cij_hold = line[3:]
-
-            # check entries
-            # --- termination time
-            termination_time = format_termination_time(
-                leg_num, termination_time, final_time)
-            if termination_time is None:
-                termination_time = 1e99
-            final_time = termination_time
-
-            # --- number of steps
-            num_steps = format_num_steps(leg_num, num_steps)
-            if num_steps is None:
-                num_steps = 10000
-
-            # --- control
-            control = cls.format_path_control(control_hold, leg_num=leg_num)
-
-            # --- Cij
-            Cij = []
-            for (i, comp) in enumerate(Cij_hold):
-                try:
-                    comp = float(comp)
-                except ValueError:
-                    fatal_inp_error("Path: Component {0} of leg {1} must be a "
-                                    "float, got {2}".format(i+1, leg_num, comp))
-                Cij.append(comp)
-
-            Cij = np.array(Cij)
-
-            # --- Check lengths of Cij and control are consistent
-            if len(Cij) != len(control):
-                fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
-                                .format(leg_num))
-                continue
-
-
-            path.append([termination_time, num_steps, control, Cij])
-            leg_num += 1
-            continue
-
-        return path
-
-    @classmethod
-    def parse_path_table(cls, lines, tfmt, cols, cfmt):
-        """Parse the path table
-
-        """
-        path = []
-        final_time = 0.
-        termination_time = 0.
-        leg_num = 1
-
-        # check the control
-        control = cls.format_path_control(cfmt)
-
-        tbl = []
-        for line in lines:
-            if not line:
-                continue
-            try:
-                line = [float(x) for x in line]
-            except ValueError:
-                fatal_inp_error("Expected floats in leg {0}, got {1}".format(
-                    leg_num, line))
-                continue
-            tbl.append(line)
-        tbl = np.array(tbl)
-
-        # if cols was not specified, must want all
-        if not cols:
-            columns = range(len(tbl.shape[1]))
-        else:
-            columns = cls.format_tbl_cols(cols)
-
-        for line in tbl:
-            try:
-                line = line[columns]
-            except IndexError:
-                fatal_inp_error("Requested column not found in leg "
-                                "{0}".format(leg_num))
-                continue
-
-            if tfmt == S_DT:
-                termination_time += line[0]
-            else:
-                termination_time = line[0]
-
-            Cij = line[1:]
-
-            # check entries
-            # --- termination time
-            termination_time = format_termination_time(
-                leg_num, termination_time, final_time)
-            if termination_time is None:
-                continue
-            final_time = termination_time
-
-            # --- number of steps
-            num_steps = 1
-
-            # --- Check lengths of Cij and control are consistent
-            if len(Cij) != len(control):
-                fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
-                                .format(leg_num))
-
-            path.append([termination_time, num_steps, control, Cij])
-            leg_num += 1
-            continue
-
-        return path
-
-    @classmethod
-    def parse_path_cijfcn(cls, lines, functions, num_steps, cfmt):
-        """Parse the path given by functions
-
-        """
-        start_time = 0.
-        leg_num = 1
-
-        if not lines:
-            fatal_inp_error("Empty path encountered")
-            return
-        elif len(lines) > 1:
-            fatal_inp_error("Only one line of table functions allowed, "
-                            "got {0}".format(len(lines)))
-            return
-
-        termination_time = lines[0][0]
-        cijfcns = lines[0][1:]
-
-        # check entries
-        # --- termination time
-        termination_time = format_termination_time(1, termination_time, -1)
-        if termination_time is None:
-            # place holder, just to check rest of input
-            termination_time = 1.e99
-        final_time = termination_time
-
-        # --- control
-        control = cls.format_path_control(cfmt, leg_num=leg_num)
-
-        # --- get the actual functions
-        Cij = []
-        for icij, cijfcn in enumerate(cijfcns):
-            cijfcn = cijfcn.split(":")
-            try:
-                fid, scale = cijfcn
-            except ValueError:
-                fid, scale = cijfcn[0], 1
-            try:
-                fid = int(float(fid))
-            except ValueError:
-                fatal_inp_error("expected integer function ID, got {0}".format(fid))
-                continue
-            try:
-                scale = float(scale)
-            except ValueError:
-                fatal_inp_error("expected real function scale for function {0}"
-                                ", got {1}".format(fid, scale))
-                continue
-
-            fcn = functions.get(fid)
-            if fcn is None:
-                fatal_inp_error("{0}: function not defined".format(fid))
-                continue
-            Cij.append((scale, fcn))
-
-        # --- Check lengths of Cij and control are consistent
-        if len(Cij) != len(control):
-            fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
-                            .format(leg_num))
-
-        path = []
-        for time in np.linspace(start_time, final_time, num_steps):
-            leg = [time, 1, control]
-            leg.append(np.array([s * f(time) for (s, f) in Cij]))
-            path.append(leg)
-
-        return path
-
-    @staticmethod
-    def format_path_control(cfmt, leg_num=None):
-        leg = "" if leg_num is None else "(leg {0})".format(leg_num)
-        valid_control_flags = [1, 2, 3, 4, 5, 6, 8, 9]
-        control = []
-        for (i, flag) in enumerate(cfmt):
-            try:
-                flag = int(flag)
-            except ValueError:
-                fatal_inp_error("Path: expected control flag {0} to be an integer"
-                                ", got {1} {2}".format(i+1, flag, leg))
-                continue
-
-            if flag not in valid_control_flags:
-                valid = ", ".join(xmltools.stringify(x)
-                                  for x in valid_control_flags)
-                fatal_inp_error("Path: expected control flag to be one of {0}, "
-                                "got {1} {2}".format(valid, flag, leg))
-                continue
-
-            control.append(flag)
-
-        if 5 in control:
-            if any(flag != 5 and flag not in (6, 9) for flag in control):
-                fatal_inp_error("Path: mixed mode deformation not allowed with "
-                                "deformation gradient control {0}".format(leg))
-
-            # must specify all components
-            elif len(control) != 9:
-                fatal_inp_error("all 9 components of deformation gradient must "
-                                "be specified {0}".format(leg))
-
-        if 8 in control:
-            # like deformation gradient control, if displacement is specified
-            # for one, it must be for all
-            if any(flag != 8 and flag not in (6, 9) for flag in control):
-                fatal_inp_error("Path: mixed mode deformation not allowed with "
-                                "displacement control {0}".format(leg))
-
-            # must specify all components
-            elif len(control) != 3:
-                fatal_inp_error("all 3 components of displacement must "
-                                "be specified {0}".format(leg))
-
-        return np.array(control, dtype=np.int)
-
-
-    @staticmethod
-    def format_tbl_cols(cols):
-        columns = []
-        for item in [x.split(":")
-                     for x in xmltools.str2list(
-                             re.sub(r"\s*:\s*", ":", cols), dtype=str)]:
-            try:
-                item = [int(x) for x in item]
-            except ValueError:
-                fatal_inp_error("Path: expected integer cols, got "
-                                "{0}".format(cols))
-                continue
-            item[0] -= 1
-
-            if len(item) == 1:
-                columns.append(item[0])
-
-            elif len(item) not in (2, 3):
-                fatal_inp_error("Path: expected cfmt range to be specified as "
-                                "start:end:[step], got {0}".format(
-                                    ":".join(str(x) for x in item)))
-                continue
-
-            if len(item) == 2:
-                columns.extend(range(item[0], item[1]))
-
-            elif len(item) == 3:
-                columns.extend(range(item[0], item[1], item[2]))
-
-        return columns
-
-    @staticmethod
-    def _format_path(path, pathdict, tterm):
-        """Format the path by applying multipliers
-
-        """
-        # stress control if any of the control types are 3 or 4
-        stress_control = any(c in (3, 4) for leg in path for c in leg[2])
-        kappa = pathdict["kappa"]
-        if stress_control and kappa != 0.:
-            fatal_inp_error("kappa must be 0 with stress control option")
-
-        # From these formulas, note that AMPL may be used to increase or
-        # decrease the peak strain without changing the strain rate. ratfac is
-        # the multiplier on strain rate and stress rate.
-        amplitude = pathdict["amplitude"]
-        ratfac = pathdict["ratfac"]
-        nfac = pathdict["nfac"]
-        ndumps = pathdict["ndumps"]
-        if ndumps == "all":
-            ndumps = 100000000
-        ndumps= int(ndumps)
-
-        # factors to be applied to deformation types
-        efac = amplitude * pathdict["estar"]
-        tfac = abs(amplitude) * pathdict["tstar"] / ratfac
-        sfac = amplitude * pathdict["sstar"]
-        ffac = amplitude * pathdict["fstar"]
-        effac = amplitude * pathdict["efstar"]
-        dfac = amplitude * pathdict["dstar"]
-
-        # for now unit tensor for rotation
-        Rij = np.reshape(np.eye(3), (9,))
-
-        # format each leg
-        if not tterm:
-            tterm = 1.e80
-        for ileg, (termination_time, num_steps, control, Cij) in enumerate(path):
-
-            leg_num = ileg + 1
-
-            num_steps = int(nfac * num_steps)
-            termination_time = tfac * termination_time
-
-            if len(control) != len(Cij):
-                fatal_inp_error("len(cij) != len(control) in leg "
-                                "{0}".format(leg_num))
-                continue
-
-            # pull out electric field from other deformation specifications
-            efcomp = np.zeros(3)
-            trtbl = np.array([True] * len(control))
-            j = 0
-            for i, c in enumerate(control):
-                if c == 6:
-                    efcomp[j] = effac * Cij[i]
-                    trtbl[i] = False
-                    j += 1
-
-            Cij = Cij[trtbl]
-            control = control[trtbl]
-
-            if 5 in control:
-                # check for valid deformation
-                defgrad = np.reshape(ffac * Cij, (3, 3))
-                jac = np.linalg.det(defgrad)
-                if jac <= 0:
-                    fatal_inp_error("Inadmissible deformation gradient in "
-                                    "leg {0} gave a Jacobian of "
-                                    "{1:f}".format(leg_num, jac))
-
-                # convert defgrad to strain E with associated rotation given by
-                # axis of rotation x and angle of rotation theta
-                Rij, Vij = np.linalg.qr(defgrad)
-                if np.max(np.abs(Rij - np.eye(3))) > np.finfo(np.float).eps:
-                    fatal_inp_error("Rotation encountered in leg {0}. "
-                                    "Rotations are not supported".format(leg_num))
-                Uij = tensor.asarray(np.dot(Rij.T, np.dot(Vij, Rij)))
-                Rij = np.reshape(Rij, (9,))
-                Cij = tensor.u2e(Uij, kappa)
-
-                # deformation gradient now converted to strains
-                control = np.array([2] * 6, dtype=np.int)
-
-            elif 8 in control:
-                # displacement control check
-                # convert displacments to strains
-                Uij = np.zeros(6)
-                Uij[:3] = dfac * Cij[:3] + 1.
-                Cij = tensor.u2e(Uij, kappa)
-
-                # displacements now converted to strains
-                control = np.array([2] * 6, dtype=np.int)
-
-            elif 2 in control and len(control) == 1:
-                # only one strain value given -> volumetric strain
-                evol = Cij[0]
-                if kappa * evol + 1. < 0.:
-                    fatal_inp_error("1 + kappa * ev must be positive in leg "
-                                    "{0}".format(leg_num))
-
-                if kappa == 0.:
-                    eij = evol / 3.
-
-                else:
-                    eij = ((kappa * evol + 1.) ** (1. / 3.) - 1.)
-                    eij = eij / kappa
-
-                control = np.array([2] * 6, dtype=np.int)
-                Cij = np.array([eij, eij, eij, 0., 0., 0.])
-
-            elif 4 in control and len(control) == 1:
-                # only one stress value given -> pressure
-                Sij = -Cij[0]
-                control = np.array([4, 4, 4, 2, 2, 2], dtype=np.int)
-                Cij = np.array([Sij, Sij, Sij, 0., 0., 0.])
-
-            control = np.append(control, [2] * (6 - len(control)))
-            Cij = np.append(Cij, [0.] * (6 - len(Cij)))
-
-            # adjust components based on user input
-            for idx, ctype in enumerate(control):
-                if ctype in (1, 3):
-                    # adjust rates
-                    Cij[idx] *= ratfac
-
-                elif ctype == 2:
-                    # adjust strain
-                    Cij[idx] *= efac
-
-                    if kappa * Cij[idx] + 1. < 0.:
-                        fatal_inp_error("1 + kappa*E[{0}] must be positive in "
-                                        "leg {1}".format(idx, leg_num))
-
-                elif ctype == 4:
-                    # adjust stress
-                    Cij[idx] *= sfac
-
-                continue
-
-            # initial stress check
-            if termination_time == 0.:
-                if 3 in control:
-                    fatal_inp_error("initial stress rate ambiguous")
-
-                elif 4 in control and any(x != 4 for x in control):
-                    fatal_inp_error("Mixed initial state not allowed")
-
-            # Replace leg with modfied values
-            leg = [termination_time, num_steps]
-            leg.extend(control)
-            leg.extend(Cij)
-            leg.append(ndumps)
-            leg.extend(efcomp)
-            path[ileg] = leg
-
-            if termination_time > tterm:
-                del path[ileg+1:]
-                break
-
-            continue
-
-        return np.array(path)
 
 def mybool(a):
     if str(a).lower().strip() in ("false", "no", "0", "none"):
@@ -793,3 +313,468 @@ def format_num_steps(leg_num, num_steps):
         return
 
     return num_steps
+
+def pPrdef(pathdict, functions, tterm):
+    """Parse the Path block and set defaults
+
+    """
+    lines = [line.split() for line in pathdict.pop("Content") if line.split()]
+
+    # parse the Path depending on type
+    pformat = pathdict["format"]
+    if pformat == S_DEFAULT:
+        path = parse_path_default(lines)
+
+    elif pformat == S_TBL:
+        path = parse_path_table(lines, pathdict["tfmt"],
+                                pathdict["cols"],
+                                pathdict["cfmt"])
+
+    elif pformat == "fcnspec":
+        path = parse_path_cijfcn(lines, functions,
+                                 pathdict["nfac"],
+                                 pathdict["cfmt"])
+        pathdict["nfac"] = 1
+
+    else:
+        fatal_inp_error("Path: {0}: invalid format".format(pformat))
+        return
+
+    if input_errors():
+        return
+
+    # store relevant info to the class
+    path = _format_path(path, pathdict, tterm)
+
+    return path
+
+def parse_path_default(lines):
+    """Parse the individual path
+
+    """
+    path = []
+    final_time = 0.
+    leg_num = 1
+    for line in lines:
+        if not line:
+            continue
+        termination_time, num_steps, control_hold = line[:3]
+        Cij_hold = line[3:]
+
+        # check entries
+        # --- termination time
+        termination_time = format_termination_time(
+            leg_num, termination_time, final_time)
+        if termination_time is None:
+            termination_time = 1e99
+        final_time = termination_time
+
+        # --- number of steps
+        num_steps = format_num_steps(leg_num, num_steps)
+        if num_steps is None:
+            num_steps = 10000
+
+        # --- control
+        control = format_path_control(control_hold, leg_num=leg_num)
+
+        # --- Cij
+        Cij = []
+        for (i, comp) in enumerate(Cij_hold):
+            try:
+                comp = float(comp)
+            except ValueError:
+                fatal_inp_error("Path: Component {0} of leg {1} must be a "
+                                "float, got {2}".format(i+1, leg_num, comp))
+            Cij.append(comp)
+
+        Cij = np.array(Cij)
+
+        # --- Check lengths of Cij and control are consistent
+        if len(Cij) != len(control):
+            fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
+                            .format(leg_num))
+            continue
+
+
+        path.append([termination_time, num_steps, control, Cij])
+        leg_num += 1
+        continue
+
+    return path
+
+
+def parse_path_table(lines, tfmt, cols, cfmt):
+    """Parse the path table
+
+    """
+    path = []
+    final_time = 0.
+    termination_time = 0.
+    leg_num = 1
+
+    # check the control
+    control = format_path_control(cfmt)
+
+    tbl = []
+    for line in lines:
+        if not line:
+            continue
+        try:
+            line = [float(x) for x in line]
+        except ValueError:
+            fatal_inp_error("Expected floats in leg {0}, got {1}".format(
+                leg_num, line))
+            continue
+        tbl.append(line)
+    tbl = np.array(tbl)
+
+    # if cols was not specified, must want all
+    if not cols:
+        columns = range(len(tbl.shape[1]))
+    else:
+        columns = format_tbl_cols(cols)
+
+    for line in tbl:
+        try:
+            line = line[columns]
+        except IndexError:
+            fatal_inp_error("Requested column not found in leg "
+                            "{0}".format(leg_num))
+            continue
+
+        if tfmt == S_DT:
+            termination_time += line[0]
+        else:
+            termination_time = line[0]
+
+        Cij = line[1:]
+
+        # check entries
+        # --- termination time
+        termination_time = format_termination_time(
+            leg_num, termination_time, final_time)
+        if termination_time is None:
+            continue
+        final_time = termination_time
+
+        # --- number of steps
+        num_steps = 1
+
+        # --- Check lengths of Cij and control are consistent
+        if len(Cij) != len(control):
+            fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
+                            .format(leg_num))
+
+        path.append([termination_time, num_steps, control, Cij])
+        leg_num += 1
+        continue
+
+    return path
+
+
+def parse_path_cijfcn(lines, functions, num_steps, cfmt):
+    """Parse the path given by functions
+
+    """
+    start_time = 0.
+    leg_num = 1
+
+    if not lines:
+        fatal_inp_error("Empty path encountered")
+        return
+    elif len(lines) > 1:
+        fatal_inp_error("Only one line of table functions allowed, "
+                        "got {0}".format(len(lines)))
+        return
+
+    termination_time = lines[0][0]
+    cijfcns = lines[0][1:]
+
+    # check entries
+    # --- termination time
+    termination_time = format_termination_time(1, termination_time, -1)
+    if termination_time is None:
+        # place holder, just to check rest of input
+        termination_time = 1.e99
+    final_time = termination_time
+
+    # --- control
+    control = format_path_control(cfmt, leg_num=leg_num)
+
+    # --- get the actual functions
+    Cij = []
+    for icij, cijfcn in enumerate(cijfcns):
+        cijfcn = cijfcn.split(":")
+        try:
+            fid, scale = cijfcn
+        except ValueError:
+            fid, scale = cijfcn[0], 1
+        try:
+            fid = int(float(fid))
+        except ValueError:
+            fatal_inp_error("expected integer function ID, got {0}".format(fid))
+            continue
+        try:
+            scale = float(scale)
+        except ValueError:
+            fatal_inp_error("expected real function scale for function {0}"
+                            ", got {1}".format(fid, scale))
+            continue
+
+        fcn = functions.get(fid)
+        if fcn is None:
+            fatal_inp_error("{0}: function not defined".format(fid))
+            continue
+        Cij.append((scale, fcn))
+
+    # --- Check lengths of Cij and control are consistent
+    if len(Cij) != len(control):
+        fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
+                        .format(leg_num))
+
+    path = []
+    for time in np.linspace(start_time, final_time, num_steps):
+        leg = [time, 1, control]
+        leg.append(np.array([s * f(time) for (s, f) in Cij]))
+        path.append(leg)
+
+    return path
+
+def format_path_control(cfmt, leg_num=None):
+    leg = "" if leg_num is None else "(leg {0})".format(leg_num)
+    valid_control_flags = [1, 2, 3, 4, 5, 6, 8, 9]
+    control = []
+    for (i, flag) in enumerate(cfmt):
+        try:
+            flag = int(flag)
+        except ValueError:
+            fatal_inp_error("Path: expected control flag {0} to be an integer"
+                            ", got {1} {2}".format(i+1, flag, leg))
+            continue
+
+        if flag not in valid_control_flags:
+            valid = ", ".join(xmltools.stringify(x)
+                              for x in valid_control_flags)
+            fatal_inp_error("Path: expected control flag to be one of {0}, "
+                            "got {1} {2}".format(valid, flag, leg))
+            continue
+
+        control.append(flag)
+
+    if 5 in control:
+        if any(flag != 5 and flag not in (6, 9) for flag in control):
+            fatal_inp_error("Path: mixed mode deformation not allowed with "
+                            "deformation gradient control {0}".format(leg))
+
+        # must specify all components
+        elif len(control) != 9:
+            fatal_inp_error("all 9 components of deformation gradient must "
+                            "be specified {0}".format(leg))
+
+    if 8 in control:
+        # like deformation gradient control, if displacement is specified
+        # for one, it must be for all
+        if any(flag != 8 and flag not in (6, 9) for flag in control):
+            fatal_inp_error("Path: mixed mode deformation not allowed with "
+                            "displacement control {0}".format(leg))
+
+        # must specify all components
+        elif len(control) != 3:
+            fatal_inp_error("all 3 components of displacement must "
+                            "be specified {0}".format(leg))
+
+    return np.array(control, dtype=np.int)
+
+
+def format_tbl_cols(cols):
+    columns = []
+    for item in [x.split(":")
+                 for x in xmltools.str2list(
+                         re.sub(r"\s*:\s*", ":", cols), dtype=str)]:
+        try:
+            item = [int(x) for x in item]
+        except ValueError:
+            fatal_inp_error("Path: expected integer cols, got "
+                            "{0}".format(cols))
+            continue
+        item[0] -= 1
+
+        if len(item) == 1:
+            columns.append(item[0])
+
+        elif len(item) not in (2, 3):
+            fatal_inp_error("Path: expected cfmt range to be specified as "
+                            "start:end:[step], got {0}".format(
+                                ":".join(str(x) for x in item)))
+            continue
+
+        if len(item) == 2:
+            columns.extend(range(item[0], item[1]))
+
+        elif len(item) == 3:
+            columns.extend(range(item[0], item[1], item[2]))
+
+    return columns
+
+
+def _format_path(path, pathdict, tterm):
+    """Format the path by applying multipliers
+
+    """
+    # stress control if any of the control types are 3 or 4
+    stress_control = any(c in (3, 4) for leg in path for c in leg[2])
+    kappa = pathdict["kappa"]
+    if stress_control and kappa != 0.:
+        fatal_inp_error("kappa must be 0 with stress control option")
+
+    # From these formulas, note that AMPL may be used to increase or
+    # decrease the peak strain without changing the strain rate. ratfac is
+    # the multiplier on strain rate and stress rate.
+    amplitude = pathdict["amplitude"]
+    ratfac = pathdict["ratfac"]
+    nfac = pathdict["nfac"]
+    ndumps = pathdict["ndumps"]
+    if ndumps == "all":
+        ndumps = 100000000
+    ndumps= int(ndumps)
+
+    # factors to be applied to deformation types
+    efac = amplitude * pathdict["estar"]
+    tfac = abs(amplitude) * pathdict["tstar"] / ratfac
+    sfac = amplitude * pathdict["sstar"]
+    ffac = amplitude * pathdict["fstar"]
+    effac = amplitude * pathdict["efstar"]
+    dfac = amplitude * pathdict["dstar"]
+
+    # for now unit tensor for rotation
+    Rij = np.reshape(np.eye(3), (9,))
+
+    # format each leg
+    if not tterm:
+        tterm = 1.e80
+    for ileg, (termination_time, num_steps, control, Cij) in enumerate(path):
+
+        leg_num = ileg + 1
+
+        num_steps = int(nfac * num_steps)
+        termination_time = tfac * termination_time
+
+        if len(control) != len(Cij):
+            fatal_inp_error("len(cij) != len(control) in leg "
+                            "{0}".format(leg_num))
+            continue
+
+        # pull out electric field from other deformation specifications
+        efcomp = np.zeros(3)
+        trtbl = np.array([True] * len(control))
+        j = 0
+        for i, c in enumerate(control):
+            if c == 6:
+                efcomp[j] = effac * Cij[i]
+                trtbl[i] = False
+                j += 1
+
+        Cij = Cij[trtbl]
+        control = control[trtbl]
+
+        if 5 in control:
+            # check for valid deformation
+            defgrad = np.reshape(ffac * Cij, (3, 3))
+            jac = np.linalg.det(defgrad)
+            if jac <= 0:
+                fatal_inp_error("Inadmissible deformation gradient in "
+                                "leg {0} gave a Jacobian of "
+                                "{1:f}".format(leg_num, jac))
+
+            # convert defgrad to strain E with associated rotation given by
+            # axis of rotation x and angle of rotation theta
+            Rij, Vij = np.linalg.qr(defgrad)
+            if np.max(np.abs(Rij - np.eye(3))) > np.finfo(np.float).eps:
+                fatal_inp_error("Rotation encountered in leg {0}. "
+                                "Rotations are not supported".format(leg_num))
+            Uij = tensor.asarray(np.dot(Rij.T, np.dot(Vij, Rij)))
+            Rij = np.reshape(Rij, (9,))
+            Cij = tensor.u2e(Uij, kappa)
+
+            # deformation gradient now converted to strains
+            control = np.array([2] * 6, dtype=np.int)
+
+        elif 8 in control:
+            # displacement control check
+            # convert displacments to strains
+            Uij = np.zeros(6)
+            Uij[:3] = dfac * Cij[:3] + 1.
+            Cij = tensor.u2e(Uij, kappa)
+
+            # displacements now converted to strains
+            control = np.array([2] * 6, dtype=np.int)
+
+        elif 2 in control and len(control) == 1:
+            # only one strain value given -> volumetric strain
+            evol = Cij[0]
+            if kappa * evol + 1. < 0.:
+                fatal_inp_error("1 + kappa * ev must be positive in leg "
+                                "{0}".format(leg_num))
+
+            if kappa == 0.:
+                eij = evol / 3.
+
+            else:
+                eij = ((kappa * evol + 1.) ** (1. / 3.) - 1.)
+                eij = eij / kappa
+
+            control = np.array([2] * 6, dtype=np.int)
+            Cij = np.array([eij, eij, eij, 0., 0., 0.])
+
+        elif 4 in control and len(control) == 1:
+            # only one stress value given -> pressure
+            Sij = -Cij[0]
+            control = np.array([4, 4, 4, 2, 2, 2], dtype=np.int)
+            Cij = np.array([Sij, Sij, Sij, 0., 0., 0.])
+
+        control = np.append(control, [2] * (6 - len(control)))
+        Cij = np.append(Cij, [0.] * (6 - len(Cij)))
+
+        # adjust components based on user input
+        for idx, ctype in enumerate(control):
+            if ctype in (1, 3):
+                # adjust rates
+                Cij[idx] *= ratfac
+
+            elif ctype == 2:
+                # adjust strain
+                Cij[idx] *= efac
+
+                if kappa * Cij[idx] + 1. < 0.:
+                    fatal_inp_error("1 + kappa*E[{0}] must be positive in "
+                                    "leg {1}".format(idx, leg_num))
+
+            elif ctype == 4:
+                # adjust stress
+                Cij[idx] *= sfac
+
+            continue
+
+        # initial stress check
+        if termination_time == 0.:
+            if 3 in control:
+                fatal_inp_error("initial stress rate ambiguous")
+
+            elif 4 in control and any(x != 4 for x in control):
+                fatal_inp_error("Mixed initial state not allowed")
+
+        # Replace leg with modfied values
+        leg = [termination_time, num_steps]
+        leg.extend(control)
+        leg.extend(Cij)
+        leg.append(ndumps)
+        leg.extend(efcomp)
+        path[ileg] = leg
+
+        if termination_time > tterm:
+            del path[ileg+1:]
+            break
+
+        continue
+
+    return np.array(path)

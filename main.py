@@ -90,15 +90,9 @@ def main(argv=None):
         if stype == "Physics":
             model = PhysicsHandler(runid, args.v, *mm_input[1:])
 
-        elif mm_input.stype == S_PERMUTATION:
-            opts = (args.j,)
+        elif stype == "Permutation":
             exe = "{0} {1}".format(sys.executable, FILE)
-            model = PermutationHandler(runid, args.v, mm_input.method,
-                                       mm_input.response_function,
-                                       mm_input.response_descriptor,
-                                       mm_input.parameters, exe,
-                                       mm_input.basexml, mm_input.correlation,
-                                       *opts)
+            model = PermutationHandler(runid, args.v, exe, args.j, *mm_input[1:])
 
         elif mm_input.stype == S_OPT:
             exe = "{0} {1}".format(sys.executable, FILE)

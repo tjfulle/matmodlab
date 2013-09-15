@@ -22,8 +22,9 @@ NJOBS = 0
 
 
 class PermutationHandler(object):
-    def __init__(self, runid, verbosity, method, respfcn, respdesc,
-                 parameters, exe, basexml, correlation, *opts):
+    def __init__(self, runid, verbosity, exe, nproc, method, respfcn,
+                 parameters, basexml, correlation):
+        global NJOBS
 
         self.rootd = os.path.join(os.getcwd(), runid + ".eval")
         if os.path.isdir(self.rootd):
@@ -35,7 +36,7 @@ class PermutationHandler(object):
         self.method = method
         self.exe = exe
         self.basexml = basexml
-        self.nproc = opts[0]
+        self.nproc = nproc
 
         self.names = []
         self.timing = {}
@@ -44,15 +45,14 @@ class PermutationHandler(object):
             self.names.append(name)
             self.ivalues.append(ivalue)
 
-        self.respfcn = None if not respfcn else respfcn
-        if self.respfcn is not None and not respdesc:
+        if respfcn:
+            self.respdesc, self.respfcn = respfcn
             s = re.search(GMD_RESP_FCN_RE, self.respfcn)
             respdesc = s.group("var")
         self.respdesc = respdesc
         self.correlation = correlation
 
-    def setup(self):
-        global NJOBS
+        # set up the jobs
         if self.method in ("zip", "shotgun"):
             if not all(len(x) == len(self.ivalues[0]) for x in self.ivalues):
                 raise io.Error1("Number of permutations must be the same for "
