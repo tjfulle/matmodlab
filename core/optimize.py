@@ -19,15 +19,15 @@ OPT_METHODS = {"simplex": "fmin", "powell": "fmin_powell",
                "cobyla": "fmin_cobyla"}
 
 class OptimizationHandler(object):
-    def __init__(self, runid, verbosity, method, exe, script, descriptor,
-                 parameters, tolerance, maxiter, disp,
-                 basexml, auxiliary, *opts):
+    def __init__(self, runid, verbosity, exe, method, respfcn,
+                 parameters, tolerance, maxiter, basexml, auxiliary):
 
         # root directory to run the problem
         self.rootd = os.path.join(os.getcwd(), runid + ".eval")
         if os.path.isdir(self.rootd):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
+        descriptor, script = respfcn
 
         # logger
         io.setup_logger(runid, verbosity, d=self.rootd)
@@ -58,8 +58,6 @@ class OptimizationHandler(object):
                 if self.method in ("fmin", "fmin_powell"):
                     io.log_warning("{0}: bounds not supported".format(method))
 
-                if bounds[0] is None: bounds[0] = -HUGE
-                if bounds[1] is None: bounds[1] = HUGE
                 if bounds[0] > bounds[1]:
                     io.log_warning("{0}: upper bound must be greater than "
                                    "lower".format(name))
@@ -77,10 +75,9 @@ class OptimizationHandler(object):
         self.runid = runid
         self.exe = exe
         self.script = script
-        self.descriptor = descriptor if descriptor else "ERR"
+        self.descriptor = descriptor
         self.tolerance = tolerance
         self.maxiter = maxiter
-        self.disp = disp
         self.basexml = basexml
         self.auxiliary_files = auxiliary
         self.tabular = GMDTabularWriter(runid, self.rootd)
@@ -138,16 +135,16 @@ class OptimizationHandler(object):
         if self.method == OPT_METHODS["simplex"]:
             xopt = scipy.optimize.fmin(
                 func, x0, xtol=self.tolerance, ftol=self.tolerance,
-                maxiter=self.maxiter, disp=self.disp, args=fargs)
+                maxiter=self.maxiter, args=fargs, disp=0)
 
         elif self.method == OPT_METHODS["powell"]:
             xopt = scipy.optimize.fmin_powell(
                 func, x0, xtol=self.tolerance, ftol=self.tolerance,
-                maxiter=self.maxiter, disp=self.disp, args=fargs)
+                maxiter=self.maxiter, args=fargs, disp=0)
 
         elif self.method == OPT_METHODS["cobyla"]:
             xopt = scipy.optimize.fmin_cobyla(
-                func, x0, cons, consargs=(), disp=self.disp, args=fargs)
+                func, x0, cons, consargs=(), args=fargs, disp=0)
 
         self.xopt = xopt * xfac
 

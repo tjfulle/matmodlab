@@ -58,7 +58,7 @@
       <Attribute name="dstar" type="real" default="1"/>
       <Attribute name="href" type="string" default="None" test="isfile"/>
       <Attribute name="format" type="string" default="default"
-                 choices="default tbl fcnspec"/>
+                 choices="default table fcnspec"/>
       <Attribute name="proportional" default="false" type="boolean"/>
       <Attribute name="ndumps" default="20" type="string"/>
       <Attribute name="cols" default="None" type="string"/>
@@ -85,7 +85,7 @@
 
   <Element name="Permutation" n="?" conflict="Optimization">
     <Attribute name="method" default="zip" type="string"
-	       choices="zip combine shotgun"/>
+	       choices="zip combine"/>
     <Attribute name="seed" default="None" type="integer" test="ispositive"/>
     <Element name="Permutate" n="+">
       <Attribute name="var" type="string"/>

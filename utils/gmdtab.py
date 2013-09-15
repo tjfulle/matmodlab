@@ -29,27 +29,25 @@ class GMDTabularWriter(object):
         self.stack = []
 
         if d is None:
-            self._stream = sys.stdout
-            self._filepath = None
-        else:
-            self._filepath = os.path.join(d, F_EVALDB)
-            self._stream = open(self._filepath, "w")
-
+            d = os.getcwd()
+        self._filepath = os.path.join(d, F_EVALDB)
         self.start_document()
         pass
 
     def create_element(self, name, attrs):
         sp = IND * len(self.stack)
         a = " ".join('{0}="{1}"'.format(k, v) for (k, v) in attrs)
-        self._stream.write("{0}<{1} {2}/>\n".format(sp, name, a))
-        self._stream.flush()
+        with open(self._filepath, "a") as stream:
+            stream.write("{0}<{1} {2}/>\n".format(sp, name, a))
+            stream.flush()
         return
 
     def start_element(self, name, attrs, end=False):
         sp = IND * len(self.stack)
         a = " ".join('{0}="{1}"'.format(k, v) for (k, v) in attrs)
-        self._stream.write("{0}<{1} {2}>\n".format(sp, name, a))
-        self._stream.flush()
+        with open(self._filepath, "a") as stream:
+            stream.write("{0}<{1} {2}>\n".format(sp, name, a))
+            stream.flush()
         self.stack.append(name)
         return
 
@@ -57,13 +55,15 @@ class GMDTabularWriter(object):
         _name = self.stack.pop(-1)
         assert _name == name
         sp = IND * len(self.stack)
-        self._stream.write("{0}</{1}>\n".format(sp, name))
-        self._stream.flush()
+        with open(self._filepath, "a") as stream:
+            stream.write("{0}</{1}>\n".format(sp, name))
+            stream.flush()
         return
 
     def start_document(self):
-        self._stream.write("""<?xml version="1.0"?>\n""")
-        self._stream.flush()
+        with open(self._filepath, "w") as stream:
+            stream.write("""<?xml version="1.0"?>\n""")
+            stream.flush()
         now = time.asctime(time.localtime())
         self.start_element(U_ROOT, (("runid", self.runid), ("date", now)))
         return
@@ -71,9 +71,10 @@ class GMDTabularWriter(object):
     def end_document(self):
         _name = self.stack.pop(-1)
         assert _name == U_ROOT
-        self._stream.write("</{0}>\n".format(U_ROOT))
-        self._stream.flush()
-        self._stream.close()
+        with open(self._filepath, "a") as stream:
+            stream.write("</{0}>\n".format(U_ROOT))
+            stream.flush()
+            stream.close()
         return
 
     def write_eval_info(self, n, s, d, parameters, responses=None):

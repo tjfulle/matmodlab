@@ -314,7 +314,7 @@ def isfile(a):
     if not os.path.isfile(a):
         if not os.path.isfile(os.path.join(cfg.I, a)):
             return "{0}: no such file".format(a)
-        a = os.path.join(cfg.I, href)
+        a = os.path.join(cfg.I, a)
     return True, a
 def isint(a): return a.isdigit()
 def isnumber(a):
@@ -504,8 +504,8 @@ def parse_input(filepath):
 
     optdict = els.pop("Optimization")
     if optdict:
-        root[0].removeChild(root[0].getElementsByTagName("Permutation")[0])
-        return pOptimization(optdict, functions, root[0])
+        root[0].removeChild(root[0].getElementsByTagName("Optimization")[0])
+        return pOptimization(optdict, root[0].toxml())
 
     return pPhysics(els.pop("Physics"), functions)
 
@@ -631,18 +631,49 @@ def pMaterial(mtldict):
     return [model, params]
 
 
-def pOptimization(optdict, *args):
-    if not optdict: return
+def pOptimization(optdict, basexml):
+    """Parse the optimization block
+
+    """
+    # response function
+    elements = optdict.pop("Elements")
+    respfcn = elements.pop("ResponseFunction", None)
+    if not respfcn or respfcn == NOT_SPECIFIED:
+        fatal_inp_error("expected a ResponseFunction")
+        return
+    fcn = respfcn["function"]
+    if not os.path.isfile(fcn):
+        fatal_inp_error("{0}: no such file".format(fcn))
+    dsc = respfcn["descriptor"]
+    dsc = "ERR" in dsc is None
+    respfcn = (dsc, os.path.realpath(fcn))
+
+    # read in optimized values
+    p = []
+    for items in elements.pop("Optimize", []):
+        p.append([items["var"], items["initial_value"], items["bounds"]])
+
+    # auxiliary files
+    auxfiles = []
+    for item in elements["AuxiliaryFile"]:
+        auxfile = item.get("href")
+        if not auxfile:
+            fatal_inp_error("pOptimization: expected href attribute to "
+                            "AuxiliaryFile")
+        elif not os.path.isfile(auxfile):
+            fatal_inp_error("{0}: no such file".format(auxfile))
+        else:
+            auxfiles.append(os.path.realpath(auxfile))
+
+    return ("Optimization", optdict["method"], respfcn, p, optdict["tolerance"],
+            optdict["maxiter"], basexml, auxfiles)
 
 
 def pPermutation(permdict, basexml):
     """Parse the permutation block
 
     """
-    if not permdict:
-        return
     permdict.pop("seed")
-
     # response function
     elements = permdict.pop("Elements")
     respfcn = elements.pop("ResponseFunction", None)
@@ -672,8 +703,7 @@ def pPermutation(permdict, basexml):
             corr = None
         permdict["correlation"] = corr
 
-    return ("Permutation", permdict["method"], respfcn, p,
-            basexml, correlations)
+    return ("Permutation", permdict["method"], respfcn, p, basexml, correlations)
 
 
 def pExtract(extdict, driver):

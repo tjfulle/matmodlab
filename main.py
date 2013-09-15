@@ -5,8 +5,7 @@ import random
 import argparse
 
 from __config__ import cfg, SPLASH, ROOT_D, LIB_D
-from core.inpkws import *
-from core.inpparse import parse_input
+import core.inpparse as inp
 from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
 from core.optimize import OptimizationHandler
@@ -79,12 +78,15 @@ def main(argv=None):
             if os.path.splitext(basename)[1] != ".xml":
                 logerr("*** gmd: expected .xml file extension")
                 continue
-            mm_input = parse_input(source)
+            mm_input = inp.parse_input(source)
             restart_info = None
 
         if args.v:
             sys.stdout.write(SPLASH)
             sys.stdout.flush()
+
+        if inp.INP_ERRORS:
+            raise SystemExit("stopping due to input errors")
 
         stype = mm_input[0]
         if stype == "Physics":
@@ -94,15 +96,9 @@ def main(argv=None):
             exe = "{0} {1}".format(sys.executable, FILE)
             model = PermutationHandler(runid, args.v, exe, args.j, *mm_input[1:])
 
-        elif mm_input.stype == S_OPT:
+        elif stype == "Optimization":
             exe = "{0} {1}".format(sys.executable, FILE)
-            model = OptimizationHandler(runid, args.v, mm_input.method,
-                                        exe, mm_input.response_function,
-                                        mm_input.response_descriptor,
-                                        mm_input.parameters,
-                                        mm_input.tolerance, mm_input.maxiter,
-                                        mm_input.disp, mm_input.basexml,
-                                        mm_input.auxiliary_files)
+            model = OptimizationHandler(runid, args.v, exe, *mm_input[1:])
 
         else:
             logerr("{0}: unrecognized simulation type".format(mm_input.stype))

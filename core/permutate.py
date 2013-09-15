@@ -48,8 +48,9 @@ class PermutationHandler(object):
         if respfcn:
             self.respdesc, self.respfcn = respfcn
             s = re.search(GMD_RESP_FCN_RE, self.respfcn)
-            respdesc = s.group("var")
-        self.respdesc = respdesc
+            self.respdesc = s.group("var")
+        else:
+            self.respfcn = self.respdesc = None
         self.correlation = correlation
 
         # set up the jobs
@@ -161,8 +162,8 @@ def run_single_job(args):
         if response == np.nan:
             io.log_message("*** error: job {0} response function "
                            "failed".format(job_num + 1))
+        response = ((respdesc, response),)
 
-    tabular.write_eval_info(job_num, job.returncode, evald,
-                            parameters, ((respdesc, response),))
+    tabular.write_eval_info(job_num, job.returncode, evald, parameters, response)
 
     return job.returncode
