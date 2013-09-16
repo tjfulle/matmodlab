@@ -12,7 +12,7 @@ from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
 from core.respfcn import check_response_function, GMD_RESP_FCN_RE
-from core.io import fatal_inp_error
+from core.io import fatal_inp_error, input_errors
 from materials.material import get_material_from_db
 
 _D = os.path.dirname(os.path.realpath(__file__))
@@ -573,6 +573,8 @@ def pPhysics(physdict, functions):
 
     """
     material = pMaterial(physdict["Elements"].pop("Material"))
+    if input_errors():
+        raise UserInputError("failed to parse material")
     dcls = getdrvcls(physdict["driver"])
     driver = [physdict["driver"]]
     driver.extend(dcls.format_path(physdict["Elements"]["Path"], functions,
