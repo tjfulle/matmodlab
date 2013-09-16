@@ -415,8 +415,7 @@ time is taken as final time in \reqdtag{Path}. Recognized subelements of
 \reqdtag{Physics} are
 %
 \begin{itemize}
-  \item \reqdtag{Path\sd{solid}}
-  \item \reqdtag{Surface\sd{eos}}
+  \item \reqdtag{Path\sd{solid,eos}}
   \item \reqdtag{Material}
   \item \tag{Extract}
 \end{itemize}
@@ -428,19 +427,29 @@ that driver type only.
 \subsection{Path}
 %\supporting{solid}
 \begin{verbatim}
-<Path type="str{prdef}"
+<Path type="str{prdef, surface}"
       format="str[default]{default, table, fcnspec}"
       cols="list[1, ..., n]" cfmt="str" tfmt="str[time]{time,dt}"
-      nfac="int[1]" kappa="real[0]"
+      nfac="int[1]" kappa="real[0]" rstar="real[1]"
       tstar="real[1]" estar="real[1]" sstar="real[1]"
       amplitude="real[1]" ratfac="real[1]" href="str">
 \end{verbatim}
 %
-Define deformation paths. The jth leg of \reqdtag{Path} is sent to the driver
-in form \texttt{[tf, n, cfmt, Cij]}, where \texttt{tf}, \texttt{n},
-\texttt{cfmt}, and \texttt{Cij} are the termination time, number of steps,
-control format, and control values.  Methods of inputing legs depends on the
-attributes of \reqdtag{Path} and will be shown in examples to follow.
+Define deformation paths or equaiton of state surface boundaries, depending on
+\texttt{type}
+
+\subsubsection{prdef}
+The jth leg of \reqdtag{Path} is sent to the driver in form \texttt{[tf, n,
+  cfmt, Cij]}, where \texttt{tf}, \texttt{n}, \texttt{cfmt}, and \texttt{Cij}
+are the termination time, number of steps, control format, and control values.
+Methods of inputing legs depends on the attributes of \reqdtag{Path} and will
+be shown in examples to follow.
+
+\subsubsection{surface}
+Input is similar to the \texttt{type=''prdef''} specification, but leg
+termination time is not specified. Control parameters also differ, as shown in
+Table \ref{tab:cfmt-1}.
+
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{A note on \texttt{cfmt} and \texttt{Cij}}
@@ -481,8 +490,24 @@ components are assumed to be zero strain.
     5 & Deformation gradient \\
     6 & Electric field
   \end{tabular}
-  \caption{Supported deformation types and \texttt{cfmt} code}
+  \caption{Supported deformation types and \texttt{cfmt} code for
+    \texttt{solid} \texttt{prdef} paths}
   \label{tab:cfmt}
+\end{table}
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}[h]{cl}
+    \hline
+    \hline
+    \texttt{cfmt} & Variable type \\
+    \hline
+    1 & Density \\
+    2 & Temperature
+  \end{tabular}
+  \caption{Supported surface variable types and \texttt{cfmt} code for
+    \texttt{eos} \texttt{surface} paths}
+  \label{tab:cfmt-1}
 \end{table}
 
 \subsubsection{kappa}
@@ -568,7 +593,7 @@ each leg as \texttt{nfac}.
 \tag{Include} element and then the \texttt{href} attribute.
 \begin{verbatim}
 <Path type="prdef" format="table" cols="1 3:8" cfmt="222222" tfmt="time">
-  <include href="exmpls.tbl"/>
+  <Include href="exmpls.tbl"/>
 </Path>
 \end{verbatim}
 
@@ -587,56 +612,27 @@ Only a single leg can be specified.
 </Path>
 \end{verbatim}
 
-% ----------------------------------------------------------------------------- %
-\subsection{Surface}
-%\supporting{eos}
-\begin{verbatim}
-<Surface format="str[default]{default, table}"
-         cols="list[1, ..., n]" cfmt="str"
-         nfac="int[1]" tstar="real[1]" rstar="real[1]"
-         amplitude="real[1]" href="str">
-\end{verbatim}
-%
-Define equaiton of state surface boundaries. Input is similar to the
-\reqdtag{Path} specification, but leg termination time is not specified.
-Control parameters also differ, as shown in Table \ref{tab:cfmt-1}.
-
-\begin{table}[h!]
-  \centering
-  \begin{tabular}[h]{cl}
-    \hline
-    \hline
-    \texttt{cfmt} & Variable type \\
-    \hline
-    1 & Density \\
-    2 & Temperature
-  \end{tabular}
-  \caption{Supported surface variable types and \texttt{cfmt} code}
-  \label{tab:cfmt-1}
-\end{table}
-
-% ----------------------------------------------------------------------------- %
-\subsubsection{Examples}
-The following examples demonstrate the \reqdtag{Surface} input.
+\paragraph{type: surface} The following examples demonstrate the
+\texttt{type=''surface''}
 
 \paragraph{format: default}
 \begin{verbatim}
-<Surface>
+<Path type="surface">
   <!-- nsteps, control, Cij -->
   <!-- control goes as 1 -> density
                        2 -> temperature -->
     0 12 1 100
   100 12 5 300
-</Surface>
+</Path>
 \end{verbatim}
 
 \paragraph{format: table}
 \begin{verbatim}
-<Surface format="table" cfmt="12" nfac="100">
+<Path type="surface" format="table" cfmt="12" nfac="100">
   <!-- Cij -->
   1 100
   5 300
-</Surface>
+</Path>
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
