@@ -193,8 +193,12 @@ def correlations(filepath):
 
 
 def plot_correlations(filepath):
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import FormatStrFormatter
+    try:
+        import matplotlib.pyplot as plt
+        from matplotlib.ticker import FormatStrFormatter
+    except ImportError:
+        print "unable to import matplotlib"
+        return
     head, data, nresp = read_gmd_evaldb_nd(filepath)
 
     # create xy scatter plots

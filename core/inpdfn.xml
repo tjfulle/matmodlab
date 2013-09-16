@@ -87,6 +87,8 @@
     <Attribute name="method" default="zip" type="string"
 	       choices="zip combine"/>
     <Attribute name="seed" default="None" type="integer" test="ispositive"/>
+    <Attribute name="correlation" default="None" type="strlist"
+	       choices="plot table"/>
     <Element name="Permutate" n="+">
       <Attribute name="var" type="string"/>
       <Attribute name="values" type="npalias"/>

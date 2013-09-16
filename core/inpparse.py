@@ -87,17 +87,18 @@ class Element(object):
         if myattrib is None:
             raise UserInputError("{0}: {1}: unexpected "
                                  "attribute".format(self.name, attrib))
+        value = myattrib[0].dtype(value)
+        l = self.getattrib("len")
+        if l is not None:
+            if len(value) != l:
+                err = "expected {0} to be length {1}".format(attrib, l)
+                fatal_inp_error("{0}: {1}".format(self.name, err))
+
         err, value = myattrib[0].test(value)
         if err != 0:
             fatal_inp_error("{0}: {1}".format(self.name, err))
 
         else:
-            value = myattrib[0].dtype(value)
-            l = self.getattrib("len")
-            if l is not None:
-                if len(value) != l:
-                    err = "expected {0} to be length {1}".format(attrib, l)
-                    fatal_inp_error("{0}: {1}".format(self.name, err))
             self.attribs[attrib][1] = value
 
     def getattrib(self, attrib):
@@ -195,12 +196,17 @@ class Attribute(object):
         errmsg : fail
 
         """
-        if self.choices and a not in self.choices:
-            choices = ", ".join("'{0}'".format(c) for c in self.choices)
-            errmsg = "{0}: invalid choice: '{1}' (choose from {2})".format(
-                self.name, a, choices)
-            return errmsg, a
-        passed = eval("{0}('{1}')".format(self.testmeth, a),
+        if self.choices:
+            if isinstance(a, list):
+                bad = any(x not in self.choices for x in a)
+            else:
+                bad = a not in self.choices
+            if bad:
+                choices = ", ".join("'{0}'".format(c) for c in self.choices)
+                errmsg = "{0}: invalid choice: '{1}' (choose from {2})".format(
+                    self.name, a, choices)
+                return errmsg, a
+        passed = eval("""{0}("{1}")""".format(self.testmeth, a),
                       {"__builtins__": None}, TESTS)
         try:
             passed, a = passed
@@ -273,6 +279,7 @@ def set_random_seed(seed, seedset=[0]):
 def boolean(a):
     if re.search(r"no|0|none|false", a.lower()): return False
     return True
+def strlist(a): return aslist(a)
 def real(a): return float(a)
 def integer(a): return int(a)
 def string(a): return str(a)
@@ -305,7 +312,7 @@ def npalias(a):
 
 DTYPES = {"boolean": boolean, "real": real, "integer": integer, "string": string,
           "array": array, "indices": indices, "responsefcn": responsefcn,
-          "npalias": npalias}
+          "npalias": npalias, "strlist": strlist}
 
 # tests
 def always(a): return True
@@ -687,18 +694,8 @@ def pPermutation(permdict, basexml):
         values = items["values"]
         p.append([var, values])
 
-    correlations = None
-    if permdict.get("correlations") is not None:
-        corr = xmltools.str2list(permdict["correlations"], dtype=str)
-        for (i, c) in enumerate(corr):
-            if c.lower() not in (S_TBL, S_PLOT, S_NONE):
-                fatal_inp_error("{0}: unrecognized correlation option".format(c))
-            corr[i] = c.lower()
-        if "none" in corr:
-            corr = None
-        permdict["correlation"] = corr
-
-    return ("Permutation", permdict["method"], respfcn, p, basexml, correlations)
+    return ("Permutation", permdict["method"], respfcn, p, basexml,
+            permdict.get("correlation"))
 
 
 def pExtract(extdict, driver):
