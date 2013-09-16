@@ -206,7 +206,8 @@ class Attribute(object):
                 errmsg = "{0}: invalid choice: '{1}' (choose from {2})".format(
                     self.name, a, choices)
                 return errmsg, a
-        passed = eval("""{0}("{1}")""".format(self.testmeth, a),
+        a_as_str = " ".join(str(a).split("\n"))
+        passed = eval('{0}("{1}")'.format(self.testmeth, a_as_str),
                       {"__builtins__": None}, TESTS)
         try:
             passed, a = passed
