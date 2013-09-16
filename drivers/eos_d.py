@@ -6,7 +6,6 @@ import numpy as np
 from itertools import product
 
 from __config__ import cfg
-from core.inpkws import *
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from drivers.driver import Driver
@@ -260,10 +259,10 @@ def pPath(pathdict, functions):
 
     # parse the Path depending on type
     pformat = pathdict["format"]
-    if pformat == S_DEFAULT:
+    if pformat == "default":
         surface = parse_surf_default(lines)
 
-    elif pformat == S_TBL:
+    elif pformat == "table":
         surface = parse_surf_table(lines, pathdict["cols"], pathdict["cfmt"])
 
     else:

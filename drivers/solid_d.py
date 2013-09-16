@@ -5,7 +5,6 @@ import numpy as np
 from numpy.linalg import solve, lstsq
 
 from __config__ import cfg
-from core.inpkws import *
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from drivers.driver import Driver
@@ -322,10 +321,10 @@ def pPrdef(pathdict, functions, tterm):
 
     # parse the Path depending on type
     pformat = pathdict["format"]
-    if pformat == S_DEFAULT:
+    if pformat == "default":
         path = parse_path_default(lines)
 
-    elif pformat == S_TBL:
+    elif pformat == "table":
         path = parse_path_table(lines, pathdict["tfmt"],
                                 pathdict["cols"],
                                 pathdict["cfmt"])
@@ -442,7 +441,7 @@ def parse_path_table(lines, tfmt, cols, cfmt):
                             "{0}".format(leg_num))
             continue
 
-        if tfmt == S_DT:
+        if tfmt == "dt":
             termination_time += line[0]
         else:
             termination_time = line[0]
