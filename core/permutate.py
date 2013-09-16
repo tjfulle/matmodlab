@@ -47,8 +47,6 @@ class PermutationHandler(object):
 
         if respfcn:
             self.respdesc, self.respfcn = respfcn
-            s = re.search(GMD_RESP_FCN_RE, self.respfcn)
-            self.respdesc = s.group("var")
         else:
             self.respfcn = self.respdesc = None
         self.correlation = correlation
