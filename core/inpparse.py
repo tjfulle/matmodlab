@@ -472,10 +472,12 @@ def read_matlabel(dom, model):
     return ["{0} = {1}".format(k, v) for k, v in mtl_db_params.items()]
 
 
-def parse_input(filepath):
+def parse_input(filepath, argp=None):
     """Parse the input
 
     """
+    if argp is None:
+        argp = {}
     # remove the shebang, if any
     lines = open(filepath, "r").readlines()
     if re.search("#!/", lines[0]):
@@ -483,7 +485,7 @@ def parse_input(filepath):
 
     # find all "Include" files, and preprocess the input
     user_input = pp.find_and_fill_includes("\n".join(lines))
-    user_input, nsubs = pp.find_and_make_subs(user_input, disp=1)
+    user_input, nsubs = pp.find_and_make_subs(user_input, disp=1, argp=argp)
     if nsubs:
         with open(filepath + ".preprocessed", "w") as fobj:
             fobj.write(user_input)

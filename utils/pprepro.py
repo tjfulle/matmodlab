@@ -38,13 +38,16 @@ def set_random_seed(seed):
     update_safe({"random": RAND.random_sample, "randreal": RAND.random_sample()})
 
 
-def find_vars_to_sub(lines):
+def find_vars_to_sub(lines, argp):
     """Find vars to be preprocessed
 
     Parameters
     ----------
     lines : str
         user input
+
+    argp : dict
+       key, val pairs given on command line.
 
     Returns
     -------
@@ -60,14 +63,17 @@ def find_vars_to_sub(lines):
         vsplit = re.sub(r"[\{\}]", "", variable).split("=")
         key = vsplit[0].strip()
         hold.append(key)
-        expr = vsplit[1].strip()
-        var_to_sub = eval(expr, GDICT, SAFE)
+        if key in argp:
+            var_to_sub = eval(argp[key], GDICT, SAFE)
+        else:
+            expr = vsplit[1].strip()
+            var_to_sub = eval(expr, GDICT, SAFE)
         if key.lower() == "random_seed":
             set_random_seed(var_to_sub)
         update_safe({key: var_to_sub})
         vars_to_sub[key] = repr(var_to_sub)
 
-    # replace value
+    # replace the commented value.  ie. { foo = 1.2 } -> 1.2
     for (i, variable) in enumerate(variables):
         lines = re.sub(re.escape(variable), vars_to_sub[hold[i]], lines)
 
@@ -83,7 +89,7 @@ def find_subs_to_make(lines):
     return subs_to_make
 
 
-def find_and_make_subs(lines, prepro=None, disp=0):
+def find_and_make_subs(lines, prepro=None, disp=0, argp=None):
     """Preprocess the input file
 
     Parameters
@@ -99,7 +105,9 @@ def find_and_make_subs(lines, prepro=None, disp=0):
     """
     if prepro is not None:
         update_safe(prepro)
-    lines, vars_to_sub = find_vars_to_sub(lines)
+    if argp is None:
+        argp = {}
+    lines, vars_to_sub = find_vars_to_sub(lines, argp)
     if not vars_to_sub and prepro is None:
         if disp:
             return lines, 0

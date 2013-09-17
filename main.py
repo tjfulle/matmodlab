@@ -20,6 +20,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", default=1, type=int,
        help="Verbosity [default: %(default)s]")
+    parser.add_argument("-p", action="append",
+       help="pprepro variables [default: %(default)s]")
     parser.add_argument("--dbg", default=False, action="store_true",
        help="Debug mode [default: %(default)s]")
     parser.add_argument("--sqa", default=False, action="store_true",
@@ -55,6 +57,10 @@ def main(argv=None):
         window = vs.MaterialModelSelector(model_type="any")
         sys.exit(window.configure_traits())
 
+    if args.p:
+        tup = lambda a: (a[0].strip(), a[1].strip())
+        args.p = dict(tup(x.split("=")) for x in args.p)
+
     output = []
     for (i, source) in enumerate(args.sources):
 
@@ -78,7 +84,7 @@ def main(argv=None):
             if os.path.splitext(basename)[1] != ".xml":
                 logerr("*** gmd: expected .xml file extension")
                 continue
-            mm_input = inp.parse_input(source)
+            mm_input = inp.parse_input(source, argp=args.p)
             restart_info = None
 
         if args.v:
