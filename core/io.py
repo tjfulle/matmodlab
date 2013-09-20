@@ -176,7 +176,7 @@ class ExoManager(object):
         self.exofile.put_qa(num_qa_rec, qa_record)
 
         # information records
-#        self.exofile.put_info(format_exrestart_info(*info))
+        self.exofile.put_info(format_exrestart_info(*info))
 
         # write results variables parameters and names
         num_glob_vars = len(glob_var_names)

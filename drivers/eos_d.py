@@ -6,24 +6,23 @@ import numpy as np
 from itertools import product
 
 from __config__ import cfg
-import utils.tensor as tensor
 import utils.xmltools as xmltools
 from drivers.driver import Driver
-from core.kinematics import deps2d, sig2d, update_deformation
-from utils.tensor import NSYMM, NTENS, NVEC, I9
-from utils.opthold import OptionHolder
-from core.io import fatal_inp_error, input_errors, log_message, log_error
+from utils.tensor import I9
+from core.io import fatal_inp_error, input_errors, log_message, log_error, Error1
 from materials.material import create_material
 
 np.set_printoptions(precision=4)
 
 class EOSDriver(Driver):
     name = "eos"
-    def __init__(self, surface, material, mtlparams):
+    def __init__(self, surface, opts, material):
         super(EOSDriver, self).__init__()
-        self.material = create_material(material, mtlparams)
+        self.material = create_material(material[0], material[1])
         self.surface = surface
         self.path = self.surface
+        if opts:
+            raise Error1("EOS path not configured to restart")
 
         self.register_glob_variable("TIME_STEP")
         self.register_glob_variable("STEP_NUM")
@@ -111,7 +110,7 @@ class EOSDriver(Driver):
 
     # --------------------------------------------------------- Parsing methods
     @staticmethod
-    def format_path(pathdict, functions, tterm):
+    def format_path_and_opts(pathdict, functions, tterm):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 
@@ -121,7 +120,7 @@ class EOSDriver(Driver):
             return
 
         surface = pPath(pathdict, functions)
-        return surface,
+        return surface, []
 
     @staticmethod
     def format_path_extraction(pdict):

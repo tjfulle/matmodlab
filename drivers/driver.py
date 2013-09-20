@@ -13,12 +13,10 @@ DRIVER_DB = None
 
 class Driver(object):
     name = None
-    paths = None
-    surfaces = None
-    kappa = 0
     def __init__(self):
         self._elem_variables = []
         self._glob_variables = []
+        self.opts = []
         self.ndata = 0
         self._data = np.zeros(self.ndata)
         self.nglobdata = 0
@@ -152,9 +150,12 @@ def getdriver(drivername):
     return DRIVER_DB.get(" ".join(drivername.split()).lower())
 
 
-def create_driver(drivername, *driveropts):
+def create_driver(driver, material):
+    drivername = driver[0]
+    path = driver[1]
+    opts = driver[2]
     drvcls = getdrvcls(drivername)
-    return drvcls(*driveropts)
+    return drvcls(path, opts, material)
 
 
 def getdrvcls(drivername):

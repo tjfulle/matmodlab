@@ -21,7 +21,7 @@ class PhysicsHandler(object):
         io.setup_logger(runid, verbosity, mode=mode)
         io.log_message("{0}: setting up".format(self.runid))
 
-        self.driver = create_driver(*(driver + material))
+        self.driver = create_driver(driver, material)
         self.mtlprops = np.array(material[1])
         self.extract = extract
 
@@ -46,9 +46,9 @@ class PhysicsHandler(object):
         glob_var_names = self.driver.glob_vars()
         ele_var_names = self.driver.elem_vars()
         title = "gmd {0} simulation".format(self.driver.name)
-        info = [self.driver.material.name, self.driver.material._param_vals,
-                self.driver.name, self.driver.kappa,
-                self.driver.path, self.extract]
+        info = [(self.driver.material.name, self.driver.material._param_vals),
+                (self.driver.name, self.driver.path, self.driver.opts),
+                self.extract]
         self.exo = io.ExoManager.new_from_runid(
             self.runid, title, glob_var_names, ele_var_names, info)
 

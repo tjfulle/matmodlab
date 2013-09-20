@@ -13,6 +13,7 @@ from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
 from core.respfcn import check_response_function, GMD_RESP_FCN_RE
 from core.io import fatal_inp_error, input_errors
+from core.restart import read_exrestart_info
 from materials.material import get_material_from_db
 
 _D = os.path.dirname(os.path.realpath(__file__))
@@ -513,6 +514,13 @@ def parse_input(filepath, argp=None):
     return pPhysics(els.pop("Physics"), functions)
 
 
+def parse_exo_input(source, time=-1):
+    (mtlmdl, mtlparams, dname, dpath, dopts, leg_num, time, glob_data,
+     elem_data, extract) = read_exrestart_info(source, time=time)
+    dopts.append([leg_num, time, glob_data, elem_data])
+    return ("Physics", (dname, dpath, dopts), (mtlmdl, mtlparams), extract)
+
+
 def pFunction(flist):
     """Parse the functions block
 
@@ -582,17 +590,24 @@ def pPhysics(physdict, functions):
     """Parse the physics tag
 
     """
-    material = pMaterial(physdict["Elements"].pop("Material"))
-    if input_errors():
+    try:
+        mtlmdl, mtlparams = pMaterial(physdict["Elements"].pop("Material"))
+    except ValueError:
         raise UserInputError("failed to parse material")
+
     dcls = getdrvcls(physdict["driver"])
-    driver = [physdict["driver"]]
-    driver.extend(dcls.format_path(physdict["Elements"]["Path"], functions,
-                                   physdict["termination_time"]))
+    try:
+        dpath, dopts = dcls.format_path_and_opts(
+            physdict["Elements"]["Path"], functions,
+            physdict["termination_time"])
+    except ValueError:
+        raise UserInputError("failed to setup driver path")
+
+    driver = [physdict["driver"], dpath, dopts]
     extract = pExtract(physdict["Elements"].pop("Extract"), dcls)
 
     # Return the physics dictionary
-    return ("Physics", driver, material, extract)
+    return ("Physics", driver, (mtlmdl, mtlparams), extract)
 
 
 def pMaterial(mtldict):
@@ -633,7 +648,7 @@ def pMaterial(mtldict):
             continue
         params[idx] = val
 
-    return [model, params]
+    return model, params
 
 
 def pOptimization(optdict, basexml):

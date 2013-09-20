@@ -18,17 +18,15 @@ np.set_printoptions(precision=4)
 
 class SolidDriver(Driver):
     name = "solid"
-    def __init__(self, kappa, proportional, path, material, mtlparams):
+    def __init__(self, path, opts, material):
         super(SolidDriver, self).__init__()
-        self.kappa = kappa
-        self.proportional = proportional
+        self.kappa = opts[0]
+        self.proportional = bool(opts[1])
         self.path = path
+        self.opts = [float(x) for x in opts[:2]]
 
         # Create material
-        self.material = create_material(material, mtlparams)
-
-#        setup_restart = opts[1]
-        setup_restart = False
+        self.material = create_material(material[0], material[1])
 
         # register variables
         self.register_glob_variable("TIME_STEP")
@@ -56,14 +54,13 @@ class SolidDriver(Driver):
         # allocate storage
         self.allocd()
 
-        if setup_restart:
-            kappa, start_leg, time, glob_data, elem_data = setup_restart
+        if len(opts) == 3:
+            start_leg, time, glob_data, elem_data = opts[2]
             self._glob_data[:] = glob_data
             self._data[:] = elem_data
             self.start_leg = start_leg
             self.step_num = glob_data[1]
             self.time = time
-            self.kappa = kappa
 
         else:
             # initialize nonzero data
@@ -260,7 +257,7 @@ class SolidDriver(Driver):
 
     # --------------------------------------------------------- Parsing methods
     @staticmethod
-    def format_path(pathdict, functions, tterm):
+    def format_path_and_opts(pathdict, functions, tterm):
         """Parse the Path elements of the input file and register the formatted
         paths to the class
 
@@ -268,7 +265,7 @@ class SolidDriver(Driver):
         path = pPrdef(pathdict, functions, tterm)
         if input_errors():
             return
-        return [pathdict["kappa"], pathdict["proportional"], path]
+        return path, (pathdict["kappa"], pathdict["proportional"])
 
 def mybool(a):
     if str(a).lower().strip() in ("false", "no", "0", "none"):

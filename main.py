@@ -70,9 +70,7 @@ def main(argv=None):
 
         if args.restart:
             source = runid + ".exo"
-            mm_input = parse_exo_input(source, time=float(args.restart))
-            restart_info = [mm_input.kappa, mm_input.leg_num, mm_input.time,
-                            mm_input.glob_data, mm_input.elem_data]
+            mm_input = inp.parse_exo_input(source, time=float(args.restart))
 
         else:
             if not os.path.isfile(source):
@@ -85,7 +83,6 @@ def main(argv=None):
                 logerr("*** gmd: expected .xml file extension")
                 continue
             mm_input = inp.parse_input(source, argp=args.p)
-            restart_info = None
 
         if args.v:
             sys.stdout.write(SPLASH)

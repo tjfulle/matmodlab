@@ -13,8 +13,8 @@ S_REST_VERS = "RESTART VERSION"
 S_MTL = "MATERIAL"
 S_MTL_PARAMS = "MATERIAL PARAMETERS"
 S_DRIVER = "DRIVER"
-S_PATHS = "PATHS"
-S_SURFS = "SURFACES"
+S_PATH = "PATH"
+S_DOPTS = "DRIVER_OPTS"
 S_EXREQ = "EXTRACTION REQUESTS"
 
 class RestartError(Exception):
@@ -23,20 +23,17 @@ class RestartError(Exception):
         super(RestartError, self).__init__(message)
 
 
-def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpath, extract):
+def format_exrestart_info(material, driver, extract):
     """Format information records to be written to exodus database for reading in
     later
 
     Parameters
     ----------
-    mtlname : str
-        Material model name
-    mtlparams : ndarray
-        Array of material parameters
-    driver : string
-        Name of driver
-    paths : list
-        list holding driver paths
+    material : tuple of str
+        material[0] - mtlname, Material model name
+        material[1] - mtlparams, Array of material parameters
+    driver : list
+        Name of driver, opts, path
     extract : list
         List of extraction info
 
@@ -51,6 +48,7 @@ def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpath, extract):
     ex_info.append(S_REST_VERS)
     ex_info.append(RESTART_VERSION)
 
+    mtlname, mtlparams = material
     ex_info.append(S_MTL)
     ex_info.append(mtlname)
 
@@ -58,11 +56,15 @@ def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpath, extract):
     ex_info.append(len(mtlparams))
     ex_info.extend(mtlparams)
 
+    dname, dpath, dopts = driver
     ex_info.append(S_DRIVER)
     ex_info.append(dname)
-    ex_info.append(kappa)
 
-    ex_info.append(S_PATHS)
+    ex_info.append(S_DOPTS)
+    ex_info.append(len(dopts))
+    ex_info.extend(dopts)
+
+    ex_info.append(S_PATH)
     ex_info.append(dpath.shape[0])
     ex_info.append(dpath.shape[1])
     [ex_info.extend(line) for line in dpath]
@@ -79,7 +81,10 @@ def format_exrestart_info(mtlname, mtlparams, dname, kappa, dpath, extract):
         ex_info.append(len(variables))
         ex_info.extend(variables)
         ex_info.append(len(paths))
-        ex_info.extend([p.toxml() for p in paths])
+        for path in paths:
+            ex_info.append(path[0]) # nincrement
+            ex_info.extend(path[1]) # list of density bounds (len = 2)
+            ex_info.append(path[2]) # initial temperature
 
     ex_info.append(S_GMD_FINI)
 
@@ -133,47 +138,18 @@ def read_exrestart_info(filepath, time=-1):
 
     # driver
     dname = ex_info[ex_info.index(S_DRIVER)+1]
-    kappa = float(ex_info[ex_info.index(S_DRIVER)+2])
+
+    i = ex_info.index(S_DOPTS)
+    ndopts = int(ex_info[i+1])
+    dopts = [float(x) for x in ex_info[i+2:i+2+ndopts]]
 
     # paths
-    # i is the index to the S_PATHS information keyword
+    # i is the index to the S_PATH information keyword
     # i + j is the index to the beginning of each path specification
-    dpaths = {}
-    i = ex_info.index(S_PATHS)
-    npaths = int(ex_info[i+1])
-    j = 2
-    for n in range(npaths):
-        path = []
-        key = int(ex_info[i+j])
-        nrow = int(ex_info[i+j+1])
-        ncol = int(ex_info[i+j+2])
-        start = i + j + 3
-        end = start + nrow * ncol
-        step = ncol
-        for l in range(start, end, step):
-            path.append([float(x) for x in ex_info[l:l+step]])
-        dpaths[key] = np.array(path)
-        j = l
-
-    # surfaces
-    # i is the index to the S_SURFS information keyword
-    # i + j is the index to the beginning of each path specification
-    dsurfaces = {}
-    i = ex_info.index(S_SURFS)
-    nsurfs = int(ex_info[i+1])
-    j = 2
-    for n in range(nsurfs):
-        surf = []
-        key = int(ex_info[i+j])
-        nrow = int(ex_info[i+j+1])
-        ncol = int(ex_info[i+j+2])
-        start = i + j + 3
-        end = start + nrow * ncol
-        step = ncol
-        for l in range(start, end, step):
-            surf.append([float(x) for x in ex_info[l:l+step]])
-        dsurfaces[key] = np.array(surf)
-        j = l
+    i = ex_info.index(S_PATH)
+    rw = int(ex_info[i+1])
+    cl = int(ex_info[i+2])
+    dpath = np.reshape([float(x) for x in ex_info[i+3:i+3+rw*cl]], (rw, cl))
 
     # extraction requests
     i = ex_info.index(S_EXREQ)
@@ -191,19 +167,20 @@ def read_exrestart_info(filepath, time=-1):
 
         npaths = int(ex_info[end])
         start = end + 1
-        end = start + npaths
-        paths = ex_info[start:end]
+        paths = []
+        for i in range(npaths):
+            ninc = int(ex_info[start])
+            r0, rf = float(ex_info[start+1]), float(ex_info[start+2])
+            t0 = float(ex_info[start+3])
+            start = start + 4
+            paths.append([ninc, np.array([r0, rf]), t0])
 
         extract = [ofmt, step, ffmt, variables, paths]
-
-    # set up and register paths with driver
-    driver = create_driver(dname)
-    driver.register_paths_and_surfaces(paths=dpaths, surfaces=dsurfaces)
 
     # driver is now set up, find step number corresponding to time and then
     # get all data from that step
     times = exof.get_all_times()
-    path_times = dpaths[0][:, 0]
+    path_times = dpath[:, 0]
     if time < 0:
         time = times[-1]
 
@@ -223,5 +200,5 @@ def read_exrestart_info(filepath, time=-1):
 
     exof.close()
 
-    return (mtlname, mtlparams, driver, kappa, extract, leg_num,
-            time, glob_data, elem_data)
+    return (mtlname, mtlparams, dname, dpath, dopts,
+            leg_num, time, glob_data, elem_data, extract)

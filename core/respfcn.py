@@ -5,8 +5,6 @@ import subprocess
 import numpy as np
 from utils.exodump import read_vars_from_exofile
 from core.io import fatal_inp_error
-import utils.xmltools as xmltools
-from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
 
 GMD_RESP_FCNS = {"max": np.amax, "min": np.amin, "mean": np.mean,
                  "ave": np.average,
