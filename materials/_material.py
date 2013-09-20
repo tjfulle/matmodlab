@@ -10,7 +10,6 @@ class Material(object):
         self.xinit = np.zeros(self.nxtra)
         self.mtl_variables = []
         self.param_map = {}
-        self.dc = np.zeros(0)
         self.initialized = True
 
     def register_parameters(self, *parameters):

@@ -591,7 +591,7 @@ def pPhysics(physdict, functions):
 
     """
     try:
-        mdl, params, dc, istate = pMaterial(physdict["Elements"].pop("Material"))
+        mdl, params, istate = pMaterial(physdict["Elements"].pop("Material"))
     except ValueError:
         raise UserInputError("failed to parse material")
 
@@ -607,7 +607,7 @@ def pPhysics(physdict, functions):
     extract = pExtract(physdict["Elements"].pop("Extract"), dcls)
 
     # Return the physics dictionary
-    return ("Physics", driver, (mdl, params, dc, istate), extract)
+    return ("Physics", driver, (mdl, params, istate), extract)
 
 
 def pMaterial(mtldict):
@@ -632,27 +632,29 @@ def pMaterial(mtldict):
 
     # get the user give parameters
     ui = mtldict.pop("Content")
-    dc, istate = [], []
+    istate = []
     for p in ui:
         p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
         name = p[0]
+
+        # --- look for special values of input before parameters
         if name == "ParameterArray":
-            # entire parameter array given
+            # entire parameter array given. assumes all components are give
+            # and that they are in right order
             val = np.array(child2list(" ".join(p[1:]), dtype=float))
             if val.shape[0] != params.shape[0]:
                 fatal_inp_error("incorrect length of ParameterArray")
                 continue
             params[:] = val
             continue
+
         elif name == "InitialState":
-            # initial state given
+            # initial state given as [stress, xtra]
             istate = np.array(child2list(" ".join(p[1:]), dtype=float))
             continue
-        elif name == "DerivedConstantArray":
-            # material derived constants
-            dc = np.array(child2list(" ".join(p[1:]), dtype=float))
-            continue
 
+        # not a special name -> a parameter name find its location in the
+        # material parameter array and put it in the right spot
         idx = pdict.get(name.lower())
         if idx is None:
             fatal_inp_error("Material: {0}: invalid parameter for the {1} "
@@ -666,7 +668,7 @@ def pMaterial(mtldict):
             continue
         params[idx] = val
 
-    return model, params, dc, istate
+    return model, params, istate
 
 
 def pOptimization(optdict, basexml):

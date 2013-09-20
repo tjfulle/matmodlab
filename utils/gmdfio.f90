@@ -32,7 +32,7 @@ subroutine bombed(msg)
   character*(*) msg
   character*200 jnkstr
   external log_error
-  jnkstr = "BOMBED: " // msg
+  jnkstr = "fio: bombed: " // msg
   call log_error(jnkstr)
   return
 end subroutine bombed
@@ -42,7 +42,7 @@ subroutine faterr(caller, msg)
   character*(*) caller
   character*(*) msg
   external log_error
-  jnkstr = "FATAL ERROR: " // msg
+  jnkstr = "fio: fatal error: " // msg
   call log_error(jnkstr)
   return
 end subroutine faterr

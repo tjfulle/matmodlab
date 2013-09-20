@@ -21,8 +21,8 @@ class PhysicsHandler(object):
         io.setup_logger(runid, verbosity, mode=mode)
         io.log_message("{0}: setting up".format(self.runid))
 
+        self.ipropvals = np.array(material[1])
         self.driver = create_driver(driver, material)
-        self.mtlprops = np.array(material[1])
         self.extract = extract
 
         # set up timing
@@ -61,13 +61,12 @@ class PhysicsHandler(object):
 
         # write to the log file the material props
         L = max(max(len(n) for n in ele_var_names), 10)
-        param_ivals = self.mtlprops
         param_names = self.driver.material.params()
         param_vals = self.driver.material.param_vals()
         io.log_debug("Material Parameters")
         io.log_debug("  {1:{0}s}  {2:12}  {3:12}".format(
             L, "Name", "iValue", "Value"))
-        for p in zip(param_names, param_ivals, param_vals):
+        for p in zip(param_names, self.ipropvals, param_vals):
             io.log_debug("  {1:{0}s} {2: 12.6E} {3: 12.6E}".format(L, *p))
 
         # write out plotable data

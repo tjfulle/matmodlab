@@ -20,7 +20,7 @@ LEVELS = {2: logging.DEBUG,
 
 class Error1(Exception):
     def __init__(self, message):
-        self.message = message
+        self.message = message.rstrip()
         try: LOGGER.exception(message)
         except: pass
         super(Error1, self).__init__(message)

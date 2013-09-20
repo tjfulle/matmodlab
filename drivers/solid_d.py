@@ -26,7 +26,7 @@ class SolidDriver(Driver):
         self.opts = [float(x) for x in opts[:2]]
 
         # Create material
-        self._mtl_dc, self._mtl_istate = material[2:]
+        self._mtl_istate = material[2]
         self.material = create_material(material[0], material[1])
 
         # register variables
@@ -56,6 +56,7 @@ class SolidDriver(Driver):
         self.allocd()
 
         if len(opts) == 3:
+            # restart info given
             start_leg, time, glob_data, elem_data = opts[2]
             self._glob_data[:] = glob_data
             self._data[:] = elem_data
@@ -67,14 +68,8 @@ class SolidDriver(Driver):
             # initialize nonzero data
             self._data[self.defgrad_slice] = I9
 
-            if len(self._mtl_dc):
-                if len(self._mtl_dc) != len(self.material.dc):
-                    raise Error1("incorrect len(DerivedConstantArray)")
-                self.material.dc[:] = self._mtl_dc
-                del self._mtl_dc
-
             if len(self._mtl_istate):
-                # --- check if initial state is given
+                # --- initial state is given
                 sig = self._mtl_istate[:6]
                 xtra = self._mtl_istate[6:]
                 if len(xtra) != self.material.nxtra:
