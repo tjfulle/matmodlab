@@ -591,7 +591,7 @@ def pPhysics(physdict, functions):
 
     """
     try:
-        mtlmdl, mtlparams = pMaterial(physdict["Elements"].pop("Material"))
+        mdl, params, dc, istate = pMaterial(physdict["Elements"].pop("Material"))
     except ValueError:
         raise UserInputError("failed to parse material")
 
@@ -607,7 +607,7 @@ def pPhysics(physdict, functions):
     extract = pExtract(physdict["Elements"].pop("Extract"), dcls)
 
     # Return the physics dictionary
-    return ("Physics", driver, (mtlmdl, mtlparams), extract)
+    return ("Physics", driver, (mdl, params, dc, istate), extract)
 
 
 def pMaterial(mtldict):
@@ -632,23 +632,41 @@ def pMaterial(mtldict):
 
     # get the user give parameters
     ui = mtldict.pop("Content")
-
+    dc, istate = [], []
     for p in ui:
-        name, val = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
+        p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
+        name = p[0]
+        if name == "ParameterArray":
+            # entire parameter array given
+            val = np.array(child2list(" ".join(p[1:]), dtype=float))
+            if val.shape[0] != params.shape[0]:
+                fatal_inp_error("incorrect length of ParameterArray")
+                continue
+            params[:] = val
+            continue
+        elif name == "InitialState":
+            # initial state given
+            istate = np.array(child2list(" ".join(p[1:]), dtype=float))
+            continue
+        elif name == "DerivedConstantArray":
+            # material derived constants
+            dc = np.array(child2list(" ".join(p[1:]), dtype=float))
+            continue
+
         idx = pdict.get(name.lower())
         if idx is None:
             fatal_inp_error("Material: {0}: invalid parameter for the {1} "
                             "material model".format(name, model))
             continue
         try:
-            val = float(val)
+            val = float(p[1])
         except ValueError:
             fatal_inp_error("Material: {0}: invalid value "
-                            "{1}".format(name, val))
+                            "{1}".format(name, p[1]))
             continue
         params[idx] = val
 
-    return model, params
+    return model, params, dc, istate
 
 
 def pOptimization(optdict, basexml):
@@ -744,3 +762,9 @@ def pExtract(extdict, driver):
     # get Paths to extract -> further parsing is handled by drivers that
     # support extracting paths
     return extdict["format"], extdict["step"], extdict["ffmt"], variables, paths
+
+
+def child2list(child_lines, dtype=str):
+    child_list = [dtype(s) for line in child_lines.split("\n")
+                  for s in line.split() if s.split()]
+    return child_list

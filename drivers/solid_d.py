@@ -11,7 +11,7 @@ from drivers.driver import Driver
 from core.kinematics import deps2d, sig2d, update_deformation
 from utils.tensor import NSYMM, NTENS, NVEC, I9
 from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
-from core.io import fatal_inp_error, input_errors, log_message
+from core.io import fatal_inp_error, input_errors, log_message, Error1
 from materials.material import create_material
 
 np.set_printoptions(precision=4)
@@ -26,6 +26,7 @@ class SolidDriver(Driver):
         self.opts = [float(x) for x in opts[:2]]
 
         # Create material
+        self._mtl_dc, self._mtl_istate = material[2:]
         self.material = create_material(material[0], material[1])
 
         # register variables
@@ -66,18 +67,27 @@ class SolidDriver(Driver):
             # initialize nonzero data
             self._data[self.defgrad_slice] = I9
 
-            # initialize material
-            sig = np.zeros(6)
-            xtra = self.material.initial_state()
-            args = (I9, np.zeros(3), 0.)
+            if len(self._mtl_dc):
+                if len(self._mtl_dc) != len(self.material.dc):
+                    raise Error1("incorrect len(DerivedConstantArray)")
+                self.material.dc[:] = self._mtl_dc
+                del self._mtl_dc
 
-            sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
+            if len(self._mtl_istate):
+                # --- check if initial state is given
+                sig = self._mtl_istate[:6]
+                xtra = self._mtl_istate[6:]
+                if len(xtra) != self.material.nxtra:
+                    raise Error1("incorrect len(InitialState)")
+            else:
+                # initialize material
+                sig = np.zeros(6)
+                xtra = self.material.initial_state()
+                args = (I9, np.zeros(3), 0.)
+                sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
+                xtra = self.material.adjust_initial_state(xtra)
 
-            # -------------------------- quantities derived from final state
             pres = -np.sum(sig[:3]) / 3.
-
-            xtra = self.material.adjust_initial_state(xtra)
-
             self.setvars(stress=sig, pressure=pres, xtra=xtra)
 
             self.start_leg = 0
@@ -426,7 +436,7 @@ def parse_path_table(lines, tfmt, cols, cfmt):
 
     # if cols was not specified, must want all
     if not cols:
-        columns = range(len(tbl.shape[1]))
+        columns = range(tbl.shape[1])
     else:
         columns = format_tbl_cols(cols)
 

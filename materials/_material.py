@@ -7,10 +7,10 @@ class Material(object):
     def __init__(self):
         self.ndata = 0
         self.nxtra = 0
-        self.xtra = np.zeros(self.nxtra)
         self.xinit = np.zeros(self.nxtra)
         self.mtl_variables = []
         self.param_map = {}
+        self.dc = np.zeros(0)
         self.initialized = True
 
     def register_parameters(self, *parameters):
@@ -26,10 +26,10 @@ class Material(object):
     def register_xtra_variables(self, keys, mig=False):
         if self.nxtra:
             raise Error1("Register extra variables at most once")
-        self.nxtra = len(keys)
         if mig:
             keys = [" ".join(x.split())
                     for x in "".join(keys).split("|") if x.split()]
+        self.nxtra = len(keys)
         for key in keys:
             self.register_mtl_variable(key, "SCALAR")
 
