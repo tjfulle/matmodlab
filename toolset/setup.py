@@ -73,18 +73,14 @@ def main(argv=None):
     path = os.getenv("PATH", "").split(os.pathsep)
     log_message("setup: gmd {0}".format(version))
 
-    mtldirs = [x for x in os.getenv("GMDMTLS", "").split(os.pathsep) if x]
-    for d in args.mtldirs:
-        mtldirs.append(os.path.realpath(d))
+    mtldirs = [os.path.realpath(d) for d in args.mtldirs]
     for d in mtldirs:
         if not os.path.isdir(d):
             logerr("{0}: no such material directory".format(d))
             continue
     mtldirs = os.pathsep.join(list(set(mtldirs)))
 
-    testdirs = [x for x in os.getenv("GMDTESTS", "").split(os.pathsep) if x]
-    for d in args.testdirs:
-        testdirs.append(os.path.realpath(d))
+    testdirs = [os.path.realpath(d) for d in args.testdirs]
     for d in testdirs:
         if not os.path.isdir(d):
             logerr("{0}: no such test directory".format(d))
@@ -187,15 +183,15 @@ def main(argv=None):
     pyopts = "" if not sys.dont_write_bytecode else "-B"
 
     write_exe("gmd", tools, os.path.join(root, "main.py"),
-              pyexe, pyopts,
-              {"PYTHONPATH": pypath, "FC": gfortran, "GMDSETUPMTLDIR": mtldirs})
+              pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
+              {"GMDMTLS": mtldirs})
 
     write_exe("buildmtls", tools, os.path.join(core, "build.py"),
-              pyexe, pyopts,
-              {"PYTHONPATH": pypath, "FC": gfortran, "GMDSETUPMTLDIR": mtldirs})
+              pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
+              {"GMDMTLS": mtldirs})
 
     write_exe("runtests", tools, os.path.join(core, "test.py"),
-              pyexe, pyopts, {"PYTHONPATH": pypath, "GMDSETUPTSTDIR": testdirs})
+              pyexe, pyopts, {"PYTHONPATH": pypath}, {"GMDTESTS": testdirs})
 
     write_exe("gmddump", tools, os.path.join(utld, "exodump.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath})
@@ -230,14 +226,25 @@ def remove(paths):
     return
 
 
-def write_exe(name, destd, pyfile, pyexe, pyopts, env):
+def write_exe(name, destd, pyfile, pyexe, pyopts, env, gmdvars=None):
     exe = os.path.join(destd, name)
     remove(exe)
     log_message("writing {0}".format(os.path.basename(exe)), end="...  ")
     if not os.path.isfile(pyfile):
         logerr("{0}: no such file".format(pyfile))
         return
-    env = "\n".join("export {0}={1}".format(k, v) for k, v in env.items())
+
+    # set environment variables in scripts
+    env = ["export {0}={1}".format(k, v) for (k, v) in env.items()]
+    if gmdvars:
+        # if user set gmd variable on command line (gmdvar), add it to the
+        # already recognized gmd environment variable
+        for (k, v) in gmdvars.items():
+            if not v.split():
+                continue
+            env.append("export {0}={1}{2}${0}".format(k, v, os.pathsep))
+    env = "\n".join(env)
+
     with open(exe, "w") as fobj:
         fobj.write("#!/bin/sh -f\n")
         fobj.write("{0}\n".format(env))

@@ -223,7 +223,7 @@ class Plot2D(tapi.HasTraits):
                 else:
                     entry = "{0} {1}".format(yname, variables)
                 self.create_plot(x, y, yp_idx, d, entry, "solid")
-                XY_PAIRS[fnam] = [xname, x, yname, y]
+                XY_PAIRS.setdefault(fnam, []).append([xname, x, yname, y])
 
                 # create point marker
                 xp = self.plot_data[d][ti, xp_idx] * x_scale
@@ -246,7 +246,7 @@ class Plot2D(tapi.HasTraits):
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
                         self.create_plot(xo, yo, yo_idx, d, entry, LS[ls_ % 4])
-                        XY_PAIRS[fnam] = [xname, x, yname, y]
+                        XY_PAIRS.setdefault(fnam, []).append([xname, x, yname, y])
                         ls_ += 1
                         continue
 
@@ -611,12 +611,26 @@ class ModelPlot(tapi.HasStrictTraits):
         self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
 
     def _Print_to_PDF_fired(self):
+        if not XY_PAIRS:
+            return
+
+        # get the maximum of Y for normalization
+        ymax = max(np.amax(np.abs(xy_pair[-1]))
+                   for (label, item) in XY_PAIRS.items() for xy_pair in item)
+
+        # setup figure
         plt.figure(0)
         plt.cla()
         plt.clf()
-        for (label, xy_pair) in XY_PAIRS.items():
-            xname, x, yname, y = xy_pair
-            plt.plot(x, y, label=label)
+
+        # plot y value for each plot on window
+        ynames = []
+        for (fnam, info) in XY_PAIRS.items():
+            for (xname, x, yname, y) in info:
+                label = fnam + ":" + yname if len(XY_PAIRS) > 1 else yname
+                ynames.append(yname)
+                plt.plot(x, y / ymax, label=label)
+        yname = common_prefix(ynames)
         plt.xlabel(xname)
         plt.ylabel(yname)
         plt.legend(loc="best")
@@ -846,6 +860,25 @@ def get_sorted_fileinfo(filepaths):
     if logerr():
         stop("***error: stopping due to previous errors")
     return sorted(fileinfo, key=lambda x: len(x[1]), reverse=True)
+
+
+def common_prefix(strings):
+    """Find the longest string that is a prefix of all the strings.
+
+    """
+    if not strings:
+        return ''
+    prefix = strings[0]
+    for s in strings:
+        if len(s) < len(prefix):
+            prefix = prefix[:len(s)]
+        if not prefix:
+            return ''
+        for i in range(len(prefix)):
+            if prefix[i] != s[i]:
+                prefix = prefix[:i]
+                break
+    return prefix
 
 
 if __name__ == "__main__":

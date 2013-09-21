@@ -9,7 +9,7 @@ from __config__ import __version__, SPLASH
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
 MTLDIRS = [os.path.join(R, "materials")]
-MTLDIRS.extend([x for x in os.getenv("GMDSETUPMTLDIR", "").split(os.pathsep) if x])
+MTLDIRS.extend([x for x in os.getenv("GMDMTLS", "").split(os.pathsep) if x])
 FC = os.getenv("FC", "gfortran")
 LIBD = os.path.join(R, "lib")
 UTLD = os.path.join(R, "utils")

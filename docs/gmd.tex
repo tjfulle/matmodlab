@@ -2,7 +2,19 @@
 \usepackage{ifthen}
 \usepackage{nomenclature}
 \usepackage{url}
+\usepackage{calc}
+\usepackage{enumitem}
+
 \newcommand{\gmd}{\texttt{gmd}}
+\newcommand{\gmdviz}{\texttt{gmdviz}}
+\newcommand{\exodusii}{{\sc\texttt{ExodusII}}}
+\newcommand{\fpy}[1]{\texttt{f2py}}
+\newcommand{\paraview}[1]{{\sc\texttt{paraview}}}
+\newcommand{\pprepro}[1]{{\texttt{pprepro}}}
+\newcommand{\prompt}{\texttt{\$}}
+
+\newcommand{\boldnoindent}[1]{\noindent\textbf{#1}}
+
 \renewcommand{\tag}[1]{\texttt{<#1>}}
 \newcommand{\reqdtag}[1]{\Red{\texttt{<#1>}}}
 \newcommand{\gat}[1]{\texttt{<\textbackslash{}#1>}}
@@ -22,25 +34,46 @@
       \texttt{#1=``#2[#3]\{#4\}''}}}}
 
 
-\title{\gmd{} User's Guide}
+\title{\gmd{} \\ a General Material Model Driver}
 \author{Tim Fuller}
 
 \begin{document}
 \maketitle
 
 % ----------------------------------------------------------------------------- %
-\chapter{Introduction}
-\gmd{} is an object oriented \textbf{G}eneral \textbf{M}aterial model
-\textbf{D}river designed for rapid development and testing of material models.
-The core of the \gmd{} code base is written in Python, with the exception of
-many material models and optimization routines that are written in Fortran and
-wrapped by f2py. \gmd{} also leverages the fortran version of the ExodusII
-finite element databasing library for simulation output.
+\chapter{Introduction to \gmd}
+\gmd{} is a \textbf{G}eneral \textbf{M}aterial model \textbf{D}river designed
+for rapid development and testing of material models. \gmd{} can be thought to
+drive a single material point of a finite element simulation through very
+specific user designed paths. This permits exercising material models in ways
+not possible in finite element calculations, desgining verification and
+validation tests of the material response, among others. \gmd{} is a small
+tool at the developers disposal to aid in the design and implementation of
+material models in larger finite element host codes. \gmd{} is the successor
+the \texttt{payette} material model \cite{payette} which was itself based in
+part on Tom Pucick's \texttt{MMD} \cite{pucick} and Rebecca Brannon's
+\texttt{MED} \cite{brandriver} drivers.
+
+The core of the \gmd{} code base is written in Python and leverages Python's
+object oriented programming (OOP) design. OOP techniques are used throughout
+\gmd{} to setup and manage simulation data. Computationally heavy portions of
+the code, and the material models themselves are written in Fortran for its
+speed and ubiquity in scientific computing. Calling Fortran procedures from
+Python is made possible by the \fpy{} module, standard in Numpy, that compiles
+and creates Python shared object libraries from Fortran sources.
+
+Output files from \gmd{} simulations are in the \exodusii{} \cite{exodus}
+database format, devloped at Sandia National Labs for storing finite element
+simulation data. Since \gmd{} is designed to be used by material model
+developers, it is expected that the typical user will want access to
+\emph{all} all available output from a material model, thus all simulation
+data is written to the output database. \exodusii{} database files can be post
+processed via the \gmdviz{} utility, in addition to other visualization
+packages such as \paraview{} \cite{paraview}.
 
 \gmd{} is free software released under the MIT License.
 
 % ----------------------------------------------------------------------------- %
-
 \section{Why a Single Element Driver?}
 Due to their complexity, it is often over kill to use a finite element code
 for constitutive model development. In addition, features such as artificial
@@ -90,70 +123,58 @@ Python's object oriented nature allows for rapid installation of new material
 models.
 
 % ----------------------------------------------------------------------------- %
-\section{Historical Background}
-\gmd{} is the successor the \texttt{payette} material model,
-(\url{github.com/Payette/Payette}) which is itself an outgrowth of Tom Pucick's
-\texttt{MMD} and Rebecca Brannon's (\url{http://www.mech.utah.edu/~brannon}
-\texttt{MED} drivers.
-
-% ----------------------------------------------------------------------------- %
-\section{Simulation Approach}
-\gmd{} exercises a material model directly by ``driving'' it through user
-specified mechanical and electrical paths.
-
-% ----------------------------------------------------------------------------- %
-\section{Supported Drivers}
-
-% ----------------------------------------------------------------------------- %
-\subsection{Solid}
-
-% ----------------------------------------------------------------------------- %
-\subsubsection{Direct}
-\begin{itemize}
-  \item Strain rate
-  \item Strain
-  \item Deformation gradient
-\end{itemize}
-
-% ----------------------------------------------------------------------------- %
-\subsubsection{Inverse}
-\begin{itemize}
-  \item Stress
-  \item Stress rate
-\end{itemize}
-
-% ----------------------------------------------------------------------------- %
-\subsection{Electrical}
-
-% ----------------------------------------------------------------------------- %
-\subsubsection{Direct}
-
-\begin{itemize}
-  \item Electric field
-\end{itemize}
-
-% ----------------------------------------------------------------------------- %
 \section{Obtaining \gmd{}}
 \gmd{} is an open source project licensed under the MIT license. A copy of may
 be obtained from \url{https://github.com/tjfulle/gmd}
 
+% ----------------------------------------------------------------------------- %
+\chapter{\gmd{} Quick Start Guide}
+This guide provides an outline for building and running \gmd.\\[3pt]
+
+\boldnoindent{Build \gmd{}} See Chapter \ref{chap:build}.
+\begin{itemize}
+  \item Download \gmd{} and setup environment
+  \item \prompt{} \texttt{cd path/to/gmd/toolset \&\& ./setup.py}
+  \item \prompt{} \texttt{buildmtls}
+\end{itemize}
+
+\boldnoindent{Prepare Input} Inputs are xml specification files. See Chapter
+\ref{chap:input}.
+\begin{itemize}
+  \item Set up the desired simulation path.
+  \item Add material model.
+  \item Add desired extraction requests.
+\end{itemize}
+
+\boldnoindent{Run}
+\begin{itemize}
+  \item \prompt{} \gmd{} [options] \emph{runid} [,\emph{runid\_1}, $\ldots$,
+  \emph{runid\_n}]\\
+  \emph{runid} is prefix of ``.xml'' file.
+  \item Complete list of options given by \\ \prompt{} \texttt{gmd -h}
+\end{itemize}
+
+\boldnoindent{Postprocess}
+\begin{itemize}
+  \item \prompt{} \gmdviz{} \emph{runid} [,\emph{runid\_1}, $\ldots$,
+  \emph{runid\_n}]
+  \item \paraview{} also reads exodus files.
+\end{itemize}
 
 
 % ----------------------------------------------------------------------------- %
-\chapter{Building \gmd}
-\gmd's code base is largely written in Python and requires no additional
-compiling.  However, the ExodusII third party library and material models
+\chapter{Building \gmd{}}
+\label{chap:build}
+\gmd{}'s code base is largely written in Python and requires no additional
+compiling.  However, the \exodusii{} third party library and material models
 written in fortran must be built.
 
 % ----------------------------------------------------------------------------- %
-\section{System Requirements}
+\section{System and Software Requirements}
 \gmd{} has been built and tested extensively on several versions of linux and
 the Apple Mac OSX operating systems. It is unknown whether or not \gmd{}
 will run on Windows.
 
-
-% ----------------------------------------------------------------------------- %
-\section{Required Software}
 \gmd{} requires the following software installed for your platform:
 
 \begin{itemize}
@@ -171,42 +192,71 @@ compiler to build the \gmd{} components that was used to build SciPy.
 
 % ----------------------------------------------------------------------------- %
 \section{Installation}
-\begin{enumerate}
-  \item Make sure that all \gmd{} prerequisites are installed and working properly.
-  \item Add \verb:GMD/toolset: to your \texttt{PATH} environment variable
-  \item (Optional) Set the \texttt{GMDMTLS} environment variable to point to
-  directories containing additional material models (user developed, not part
-  of \gmd{}). See Section \ref{sec:install} for additional instructions on
-  installing user developed material models.
-  \item (Optional) Set the \texttt{GMDTESTS} environment variable to point to
-  directories containing additional tests.
-\end{enumerate}
+Ensure that all \gmd{} prerequisites are installed and working properly before
+proceeding.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Setting Up}
-Set up and build the third party libraries.
+\section{Set Environment and Path}
+
+\begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{GMDTESTS}}]
+  \item[\texttt{GMDROOT}] Optional, name of installation directory
+  \item[\texttt{PATH}] \verb|$GMDROOT/toolset:$PATH|
+  \item[\texttt{GMDMTLS}] ``:'' separated list of paths to directories
+  containing user defined material models. See Section \ref{sec:usrmtls}.
+  \item[\texttt{GMDTESTS}] ``:'' separated list of paths to directories
+  containing user defined regression tests. See Section \ref{sec:usrtests}.
+\end{description}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Set Up}
+Set up and build the TPLs.
+%
 \begin{verbatim}
-% cd GMD/toolset
-% python setup.py
+$ cd $GMDROOT/toolset
+$ python setup.py
 \end{verbatim}
+%
+In addition to building the TPLs, \texttt{setup.py} generates the following
+executable scripts
+%
+\begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{buildmtls}}]
+  \item[\texttt{buildmtls}] Build material models
+  \item[\texttt{gmd}] Run \gmd{} simulations
+  \item[\texttt{gmddump}] Read a \gmd{} output and dumps requested variables
+  to ascii columnar files
+  \item[\texttt{gmdviz}] 2D plots of \gmd{} output
+  \item[\texttt{runtests}] Run the regression tests
+\end{description}
+%
+Each script is a wrapper to another \gmd{} Python file. In the wrapper,
+relevant environment variables are set (e.g., \verb:$PYTHONPATH:) and the
+correct Python executable (the one used to set up) is used to interpret the
+\gmd{} source file.  The full set of options for each script is obtained by
+\begin{verbatim}
+$ scriptname -h
+\end{verbatim}
+%
+where \texttt{scriptname} is the name of the script.
 
-Add \texttt{GMD/toolset} to your \texttt{PATH} environment variable.
+The TPLs will build the first time \gmd{} is setup.
+Thereafter after, only the executable scripts are rewritten.  Execute
+\verb:$ python setup.py -h: for options to rebuild the TPLs.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Building}
+\subsection{Build}
 Build the material libraries
 \begin{verbatim}
-% buildmtls
+$ buildmtls
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Testing the Installation}
+\subsection{Test the Installation}
 To test \gmd{} after installation, execute
 
 \begin{verbatim}
-% runtests
+$ runtests [-j N]
 \end{verbatim}
-
+%
 which will run the \gmd{} regression tests.
 
 % ----------------------------------------------------------------------------- %
@@ -219,49 +269,102 @@ in your message:
   \item Platform information OS, its distribution name and version information
   etc.
 \begin{verbatim}
-% python -c 'import os,sys;print os.name,sys.platform'
-% uname -a
+$ python -c 'import os,sys;print os.name,sys.platform'
+$ uname -a
 \end{verbatim}
 
   \item Information about C,C++,Fortran compilers/linkers as reported by the
   compilers when requesting their version information, e.g., the output of
 \begin{verbatim}
-% gcc -v
-% gfortran --version
+$ gcc -v
+$ gfortran --version
 \end{verbatim}
 
   \item Python version
 \begin{verbatim}
-% python -c 'import sys;print sys.version'
+$ python -c 'import sys;print sys.version'
 \end{verbatim}
 
 \item NumPy version
 \begin{verbatim}
-% python -c 'import numpy;print numpy.__version__'
+$ python -c 'import numpy;print numpy.__version__'
 \end{verbatim}
 
 \item SciPy version
 \begin{verbatim}
-% python -c 'import scipy;print scipy.__version__'
+$ python -c 'import scipy;print scipy.__version__'
 \end{verbatim}
 
 \item Feel free to add any other relevant information.
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
+\section{Building User Materials}
+\label{sec:usrmtls}
+
+% ----------------------------------------------------------------------------- %
+\chapter{\gmd{} Solution Method}
+\gmd{} exercises a material model directly by ``driving'' it through user
+specified paths using a specified driver.  Currently installed drivers are the
+\texttt{solid} and \texttt{eos} drivers.  The details of the solution method
+depend on the driver and are described in the sections to follow.
+
+In solid mechanics inevitably run in to the momentum equation.  In equation is
+stress, need a constitutive model for stress.
+
+% ----------------------------------------------------------------------------- %
+\section{Supported Drivers}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Solid}
+The \texttt{solid} driver is designed to exercises material models designed to
+predict an increment in the material state given the current state and an
+increment in strain.
+%
+\begin{equation}
+  \label{eq:solid-0}
+  \Stress = f\left[\Stress, \ISV, \dStrain\right]
+\end{equation}
+%
+where $\Stress$ is the stress state, $\ISV$ are a set of path dependent
+internal state variables, and $\dStrain$ is the strain rate. The definitions
+of $\Stress$ and $\dStrain$ are left intentionally vague, except that the pair
+is work conjugate.  Further explanation of $\Stress$ and $\dStrain$ are
+deferred until a later section.  Users drive the material through specified
+deformation paths.  The path can also be a specified stress, in which case we
+solve for $\dStrain$ to be
+%
+\begin{equation}
+  \label{eq:inv-prob-0}
+  \dStrain = \dStrain_0 + f^{-1}\left[\Stress, \ISV,
+    \dStrain\right]\left(\Stress - \Stress_0\right)
+\end{equation}
+
+Mixed modes are also allowed.  Paths can be prescribed by specifying the
+components of strain and their rates, components of deformation gradient,
+displacements of boundary of unit cube, components of stress and their rates.
+Mixed modes involving strains and stresses allowed.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Electrical}
+Electric field can be prescribed for testing piezoelectric models.
+
+
+
+% ----------------------------------------------------------------------------- %
 \chapter{Running}
-Make sure \texttt{GMD/toolset} is on your \texttt{PATH}.
+
 \begin{verbatim}
-% gmd runid[.xml]
+$ gmd runid[.xml]
 \end{verbatim}
 
 The following files will be produced
 \begin{verbatim}
-% ls runid.*
+$ ls runid.*
 runid.exo       runid.log       runid.xml
 \end{verbatim}
 %
-\texttt{runid.exo} is the ExodusII output database, \texttt{runid.log} the log
+\texttt{runid.exo} is the \exodusii{} output database, \texttt{runid.log} the log
 file, and \texttt{runid.xml} the input file.
 
 
@@ -393,7 +496,7 @@ Read a piecewise linear table from an external file using columns 1 and 3
 \end{verbatim}
 
 \begin{verbatim}
-% cat file.dat
+$ cat file.dat
 # Column1 Column2 Column3
 1 1 4
 2 3 7
@@ -646,10 +749,12 @@ are
 %
 \begin{itemize}
   \item \tag{Matlabel}
-  \item \tag{Key}
+  \item \tag{ParameterArray}
+  \item \tag{InitialState}
+  \item \tag{Key}*
 \end{itemize}
 %
-Where \tag{Key} is a valid material parameter name.
+*\tag{Key} is a valid material parameter name.
 
 \subsubsection{Matlabel}
 \begin{verbatim}
@@ -658,6 +763,26 @@ Where \tag{Key} is a valid material parameter name.
 %
 Insert model parameters from a database file.  The default file
 \verb:F_MTL_PARAM_DB: is in \verb:/path/to/gmd/materials/material_properties.db:.
+
+\subsubsection{ParameterArray}
+\begin{verbatim}
+<ParameterArray> VAL1 VAL2 ... VALN </ParameterArray>
+\end{verbatim}
+%
+Specify the parameter array for the material as whitespace separated list of
+floats.  The list of values must be the same length as the parameter array for
+the material or an error will occur.
+
+\subsubsection{InitialState}
+\begin{verbatim}
+<InitialState> STRESS_XX STRESS_YY ... STRESS_XZ XTRA1 XTRA2 ... XTRAN </InitialState>
+\end{verbatim}
+%
+Specify the initial state of the material as a whitespace separated list of
+floats. Six stress values must be followed by material variables (if any). The
+length of the material variables must be the same as the length of the
+\texttt{xtra} variable array for the material or an error will occur.  Note,
+implementation is material model specific.
 
 \subsubsection{Key}
 \begin{verbatim}
@@ -685,7 +810,7 @@ Insert model parameters from a database file.  The default file
 <Extract format="str[ascii]{ascii, mathematica}" step="int[1]" ffmt="str[.18f]">
 \end{verbatim}
 %
-Extract variables and paths from ExodusII output and (optionally) write to
+Extract variables and paths from \exodusii{} output and (optionally) write to
 different formats. Recognized subelements of \tag{Extract} are
 %
 \begin{itemize}
@@ -698,7 +823,7 @@ different formats. Recognized subelements of \tag{Extract} are
 <Variables> VAR_1, ..., VAR_N </Variables>
 \end{verbatim}
 %
-Variables to extract from the ExodusII output database. Variables are specified
+Variables to extract from the \exodusii{} output database. Variables are specified
 children of the \tag{Variables} element. All components of vector and tensor
 variables will be extracted if only the basename is specified. Time is always
 extracted as the first entry of the output file.  Extracted variables are in
@@ -780,7 +905,7 @@ for each parameter.
 
 The \texttt{correlation} attribute is only meaningful if a
 \tag{ResponseFunction} is specified.  Also, note that issues relating to
-reading the ExodusII database prevent gmd from running simultaneous
+reading the \exodusii{} database prevent gmd from running simultaneous
 permutation jobs that define a \tag{ResponseFunction}.
 
 
