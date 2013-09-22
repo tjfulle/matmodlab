@@ -4,6 +4,7 @@
 \usepackage{url}
 \usepackage{calc}
 \usepackage{enumitem}
+\usepackage{multirow}
 
 \newcommand{\gmd}{\texttt{gmd}}
 \newcommand{\gmdviz}{\texttt{gmdviz}}
@@ -14,12 +15,12 @@
 \newcommand{\prompt}{\texttt{\$}}
 
 \newcommand{\boldnoindent}[1]{\noindent\textbf{#1}}
+\newcommand{\ih}[1][1]{\indent\hspace{.#1in}}
 
 \renewcommand{\tag}[1]{\texttt{<#1>}}
 \newcommand{\reqdtag}[1]{\Red{\texttt{<#1>}}}
 \newcommand{\gat}[1]{\texttt{<\textbackslash{}#1>}}
 \newcommand{\supporting}[1]{\texttt{Supporting Drivers: #1}}
-\newcommand{\sd}[1]{\texttt{!#1!}}
 \newcommand{\element}[4][0in]{%
   \indent\hspace{#1}\tag{#2 #3}\\%
   \indent\hspace{.2in}#4\\%
@@ -299,10 +300,6 @@ $ python -c 'import scipy;print scipy.__version__'
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
-\section{Building User Materials}
-\label{sec:usrmtls}
-
-% ----------------------------------------------------------------------------- %
 \chapter{\gmd{} Solution Method}
 \gmd{} exercises a material model directly by ``driving'' it through user
 specified paths using a specified driver.  Currently installed drivers are the
@@ -348,8 +345,6 @@ Mixed modes involving strains and stresses allowed.
 % ----------------------------------------------------------------------------- %
 \subsection{Electrical}
 Electric field can be prescribed for testing piezoelectric models.
-
-
 
 % ----------------------------------------------------------------------------- %
 \chapter{Running}
@@ -458,7 +453,7 @@ Path to file to be included as if its contents were inplace in the input file
 \section{Function}
 \begin{verbatim}
 <Function id="int"
-          type="str{analytic expression, piecewise linear}"
+          type="str{analytic_expression, piecewise_linear}"
           var="str[x]" href="str[]" cols="list[1 2]">
 \end{verbatim}
 %
@@ -474,7 +469,7 @@ linear table.
 \paragraph{Analytic expression}
 %
 \begin{verbatim}
-<Function id="2" type="analytic expression" var="t">
+<Function id="2" type="analytic_expression" var="t">
   sin(t)
 </Function>
 \end{verbatim}
@@ -482,7 +477,7 @@ linear table.
 \paragraph{Piecewise linear table}
 %
 \begin{verbatim}
-<Function id="2" type="piecewise linear">
+<Function id="2" type="piecewise_linear">
   1 2
   2 3
   3 5
@@ -492,7 +487,7 @@ linear table.
 Read a piecewise linear table from an external file using columns 1 and 3
 %
 \begin{verbatim}
-<Function id="2" type="piecewise linear" href="./file.dat" cols="1 3"/>
+<Function id="2" type="piecewise_linear" href="./file.dat" cols="1 3"/>
 \end{verbatim}
 
 \begin{verbatim}
@@ -507,7 +502,7 @@ $ cat file.dat
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\section{Physics}
+\chapter{Physics}
 \begin{verbatim}
 <Physics driver="str[solid]{solid, eos}" termination_time="real[]">
 \end{verbatim}
@@ -518,13 +513,10 @@ time is taken as final time in \reqdtag{Path}. Recognized subelements of
 \reqdtag{Physics} are
 %
 \begin{itemize}
-  \item \reqdtag{Path\sd{solid,eos}}
+  \item \reqdtag{Path}
   \item \reqdtag{Material}
   \item \tag{Extract}
 \end{itemize}
-
-\sd{driver} indicates that the containing element is valid for
-that driver type only.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Path}
@@ -814,9 +806,11 @@ Extract variables and paths from \exodusii{} output and (optionally) write to
 different formats. Recognized subelements of \tag{Extract} are
 %
 \begin{itemize}
-  \item \tag{Path\sd{eos}}
+  \item \tag{Path*}
   \item \tag{Variables}
 \end{itemize}
+%
+* \texttt{eos} driver only
 
 \subsubsection{Variables}
 \begin{verbatim}
@@ -881,7 +875,7 @@ Extract Hugoniot and Isotherm paths
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\section{Permutation}
+\chapter{Permutation}
 \begin{verbatim}
 <Permutation method="str[zip]{zip, combine, shotgun}" seed="real[12]"
                      correlation="list[none]{plot, table, none}">
@@ -952,12 +946,12 @@ response function.
 Built in response functions are
 %
 \begin{itemize}
-  \item \texttt{gmd.max} maximum value of a simulation output
-  \item \texttt{gmd.min} minimum value of a simulation output
-  \item \texttt{gmd.mean} mean value of a simulation output
-  \item \texttt{gmd.ave} average value of a simulation output
-  \item \texttt{gmd.absmax} maximum absolute value of a simulation output
-  \item \texttt{gmd.absmin} minimum absolute value of a simulation output
+  \item \texttt{gmd.max} maximum value of a simulation variable output
+  \item \texttt{gmd.min} minimum value of a simulation variable output
+  \item \texttt{gmd.mean} mean value of a simulation variable output
+  \item \texttt{gmd.ave} average value of a simulation variable output
+  \item \texttt{gmd.absmax} maximum absolute value of a simulation variable output
+  \item \texttt{gmd.absmin} minimum absolute value of a simulation variable output
 \end{itemize}
 %
 Built in response functions operate only on variabes in the simulation output file.
@@ -979,7 +973,7 @@ command line as
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\section{Optimization}
+\chapter{Optimization}
 \begin{verbatim}
 <Optimization method="str[simplex]{simplex, powell, cobyla}"
               maxiter="int[25]" tolerance="real[1e-6]">
@@ -1036,6 +1030,35 @@ are specified as
   <G> {opt_g} </G>
 </Material>
 \end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\chapter{User Materials}
+
+\section{Building}
+Looks for makemf.py in mtldir directories.  Flexibility to build how you want,
+but makemf.makemf must return a tuple
+
+\section{API}
+\begin{tabular}[h!]{lp{3in}}
+  \multicolumn{2}{p{3in}}{makemf.\textbf{makemf}(*args, **kwargs)} \\
+  \multicolumn{2}{p{\textwidth}}{
+    \hfill\begin{minipage}{\dimexpr\textwidth-.2in}
+      Returns a tuple containing information about which models were built,
+      skipped, or failed to build.
+    \end{minipage}} \\[5pt]
+  \ih[2]\textbf{Parameters} : & \textbf{args} : tuple \\
+                              & \ih[1] Tuple of inputs \\[3pt]
+                              & \textbf{kwargs} : dict \\
+                              & \ih[1] Dictionary of inputs\\[5pt]
+  \ih[2]\textbf{Returns} :    & \textbf{mtl} : tuple \\
+                              & \ih[1] Tuple of materials that
+                              (\texttt{built}, \texttt{skipped}, \texttt{failed}) \\
+\end{tabular}
+
+
+
+% ----------------------------------------------------------------------------- %
+\chapter{Regression Testing}
 
 \end{document}
 

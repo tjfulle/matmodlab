@@ -6,7 +6,6 @@ from xml.parsers.expat import ExpatError
 from __config__ import F_MTL_MODEL_DB
 from core.io import Error1
 from utils.impmod import load_file
-from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))
 
@@ -28,8 +27,9 @@ def create_material(matname, matparams):
     model = get_material_from_db(matname)
     if model is None:
         return None
-    mtlmod = load_file(model.filepath)
-    mclass = getattr(mtlmod, model.mclass)
+    mtli, mtlc, mtlp = model
+    mtlmod = load_file(mtli)
+    mclass = getattr(mtlmod, mtlc)
     material = mclass()
     material.setup(matparams)
     return material
@@ -51,24 +51,29 @@ def read_mtldb():
     mtldb = {}
     materials = doc.getElementsByTagName("Materials")[0]
     for mtl in materials.getElementsByTagName("Material"):
-        ns = Namespace()
         name = str(mtl.attributes.getNamedItem("name").value).lower()
         filepath = str(mtl.attributes.getNamedItem("filepath").value)
         filepath = os.path.realpath(os.path.join(D, filepath))
         if not os.path.isfile(filepath):
             raise Error1("{0}: no such file".format(filepath))
+        mclass = str(mtl.attributes.getNamedItem("mclass").value)
         p = mtl.attributes.getNamedItem("parameters").value.split(",")
+        parameters = ",".join(str(x.strip().lower()) for x in p)
+        mtldb[name] = (filepath, mclass, parameters)
 
-        ns.nparam = len(p)
-        ns.filepath = filepath
-        ns.mclass = str(mtl.attributes.getNamedItem("mclass").value)
-        ns.parameters = ",".join(str(x.strip().lower()) for x in p)
-        mtldb[name] = ns
     return mtldb
 
 
-def write_mtldb(mtldict, wipe=False):
+def write_mtldb(built_mtls, wipe=False):
     """Write the F_MTL_MODEL_DB database file
+
+    Parameters
+    ----------
+    built_mtls : list
+        list of (name, filepath, mclass, parameters) tuples of built
+        materials, where name is the model name, filepath is the path to its
+        interface file, mclass the name of the material class, and parameters
+        is a list of ordered parameter names.
 
     """
     if wipe and os.path.isfile(F_MTL_MODEL_DB):
@@ -76,18 +81,24 @@ def write_mtldb(mtldict, wipe=False):
     mtldb = read_mtldb()
     if mtldb is None:
         mtldb = {}
-    mtldb.update(mtldict)
+
+    for (name, filepath, mclass, parameters) in built_mtls:
+        mtldb[name] = (filepath, mclass, parameters)
 
     doc = xdom.Document()
     root = doc.createElement("Materials")
     doc.appendChild(root)
 
-    for (name, ns) in mtldb.items():
+    for (name, (filepath, mclass, parameters)) in mtldb.items():
         # create element
         child = doc.createElement("Material")
+
         child.setAttribute("name", name)
-        for (aname, aval) in ns.items():
-            child.setAttribute(aname, str(aval))
+        child.setAttribute("filepath", filepath)
+        child.setAttribute("mclass", mclass)
+        child.setAttribute("parameters", parameters)
+
         root.appendChild(child)
+
     doc.writexml(open(F_MTL_MODEL_DB, "w"), addindent="  ", newl="\n")
     doc.unlink()

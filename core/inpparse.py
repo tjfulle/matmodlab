@@ -625,8 +625,8 @@ def pMaterial(mtldict):
         return
 
     # mtlmdl.parameters is a comma separated list of parameters
-    pdict = dict([(n.lower(), i)
-                  for i, n in enumerate(mtlmdl.parameters.split(","))])
+    mtli, mtlc, mtlp = mtlmdl
+    pdict = dict([(n.lower(), i) for i, n in enumerate(mtlp.split(","))])
     # put the parameters in an array
     params = np.zeros(len(pdict))
 

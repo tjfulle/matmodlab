@@ -29,7 +29,7 @@ class IdealGas(Material):
         self.register_mtl_variable("DEDR", "SCALAR",
             units="SPECIFIC_ENERGY_UNITS_OVER_DENSITY_UNITS")
 
-    def update_state(self, *args, **kwargs):
+    def update_state(self, dt, d, sig, xtra, *margs, **kwargs):
         """Evaluate the eos - rho and tmpr are in CGSEV
 
         By the end of this routine, the following variables should be
@@ -37,6 +37,7 @@ class IdealGas(Material):
                   density, temperature, energy, pressure
         """
         mode = kwargs.get("mode", 0)
+        rho, tmpr, enrgy = margs[-3:]
 
         # unit_system = kwargs["UNITS"]
         M = self._param_vals[0]
@@ -51,12 +52,10 @@ class IdealGas(Material):
 
         if mode == 0:
             # get (pres, enrgy) as functions of args=(rho, tmpr)
-            rho, tmpr = args
             pres, enrgy = eosigr(M, CV, R, rho, tmpr)
 
         elif mode == 1:
             # get (pres, tmpr) as functions of args=(rho, enrgy)
-            rho, enrgy = args
             pres, tmpr = eosigv(M, CV, R, rho, enrgy)
 
         else:
@@ -69,9 +68,11 @@ class IdealGas(Material):
         dedr = CV * pres * M / rho ** 2
         scratch = np.array([dpdr, dpdt, dedt, dedr])
 
+        # return stress, and lump other returned items to conform with gmd
+        sig = np.array([-pres, -pres, -pres, 0, 0, 0])
         if mode == 0:
-            return pres, enrgy, cs, scratch
-        return pres, tmpr, cs, scratch
+            return sig, [enrgy, cs, scratch]
+        return sig, [tmpr, cs, scratch]
 
 
 def eosigr(M, CV, R, rho, tmpr) :

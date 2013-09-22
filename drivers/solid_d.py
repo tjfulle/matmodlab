@@ -210,7 +210,7 @@ class SolidDriver(Driver):
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
 
                 # --- find current value of d: sym(velocity gradient)
-                margs = (f, ef, t)
+                margs = (f, ef, t, None, None)
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components

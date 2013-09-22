@@ -16,6 +16,8 @@ fdir, fnam = os.path.split(fpath)
 root = os.path.dirname(fdir)
 sys.path.insert(0, root)
 from __config__ import __version__, SPLASH
+import utils.makeut as makeut
+
 version = ".".join(str(x) for x in __version__)
 
 def log_message(message, end="\n"):
@@ -172,6 +174,15 @@ def main(argv=None):
                 pypath.append(info.get("PYTHONPATH"))
     if logerr():
         stop("Resolve before continuing")
+
+    # build the fortran based utilities
+    log_message("building fortran based utils", end="... ")
+    stat = makeut.makeut(libd, gfortran)
+    if stat != 0:
+        log_message("no")
+        logerr("failed to build fortran based utils")
+    else:
+        log_message("yes")
 
     pypath = os.pathsep.join(x for x in pypath if x)
     for path in pypath:

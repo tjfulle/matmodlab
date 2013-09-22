@@ -8,11 +8,12 @@ from itertools import product
 from __config__ import cfg
 import utils.xmltools as xmltools
 from drivers.driver import Driver
-from utils.tensor import I9
+from utils.tensor import I9, Z6
 from core.io import fatal_inp_error, input_errors, log_message, log_error, Error1
 from materials.material import create_material
 
 np.set_printoptions(precision=4)
+EF = np.zeros(3)
 
 class EOSDriver(Driver):
     name = "eos"
@@ -26,6 +27,7 @@ class EOSDriver(Driver):
 
         self.register_glob_variable("TIME_STEP")
         self.register_glob_variable("STEP_NUM")
+        self.register_variable("STRESS", vtype="SYMTENS")
         self.register_variable("DEFGRAD", vtype="TENS")
         self.register_variable("RHO", vtype="SCALAR",
                                units="DENSITY_UNITS")
@@ -55,12 +57,19 @@ class EOSDriver(Driver):
         self.allocd()
 
         # get initial pressure, energy, and set initial state
-        self._data[self.defgrad_slice] = I9
+        F = I9
+        self._data[self.defgrad_slice] = F
         rho = self.surface[0, 0]
         tmpr = self.surface[1, 0]
-        pres, e, cs, s = self.material.update_state(rho, tmpr)
+        e = 0
+
+        margs = (F, EF, 0, rho, tmpr, e)
+        sig, xtra = self.material.update_state(0., Z6, Z6, None, *margs)
+        pres = -np.sum(sig[:3]) / 3.
+        e, cs, s = xtra
         self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=pres, cs=cs,
-                     dpdr=s[0], dpdt=s[1], dedt=s[2], dedr=s[3])
+                     dpdr=s[0], dpdt=s[1], dedt=s[2], dedr=s[3],
+                     stress=sig)
 
         return
 
@@ -90,6 +99,8 @@ class EOSDriver(Driver):
         step_num = 0
         num_steps = len(self.surface[0]) * len(self.surface[1])
         dt = 1. / self.surface.shape[0] / self.surface.shape[1]
+        sig = self.elem_var_vals("STRESS")
+        e = self.elem_var_vals("ENRGY")
         for rho in self.surface[0]:
             for tmpr in self.surface[1]:
                 step_num += 1
@@ -97,10 +108,14 @@ class EOSDriver(Driver):
                     # initial state used to initialize output file
                     continue
                 t += dt
-                p, e, cs, s = self.material.update_state(rho, tmpr)
                 F = rho / self.surface[0, 0] * I9
+                margs = (F, EF, t, rho, tmpr, e)
+                sig, xtra = self.material.update_state(dt, Z6, sig, None, *margs)
+                p = -np.sum(sig[:3]) / 3.
+                e, cs, s = xtra
                 self.setvars(rho=rho, tmpr=tmpr, enrgy=e, pres=p, cs=cs,
-                             dpdr=s[0], dpdt=s[1], dedt=s[2], dedr=s[3], defgrad=F)
+                             dpdr=s[0], dpdt=s[1], dedt=s[2], dedr=s[3],
+                             defgrad=F, stress=sig)
                 self.setglobvars(step_num=step_num, time_step=dt)
                 iomgr(t)
                 if step_num % int(num_steps / float(nprints)) == 0:

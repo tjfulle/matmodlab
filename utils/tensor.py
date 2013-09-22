@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.linalg
+import lib.linalg
 
 NSYMM = 6
 NSKEW = 3
@@ -420,7 +421,7 @@ def expm(a, strict=False):
     elif strict:
         a = np.real(scipy.linalg.expm(a))
     else:
-        a = I3x3 + a + np.dot(a, a) / 2.
+        a = linalg.expm(a)
     return a
 
 

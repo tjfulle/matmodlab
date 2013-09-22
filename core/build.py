@@ -8,7 +8,7 @@ from __config__ import __version__, SPLASH
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
-MTLDIRS = [os.path.join(R, "materials")]
+MTLDIRS = [os.path.join(R, "materials/library")]
 MTLDIRS.extend([x for x in os.getenv("GMDMTLS", "").split(os.pathsep) if x])
 FC = os.getenv("FC", "gfortran")
 LIBD = os.path.join(R, "lib")
@@ -38,10 +38,9 @@ def main(argv=None):
     log_message("gmd {0}".format(VERSION))
     log_message("looking for makemf files")
 
-    kwargs = {"FC": FC, "DESTD": LIBD, "MATERIALS": args.m, "FIO": FIO}
-    mtldict = {}
-    allfailed = []
     allbuilt = []
+    allfailed = []
+    allskipped = []
     retcode = []
     for dirpath in MTLDIRS:
         for (d, dirs, files) in os.walk(dirpath):
@@ -51,38 +50,36 @@ def main(argv=None):
             f = os.path.join(d, "makemf.py")
             log_message("building makemf in {0}".format(d), end="... ")
             makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
-            made = makemf.makemf(**kwargs)
-            failed = made.get("FAILED")
-            built = made.get("BUILT")
-            skipped = made.get("SKIPPED")
-
+            built, failed, skipped = makemf.makemf(
+                LIBD, FC, FIO, materials=args.m)
             if failed:
                 log_message("no", pre="")
-                allfailed.extend(failed)
-
-            if skipped:
-                if not failed and not built:
-                    log_message("skipped", pre="")
+            elif skipped:
+                log_message("skipped", pre="")
+            else:
+                log_message("yes", pre="")
 
             if built:
-                if not failed:
-                    log_message("yes", pre="")
-                if built:
-                    mtldict.update(built)
-                    allbuilt.extend(built.keys())
-
+                if len(built) == 4 and isinstance(built[0], basestring):
+                    allbuilt.append(built)
+                else:
+                    allbuilt.extend(built)
+            allfailed.extend(failed)
+            allskipped.extend(skipped)
             retcode.append({True: 1, False: 0}[any(failed)])
 
     if allfailed:
         log_message("the following materials failed to build: "
-               "{0}".format(", ".join(allfailed)))
+                    "{0}".format(", ".join(allfailed)))
+
+    if allskipped:
+        log_message("the following materials were skipped: "
+                    "{0}".format(", ".join(allskipped)))
 
     if allbuilt:
         log_message("the following materials were built: "
-               "{0}".format(", ".join(allbuilt)))
-
-    if mtldict:
-        write_mtldb(mtldict, wipe=args.w)
+                    "{0}".format(", ".join(b[0] for b in allbuilt)))
+        write_mtldb(allbuilt, wipe=args.w)
 
     return max(retcode)
 
