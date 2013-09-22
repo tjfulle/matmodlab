@@ -10,18 +10,18 @@ from utils.gmdf2py import f2py
 
 D = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, D)
-import elastic as elastic
+import plastic as plastic
 
 
 def makemf(destd, fc, fio, materials=None, *args):
-    name = "elastic"
+    name = "plastic"
     if materials and name not in [m.lower() for m in materials]:
         return [], [], [name]
 
-    signature = os.path.join(D, "elastic.pyf")
+    signature = os.path.join(D, "plastic.pyf")
 
     # source files
-    source_files = ["elastic_interface.f90", "elastic.f90"]
+    source_files = ["plastic_interface.f90", "plastic.f90"]
     source_files = [os.path.join(D, f) for f in source_files]
     source_files.append(fio)
     assert all(os.path.isfile(f) for f in source_files)
@@ -29,10 +29,10 @@ def makemf(destd, fc, fio, materials=None, *args):
     if stat != 0:
         return [], [name], []
 
-    material = elastic.Elastic()
+    material = plastic.Plastic()
 
     name = material.name
-    filepath = elastic.__file__.rstrip("c")
+    filepath = plastic.__file__.rstrip("c")
     mclass = material.__class__.__name__
     parameters = ", ".join(material.params()).lower()
 

@@ -24,6 +24,11 @@ def f2py(name, source_files, signature, fc, incd):
     argv.extend(source_files)
     sys.argv = [x for x in argv if x]
 
+    try:
+        os.remove(os.path.join(os.path.dirname(source_files[0]), name + ".so"))
+    except OSError:
+        pass
+
     f = os.devnull
     with open(f, "w") as sys.stdout:
         with open(f, "a") as sys.stderr:
