@@ -14,10 +14,10 @@ def makemf(destd, fc, fio, materials=None, *args):
         Path to fortran compiler
     fio : str
         Path to the fortran IO routines
-    args : tuple
-        Not used
     materials : None or list
         If None, build all.  Else, build only specified
+    args : tuple
+        Not used
 
     Returns
     -------

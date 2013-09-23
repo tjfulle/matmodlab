@@ -8,6 +8,7 @@
 
 \newcommand{\gmd}{\texttt{gmd}}
 \newcommand{\gmdviz}{\texttt{gmdviz}}
+\newcommand{\bldm}{\texttt{buildmtls}}
 \newcommand{\exodusii}{{\sc\texttt{ExodusII}}}
 \newcommand{\fpy}[1]{\texttt{f2py}}
 \newcommand{\paraview}[1]{{\sc\texttt{paraview}}}
@@ -15,7 +16,24 @@
 \newcommand{\prompt}{\texttt{\$}}
 
 \newcommand{\boldnoindent}[1]{\noindent\textbf{#1}}
+\newcommand{\ttnoindent}[1]{\noindent\texttt{#1}}
 \newcommand{\ih}[1][1]{\indent\hspace{.#1in}}
+
+\newcommand{\api}[2]{\noindent\colorbox{yellow}{%
+    \begin{minipage}{\textwidth}%
+      #1%
+    \end{minipage}}\\[9pt]%
+  \indent\texttt{#2}}
+\newcommand{\param}[2]{\ttnoindent{#1}\\%
+  \indent\begin{minipage}{.9\textwidth}#2\end{minipage}}
+\newcommand{\data}[3]{\ttnoindent{#1}.\textbf{#2}\\%
+  \indent\begin{minipage}{.9\textwidth}#3\end{minipage}}
+\newcommand{\class}[2]{\noindent\colorbox{yellow}{%
+    \begin{minipage}{\textwidth}%
+      \emph{class} \texttt{#1}.\textbf{#2}%
+    \end{minipage}}}
+\newcommand{\method}[4]{\ttnoindent{#1}.\textbf{#2}(\emph{#3})\\%
+  \indent\begin{minipage}{.9\textwidth}#4\end{minipage}}
 
 \renewcommand{\tag}[1]{\texttt{<#1>}}
 \newcommand{\reqdtag}[1]{\Red{\texttt{<#1>}}}
@@ -1033,28 +1051,60 @@ are specified as
 
 % ----------------------------------------------------------------------------- %
 \chapter{User Materials}
+\label{chap:usrmtl}
 
+% ----------------------------------------------------------------------------- %
+\section{Interface}
+\label{sec:usrint}
+\gmd{} interacts with materials through a material interface file. The
+material interface file defines the material class a subclass of\\
+\verb|$GMDROOT/materials._material.Material|.  To follow are data and methods
+that each material model must define.\\[5pt]
+
+% --- interface API
+\class{\underline{  }material}{Material} \\[5pt]
+\data{Material}{name}{The material name. Name by which material is invoked
+  from the input file.}\\
+\data{Material}{param\textunderscore{}names}{Ordered list of material
+  parameter names as they appear in the input file.}\\
+\method{Material}{\_\_init\_\_}{}{Instantiate the material model.
+  \emph{params} is the ndarray of material parameters parsed from the input
+  file. Must register parameter names with \gmd{} via the
+  \texttt{register\_parameters} method.}\\
+\method{Material}{register\_parameters}{*param\_names}{Register material
+  parameters with \gmd{}. \emph{param\_names} is the list of parameter
+  names.}\\
+\method{Material}{update\_state}{dt, d, sig, xtra, *args, **kwargs}{%
+  Return the updated stress and extra variables.}
+
+
+
+
+% ----------------------------------------------------------------------------- %
 \section{Building}
-Looks for makemf.py in mtldir directories.  Flexibility to build how you want,
-but makemf.makemf must return a tuple
+\label{sec:usrbld}
+\bldm{} builds the \gmd{} materials by searching the subdirectories of\\
+\texttt{\$GMDROOT/materials/library} and the directories specified by the
+\verb|$GMDMTLS| environment variables and building materials it finds.  It
+does so by searching for a single file \texttt{makemf.py} in each directory.
+\texttt{makemf.py} is responsible for building the materials and communicating
+back to \bldm{}.\\[4pt]
 
-\section{API}
-\begin{tabular}[h!]{lp{3in}}
-  \multicolumn{2}{p{3in}}{makemf.\textbf{makemf}(*args, **kwargs)} \\
-  \multicolumn{2}{p{\textwidth}}{
-    \hfill\begin{minipage}{\dimexpr\textwidth-.2in}
-      Returns a tuple containing information about which models were built,
-      skipped, or failed to build.
-    \end{minipage}} \\[5pt]
-  \ih[2]\textbf{Parameters} : & \textbf{args} : tuple \\
-                              & \ih[1] Tuple of inputs \\[3pt]
-                              & \textbf{kwargs} : dict \\
-                              & \ih[1] Dictionary of inputs\\[5pt]
-  \ih[2]\textbf{Returns} :    & \textbf{mtl} : tuple \\
-                              & \ih[1] Tuple of materials that
-                              (\texttt{built}, \texttt{skipped}, \texttt{failed}) \\
-\end{tabular}
-
+% --- makemf API
+\api{\texttt{makemf}.\textbf{makemf}: Python Interface}{%
+  blt, fld, skp = makemf(destd, fc, fio, materials=None, *args)}\\[8pt]
+\param{str dest}{path to directory to copy built shared object libraries (if
+  any)}\\
+\param{str fc}{path to fortran compiler}\\
+\param{str fio}{path to the fortran IO routines}\\
+\param{list materials}{list of materials to build.  if empty, build all}\\
+\param{tuple args}{not used}\\[9pt]
+\param{tuple blt}{\texttt{(name, interface, mclass, parameters)}.
+  \texttt{name} is the name of the material, \texttt{interface} the file path
+  to the interface file, \texttt{mclass} the material model class name in
+  \texttt{interface}, \texttt{parameters} an order list of parameter names}\\
+\param{list fld}{list of names of materials that failed to build}\\
+\param{list skp}{list of names of materials that were skipped}
 
 
 % ----------------------------------------------------------------------------- %
