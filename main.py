@@ -43,6 +43,9 @@ def main(argv=None):
     # directory to look for hrefs and other files
     cfg.I = args.I
 
+    # add the working directory to the Python path
+    sys.path.insert(0, os.getcwd())
+
     if args.B:
         import core.build as build
         try: os.remove(os.path.join(LIB_D, "{0}.so".format(args.B)))

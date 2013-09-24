@@ -3,7 +3,7 @@ import sys
 import time
 import numpy as np
 
-from __config__ import cfg
+from __config__ import cfg, RESTART
 import core.io as io
 from utils.exodump import exodump
 from drivers.driver import create_driver
@@ -15,9 +15,10 @@ class PhysicsHandler(object):
 
         """
         self.runid = runid
+        cfg.runid = runid
 
-#        mode = "a" if restart else "w"
-        mode = "w"
+        restart = driver[2][0] == RESTART
+        mode = "a" if restart else "w"
         io.setup_logger(runid, verbosity, mode=mode)
         io.log_message("{0}: setting up".format(self.runid))
 
@@ -29,7 +30,6 @@ class PhysicsHandler(object):
         self.timing = {}
         self.timing["start"] = time.time()
 
-        restart = False
         if restart:
             return self._setup_restart_io()
         else:

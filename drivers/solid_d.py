@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from numpy.linalg import solve, lstsq
 
-from __config__ import cfg
+from __config__ import cfg, RESTART
 import utils.tensor as tensor
 import utils.xmltools as xmltools
 from drivers.driver import Driver
@@ -20,10 +20,10 @@ class SolidDriver(Driver):
     name = "solid"
     def __init__(self, path, opts, material):
         super(SolidDriver, self).__init__()
-        self.kappa = opts[0]
-        self.proportional = bool(opts[1])
+        self.opts = opts
+        self.kappa = opts[1]
+        self.proportional = bool(opts[2])
         self.path = path
-        self.opts = [float(x) for x in opts[:2]]
 
         # Create material
         self._mtl_istate = material[2]
@@ -55,9 +55,9 @@ class SolidDriver(Driver):
         # allocate storage
         self.allocd()
 
-        if len(opts) == 3:
+        if opts[0] == RESTART:
             # restart info given
-            start_leg, time, glob_data, elem_data = opts[2]
+            start_leg, time, glob_data, elem_data = opts[3]
             self._glob_data[:] = glob_data
             self._data[:] = elem_data
             self.start_leg = start_leg
@@ -81,6 +81,7 @@ class SolidDriver(Driver):
                 args = (I9, np.zeros(3), 0.)
                 sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
                 xtra = self.material.adjust_initial_state(xtra)
+                gmd_user_sub_eval(0., np.zeros(6), sig, xtra)
 
             pres = -np.sum(sig[:3]) / 3.
             self.setvars(stress=sig, pressure=pres, xtra=xtra)
@@ -244,6 +245,7 @@ class SolidDriver(Driver):
                              vstrain=epsv, pressure=pres,
                              dstress=dstress, xtra=xtra)
 
+                gmd_user_sub_eval(t, d, sig, xtra)
 
                 # --- write state to file
                 endstep = abs(t - tleg[1]) / tleg[1] < 1.E-12
@@ -270,7 +272,7 @@ class SolidDriver(Driver):
         path = pPrdef(pathdict, functions, tterm)
         if input_errors():
             return
-        return path, (pathdict["kappa"], pathdict["proportional"])
+        return path, (0, pathdict["kappa"], pathdict["proportional"])
 
 def mybool(a):
     if str(a).lower().strip() in ("false", "no", "0", "none"):
@@ -534,7 +536,10 @@ def parse_path_cijfcn(lines, functions, num_steps, cfmt):
                         .format(leg_num))
 
     path = []
-    for time in np.linspace(start_time, final_time, num_steps):
+    path.append([start_time, 1, np.array([2] * len(Cij)), np.zeros(len(Cij))])
+    for time in np.linspace(start_time, final_time, num_steps-1):
+        if time == start_time:
+            continue
         leg = [time, 1, control]
         leg.append(np.array([s * f(time) for (s, f) in Cij]))
         path.append(leg)
@@ -779,3 +784,10 @@ def _format_path(path, pathdict, tterm):
         continue
 
     return np.array(path)
+
+def gmd_user_sub_eval(t, d, sig, xtra):
+    try:
+        import gmd_user_sub as usr
+    except ImportError:
+        return
+    usr.gmd_user_sub(cfg.runid, t, d, sig, xtra)

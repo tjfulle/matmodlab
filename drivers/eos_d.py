@@ -5,7 +5,7 @@ import math
 import numpy as np
 from itertools import product
 
-from __config__ import cfg
+from __config__ import cfg, RESTART
 import utils.xmltools as xmltools
 from drivers.driver import Driver
 from utils.tensor import I9, Z6
@@ -22,7 +22,7 @@ class EOSDriver(Driver):
         self.material = create_material(material[0], material[1])
         self.surface = surface
         self.path = self.surface
-        if opts:
+        if opts[0] == RESTART:
             raise Error1("EOS path not configured to restart")
 
         self.register_glob_variable("TIME_STEP")
@@ -135,7 +135,7 @@ class EOSDriver(Driver):
             return
 
         surface = pPath(pathdict, functions)
-        return surface, []
+        return surface, [0]
 
     @staticmethod
     def format_path_extraction(pdict):

@@ -223,7 +223,7 @@ class Plot2D(tapi.HasTraits):
                 else:
                     entry = "{0} {1}".format(yname, variables)
                 self.create_plot(x, y, yp_idx, d, entry, "solid")
-                XY_PAIRS.setdefault(fnam, []).append([xname, x, yname, y])
+                XY_PAIRS.setdefault(fnam, []).append([xname, x, yname, y, 1])
 
                 # create point marker
                 xp = self.plot_data[d][ti, xp_idx] * x_scale
@@ -246,7 +246,8 @@ class Plot2D(tapi.HasTraits):
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
                         self.create_plot(xo, yo, yo_idx, d, entry, LS[ls_ % 4])
-                        XY_PAIRS.setdefault(fnam, []).append([xname, x, yname, y])
+                        XY_PAIRS.setdefault(fnam, []).append(
+                            [xname, x, yname, y, 3])
                         ls_ += 1
                         continue
 
@@ -615,7 +616,7 @@ class ModelPlot(tapi.HasStrictTraits):
             return
 
         # get the maximum of Y for normalization
-        ymax = max(np.amax(np.abs(xy_pair[-1]))
+        ymax = max(np.amax(np.abs(xy_pair[-2]))
                    for (label, item) in XY_PAIRS.items() for xy_pair in item)
 
         # setup figure
@@ -625,11 +626,11 @@ class ModelPlot(tapi.HasStrictTraits):
 
         # plot y value for each plot on window
         ynames = []
-        for (fnam, info) in XY_PAIRS.items():
-            for (xname, x, yname, y) in info:
-                label = fnam + ":" + yname if len(XY_PAIRS) > 1 else yname
+        for key in sorted(XY_PAIRS, key=lambda x: XY_PAIRS[x][0][-1], reverse=True):
+            for (xname, x, yname, y, lw) in XY_PAIRS[key]:
+                label = key + ":" + yname if len(XY_PAIRS) > 1 else yname
                 ynames.append(yname)
-                plt.plot(x, y / ymax, label=label)
+                plt.plot(x, y / ymax, label=label, lw=lw)
         yname = common_prefix(ynames)
         plt.xlabel(xname)
         plt.ylabel(yname)

@@ -5,7 +5,7 @@ import numpy as np
 from xml.etree.ElementTree import iterparse
 import xml.dom.minidom as xdom
 
-from __config__ import cfg, F_MTL_PARAM_DB
+from __config__ import cfg, F_MTL_PARAM_DB, RESTART
 import utils.pprepro as pp
 from utils.mtldb import read_material_params_from_db
 from utils.fcnbldr import build_lambda, build_interpolating_function
@@ -279,8 +279,8 @@ def set_random_seed(seed, seedset=[0]):
 
 # recognized types
 def boolean(a):
-    if re.search(r"no|0|none|false", a.lower()): return False
-    return True
+    if re.search(r"no|0|none|false", a.lower()): return 0
+    return 1
 def strlist(a): return aslist(a)
 def real(a): return float(a)
 def integer(a): return int(a)
@@ -517,8 +517,9 @@ def parse_input(filepath, argp=None):
 def parse_exo_input(source, time=-1):
     (mtlmdl, mtlparams, dname, dpath, dopts, leg_num, time, glob_data,
      elem_data, extract) = read_exrestart_info(source, time=time)
+    dopts[0] = RESTART
     dopts.append([leg_num, time, glob_data, elem_data])
-    return ("Physics", (dname, dpath, dopts), (mtlmdl, mtlparams), extract)
+    return ("Physics", (dname, dpath, dopts), (mtlmdl, mtlparams, []), extract)
 
 
 def pFunction(flist):
@@ -573,7 +574,7 @@ def pFunction(flist):
                     fatal_inp_error("Note enought columns in table data")
                     continue
                 table.append(line)
-            table = np.array(table)[function["cols"]]
+            table = np.array(table)[:, function["cols"]]
             func, err = build_interpolating_function(table, disp=1)
             if err:
                 fatal_inp_error("{0}: in piecwise linear table in "
@@ -596,12 +597,12 @@ def pPhysics(physdict, functions):
         raise UserInputError("failed to parse material")
 
     dcls = getdrvcls(physdict["driver"])
-    try:
-        dpath, dopts = dcls.format_path_and_opts(
-            physdict["Elements"]["Path"], functions,
-            physdict["termination_time"])
-    except ValueError:
+    p = dcls.format_path_and_opts(
+        physdict["Elements"]["Path"], functions,
+        physdict["termination_time"])
+    if p is None:
         raise UserInputError("failed to setup driver path")
+    dpath, dopts = p
 
     driver = [physdict["driver"], dpath, dopts]
     extract = pExtract(physdict["Elements"].pop("Extract"), dcls)
