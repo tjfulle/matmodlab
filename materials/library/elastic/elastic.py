@@ -10,12 +10,6 @@ except ImportError:
 class Elastic(Material):
     name = "elastic"
     param_names = ["K", "G"]
-    def __init__(self):
-        """Instantiate the Plastic material
-
-        """
-        super(Elastic, self).__init__()
-        self.register_parameters(*self.param_names)
 
     def setup(self, params):
         """Set up the Elastic material

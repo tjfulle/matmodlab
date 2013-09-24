@@ -11,10 +11,13 @@ class Material(object):
         self.mtl_variables = []
         self.param_map = {}
         self.initialized = True
+        if not hasattr(self, "param_names"):
+            raise Error1("{0}: param_names not defined".format(self.name))
+        self._register_parameters()
 
-    def register_parameters(self, *parameters):
-        self.nparam = len(parameters)
-        for idx, name in enumerate(parameters):
+    def _register_parameters(self):
+        self.nparam = len(self.param_names)
+        for idx, name in enumerate(self.param_names):
             name = name.upper()
             self.param_map[name] = idx
             setattr(self, name, idx)

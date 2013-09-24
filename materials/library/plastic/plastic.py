@@ -10,13 +10,6 @@ except ImportError:
 class Plastic(Material):
     name = "plastic"
     param_names = ["K", "G", "A1", "A4"]
-    def __init__(self):
-        """Instantiate the Plastic material
-
-        """
-        super(Plastic, self).__init__()
-        self.register_parameters(*self.param_names)
-
     def setup(self, params):
         """Set up the Elastic material
 

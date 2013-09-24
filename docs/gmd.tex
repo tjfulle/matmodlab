@@ -5,6 +5,16 @@
 \usepackage{calc}
 \usepackage{enumitem}
 \usepackage{multirow}
+\usepackage{fancyvrb}
+\usepackage{xcolor}
+\usepackage{adjustbox}
+\usepackage{verbatim}
+\definecolor{shadecolor}{rgb}{.9, .9, .9}
+
+\newenvironment{example}%
+   {\par\noindent\adjustbox{margin=1ex,bgcolor=shadecolor,margin=0ex
+       \medskipamount}\bgroup\minipage\textwidth\verbatim}%
+   {\endverbatim\endminipage\egroup}
 
 \newcommand{\gmd}{\texttt{gmd}}
 \newcommand{\gmdviz}{\texttt{gmdviz}}
@@ -14,26 +24,32 @@
 \newcommand{\paraview}[1]{{\sc\texttt{paraview}}}
 \newcommand{\pprepro}[1]{{\texttt{pprepro}}}
 \newcommand{\prompt}{\texttt{\$}}
+\newcommand{\us}{\underline{  }}
 
 \newcommand{\boldnoindent}[1]{\noindent\textbf{#1}}
 \newcommand{\ttnoindent}[1]{\noindent\texttt{#1}}
 \newcommand{\ih}[1][1]{\indent\hspace{.#1in}}
 
-\newcommand{\api}[2]{\noindent\colorbox{yellow}{%
+\newcommand{\Example}[1]{\indent\colorbox{green}{%
+    \begin{minipage}{\textwidth}%
+      #1%
+    \end{minipage}}\\[9pt]}
+
+\newcommand{\function}[2]{\noindent\colorbox{yellow}{%
     \begin{minipage}{\textwidth}%
       #1%
     \end{minipage}}\\[9pt]%
   \indent\texttt{#2}}
 \newcommand{\param}[2]{\ttnoindent{#1}\\%
-  \indent\begin{minipage}{.9\textwidth}#2\end{minipage}}
+  \indent\begin{minipage}{.95\textwidth}#2\end{minipage}}
 \newcommand{\data}[3]{\ttnoindent{#1}.\textbf{#2}\\%
-  \indent\begin{minipage}{.9\textwidth}#3\end{minipage}}
-\newcommand{\class}[2]{\noindent\colorbox{yellow}{%
+  \indent\begin{minipage}{.95\textwidth}#3\end{minipage}}
+\newcommand{\class}[2]{\noindent\colorbox{orange}{%
     \begin{minipage}{\textwidth}%
       \emph{class} \texttt{#1}.\textbf{#2}%
     \end{minipage}}}
 \newcommand{\method}[4]{\ttnoindent{#1}.\textbf{#2}(\emph{#3})\\%
-  \indent\begin{minipage}{.9\textwidth}#4\end{minipage}}
+  \indent\begin{minipage}{.95\textwidth}#4\end{minipage}}
 
 \renewcommand{\tag}[1]{\texttt{<#1>}}
 \newcommand{\reqdtag}[1]{\Red{\texttt{<#1>}}}
@@ -153,7 +169,7 @@ This guide provides an outline for building and running \gmd.\\[3pt]
 \boldnoindent{Build \gmd{}} See Chapter \ref{chap:build}.
 \begin{itemize}
   \item Download \gmd{} and setup environment
-  \item \prompt{} \texttt{cd path/to/gmd/toolset \&\& ./setup.py}
+  \item \prompt{} \texttt{cd \$GMDROOT/toolset \&\& ./setup.py}
   \item \prompt{} \texttt{buildmtls}
 \end{itemize}
 
@@ -1057,28 +1073,132 @@ are specified as
 \section{Interface}
 \label{sec:usrint}
 \gmd{} interacts with materials through a material interface file. The
-material interface file defines the material class a subclass of\\
+material interface file defines the material class which must be a subclass of\\
 \verb|$GMDROOT/materials._material.Material|.  To follow are data and methods
 that each material model must define.\\[5pt]
 
 % --- interface API
-\class{\underline{  }material}{Material} \\[5pt]
+\class{\underline{  }material}{Material}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Class Data}
 \data{Material}{name}{The material name. Name by which material is invoked
-  from the input file.}\\
-\data{Material}{param\textunderscore{}names}{Ordered list of material
-  parameter names as they appear in the input file.}\\
-\method{Material}{\_\_init\_\_}{}{Instantiate the material model.
-  \emph{params} is the ndarray of material parameters parsed from the input
-  file. Must register parameter names with \gmd{} via the
-  \texttt{register\_parameters} method.}\\
-\method{Material}{register\_parameters}{*param\_names}{Register material
-  parameters with \gmd{}. \emph{param\_names} is the list of parameter
-  names.}\\
-\method{Material}{update\_state}{dt, d, sig, xtra, *args, **kwargs}{%
-  Return the updated stress and extra variables.}
+  from the input file.}\\[5pt]
+\data{Material}{param\us{}names}{Ordered list of material
+  parameter names as they appear in the input file.}\\[8pt]
+%
+The following is an example of a \texttt{Material} declaration.
+\begin{example}
+class Elastic(Material)
+    name = 'elastic'
+    param_names = ['K', 'G']
+\end{example}
 
+% ----------------------------------------------------------------------------- %
+\subsection{Instantiation}
+Called by Driver. Instantiate the material model. A material's
+\texttt{\us\us{}init\us\us{}} method must call the
+\texttt{\us{}\us{}init\us{}\us{}} method of the parent
+class.\\[4pt]
+%
+\function{\texttt{Material}.\textbf{\us\us{}init\us\us{}(params)}}{%
+  material = Material()}
 
+The following is an example of a \texttt{\us\us{}init\us\us{}} method
+\begin{example}
+def __init__(self):
+    super(Elastic, self).__init__()
+\end{example}
 
+% ----------------------------------------------------------------------------- %
+\subsection{Base Class Methods}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Methods to be Defined by Each Material Model}
+\subsubsection{Setup the Material}
+Called by Driver. The method \texttt{setup} sets up the material
+model by checking user input and requesting allocation of storage of material
+variables.\\[4pt]
+%
+\function{\texttt{Material}.\textbf{setup(params)}}{%
+    material.setup(params)}\\[4pt]
+\param{ndarray params}{Material parameters parsed from the input file}\\[4pt]
+%
+The following is an example of a \texttt{setup} method
+\begin{example}
+def setup(self, params):
+    if elastic is None:
+        raise Error1("elastic model not imported")
+    elastic.elastic_check(params, log_error, log_message)
+    K, G, = params
+    self.set_param_vals(params)
+    self.bulk_modulus = K
+    self.shear_modulus = G
+\end{example}
+
+\subsubsection{Adjusting the Initial State}
+Called by Driver. The method \texttt{adjust\us{}initial\us{}state}
+adjusts the initial state after the material is setup.  Method provided by
+base class should be adequate for most materials.  A material should only
+overide the base method if absolutely necessary. \\[4pt]
+%
+\function{\texttt{Material}.\textbf{adjust\us{}initial\us{}state(xtra)}}{%
+    material.adjust\us{}initial\us{}state(xtra)}
+
+\subsubsection{Update the Material State}
+Called by Driver. The material state is updated to the end of the step via
+the \texttt{update\us{}state} method. Each material model must provide its own
+\texttt{update\us{}state} method.\\[4pt]
+%
+\function{\texttt{Material}.\textbf{update\us{}state(dt, d, sig, xtra, %
+    *args, **kwargs)}}{%
+  stress, xtra = material.update\us{}state(dt, d, sig, xtra, *args,
+  **kwargs)}\\[8pt]
+\param{dt real}{timestep size}\\
+\param{ndarray d}{rate of deformation}\\
+\param{ndarray sig}{stress at beginning of step}\\
+\param{ndarray xtra}{extra state variables at beginning of step}\\
+\param{tuple args}{(\texttt{defgrad}, \texttt{efield}, \texttt{time},
+  \texttt{rho}, \texttt{tmpr}) extra positional arguments.}\\
+\param{dict kwargs}{extra keyword args (not used)}\\[8pt]
+\param{ndarray stress}{stress at end of step}\\
+\param{ndarray xtra}{extra state variables at end of step}\\
+
+\subsection{Example}
+A complete example
+\begin{example}
+import numpy as np
+from materials._material import Material
+from core.io import Error1, log_error, log_message
+try:
+    import lib.elastic as elastic
+except ImportError:
+    elastic = None
+
+class Elastic(Material):
+    name = "elastic"
+    param_names = ["K", "G"]
+    def __init__(self):
+        super(Elastic, self).__init__()
+
+    def setup(self, params):
+        if elastic is None:
+            raise Error1("elastic model not imported")
+        elastic.elastic_check(params, log_error, log_message)
+        K, G, = params
+        self.set_param_vals(params)
+        self.bulk_modulus = K
+        self.shear_modulus = G
+
+    def update_state(self, dt, d, stress, xtra, *args):
+        elastic.elastic_update_state(dt, self._param_vals,
+                                     d, stress,
+                                     log_error, log_message)
+        return stress, xtra
+
+    def jacobian(self, dt, d, stress, xtra, v):
+        return self.constant_jacobian(v)
+\end{example}
 
 % ----------------------------------------------------------------------------- %
 \section{Building}
@@ -1091,7 +1211,7 @@ does so by searching for a single file \texttt{makemf.py} in each directory.
 back to \bldm{}.\\[4pt]
 
 % --- makemf API
-\api{\texttt{makemf}.\textbf{makemf}: Python Interface}{%
+\function{\texttt{makemf}.\textbf{makemf}}{%
   blt, fld, skp = makemf(destd, fc, fio, materials=None, *args)}\\[8pt]
 \param{str dest}{path to directory to copy built shared object libraries (if
   any)}\\

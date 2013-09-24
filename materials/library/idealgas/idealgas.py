@@ -8,9 +8,6 @@ from materials._material import Material
 class IdealGas(Material):
     name = "idealgas"
     param_names = ["M", "CV"]
-    def __init__(self):
-        super(IdealGas, self).__init__()
-        self.register_parameters(*self.param_names)
 
     # Public methods
     def setup(self, params):
