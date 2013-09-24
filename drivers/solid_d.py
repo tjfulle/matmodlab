@@ -9,8 +9,7 @@ import utils.tensor as tensor
 import utils.xmltools as xmltools
 from drivers.driver import Driver
 from core.kinematics import deps2d, sig2d, update_deformation
-from utils.tensor import NSYMM, NTENS, NVEC, I9
-from utils.opthold import OptionHolder, OptionHolderError as OptionHolderError
+from utils.tensor import NSYMM, NTENS, I9
 from core.io import fatal_inp_error, input_errors, log_message, Error1
 from materials.material import create_material
 
@@ -70,18 +69,18 @@ class SolidDriver(Driver):
 
             if len(self._mtl_istate):
                 # --- initial state is given
-                sig = self._mtl_istate[:6]
-                xtra = self._mtl_istate[6:]
+                sig = self._mtl_istate[:NSYMM]
+                xtra = self._mtl_istate[NSYMM:]
                 if len(xtra) != self.material.nxtra:
                     raise Error1("incorrect len(InitialState)")
             else:
                 # initialize material
-                sig = np.zeros(6)
+                sig = np.zeros(NSYMM)
                 xtra = self.material.initial_state()
                 args = (I9, np.zeros(3), 0.)
                 sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
                 xtra = self.material.adjust_initial_state(xtra)
-                gmd_user_sub_eval(0., np.zeros(6), sig, xtra)
+                gmd_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
 
             pres = -np.sum(sig[:3]) / 3.
             self.setvars(stress=sig, pressure=pres, xtra=xtra)
@@ -113,7 +112,7 @@ class SolidDriver(Driver):
         d = np.zeros(NSYMM)
         dt = 0.
         eps = np.zeros(NSYMM)
-        f = np.reshape(np.eye(3), (9, 1))
+        f = np.reshape(np.eye(3), (NTENS, 1))
         depsdt = np.zeros(NSYMM)
         sigdum = np.zeros((2, NSYMM))
 
@@ -123,7 +122,7 @@ class SolidDriver(Driver):
         # v array is an array of integers that contains the rows and columns of
         # the slice needed in the jacobian subroutine.
         nv = 0
-        vdum = np.zeros(6, dtype=np.int)
+        vdum = np.zeros(NSYMM, dtype=np.int)
 
         # Process each leg
         nlegs = len(legs)
@@ -653,7 +652,7 @@ def _format_path(path, pathdict, tterm):
     dfac = amplitude * pathdict["dstar"]
 
     # for now unit tensor for rotation
-    Rij = np.reshape(np.eye(3), (9,))
+    Rij = np.reshape(np.eye(3), (NTENS,))
 
     # format each leg
     if not tterm:
@@ -699,21 +698,21 @@ def _format_path(path, pathdict, tterm):
                 fatal_inp_error("Rotation encountered in leg {0}. "
                                 "Rotations are not supported".format(leg_num))
             Uij = tensor.asarray(np.dot(Rij.T, np.dot(Vij, Rij)))
-            Rij = np.reshape(Rij, (9,))
+            Rij = np.reshape(Rij, (NTENS,))
             Cij = tensor.u2e(Uij, kappa)
 
             # deformation gradient now converted to strains
-            control = np.array([2] * 6, dtype=np.int)
+            control = np.array([2] * NSYMM, dtype=np.int)
 
         elif 8 in control:
             # displacement control check
             # convert displacments to strains
-            Uij = np.zeros(6)
+            Uij = np.zeros(NSYMM)
             Uij[:3] = dfac * Cij[:3] + 1.
             Cij = tensor.u2e(Uij, kappa)
 
             # displacements now converted to strains
-            control = np.array([2] * 6, dtype=np.int)
+            control = np.array([2] * NSYMM, dtype=np.int)
 
         elif 2 in control and len(control) == 1:
             # only one strain value given -> volumetric strain
@@ -729,7 +728,7 @@ def _format_path(path, pathdict, tterm):
                 eij = ((kappa * evol + 1.) ** (1. / 3.) - 1.)
                 eij = eij / kappa
 
-            control = np.array([2] * 6, dtype=np.int)
+            control = np.array([2] * NSYMM, dtype=np.int)
             Cij = np.array([eij, eij, eij, 0., 0., 0.])
 
         elif 4 in control and len(control) == 1:
@@ -738,8 +737,8 @@ def _format_path(path, pathdict, tterm):
             control = np.array([4, 4, 4, 2, 2, 2], dtype=np.int)
             Cij = np.array([Sij, Sij, Sij, 0., 0., 0.])
 
-        control = np.append(control, [2] * (6 - len(control)))
-        Cij = np.append(Cij, [0.] * (6 - len(Cij)))
+        control = np.append(control, [2] * (NSYMM - len(control)))
+        Cij = np.append(Cij, [0.] * (NSYMM - len(Cij)))
 
         # adjust components based on user input
         for idx, ctype in enumerate(control):
