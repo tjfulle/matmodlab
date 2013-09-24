@@ -12,6 +12,10 @@ from core.kinematics import deps2d, sig2d, update_deformation
 from utils.tensor import NSYMM, NTENS, I9
 from core.io import fatal_inp_error, input_errors, log_message, Error1
 from materials.material import create_material
+try:
+    import gmd_user_sub as usr
+except ImportError:
+    usr = None
 
 np.set_printoptions(precision=4)
 
@@ -785,8 +789,8 @@ def _format_path(path, pathdict, tterm):
     return np.array(path)
 
 def gmd_user_sub_eval(t, d, sig, xtra):
-    try:
-        import gmd_user_sub as usr
-    except ImportError:
-        return
-    usr.gmd_user_sub(cfg.runid, t, d, sig, xtra)
+    """Evaluate a user subroutine
+
+    """
+    if usr:
+        usr.gmd_user_sub(cfg.runid, t, d, sig, xtra)
