@@ -1,6 +1,6 @@
 <rtest name="gmd/path-cycle">
 
-  <keywords> fast elastic mixed </keywords>
+  <keywords> builtin fast elastic mixed </keywords>
 
   <link_files>
     base.gmddiff {NAME}.rxml {NAME}.xml {NAME}.base_exo

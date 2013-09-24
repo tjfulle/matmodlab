@@ -1,6 +1,6 @@
 <rtest name="gmd/elastic-unistrain">
 
-  <keywords> fast elastic </keywords>
+  <keywords> builtin fast elastic </keywords>
 
   <link_files>
     base.gmddiff {NAME}.rxml {NAME}.xml {NAME}.base_exo

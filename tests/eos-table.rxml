@@ -1,6 +1,6 @@
 <rtest name="gmd/eos-table">
 
-  <keywords> fast elastic eos </keywords>
+  <keywords> builtin fast elastic eos </keywords>
 
   <link_files>
     {NAME}.rxml {NAME}.xml {NAME}.base_exo

@@ -1,6 +1,6 @@
 <rtest name="gmd/elastic-unistrain-stressc">
 
-  <keywords> fast elastic stress_control </keywords>
+  <keywords> builtin fast elastic stress_control </keywords>
 
   <link_files>
     base.gmddiff {NAME}.rxml {NAME}.xml {NAME}.base_exo

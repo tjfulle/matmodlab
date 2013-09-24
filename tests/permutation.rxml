@@ -1,6 +1,6 @@
 <rtest name="gmd/permutation">
 
-  <keywords> medium elastic permutation </keywords>
+  <keywords> builtin medium elastic permutation </keywords>
 
   <link_files>
     {NAME}.rxml {NAME}.xml

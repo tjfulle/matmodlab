@@ -1,6 +1,6 @@
 <rtest name="gmd/functions">
 
-  <keywords> fast elastic function </keywords>
+  <keywords> builtin fast elastic function </keywords>
 
   <link_files>
     base.gmddiff {NAME}.rxml {NAME}.xml {NAME}.base_exo
