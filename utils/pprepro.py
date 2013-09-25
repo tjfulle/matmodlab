@@ -110,7 +110,7 @@ def find_and_make_subs(lines, prepro=None, disp=0, argp=None):
     lines, vars_to_sub = find_vars_to_sub(lines, argp)
     if not vars_to_sub and prepro is None:
         if disp:
-            return lines, 0
+            return lines, 0, 0
         return lines
     return make_var_subs(lines, vars_to_sub, disp=disp)
 
@@ -161,15 +161,24 @@ def make_var_subs(lines, vars_to_sub, disp=0):
         continue
 
     # Evaluate substitutions
+    errors = []
     regex = r"(?i){.*?}"
     matches = re.findall(regex, lines)
     for pat in matches:
         repl = re.sub(r"[\{\}]", "", pat)
-        repl = repr(eval(repl, GDICT, SAFE))
+        try:
+            repl = repr(eval(repl, GDICT, SAFE))
+        except NameError as e:
+            errors.append(e.message)
+            if not disp: sys.stderr.write(e.message)
+            continue
         lines = re.sub(re.escape(pat), repl, lines)
 
     if disp:
-        return lines, nsubs
+        return lines, nsubs, errors
+
+    if errors:
+        raise SystemExit("pprepro: stopping due to previous errors")
     return lines
 
 

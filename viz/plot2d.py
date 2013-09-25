@@ -34,7 +34,20 @@ F_EVALDB = "gmd-evaldb.xml"
 L_EXO_EXT = [".exo", ".base_exo", ".e"]
 L_DAT_EXT = [".out",]
 L_REC_EXT = L_EXO_EXT + L_DAT_EXT
-XY_PAIRS = {}
+XY_DATA = None
+
+
+class Namespace(object):
+    def __init__(self, **kwargs):
+        for (k, v) in kwargs.items():
+            setattr(self, k, v)
+    def __repr__(self):
+        string = ", ".join("{0}={1}".format(k, repr(v)) for (k, v) in
+                           self.__dict__.items())
+        return "Namespace({0})".format(string)
+    def items(self):
+        return self.__dict__.items()
+
 
 
 def main(argv=None):
@@ -166,7 +179,7 @@ class Plot2D(tapi.HasTraits):
         return
 
     def change_plot(self, indices, x_scale=None, y_scale=None):
-        global XY_PAIRS
+        global XY_DATA
         self.plot_indices = indices
         self.container = self.create_container()
         self.high_time = float(max(self.plot_data[0][:, 0]))
@@ -175,7 +188,7 @@ class Plot2D(tapi.HasTraits):
         self.time_data_labels = {}
         if len(indices) == 0:
             return
-        XY_PAIRS = {}
+        XY_DATA = []
         x_scale, y_scale = self.get_axis_scales(x_scale, y_scale)
 
         # loop through plot data and plot it
@@ -223,7 +236,8 @@ class Plot2D(tapi.HasTraits):
                 else:
                     entry = "{0} {1}".format(yname, variables)
                 self.create_plot(x, y, yp_idx, d, entry, "solid")
-                XY_PAIRS.setdefault(fnam, []).append([xname, x, yname, y, 1])
+                XY_DATA.append(Namespace(key=fnam, xname=xname, x=x,
+                                         yname=yname, y=y, lw=1))
 
                 # create point marker
                 xp = self.plot_data[d][ti, xp_idx] * x_scale
@@ -246,8 +260,8 @@ class Plot2D(tapi.HasTraits):
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
                         self.create_plot(xo, yo, yo_idx, d, entry, LS[ls_ % 4])
-                        XY_PAIRS.setdefault(fnam, []).append(
-                            [xname, x, yname, y, 3])
+                        XY_DATA.append(Namespace(key=fnam, xname=xname, x=xo,
+                                                 yname=yname, y=yo, lw=3))
                         ls_ += 1
                         continue
 
@@ -612,12 +626,11 @@ class ModelPlot(tapi.HasStrictTraits):
         self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
 
     def _Print_to_PDF_fired(self):
-        if not XY_PAIRS:
+        if not XY_DATA:
             return
 
         # get the maximum of Y for normalization
-        ymax = max(np.amax(np.abs(xy_pair[-2]))
-                   for (label, item) in XY_PAIRS.items() for xy_pair in item)
+        ymax = max(np.amax(np.abs(xyd.y)) for xyd in XY_DATA)
 
         # setup figure
         plt.figure(0)
@@ -626,16 +639,15 @@ class ModelPlot(tapi.HasStrictTraits):
 
         # plot y value for each plot on window
         ynames = []
-        for key in sorted(XY_PAIRS, key=lambda x: XY_PAIRS[x][0][-1], reverse=True):
-            for (xname, x, yname, y, lw) in XY_PAIRS[key]:
-                label = key + ":" + yname if len(XY_PAIRS) > 1 else yname
-                ynames.append(yname)
-                plt.plot(x, y / ymax, label=label, lw=lw)
+        for xyd in sorted(XY_DATA, key=lambda x: x.lw, reverse=True):
+            label = xyd.key + ":" + xyd.yname if len(XY_DATA) > 1 else xyd.yname
+            ynames.append(xyd.yname)
+            plt.plot(xyd.x, xyd.y / ymax, label=label, lw=xyd.lw)
         yname = common_prefix(ynames)
-        plt.xlabel(xname)
+        plt.xlabel(xyd.xname)
         plt.ylabel(yname)
         plt.legend(loc="best")
-        plt.savefig("{0}-vs-{1}.pdf".format(yname, xname))
+        plt.savefig("{0}-vs-{1}.pdf".format(yname, xyd.xname))
 
     def _Close_Overlay_fired(self):
         if self.Single_Select_Overlay_Files.selected:

@@ -75,6 +75,8 @@ def main(argv=None):
         help="Additional directories to find tests [default: %(default)s]")
     parser.add_argument("-D", default=D_TESTS,
         help="Directory to run tests [default: %(default)s]")
+    parser.add_argument("-w", default=False, action="store_true",
+        help="Wipe test directory before running tests [default: %(default)s]")
     parser.add_argument("tests", nargs="*",
         help="Specific tests to run [default: %(default)s]")
     args = parser.parse_args(argv)
@@ -91,6 +93,13 @@ def main(argv=None):
 
     # --- root directory to run tests
     testd = args.D
+
+    if args.w:
+        try: shutil.rmtree(testd)
+        except OSError: pass
+
+    if not os.path.isdir(testd):
+        os.makedirs(testd)
 
     # --- timer
     timing = Namespace()
@@ -434,9 +443,6 @@ def run_rtests(testd, rtests, nproc):
     """Run all of the rtests
 
     """
-    if not os.path.isdir(testd):
-        os.makedirs(testd)
-
     test_inp = ((testd, rtest, rtests[rtest])
                 for rtest in sorted(rtests, key=lambda x: rtests[x]["order"]))
     nproc = min(min(mp.cpu_count(), nproc), len(rtests))

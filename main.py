@@ -34,6 +34,8 @@ def main(argv=None):
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("-B", metavar="material",
         help="Build material model before running [default: %(default)s]")
+    parser.add_argument("--clean", default=False, action="store_true",
+        help=argparse.SUPPRESS)
     parser.add_argument("--restart", const=-1, default=False, nargs="?",
         help=argparse.SUPPRESS)
     parser.add_argument("sources", nargs="*", help="Source file paths")
@@ -71,7 +73,11 @@ def main(argv=None):
         basename = re.sub(".preprocessed$", "", os.path.basename(source))
         runid = os.path.splitext(basename)[0]
 
-        if args.restart:
+        if args.clean:
+            clean_all_output(runid)
+            continue
+
+        elif args.restart:
             source = runid + ".exo"
             mm_input = inp.parse_exo_input(source, time=float(args.restart))
 
@@ -142,6 +148,11 @@ def stop(message):
     sys.stderr.write("*** gmd: error: {0}\n".format(message))
     raise SystemExit(2)
 
+
+def clean_all_output(runid):
+    for ext in (".exo", ".log", ".out"):
+        try: os.remove(runid + ext)
+        except OSError: pass
 
 if __name__ == "__main__":
     main()

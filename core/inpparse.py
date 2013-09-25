@@ -486,7 +486,8 @@ def parse_input(filepath, argp=None):
 
     # find all "Include" files, and preprocess the input
     user_input = pp.find_and_fill_includes("\n".join(lines))
-    user_input, nsubs = pp.find_and_make_subs(user_input, disp=1, argp=argp)
+    user_input, nsubs, err = pp.find_and_make_subs(
+        user_input, disp=1, argp=argp)
     if nsubs:
         with open(filepath + ".preprocessed", "w") as fobj:
             fobj.write(user_input)
@@ -510,6 +511,9 @@ def parse_input(filepath, argp=None):
     if optdict:
         root[0].removeChild(root[0].getElementsByTagName("Optimization")[0])
         return pOptimization(optdict, root[0].toxml())
+
+    if err:
+        raise UserInputError("pprepro: " + "\n".join(err))
 
     return pPhysics(els.pop("Physics"), functions)
 

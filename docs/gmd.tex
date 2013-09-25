@@ -1,4 +1,4 @@
-\documentclass[11pt]{report}
+\documentclass[12pt]{report}
 \usepackage{ifthen}
 \usepackage{nomenclature}
 \usepackage{url}
@@ -8,13 +8,30 @@
 \usepackage{fancyvrb}
 \usepackage{xcolor}
 \usepackage{adjustbox}
+\usepackage{changepage}
 \usepackage{verbatim}
+%\setlength{\parskip}{\baselineskip}%
+\setlength{\parindent}{0pt}%
 \definecolor{shadecolor}{rgb}{.9, .9, .9}
+\definecolor{yelgr}{RGB}{154, 205, 50}
+\definecolor{lemon}{RGB}{255, 215, 0}
+\definecolor{cmdcol}{RGB}{32, 178, 170}
 
 \newenvironment{example}%
    {\par\noindent\adjustbox{margin=1ex,bgcolor=shadecolor,margin=0ex
        \medskipamount}\bgroup\minipage\textwidth\verbatim}%
    {\endverbatim\endminipage\egroup}
+\newenvironment{inpusage}%
+   {\par\noindent\adjustbox{margin=1ex,bgcolor=lemon,margin=0ex
+       \medskipamount}\bgroup\minipage\textwidth\verbatim}%
+   {\endverbatim\endminipage\egroup}
+\newenvironment{interface}%
+   {\par\noindent\adjustbox{margin=1ex,bgcolor=lemon,margin=0ex
+       \medskipamount}\bgroup\minipage\textwidth}%
+   {\endminipage\egroup}
+\newcommand{\param}[2]{\texttt{#1}%
+  \begin{adjustwidth}{2.5em}{0pt}#2\end{adjustwidth}}
+\newcommand{\usage}[1]{\indent\hspace{2.5em}\texttt{#1}}
 
 \newcommand{\gmd}{\texttt{gmd}}
 \newcommand{\gmdviz}{\texttt{gmdviz}}
@@ -23,34 +40,10 @@
 \newcommand{\fpy}[1]{\texttt{f2py}}
 \newcommand{\paraview}[1]{{\sc\texttt{paraview}}}
 \newcommand{\pprepro}[1]{{\texttt{pprepro}}}
-\newcommand{\prompt}{\texttt{\$}}
 \newcommand{\us}{\underline{  }}
+\newcommand{\uus}{\us\us{}}
 
-\newcommand{\boldnoindent}[1]{\noindent\textbf{#1}}
-\newcommand{\ttnoindent}[1]{\noindent\texttt{#1}}
-\newcommand{\ih}[1][1]{\indent\hspace{.#1in}}
-
-\newcommand{\Example}[1]{\indent\colorbox{green}{%
-    \begin{minipage}{\textwidth}%
-      #1%
-    \end{minipage}}\\[9pt]}
-
-\newcommand{\function}[2]{\noindent\colorbox{yellow}{%
-    \begin{minipage}{\textwidth}%
-      #1%
-    \end{minipage}}\\[9pt]%
-  \indent\texttt{#2}}
-\newcommand{\param}[2]{\ttnoindent{#1}\\%
-  \indent\begin{minipage}{.95\textwidth}#2\end{minipage}}
-\newcommand{\data}[3]{\ttnoindent{#1}.\textbf{#2}\\%
-  \indent\begin{minipage}{.95\textwidth}#3\end{minipage}}
-\newcommand{\class}[2]{\noindent\colorbox{orange}{%
-    \begin{minipage}{\textwidth}%
-      \emph{class} \texttt{#1}.\textbf{#2}%
-    \end{minipage}}}
-\newcommand{\method}[4]{\ttnoindent{#1}.\textbf{#2}(\emph{#3})\\%
-  \indent\begin{minipage}{.95\textwidth}#4\end{minipage}}
-
+% --- xml
 \renewcommand{\tag}[1]{\texttt{<#1>}}
 \newcommand{\reqdtag}[1]{\Red{\texttt{<#1>}}}
 \newcommand{\gat}[1]{\texttt{<\textbackslash{}#1>}}
@@ -62,11 +55,11 @@
 \newcommand{\attr}[4]{%
   \ifthenelse{\equal{#3}{}}{%
     \ifthenelse{\equal{#4}{}}{%
-      \texttt{#1=``#2''}}{%
-      \texttt{#1=``#2\{#4\}''}}}{%
+      \texttt{#1="#2"}}{%
+      \texttt{#1="#2\{#4\}"}}}{%
     \ifthenelse{\equal{#4}{}}{%
-      \texttt{#1=``#2[#3]''}}{%
-      \texttt{#1=``#2[#3]\{#4\}''}}}}
+      \texttt{#1="#2[#3]"}}{%
+      \texttt{#1="#2[#3]\{#4\}"}}}}
 
 
 \title{\gmd{} \\ a General Material Model Driver}
@@ -164,16 +157,16 @@ be obtained from \url{https://github.com/tjfulle/gmd}
 
 % ----------------------------------------------------------------------------- %
 \chapter{\gmd{} Quick Start Guide}
-This guide provides an outline for building and running \gmd.\\[3pt]
+This guide provides an outline for building and running \gmd.
 
-\boldnoindent{Build \gmd{}} See Chapter \ref{chap:build}.
+\textbf{Build \gmd{}} See Chapter \ref{chap:build}.
 \begin{itemize}
   \item Download \gmd{} and setup environment
-  \item \prompt{} \texttt{cd \$GMDROOT/toolset \&\& ./setup.py}
-  \item \prompt{} \texttt{buildmtls}
+  \item \$ \verb|cd $GMDROOT/toolset && ./setup.py|
+  \item \$ \texttt{buildmtls}
 \end{itemize}
 
-\boldnoindent{Prepare Input} Inputs are xml specification files. See Chapter
+\textbf{Prepare Input} Inputs are xml specification files. See Chapter
 \ref{chap:input}.
 \begin{itemize}
   \item Set up the desired simulation path.
@@ -181,17 +174,17 @@ This guide provides an outline for building and running \gmd.\\[3pt]
   \item Add desired extraction requests.
 \end{itemize}
 
-\boldnoindent{Run}
+\textbf{Run}
 \begin{itemize}
-  \item \prompt{} \gmd{} [options] \emph{runid} [,\emph{runid\_1}, $\ldots$,
+  \item \$ \gmd{} [options] \emph{runid} [,\emph{runid\_1}, $\ldots$,
   \emph{runid\_n}]\\
   \emph{runid} is prefix of ``.xml'' file.
-  \item Complete list of options given by \\ \prompt{} \texttt{gmd -h}
+  \item Complete list of options given by \\ \$ \texttt{gmd -h}
 \end{itemize}
 
-\boldnoindent{Postprocess}
+\textbf{Postprocess}
 \begin{itemize}
-  \item \prompt{} \gmdviz{} \emph{runid} [,\emph{runid\_1}, $\ldots$,
+  \item \$ \gmdviz{} \emph{runid} [,\emph{runid\_1}, $\ldots$,
   \emph{runid\_n}]
   \item \paraview{} also reads exodus files.
 \end{itemize}
@@ -231,13 +224,13 @@ Ensure that all \gmd{} prerequisites are installed and working properly before
 proceeding.
 
 % ----------------------------------------------------------------------------- %
-\section{Set Environment and Path}
+\subsection{Set Environment and Path}
 
 \begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{GMDTESTS}}]
   \item[\texttt{GMDROOT}] Optional, name of installation directory
   \item[\texttt{PATH}] \verb|$GMDROOT/toolset:$PATH|
   \item[\texttt{GMDMTLS}] ``:'' separated list of paths to directories
-  containing user defined material models. See Section \ref{sec:usrmtls}.
+  containing user defined material models. See Section \ref{sec:usrbld}.
   \item[\texttt{GMDTESTS}] ``:'' separated list of paths to directories
   containing user defined regression tests. See Section \ref{sec:usrtests}.
 \end{description}
@@ -264,9 +257,10 @@ executable scripts
 \end{description}
 %
 Each script is a wrapper to another \gmd{} Python file. In the wrapper,
-relevant environment variables are set (e.g., \verb:$PYTHONPATH:) and the
+relevant environment variables are set (e.g., \verb|$PYTHONPATH|) and the
 correct Python executable (the one used to set up) is used to interpret the
 \gmd{} source file.  The full set of options for each script is obtained by
+%
 \begin{verbatim}
 $ scriptname -h
 \end{verbatim}
@@ -275,7 +269,11 @@ where \texttt{scriptname} is the name of the script.
 
 The TPLs will build the first time \gmd{} is setup.
 Thereafter after, only the executable scripts are rewritten.  Execute
-\verb:$ python setup.py -h: for options to rebuild the TPLs.
+
+\begin{verbatim}
+$ python setup.py -h
+\end{verbatim}
+for options to rebuild the TPLs.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Build}
@@ -392,13 +390,13 @@ The following files will be produced
 $ ls runid.*
 runid.exo       runid.log       runid.xml
 \end{verbatim}
-%
+
 \texttt{runid.exo} is the \exodusii{} output database, \texttt{runid.log} the log
 file, and \texttt{runid.xml} the input file.
 
 
 % ----------------------------------------------------------------------------- %
-\chapter{User Input}
+\chapter{User Input: GMDSpec}
 User input is via xml control files. In general, tags use CamelCase and
 attributes lower case.  Attributes are described in this document as
 %
@@ -409,19 +407,18 @@ attr="type[default]{choices}"
 where \texttt{default} is the default value (if any) and \texttt{\{choices\}}
 are valid choices (if any). Any attribute not having a default value is
 required. Types are \texttt{str}, \texttt{int}, \texttt{real}, \texttt{list}.
-Lists are given as space separated lists (e.g., ``1 2 3'').
+Lists are given as space separated lists (e.g., "1 2 3").
 
 In the following, elements shown in \Red{red} are required input.
-Additionally, the following
 
 % ----------------------------------------------------------------------------- %
 \section{GMDSpec}
-\begin{verbatim}
+All input files must have as their root element \reqdtag{GMDSpec}.
+\begin{inpusage}
 <GMDSpec>
-\end{verbatim}
-%
-All input files must have as their root element \reqdtag{GMDSpec}. Recognized
-subelements of \reqdtag{GMDSpec} are
+\end{inpusage}
+
+Recognized subelements of \reqdtag{GMDSpec} are
 %
 \begin{itemize}
   \item \reqdtag{Physics}
@@ -429,12 +426,15 @@ subelements of \reqdtag{GMDSpec} are
   \item \tag{Optimization}
 \end{itemize}
 
-Additionally, the following elements are read from any scope in the input file
+The following elements are read from any scope in the input file
 %
 \begin{itemize}
   \item \tag{Include}
   \item \tag{Function}
 \end{itemize}
+
+The \reqdtag{Physics}, \tag{Permutation}, \tag{Optimization} and input blocks
+are described separately in their own chapters.
 
 % ----------------------------------------------------------------------------- %
 \section{Preprocessing}
@@ -442,55 +442,48 @@ Preprocessing allows specifying variables in the input inside of comment tags
 for use in other parts of the input. Syntax mirrors that of \texttt{aprepro}.
 Preprocessor also evaluates (nearly) any Python expression.
 
-\subsection{Random Numbers}
-The \texttt{random()} expression generates a random number.
-
-\subsubsection{Random State Seed}
-The \verb:random_seed: variable sets the random state seed.  Note, expressions
-are evaluated in order, therefore, if setting the \verb:random_seed: it should
+The \texttt{random()} expression generates a random number. The
+\verb|random_seed| variable sets the random state seed. Note, expressions are
+evaluated in order, therefore, if setting the \verb|random_seed| it should
 occur early.
 
-\subsection{Example}
-Specify the \reqdtag{Material} parameter \texttt{K} and \tag{Path} parameter
-\texttt{estar} as variables
-\begin{verbatim}
+The following input stub demonstrates specifying the \reqdtag{Material}
+parameter \texttt{K} and \texttt{G}, and \tag{Path} parameter \texttt{estar}
+as variables
+\begin{example}
 <GMDSpec>
-  <!-- {K = 23e9}
+  <!-- {random_seed = 7}
+       {G = 54e9 * random()}
+       {K = 23e9}
        {estar = -.05}
   -->
   <Physics>
     <Material model="elastic">
       <K> {K} </K>
-      <G> 54e9 </G>
+      <G> {G} </G>
     </Material>
     <Path type="prdef" estar="{estar}">
       ...
     </Path>
   </Physics>
 </GMDSpec>
-\end{verbatim}
+\end{example}
 
 % ----------------------------------------------------------------------------- %
 \section{Include}
-\begin{verbatim}
-<Include href="str"/>
-\end{verbatim}
-%
 Path to file to be included as if its contents were inplace in the input file
 
-\subsection{Example}
-\begin{verbatim}
+\begin{inpusage}
+<Include href="str"/>
+\end{inpusage}
+
+The following stub input demonstrates how to include a file in place
+\begin{example}
 <Include href="/path/to/some/file.ext"/>
-\end{verbatim}
+\end{example}
 
 % ----------------------------------------------------------------------------- %
 \section{Function}
-\begin{verbatim}
-<Function id="int"
-          type="str{analytic_expression, piecewise_linear}"
-          var="str[x]" href="str[]" cols="list[1 2]">
-\end{verbatim}
-%
 Define functions to be used elsewhere in input. \texttt{id=0} and
 \texttt{id=1} are reserved for the constant $0$ and $1$ functions,
 respectively. \texttt{href} is the path to a file containing the function
@@ -498,31 +491,31 @@ definition (useful when the function is a large piecewise linear table).
 \texttt{cols} specifies the columns in which data is located in a piecewise
 linear table.
 
-% ----------------------------------------------------------------------------- %
-\subsection{Examples}
-\paragraph{Analytic expression}
-%
-\begin{verbatim}
+\begin{inpusage}
+<Function id="int"
+          type="str{analytic_expression, piecewise_linear}"
+          var="str[x]" href="str[]" cols="list[1 2]">
+\end{inpusage}
+
+The following input stub demonstrates how to define an analytic expression and
+piecewise linear table as functions
+
+\begin{example}
 <Function id="2" type="analytic_expression" var="t">
   sin(t)
 </Function>
-\end{verbatim}
-
-\paragraph{Piecewise linear table}
-%
-\begin{verbatim}
-<Function id="2" type="piecewise_linear">
+<Function id="3" type="piecewise_linear">
   1 2
   2 3
   3 5
 </Function>
-\end{verbatim}
-%
-Read a piecewise linear table from an external file using columns 1 and 3
-%
-\begin{verbatim}
-<Function id="2" type="piecewise_linear" href="./file.dat" cols="1 3"/>
-\end{verbatim}
+
+<!-- Read a piecewise linear table from an external file using
+     columns 1 and 3
+-->
+<Function id="4" type="piecewise_linear" href="./file.dat"
+          cols="1 3"/>
+\end{example}
 
 \begin{verbatim}
 $ cat file.dat
@@ -536,15 +529,19 @@ $ cat file.dat
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\chapter{Physics}
-\begin{verbatim}
-<Physics driver="str[solid]{solid, eos}" termination_time="real[]">
-\end{verbatim}
-%
+\chapter{User Input: Physics}
+\label{chap:input}
 Define the physics of the simulation. If specified, \verb:termination_time:
 defines the termination time for the simulation. If not specified, termination
-time is taken as final time in \reqdtag{Path}. Recognized subelements of
-\reqdtag{Physics} are
+time is taken as final time in \reqdtag{Path}.
+
+\begin{inpusage}
+<Physics driver="str[solid]{solid, eos}"
+         termination_time="real[]">
+\end{inpusage}
+
+Recognized subelements of \reqdtag{Physics} are
+%
 %
 \begin{itemize}
   \item \reqdtag{Path}
@@ -553,54 +550,149 @@ time is taken as final time in \reqdtag{Path}. Recognized subelements of
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Path}
-%\supporting{solid}
-\begin{verbatim}
+\section{Path}
+Define deformation paths through with the material will be exercised.
+
+\begin{inpusage}
 <Path type="str{prdef, surface}"
       format="str[default]{default, table, fcnspec}"
-      cols="list[1, ..., n]" cfmt="str" tfmt="str[time]{time,dt}"
+      cols="list[1, ..., n]" cfmt="str"
+      tfmt="str[time]{time,dt}"
       nfac="int[1]" kappa="real[0]" rstar="real[1]"
       tstar="real[1]" estar="real[1]" sstar="real[1]"
       amplitude="real[1]" ratfac="real[1]" href="str">
-\end{verbatim}
-%
-Define deformation paths or equaiton of state surface boundaries, depending on
-\texttt{type}
+\end{inpusage}
 
-\subsubsection{prdef}
-The jth leg of \reqdtag{Path} is sent to the driver in form \texttt{[tf, n,
-  cfmt, Cij]}, where \texttt{tf}, \texttt{n}, \texttt{cfmt}, and \texttt{Cij}
-are the termination time, number of steps, control format, and control values.
-Methods of inputing legs depends on the attributes of \reqdtag{Path} and will
-be shown in examples to follow.
+% ----------------------------------------------------------------------------- %
+\subsection{Path Attributes}
 
-\subsubsection{surface}
-Input is similar to the \texttt{type=''prdef''} specification, but leg
-termination time is not specified. Control parameters also differ, as shown in
-Table \ref{tab:cfmt-1}.
+% ----------------------------------------------------------------------------- %
+\subsubsection{type}
+The type of path specified.  Valid types are \texttt{prdef} and
+\texttt{surface}.
+
+The \texttt{prdef} type defines a prescribed deformation. The jth leg of
+\reqdtag{Path} is sent to the driver in form \texttt{[tf, n, cfmt, Cij]},
+where \texttt{tf}, \texttt{n}, \texttt{cfmt}, and \texttt{Cij} are the
+termination time, number of steps, control format, and control values. Methods
+of inputing legs depends on the attributes of \reqdtag{Path} and will be shown
+in examples to follow.
+
+The \texttt{surface} input is similar to the \texttt{prdef} specification, but
+leg termination time is not specified. Control parameters also differ, as
+shown in Table \ref{tab:cfmt-1}.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Format}
+The format by which the legs of the deformation path are specified. Valid
+formats are \texttt{default}, \texttt{table}, and \texttt{fcnspec}. In the
+following subsections, the different formats are described.
+
+% ----------------------------------------------------------------------------- %
+\paragraph{Format: default}
+\label{sec:defform}
+The \texttt{default} format offers the most control.  In this format, the
+termination time, number of steps, control format, and components of
+deformation are specified for each leg as in the following stub input
+
+\begin{example}
+<Path type="default">
+  <!-- tterm nsteps cfmt c1 c2 c3 ... -->
+  0  0 222222 0 0 0 0 0 0
+  1 10 222222 1 0 0 0 0 0
+</Path>
+\end{example}
+
+See Section \ref{sec:cfmt} for a full description of the control format
+\texttt{cfmt} and its relationship with the \texttt{c1, c2, c3, ...}.
 
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{A note on \texttt{cfmt} and \texttt{Cij}}
-\texttt{cfmt} is concatenated integer list specifying in its $i^\text{ith}$
-component the $i^\text{th}$ component of deformation, i.e., \texttt{cfmt[i]}
-instructs the driver as to the type of deformation represented by
-\texttt{Cij[i]}.  Types of deformation represented by \texttt{cfmt} are shown
-in Table \ref{tab:cfmt}.
+\paragraph{Format: table}
+\label{sec:tblform}
+The \texttt{table} format allows reading in deformation paths from a columnar
+table of data. Control format is uniform for all legs. Specify control format
+as \texttt{cfmt} attribute of \reqdtag{Path}. Specify which columns to read
+data with the \texttt{cols} attribute. The first column is assumed to be the
+time specifier. See Section \ref{sec:colspec} for a description of the
+\texttt{cols} attribute. The \texttt{tfmt} attribute specifies if the time
+column represents the actual time (\verb|tfmt="time"|) or time step
+(\texttt{tmft="dt"}). The number of steps for each leg can be set by
+\texttt{nfac}. The \texttt{href} attribute specifies an external file to read
+the table.
+
+The following input stubs demonstrate reading a table from the input file and
+from an external file.
+
+\begin{example}
+<!-- Read entries from table. -->
+<Path type="prdef" format="table" cols="1:4" cfmt="222"
+      tfmt="time">
+  0 0 0 0
+  1 1 0 0
+    ...
+  n 2 0 0
+</Path>
+\end{example}
+
+\begin{example}
+<!-- Read table from external file -->
+<Path type="prdef" format="table" cols="1 3:8" cfmt="222222"
+      tfmt="time" href="exmpls.tbl"/>
+\end{example}
+
+% ----------------------------------------------------------------------------- %
+\paragraph{Format: fcnspec}
+\label{sec:tblform}
+The \texttt{fcnspec} format allows defining a deformation path by a function.
+A deformation path defined by \texttt{fcnspec} must have only 1 leg defining
+the termination time and the function specifier defining the values of the
+components of deformation.  The function specifier is of the form
+
+\begin{example}
+function_id[:scale]
+\end{example}
+
+where \texttt{function\us{}id} is the ID of the function as specified in its
+\tag{Function} element.  The optional scale is multiplied by the function.
+
+The following input stub demonstrates uniaxial strain deformation, using a
+user defined function to specify the 11 component of strain through time.
+
+\begin{example}
+<Path type="prdef" format="fcnspec" cfmt="222" nfac="200">
+  <!-- termination time, fcn spec -->
+  {2 * pi} 2:1.e-1 0 0
+</Path>
+\end{example}
+
+\subsubsection{Control Format}
+\label{sec:cfmt}
+The control format \texttt{cfmt} is concatenated integer list specifying in
+its $i^\text{ith}$ component the $i^\text{th}$ component of deformation, i.e.,
+\texttt{cfmt[i]} instructs the driver as to the type of deformation
+represented by \texttt{Cij[i]}. Types of deformation represented by
+\texttt{cfmt} are shown in Table \ref{tab:cfmt}.
 
 For example, the following \texttt{cfmt} instructs the driver that the
 components of \texttt{Cij} represent [stress, strain, stress rate, strain
-rate, strain, strain], respectively: \verb:cfmt="423122":. Mixed modes are
-allowed only for components of strain rate, strain, stress rate, and stress.
-Electric field components can be included with any deformation type.
+rate, strain, strain], respectively:
+
+\begin{example}
+cfmt="423122"
+\end{example}
+
+Mixed modes are allowed only for components of strain rate, strain, stress
+rate, and stress. Electric field components can be included with any
+deformation type.
 
 The components \texttt{Cij} take the following order
 
-\textbf{Vectors:} [X, Y, Z]
+\paragraph{Vectors:} [X, Y, Z]
 
-\textbf{Symmetric tensors:} [XX, YY, ZZ, XY, YZ, XZ]
+\paragraph{Symmetric tensors:} [XX, YY, ZZ, XY, YZ, XZ]
 
-\textbf{Tensors:} [XX, XY, XZ, YX, YY, YZ ZX, ZY, ZZ]
+\paragraph{Tensors:} [XX, XY, XZ, YX, YY, YZ ZX, ZY, ZZ]
 
 If \texttt{len(Cij) $\neq$ 6} (or 9 for deformation gradient), the missing
 components are assumed to be zero strain.
@@ -639,17 +731,25 @@ components are assumed to be zero strain.
   \label{tab:cfmt-1}
 \end{table}
 
+% ----------------------------------------------------------------------------- %
+\subsubsection{Time Format}
+The \texttt{tfmt=["time"]\{"time","dt"\}} flag specifies the time format.
+If \texttt{tfmt="time"} (default) the first value of each leg is interpreted
+as the termination time for the leg. For \texttt{tfmt="dt"} the first value
+of each leg is interpreted as a time increment.
+
+% ----------------------------------------------------------------------------- %
 \subsubsection{kappa}
+\label{sec:kappa}
 The attribute \texttt{kappa} is only used/defined for the purposes of strain
 or strain rate control. It refers to the coefficient used in the Seth-Hill
 generalized strain definition
-
+%
 \begin{equation}
   \Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)
 \end{equation}
-
-
-Where $\kappa$ is the keyword \texttt{kappa}, $\Strain$ is the strain tensor,
+%
+where $\kappa$ is the keyword \texttt{kappa}, $\Strain$ is the strain tensor,
 $\RightStretch$ is the right Cauchy stretch tensor, and $\SOIdentity$ is the
 second order identity tensor. Common values of $\kappa$ and the associated
 common names for each (there is some ambiguity in the names) are:
@@ -670,12 +770,54 @@ common names for each (there is some ambiguity in the names) are:
 \end{table}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{Examples}
+\subsubsection{The Column Specifier}
+\label{sec:colspec}
+The columns to read from a table or the \texttt{fcnspec} leg are specified by
+the \texttt{cols} attribute.  \texttt{cols} are specified as a space separated
+list of columns.  Number is 1 based.  Ranges can be specified using Python
+slice syntax.
+
+The following input stubs demonstrate two equivalent ways to to read columns
+1, 3, 4, 5, 8, 9, and 13 from a table.
+\begin{example}
+cols="1 3 4 5 8 9 13"
+\end{example}
+
+\begin{example}
+cols="1 3:5 8:9 13"
+\end{example}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Step Multiplier}
+\texttt{nfac} is a multiplier on the number of steps for each leg.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Amplitude}
+\texttt{amplitude} is a factor multiplied to all components of deformation.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{The ``star'' Multipliers}
+\label{sec:stars}
+\texttt{[rtes(ef)]star} are multipliers on the components of density, time
+(temperature for \texttt{type="surface"}), strain, stress, and electric field,
+respectively. The \texttt{[rtes(ef)]star} are first multiplied by
+\texttt{amplitude}.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{Rate Factor}
+\label{sec:ratfac}
+\texttt{ratfac} is a divisor to the termination time of each leg, thereby
+effectively increasing the rate of deformation.
+
+% ----------------------------------------------------------------------------- %
+\subsection{More Examples}
 The following examples will help clarify the \reqdtag{Path} input syntax
 
-\paragraph{format: default} Uniaxial strain, all six components of strain prescribed
-\begin{verbatim}
-<Path type="prdef" kappa="0" tstar="1" estar="-.5" amplitude="1" ratfac="1">
+\begin{example}
+<!-- uniaxial strain, all six components of strain
+     prescribed -->
+<Path type="prdef" kappa="0" tstar="1" estar="-.5"
+      amplitude="1" ratfac="1">
   <!-- termination time, number of steps, cfmt, Cij -->
   0   0 222222 0 0 0 0 0 0
   1 100 222222 1 0 0 0 0 0
@@ -683,10 +825,10 @@ The following examples will help clarify the \reqdtag{Path} input syntax
   3 100 222222 1 0 0 0 0 0
   4 100 222222 0 0 0 0 0 0
 </Path>
-\end{verbatim}
+\end{example}
 
-\paragraph{format: default} Uniaxial strain, stress controlled
-\begin{verbatim}
+\begin{example}
+<!-- uniaxial strain, stress controlled -->
 <Path type="prdef" nfac="100">
   0 0 444 0 0 0
   1 1 444 -7490645504 -3739707392 -3739707392
@@ -694,58 +836,20 @@ The following examples will help clarify the \reqdtag{Path} input syntax
   3 1 444 -7490645504 -3739707392 -3739707392
   4 1 444 0 0 0
 </Path>
-\end{verbatim}
+\end{example}
 
-\paragraph{format: default} Uniaxial stress, mixed mode
-\begin{verbatim}
+\begin{example}
+<!-- uniaxial stress, mixed mode -->
 <Path type="prdef" nfac="100">
   0 0 222 0 0 0
   1 1 244 {epsmax} 0 0
   4 1 244 0 0 0
 </Path>
-\end{verbatim}
+\end{example}
 
-\paragraph{format: table} Read entries from table. Control type is uniform for
-all legs. Specify control type as \texttt{cfmt} attribute of \reqdtag{Path}.
-Optionally, specify the time format as \texttt{tfmt} and number of steps for
-each leg as \texttt{nfac}.
-\begin{verbatim}
-<Path type="prdef" format="table" cols="1:4" cfmt="222" tfmt="time">
-  0 0 0 0
-  1 1 0 0
-    ...
-  n 2 0 0
-</Path>
-\end{verbatim}
-
-\paragraph{format: table} Read the table from a file, first by the
-\tag{Include} element and then the \texttt{href} attribute.
-\begin{verbatim}
-<Path type="prdef" format="table" cols="1 3:8" cfmt="222222" tfmt="time">
-  <Include href="exmpls.tbl"/>
-</Path>
-\end{verbatim}
-
-\begin{verbatim}
-<Path type="prdef" format="table" cols="1 3:8" cfmt="222222" tfmt="time"
-      href="exmpls.tbl"/>
-\end{verbatim}
-
-\paragraph{format: fcnspec} Create legs from functions. Functions are specified
-as \texttt{function id[:scale]}.  Syntax is otherwise similar to table format.
-Only a single leg can be specified.
-\begin{verbatim}
-<Path type="prdef" kappa="0" tstar="1" amplitude="1" format="fcnspec"
-      cfmt="222" nfac="200">
-  {2 * pi} 2:1.e-1 1:0 1:0
-</Path>
-\end{verbatim}
-
-\paragraph{type: surface} The following examples demonstrate the
-\texttt{type=''surface''}
-
-\paragraph{format: default}
-\begin{verbatim}
+\subsubsection{Example of \texttt{type="surface"}}
+The following examples demonstrate the \texttt{type="surface"}
+\begin{example}
 <Path type="surface">
   <!-- nsteps, control, Cij -->
   <!-- control goes as 1 -> density
@@ -753,25 +857,25 @@ Only a single leg can be specified.
     0 12 1 100
   100 12 5 300
 </Path>
-\end{verbatim}
+\end{example}
 
-\paragraph{format: table}
-\begin{verbatim}
+\begin{example}
 <Path type="surface" format="table" cfmt="12" nfac="100">
   <!-- Cij -->
   1 100
   5 300
 </Path>
-\end{verbatim}
+\end{example}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Material}
-\begin{verbatim}
+\section{Material}
+Define the material model.
+
+\begin{inpusage}
 <Material model="str">
-\end{verbatim}
-%
-Specify the material model and parameters. Subelements of \reqdtag{Material}
-are
+\end{inpusage}
+
+Subelements of \reqdtag{Material} are
 %
 \begin{itemize}
   \item \tag{Matlabel}
@@ -782,202 +886,275 @@ are
 %
 *\tag{Key} is a valid material parameter name.
 
-\subsubsection{Matlabel}
-\begin{verbatim}
-<Matlabel href="str[F_MTL_PARAM_DB]">
-\end{verbatim}
-%
-Insert model parameters from a database file.  The default file
-\verb:F_MTL_PARAM_DB: is in \verb:/path/to/gmd/materials/material_properties.db:.
+% ----------------------------------------------------------------------------- %
+\subsection{Attributes of Material}
+\subsubsection{Model}
+The name of the material model.
 
-\subsubsection{ParameterArray}
-\begin{verbatim}
-<ParameterArray> VAL1 VAL2 ... VALN </ParameterArray>
-\end{verbatim}
-%
+% ----------------------------------------------------------------------------- %
+\subsection{Matlabel}
+Insert model parameters from a database file.
+\begin{inpusage}
+<Matlabel href="str[F_MTL_PARAM_DB]" material="str"/>
+\end{inpusage}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{href}
+The path to the database file. Defaults to\\
+\verb:$GMDROOT/materials/material_properties.db: if no file is given.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{material}
+Name of material as given in the database file.
+
+The following input stub demonstrates the use of \tag{Matlabel}
+\begin{example}
+<Material model="elastic">
+  <Matlabel href="./materials.xml" material="aluminum"/>
+</Material>
+\end{example}
+
+\subsection{ParameterArray}
 Specify the parameter array for the material as whitespace separated list of
 floats.  The list of values must be the same length as the parameter array for
 the material or an error will occur.
+\begin{inpusage}
+<ParameterArray>
+  VAL1 VAL2 ... VALN
+</ParameterArray>
+\end{inpusage}
 
-\subsubsection{InitialState}
-\begin{verbatim}
-<InitialState> STRESS_XX STRESS_YY ... STRESS_XZ XTRA1 XTRA2 ... XTRAN </InitialState>
-\end{verbatim}
-%
+% ----------------------------------------------------------------------------- %
+\subsection{InitialState}
 Specify the initial state of the material as a whitespace separated list of
 floats. Six stress values must be followed by material variables (if any). The
 length of the material variables must be the same as the length of the
 \texttt{xtra} variable array for the material or an error will occur.  Note,
 implementation is material model specific.
+\begin{inpusage}
+<InitialState>
+  STRESS_XX STRESS_YY ... STRESS_XZ XTRA1 XTRA2 ... XTRAN
+</InitialState>
+\end{inpusage}
 
-\subsubsection{Key}
-\begin{verbatim}
+% ----------------------------------------------------------------------------- %
+\subsection{Specify Individual Parameters}
+Specify individual parameters as xml text nodes
+\begin{inpusage}
 <Key> float </Key>
-\end{verbatim}
+\end{inpusage}
 
-\subsubsection{Examples}
-\begin{verbatim}
+The following stub inputs demonstrate the \reqdtag{Material} input
+\begin{example}
 <Material model="elastic">
   <G>  54E+09 </G>
   <K> 124E+09 </K>
 </Material>
-\end{verbatim}
-
-\begin{verbatim}
-<Material model="elastic">
-  <Matlabel href="./materials.xml"> aluminum </Matlabel>
-  <K> 124E+09 </K>
-</Material>
-\end{verbatim}
+\end{example}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Extract}
-\begin{verbatim}
-<Extract format="str[ascii]{ascii, mathematica}" step="int[1]" ffmt="str[.18f]">
-\end{verbatim}
-%
+\section{Extract}
 Extract variables and paths from \exodusii{} output and (optionally) write to
-different formats. Recognized subelements of \tag{Extract} are
+different formats.
+\begin{inpusage}
+<Extract format="str[ascii]{ascii, mathematica, ndarray}"
+         step="int[1]" ffmt="str[.18f]">
+\end{inpusage}
+
+Recognized subelements of \tag{Extract} are
 %
 \begin{itemize}
-  \item \tag{Path*}
+  \item \tag{Path}*
   \item \tag{Variables}
 \end{itemize}
 %
 * \texttt{eos} driver only
 
-\subsubsection{Variables}
-\begin{verbatim}
-<Variables> VAR_1, ..., VAR_N </Variables>
-\end{verbatim}
-%
+% ----------------------------------------------------------------------------- %
+\subsection{Attributes of Extract}
+\subsubsection{format}
+The format to write the output.  \texttt{ascii} format writes out columnar
+data as an ascii text file, \texttt{mathematica} writes an ascii text file
+that can be read by Mathematica, and \texttt{ndarray} writes the data to a
+file in the numpy .npy binary format.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{step}
+Extract every \texttt{step}th timestep.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{ffmt}
+The string format used write out variables.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Variables}
 Variables to extract from the \exodusii{} output database. Variables are specified
 children of the \tag{Variables} element. All components of vector and tensor
 variables will be extracted if only the basename is specified. Time is always
 extracted as the first entry of the output file.  Extracted variables are in
 \texttt{runid.out} or \texttt{runid.math} depending if the format is ascii or
 mathematica.
+\begin{inpusage}
+<Variables>
+  VAR_1, ..., VAR_N
+</Variables>
+\end{inpusage}
 
-\subsubsection{Path}
-%\supporting{eos}
-\begin{verbatim}
-<Path type="str{isotherm, hugoniot}" increments="int[100]"
-      density_range="list" initial_temperature="real">
-\end{verbatim}
-%
-Extract a specified path from the equation of state surface through the
-specified density range starting at the initial temperature.
-
-\subsubsection{Examples}
-Extract all components of stress and strain
-%
-\begin{verbatim}
+The following example demonstrates how to extract all components of stress and
+strain
+\begin{example}
 <Extract format="ascii">
   <variables>
     STRESS STRAIN
   </variables>
 </Extract>
-\end{verbatim}
+\end{example}
 
 Extract only the XX, YY, and ZZ components of stress
-%
-\begin{verbatim}
+\begin{example}
 <Extract format="ascii">
   <variables>
     STRESS_XX STRESS_YY STRESS_ZZ
   </variables>
 </Extract>
-\end{verbatim}
+\end{example}
 
 Extract all variables
-\begin{verbatim}
+\begin{example}
 <Extract format="ascii">
   <variables>
     ALL
   </variables>
 </Extract>
-\end{verbatim}
+\end{example}
 
-Extract Hugoniot and Isotherm paths
-\begin{verbatim}
+% ----------------------------------------------------------------------------- %
+\subsubsection{Path}
+Extract a specified path from the equation of state surface through the
+specified density range starting at the initial temperature.
+\begin{inpusage}
+<Path type="str{isotherm, hugoniot}" increments="int[100]"
+      density_range="list" initial_temperature="real">
+\end{inpusage}
+
+The following input stub demonstrates extracting Hugoniot and Isotherm paths
+\begin{example}
 <Extract>
   <Path type="isotherm" increments="200"
         density_range="1 3" initial_temperature="225"/>
   <Path type="hugoniot" increments="100"
         density_range="1 3" initial_temperature="100"/>
 </Extract>
-\end{verbatim}
+\end{example}
 
 % ----------------------------------------------------------------------------- %
-\chapter{Permutation}
-\begin{verbatim}
-<Permutation method="str[zip]{zip, combine, shotgun}" seed="real[12]"
-                     correlation="list[none]{plot, table, none}">
-\end{verbatim}
-%
+\chapter{User Input: Permutation}
 Permutate model input parameters, running jobs with different realization of
-parameters. Good for investigating model sensitivities. Recognized subelements
-of \tag{Permutation} are
+parameters. Good for investigating model sensitivities.
+%
+\begin{inpusage}
+<Permutation method="str[zip]{zip,combine,shotgun}"
+                     seed="real[date]"
+                     correlation="list[none]{plot,table,none}">
+\end{inpusage}
+
+Recognized subelements of \tag{Permutation} are
 
 \begin{itemize}
   \item \tag{Permutate}
   \item \tag{ResponseFunction}
 \end{itemize}
 
+% ----------------------------------------------------------------------------- %
+\subsection{Attributes of Permutation}
+\subsubsection{method}
 The \texttt{method} attribute describes which method to use to determine
-parameter combinations to run.  The \texttt{zip} method runs one job for each
-set of parameters (and, thus, the number of realizations for each parameter
-must be identical), the \texttt{combine} method runs every combination of
-parameters, finally, the \texttt{shotgun} method zips a uniform distribution
-for each parameter.
+parameter combinations to run.
 
-The \texttt{correlation} attribute is only meaningful if a
-\tag{ResponseFunction} is specified.  Also, note that issues relating to
-reading the \exodusii{} database prevent gmd from running simultaneous
-permutation jobs that define a \tag{ResponseFunction}.
+The \texttt{zip} method runs one job for each set of parameters (and, thus,
+the number of realizations for each parameter must be identical), the
+\texttt{combine} method runs every combination of parameters.
 
+\subsubsection{correlation}
+Create correlation table and plots of relating permutated parameters and value
+of response function. \texttt{correlation} is only meaningful if a
+\tag{ResponseFunction} is specified.
+
+\subsubsection{seed}
+The seed for the random number generator. \texttt{date} is todays date in
+seconds.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Permutate}
-\begin{verbatim}
+Specify the paramaters to permutate.
+\begin{inpusage}
 <Permutate var="str"
-           values="str{range, list, weibull, uniform, normal, percentage}"
-\end{verbatim}
-%
-Specify the paramaters to permutate. Variable names should occur elsewhere in
+           values="func{range,list,weibull,uniform,
+                        normal,percentage}"
+\end{inpusage}
+
+\subsubsection{var}
+\texttt{var} is the name of the variabe and should occur elsewhere in
 the input file in preprocessing braces.
 
-\subsection{Example}
-Permutate the \texttt{K} and \texttt{G} parameters
+\subsubsection{values}
+\texttt{values} are the specific values. The
+\texttt{range,list,weibull,uniform,normal,percentage} are all specified as
+functions with the following form
+
+\begin{example}
+values="func(start,stop,N)"
+\end{example}
+
+The following input stub demonstrates how to permutate the \texttt{K} and
+\texttt{G} parameters
 %
-\begin{verbatim}
+\begin{example}
 <Permutation method="zip" seed="12">
   <Permutate var="K" values="weibull(125.e9, 14, 3)"/>
   <Permutate var="G" values="percentage(45.e9, 10, 3)"/>
 </Permutation>
-\end{verbatim}
+\end{example}
 
 In the \tag{Material} element, the \texttt{K} and \texttt{G} parameters are
 specified as
 %
-\begin{verbatim}
+\begin{example}
 <Material model="elastic">
   <K> {K} </K>
   <G> {G} </G>
 </Material>
-\end{verbatim}
+\end{example}
 
 % ----------------------------------------------------------------------------- %
 \subsection{ResponseFunction}
-\begin{verbatim}
-<ResponseFunction href="str" descriptor="str[]"/>
-\end{verbatim}
-Name of response function that returns the response from permutation or
-optimization jobs. \texttt{href} must either be the path to an executable file
-script containing the response function, or the name of a builtin \gmd{}
-response function.
+The \tag{ResponseFunction} returns the response from permutation or
+optimization jobs.
+\begin{inpusage}
+<ResponseFunction href="str" function="gmdfcn"
+                  descriptor="str[]"/>
+\end{inpusage}
 
-Built in response functions are
+One of \texttt{href} or \texttt{function} must be specified.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{href}
+\texttt{href} is the path to an executable file script containing the response
+function. The script is called from the command line as
+
+\begin{verbatim}
+% ./scriptname runid.exo
+\end{verbatim}
+
+An example of a response function specifying \texttt{href} is
+\begin{example}
+<ResponseFunction href="./scriptname" descriptor="PRES"/>
+\end{example}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{function}
+\texttt{function} is the name of a builtin \gmd{} response function. Built in
+response functions are
 %
 \begin{itemize}
   \item \texttt{gmd.max} maximum value of a simulation variable output
@@ -990,31 +1167,25 @@ Built in response functions are
 %
 Built in response functions operate only on variabes in the simulation output file.
 
-If \texttt{href} is a user defined script, the script is called from the
-command line as
-\begin{verbatim}
-% ./scriptname simulation_output.exo [auxiliary_file_1 [... auxiliary_file_n]]
-\end{verbatim}
-
-\subsubsection{Examples}
-\begin{verbatim}
-<ResponseFunction href="./scriptname" descriptor="PRES"/>
-\end{verbatim}
-
-
-\begin{verbatim}
+An example of a response function specifying \texttt{function} is
+\begin{example}
 <ResponseFunction href="gmd.max(PRESSURE)" descriptor="PRES"/>
-\end{verbatim}
+\end{example}
 
 % ----------------------------------------------------------------------------- %
-\chapter{Optimization}
-\begin{verbatim}
+\subsubsection{descriptor}
+\texttt{descriptor} is the name given to the response function in the output.
+
+% ----------------------------------------------------------------------------- %
+\chapter{User Input: Optimization}
+Optimize specified parameters against user specified objective function.
+%
+\begin{inpusage}
 <Optimization method="str[simplex]{simplex, powell, cobyla}"
               maxiter="int[25]" tolerance="real[1e-6]">
-\end{verbatim}
-%
-Optimize specified parameters against user specified objective function.
-Recognized subelements of \tag{Optimization}
+\end{inpusage}
+
+Recognized subelements of \tag{Optimization} are
 
 \begin{itemize}
   \item \tag{Optimize}
@@ -1023,108 +1194,143 @@ Recognized subelements of \tag{Optimization}
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Optimize}
-\begin{verbatim}
-<Optimize var="str" initial_value="real" bounds="list[]"/>
-\end{verbatim}
-%
-Specify the variable to be optimized, giving initial value and, optionally,
-bounds.  Only the \texttt{cobyla} method accepts bounds.  Variable names should
-occur elsewhere in the input file in preprocessing braces.
+\subsection{Attributes of Optimization}
+\subsubsection{method}
+\texttt{method} specifies the optimization method.  All optimization routines
+utilize the scipy.optimize module.
 
 % ----------------------------------------------------------------------------- %
-\subsection{ResponseFunction}
-Same as for \tag{Permutation}.  The value returned from the response function
-is interpreted as the error to be minimized.
+\subsubsection{maxiter}
+\texttt{maxiter} is the maximum number of iterations.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{tolerance}
+\texttt{tolerance} is the optimization tolerance.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Optimize}
+Specify the variable to be optimized.
+\begin{inpusage}
+<Optimize var="str" initial_value="real" bounds="list[]"/>
+\end{inpusage}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{var}
+\texttt{var} is the name of the variabe and should occur elsewhere in
+the input file in preprocessing braces.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{initial\us{}value}
+\texttt{initial\us{}value} is the initial value of \texttt{var}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{bounds}
+\texttt{bounds} specifies lower and upper bounds on \texttt{var}. Only the
+\texttt{cobyla} method accepts bounds.
 
 % ----------------------------------------------------------------------------- %
 \subsection{AuxiliaryFile}
-\begin{verbatim}
-<AuxiliaryFile href="str"/>
-\end{verbatim}
 Path to any auxiliary file needed by the optimization objective function.
+\begin{inpusage}
+<AuxiliaryFile href="str"/>
+\end{inpusage}
+
+% ----------------------------------------------------------------------------- %
+\subsection{ResponseFunction}
+Same as for \tag{Permutation}, except that auxiliary files are also passed to
+the function. The value returned from the response function is interpreted as
+the error to be minimized.
+
+If the \tag{ResponseFunction} is given by \texttt{href}, it is called as
+\begin{verbatim}
+% ./scriptname runid.exo [AuxFile1[AuxFile2[...]]]
+\end{verbatim}
 
 \subsection{Example}
 Optimize the \texttt{K} and \texttt{G} parameters
-\begin{verbatim}
-<Optimization method="simplex" maxiter="25" tolerance="1e-4" disp="0">
-  <ResponseFunction href="opt-sig-v-time" descriptor="SIG_V_TIME"/>
+\begin{example}
+<Optimization method="simplex" maxiter="25" tolerance="1e-4">
+  <ResponseFunction href="opt-sig-v-time"
+                    descriptor="SIG_V_TIME"/>
   <AuxiliaryFile href="opt-baseline.dat"/>
   <Optimize var="opt_k" initial_value="129.e9"/>
   <Optimize var="opt_g" initial_value="54.e9"/>
 </Optimization>
-\end{verbatim}
+\end{example}
 
 In the \reqdtag{Material} element, the \texttt{K} and \texttt{G} parameters
 are specified as
 %
-\begin{verbatim}
+\begin{example}
 <Material model="elastic">
   <K> {opt_k} </K>
   <G> {opt_g} </G>
 </Material>
-\end{verbatim}
+\end{example}
 
 % ----------------------------------------------------------------------------- %
-\chapter{User Materials}
+\chapter{\gmd{} User Material Interface}
 \label{chap:usrmtl}
+\gmd{} can be made to find, build, and execute user materials outside of
+\verb|$GMDROOT|.  User materials can be written in Python or Fortran and and
+\gmd{} interacts with them through the application programming interface
+(API).  In general, the following pattern is followed for exercising a
+material model with \gmd{}:
+%
+\begin{enumerate}
+  \item create a material model interface (MMI)
+  \item build and link the material model to \gmd{}
+  \item exercise the model
+\end{enumerate}
+%
 
 % ----------------------------------------------------------------------------- %
-\section{Interface}
+\section{Material Model Interface}
 \label{sec:usrint}
 \gmd{} interacts with materials through a material interface file. The
 material interface file defines the material class which must be a subclass of\\
-\verb|$GMDROOT/materials._material.Material|.  To follow are data and methods
-that each material model must define.\\[5pt]
-
-% --- interface API
-\class{\underline{  }material}{Material}
+\verb|$GMDROOT/materials._material.Material|.  In this section, methods of the
+\verb|Material| class are described.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Class Data}
-\data{Material}{name}{The material name. Name by which material is invoked
-  from the input file.}\\[5pt]
-\data{Material}{param\us{}names}{Ordered list of material
-  parameter names as they appear in the input file.}\\[8pt]
+\subsection{Material Class Instantiation}
+\label{sec:basecls}
+The base class \verb|Material| in \verb|$GMDROOT/materials._material| creates
+new \gmd{} materials and provides the interface with which \gmd{} interacts.
+Each class must define its name (\verb|Material.name|) and an ordered list of
+material parameter names (\verb|Material.param_names|) as they appear in the
+input file.  The class should not define an \texttt{\uus{}init\uus{}} method
+and if it does, should call the \texttt{\uus{}init\uus{}} of the base class.
+
+\begin{interface}
+  \textbf{Material: Interface}
+\end{interface}
+\usage{mtl = Material()}
+
+The following is an example of a \texttt{Material} declaration for the
+\texttt{Elastic} material model
 %
-The following is an example of a \texttt{Material} declaration.
 \begin{example}
+from materials._material import Material
 class Elastic(Material)
     name = 'elastic'
     param_names = ['K', 'G']
 \end{example}
 
-% ----------------------------------------------------------------------------- %
-\subsection{Instantiation}
-Called by Driver. Instantiate the material model. A material's
-\texttt{\us\us{}init\us\us{}} method must call the
-\texttt{\us{}\us{}init\us{}\us{}} method of the parent
-class.\\[4pt]
-%
-\function{\texttt{Material}.\textbf{\us\us{}init\us\us{}(params)}}{%
-  material = Material()}
+\subsection{Setup the Material}
+The method \texttt{setup} sets up the material model by checking and setting
+the material parameter array, requesting allocation of storage of material
+variables, and computing and storing the \verb|bulk_modulus| and
+\verb|shear_modulus| of the material.
 
-The following is an example of a \texttt{\us\us{}init\us\us{}} method
-\begin{example}
-def __init__(self):
-    super(Elastic, self).__init__()
-\end{example}
+\begin{interface}
+  \textbf{Material.setup: Interface}
+\end{interface}
+\usage{mtl.setup(params)}\\[5pt]
+\param{ndarray params}{Material parameters parsed from the input file}
 
-% ----------------------------------------------------------------------------- %
-\subsection{Base Class Methods}
-
-% ----------------------------------------------------------------------------- %
-\subsection{Methods to be Defined by Each Material Model}
-\subsubsection{Setup the Material}
-Called by Driver. The method \texttt{setup} sets up the material
-model by checking user input and requesting allocation of storage of material
-variables.\\[4pt]
-%
-\function{\texttt{Material}.\textbf{setup(params)}}{%
-    material.setup(params)}\\[4pt]
-\param{ndarray params}{Material parameters parsed from the input file}\\[4pt]
-%
 The following is an example of a \texttt{setup} method
+
 \begin{example}
 def setup(self, params):
     if elastic is None:
@@ -1136,33 +1342,61 @@ def setup(self, params):
     self.shear_modulus = G
 \end{example}
 
-\subsubsection{Adjusting the Initial State}
-Called by Driver. The method \texttt{adjust\us{}initial\us{}state}
-adjusts the initial state after the material is setup.  Method provided by
-base class should be adequate for most materials.  A material should only
-overide the base method if absolutely necessary. \\[4pt]
-%
-\function{\texttt{Material}.\textbf{adjust\us{}initial\us{}state(xtra)}}{%
-    material.adjust\us{}initial\us{}state(xtra)}
+\subsection{Store Parameter Array with \gmd{}}
+The method \verb|set_param_vals| stores the checked parameter values with
+\gmd{}.  It must be called by each instance of the material model.
 
-\subsubsection{Update the Material State}
-Called by Driver. The material state is updated to the end of the step via
-the \texttt{update\us{}state} method. Each material model must provide its own
-\texttt{update\us{}state} method.\\[4pt]
-%
-\function{\texttt{Material}.\textbf{update\us{}state(dt, d, sig, xtra, %
-    *args, **kwargs)}}{%
-  stress, xtra = material.update\us{}state(dt, d, sig, xtra, *args,
-  **kwargs)}\\[8pt]
-\param{dt real}{timestep size}\\
-\param{ndarray d}{rate of deformation}\\
-\param{ndarray sig}{stress at beginning of step}\\
-\param{ndarray xtra}{extra state variables at beginning of step}\\
+\begin{interface}
+  \textbf{Material.set\us{}param\us{}vals: Interface}
+\end{interface}
+\usage{mtl.set\us{}param\us{}vals(params)}\\[5pt]
+\param{ndarray params}{Checked material parameters}
+
+The following is an example of how \verb|set_param_vals| is used within a
+mterials \verb|setup| method.
+
+\begin{example}
+params = self._check_params(params)
+self.set_param_val(params)
+\end{example}
+
+
+\subsection{Adjust the Initial State}
+The method \texttt{adjust\us{}initial\us{}state} adjusts the initial state
+after the material is setup. Method provided by base class should be adequate
+for most materials. A material should only overide the base method if
+absolutely necessary.
+
+\begin{interface}
+  \textbf{Material.adjust\us{}initial\us{}state: Interface}
+\end{interface}
+\usage{mtl.adjust\us{}initial\us{}state(xtra)}\\[5pt]
+\param{ndarray xtra}{Material variables}
+
+\subsection{Update the Material State}
+The material state is updated to the end of the step via the
+\verb|update_state| method. Each material model must provide its own
+\verb|update_state| method.
+
+\begin{interface}
+  \textbf{Material.update\us{}state: Interface}
+\end{interface}
+\usage{stress, xtra = mtl.update\us{}state(dt, d, sig, xtra, *args)}\\[5pt]
+\param{real dt}{timestep size}
+\param{ndarray d}{rate of deformation}
+\param{ndarray sig}{stress at beginning of step}
+\param{ndarray xtra}{extra state variables at beginning of step}
 \param{tuple args}{(\texttt{defgrad}, \texttt{efield}, \texttt{time},
-  \texttt{rho}, \texttt{tmpr}) extra positional arguments.}\\
-\param{dict kwargs}{extra keyword args (not used)}\\[8pt]
-\param{ndarray stress}{stress at end of step}\\
-\param{ndarray xtra}{extra state variables at end of step}\\
+  \texttt{rho}, \texttt{tmpr}) extra positional arguments.}
+\param{dict kwargs}{extra keyword args (not used)}
+\param{ndarray stress}{stress at end of step}
+\param{ndarray xtra}{extra state variables at end of step}
+
+The following code segment is used by the driver to update the material state
+\begin{example}
+args = (f, ef, t, None, None)
+sig, xtra = mtl.update_state(dt, d, sig, xtra, *args)
+\end{example}
 
 \subsection{Example}
 A complete example
@@ -1201,30 +1435,73 @@ class Elastic(Material):
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\section{Building}
+\section{Building and Linking Materials to \gmd{}}
 \label{sec:usrbld}
 \bldm{} builds the \gmd{} materials by searching the subdirectories of\\
-\texttt{\$GMDROOT/materials/library} and the directories specified by the
+\verb|$GMDROOT/materials/library| and the directories specified by the
 \verb|$GMDMTLS| environment variables and building materials it finds.  It
 does so by searching for a single file \texttt{makemf.py} in each directory.
 \texttt{makemf.py} is responsible for building the materials and communicating
-back to \bldm{}.\\[4pt]
+back to \bldm{}.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Building User Materials}
+User materials are built by the \texttt{makemf} function of the
+\texttt{makemf.py} scripts
 
 % --- makemf API
-\function{\texttt{makemf}.\textbf{makemf}}{%
-  blt, fld, skp = makemf(destd, fc, fio, materials=None, *args)}\\[8pt]
+\begin{interface}
+\textbf{makemf.makemf: Interface}
+\end{interface}
+\usage{blt, fld, skp = makemf(destd, fc, fio, materials=None, *args)}
+
 \param{str dest}{path to directory to copy built shared object libraries (if
-  any)}\\
-\param{str fc}{path to fortran compiler}\\
-\param{str fio}{path to the fortran IO routines}\\
-\param{list materials}{list of materials to build.  if empty, build all}\\
-\param{tuple args}{not used}\\[9pt]
+  any)}
+\param{str fc}{path to fortran compiler}
+\param{str fio}{path to the fortran IO routines}
+\param{list materials}{list of materials to build.  if empty, build all}
+\param{tuple args}{not used}
+
 \param{tuple blt}{\texttt{(name, interface, mclass, parameters)}.
   \texttt{name} is the name of the material, \texttt{interface} the file path
   to the interface file, \texttt{mclass} the material model class name in
-  \texttt{interface}, \texttt{parameters} an order list of parameter names}\\
-\param{list fld}{list of names of materials that failed to build}\\
+  \texttt{interface}, \texttt{parameters} an order list of parameter names}
+\param{list fld}{list of names of materials that failed to build}
 \param{list skp}{list of names of materials that were skipped}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Building Materials with \fpy{}}
+\label{sec:bldf2py}
+Material models written in Fortran should be built in to Python shared object
+libraries with \fpy{}.  The function \texttt{utils.gmdf2py.f2yp} provides an
+interface to \fpy{}.
+\begin{interface}
+\textbf{utils.gmdf2py.f2py: Interface}
+\end{interface}
+\usage{stat = f2py(name, source\us{}files, signature, fc, incd=None)}
+
+\param{str name}{material model name.  will be used to set name of shared object
+  library.}
+\param{list source\us{}files}{list of absolute values of Fortran source files}
+\param{str signature}{path to signature file}
+\param{str fc}{path to Fortran compiler}
+\param{str ind}{(optional) path to include directories}
+
+\param{int stat}{returns 0 if successful, 1 otherwise}
+
+Below is an example of using \texttt{gmdf2py.f2py}
+\begin{example}
+from utils.gmdf2py import f2py
+def makemf(destd, fc, fio, materials=None, *args)
+    ...
+    stat = f2py(name, source_files, signature, fc, incd)
+    if stat != 0:
+        return [], [name], []
+
+    shutil.move(name + ".so", os.path.join(destd, name + ".so"))
+    return (name, filepath, mclass, parameters), [], []
+\end{example}
+
 
 
 % ----------------------------------------------------------------------------- %
