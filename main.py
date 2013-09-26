@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import shutil
 import random
 import argparse
 
@@ -66,7 +67,15 @@ def main(argv=None):
         tup = lambda a: (a[0].strip(), a[1].strip())
         args.p = dict(tup(x.split("=")) for x in args.p)
 
-    output = []
+    if args.v:
+        sys.stdout.write(SPLASH)
+        sys.stdout.flush()
+
+    # --- gather all input.
+    # this is done in a separate loop from running the input
+    # so that we can gather all inputs from all files (a single file can
+    # specify multiple Physics inputs).
+    all_input = []
     for (i, source) in enumerate(args.sources):
 
         # parse the user input
@@ -93,48 +102,65 @@ def main(argv=None):
                 continue
             mm_input = inp.parse_input(source, argp=args.p)
 
-        if args.v:
-            sys.stdout.write(SPLASH)
-            sys.stdout.flush()
-
         if input_errors():
             raise SystemExit("stopping due to input errors")
 
+        all_input.extend([(runid, _) for _ in mm_input])
+
+        continue
+
+    # --- run all input
+    output = []
+    ninp = len(all_input)
+    for (iinp, (runid, mm_input)) in enumerate(all_input):
         stype = mm_input[0]
-        if stype == "Physics":
-            model = PhysicsHandler(runid, args.v, *mm_input[1:])
-
-        elif stype == "Permutation":
+        if stype in ("Optimization", "Permutation"):
             exe = "{0} {1}".format(sys.executable, FILE)
-            model = PermutationHandler(runid, args.v, exe, args.j, *mm_input[1:])
+            if stype == "Permutation":
+                model = PermutationHandler(runid, args.v, exe, args.j,
+                                           *mm_input[1:])
+            else:
+                model = OptimizationHandler(runid, args.v, exe, *mm_input[1:])
 
-        elif stype == "Optimization":
-            exe = "{0} {1}".format(sys.executable, FILE)
-            model = OptimizationHandler(runid, args.v, exe, *mm_input[1:])
+        elif stype == "Physics":
+            runid_ = mm_input[1]
+            if not runid_:
+                runid_ = runid
+                if ninp > 1:
+                    runid_ += "-" + str(iinp)
+            model = PhysicsHandler(runid_, args.v, *mm_input[2:])
 
         else:
             logerr("{0}: unrecognized simulation type".format(mm_input.stype))
             continue
 
-        # Run the problem
+        # Run the problems
         try:
             model.run()
         except Error1, e:
-            logerr("{0}: failed to run with message: {1}".format(runid, e.message))
+            logerr("{0}: failed to run with message: {1}".format(
+                model.runid, e.message))
 
         model.finish()
         output.append(model.output())
-
-        if args.v:
-            # a fun quote to end with
-            ol = open(os.path.join(ROOT_D, "utils/zol")).readlines()
-            sys.stdout.write("\n" + ol[random.randint(0, len(ol)-1)])
-
         del model
+
+        if args.v and iinp + 1 != ninp:
+            # separate screen output of different runs
+            write_newline(n=2)
+
+    if args.v:
+        # a fun quote to end with
+        ol = open(os.path.join(ROOT_D, "utils/zol")).readlines()
+        sys.stdout.write("\n" + ol[random.randint(0, len(ol)-1)])
 
     if args.V and output:
         from viz.plot2d import create_model_plot
         create_model_plot(output)
+
+
+def write_newline(n=1):
+    sys.stdout.write("\n" * n)
 
 
 def logerr(message=None, errors=[0]):
@@ -150,8 +176,11 @@ def stop(message):
 
 
 def clean_all_output(runid):
-    for ext in (".exo", ".log", ".out"):
+    for ext in (".exo", ".log", ".out", ".xml.preprocessed"):
         try: os.remove(runid + ext)
+        except OSError: pass
+    for ext in (".eval",):
+        try: shutil.rmtree(runid + ext)
         except OSError: pass
 
 if __name__ == "__main__":

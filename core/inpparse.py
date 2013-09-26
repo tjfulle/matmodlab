@@ -4,6 +4,7 @@ import sys
 import numpy as np
 from xml.etree.ElementTree import iterparse
 import xml.dom.minidom as xdom
+from xml.parsers.expat import ExpatError as ExpatError
 
 from __config__ import cfg, F_MTL_PARAM_DB, RESTART
 import utils.pprepro as pp
@@ -230,6 +231,13 @@ class Attribute(object):
                         {"__builtins__": None}, DTYPES)
         except AttributeError:
             return NOT_SPECIFIED
+        except ValueError as e:
+            if re.search(r"{.*}", a):
+                # Unpreprocessed variable. Should only occur for optimizaiton
+                # or permutation jobs. For now, return a as is and hope that
+                # it will be preprocessed later
+                return a
+            raise e
 
 
 def defntree(filepath=None):
@@ -296,7 +304,7 @@ def responsefcn(a):
 def npalias(a):
     N_default = 10
     s = {"range": lambda a, b, N=N_default: np.linspace(a, b, N),
-         "list": lambda a: np.array(a),
+         "list": lambda *a: np.array(a),
          "weibull": lambda a, b, N=N_default: a * RAND.weibull(b, N),
          "uniform": lambda a, b, N=N_default: RAND.uniform(a, b, N),
          "normal": lambda a, b, N=N_default: RAND.normal(a, b, N),
@@ -490,10 +498,17 @@ def parse_input(filepath, argp=None):
         user_input, disp=1, argp=argp)
     if nsubs:
         with open(filepath + ".preprocessed", "w") as fobj:
-            fobj.write(user_input)
+            for line in user_input.split("\n"):
+                if not line.split():
+                    continue
+                fobj.write(line + "\n")
 
     Tree = defntree()
-    dom = xdom.parseString(user_input)
+    try:
+        dom = xdom.parseString(user_input)
+    except ExpatError as e:
+        raise UserInputError("xml parsing error: {0}".format(e.message))
+
     root = dom.getElementsByTagName(Tree.name)
     if len(root) != 1:
         raise UserInputError("expected root element {0}".format(Tree.name))
@@ -505,17 +520,20 @@ def parse_input(filepath, argp=None):
     permdict = els.pop("Permutation")
     if permdict:
         root[0].removeChild(root[0].getElementsByTagName("Permutation")[0])
-        return pPermutation(permdict, root[0].toxml())
+        return [pPermutation(permdict, root[0].toxml())]
 
     optdict = els.pop("Optimization")
     if optdict:
         root[0].removeChild(root[0].getElementsByTagName("Optimization")[0])
-        return pOptimization(optdict, root[0].toxml())
+        return [pOptimization(optdict, root[0].toxml())]
 
     if err:
         raise UserInputError("pprepro: " + "\n".join(err))
 
-    return pPhysics(els.pop("Physics"), functions)
+    allinp = []
+    for phys in els.pop("Physics"):
+        allinp.append(pPhysics(phys, functions))
+    return allinp
 
 
 def parse_exo_input(source, time=-1):
@@ -611,8 +629,10 @@ def pPhysics(physdict, functions):
     driver = [physdict["driver"], dpath, dopts]
     extract = pExtract(physdict["Elements"].pop("Extract"), dcls)
 
+    runid = physdict.get("runid")
+
     # Return the physics dictionary
-    return ("Physics", driver, (mdl, params, istate), extract)
+    return ("Physics", runid, driver, (mdl, params, istate), extract)
 
 
 def pMaterial(mtldict):
@@ -686,12 +706,17 @@ def pOptimization(optdict, basexml):
     if not respfcn or respfcn == NOT_SPECIFIED:
         fatal_inp_error("expected a ResponseFunction")
         return
-    fcn = respfcn["function"]
-    if not os.path.isfile(fcn):
-        fatal_inp_error("{0}: no such file".format(fcn))
+    href = respfcn.get("href")
+    fcn = respfcn.get("function")
+    if fcn and href:
+        fatal_inp_error("ResponseFunction: expected either function or href")
+    elif not fcn and not href:
+        fatal_inp_error("ResponseFunction: expected one of function or href")
+    elif href:
+        fcn = href
     dsc = respfcn["descriptor"]
-    dsc = "ERR" in dsc is None
-    respfcn = (dsc, os.path.realpath(fcn))
+    dsc = "ERR" if dsc is None else dsc
+    respfcn = (dsc, fcn)
 
     # read in optimized values
     p = []
@@ -702,6 +727,9 @@ def pOptimization(optdict, basexml):
     auxfiles = []
     for item in elements["AuxiliaryFile"]:
         auxfile = item.get("href")
+        if auxfile == NOT_SPECIFIED:
+            # error already printed
+            continue
         if not auxfile:
             fatal_inp_error("pOptimization: expected href attribute to "
                             "AuxiliaryFile")
@@ -723,7 +751,14 @@ def pPermutation(permdict, basexml):
     elements = permdict.pop("Elements")
     respfcn = elements.pop("ResponseFunction", None)
     if respfcn:
-        fcn = respfcn["function"]
+        fcn = respfcn.get("function")
+        href = respfcn.get("href")
+        if fcn and href:
+            fatal_inp_error("ResponseFunction: expected either function or href")
+        elif not fcn and not href:
+            fatal_inp_error("ResponseFunction: expected one of function or href")
+        elif href:
+            fcn = href
         dsc = respfcn["descriptor"]
         if dsc is None:
             s = re.search(GMD_RESP_FCN_RE, fcn)

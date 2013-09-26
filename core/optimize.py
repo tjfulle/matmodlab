@@ -189,6 +189,7 @@ def func(xcall, *args):
     (rootd, runid, xnames, basexml, exe, script, desc, aux, tabular, xfac) = args
 
     IOPT += 1
+    nnn = IOPT + 1
     evald = os.path.join(rootd, "eval_{0}".format(IOPT))
     os.mkdir(evald)
     os.chdir(evald)
@@ -200,7 +201,7 @@ def func(xcall, *args):
             fobj.write("{0} = {1: .18f}\n".format(name, param))
 
     io.log_message("starting job {0} with {1}".format(
-        IOPT + 1, ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
+        nnn, ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
 
     # Preprocess the input
     xmlinp = pprepro.find_and_make_subs(basexml, prepro=dict(parameters))
@@ -218,20 +219,20 @@ def func(xcall, *args):
     if job.returncode != 0:
         tabular.write_eval_info(IOPT, job.returncode, evald,
                                 parameters, ((desc, np.nan),))
-        io.log_message("**** error: job {0} failed".format(IOPT))
+        io.log_message("**** error: job {0} failed".format(nnn))
         return np.nan
 
     # Now the response function
-    io.log_message("analyzing results of job {0}".format(IOPT + 1))
+    io.log_message("analyzing results of job {0}".format(nnn))
     outf = os.path.join(evald, runid + ".exo")
     opterr = evaluate_response_function(script, outf, aux)
-    if opterr == np.nan:
-        io.log_message("*** error: job {0} response function "
-                       "failed".format(IOPT + 1))
+    if opterr is None:
+        opterr = np.nan
+        io.log_message("*** error: job {0} response function failed".format(nnn))
     tabular.write_eval_info(IOPT, job.returncode, evald,
                             parameters, ((desc, opterr),))
 
-    io.log_message("finished with job {0}".format(IOPT))
+    io.log_message("finished with job {0}".format(nnn))
 
 
     # go back to the rootd

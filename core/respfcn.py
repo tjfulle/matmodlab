@@ -31,11 +31,10 @@ def evaluate_response_function(respfcn, outfile, auxfiles=[]):
                            stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
-        response = np.nan
+        return None
 
-    else:
-        out, err = job.communicate()
-        response = float(out)
+    out, err = job.communicate()
+    response = float(out)
 
     return response
 

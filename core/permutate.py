@@ -157,9 +157,10 @@ def run_single_job(args):
         io.log_message("analyzing results of job {0}".format(job_num + 1))
         outf = os.path.join(evald, runid + ".exo")
         response = evaluate_response_function(respfcn, outf)
-        if response == np.nan:
+        if response is None:
             io.log_message("*** error: job {0} response function "
                            "failed".format(job_num + 1))
+            response = np.nan
         response = ((respdesc, response),)
 
     tabular.write_eval_info(job_num, job.returncode, evald, parameters, response)

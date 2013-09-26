@@ -302,7 +302,7 @@ in your message:
   \item Platform information OS, its distribution name and version information
   etc.
 \begin{verbatim}
-$ python -c 'import os,sys;print os.name,sys.platform'
+$ python -c "import os,sys;print os.name,sys.platform"
 $ uname -a
 \end{verbatim}
 
@@ -315,17 +315,17 @@ $ gfortran --version
 
   \item Python version
 \begin{verbatim}
-$ python -c 'import sys;print sys.version'
+$ python -c "import sys;print sys.version"
 \end{verbatim}
 
 \item NumPy version
 \begin{verbatim}
-$ python -c 'import numpy;print numpy.__version__'
+$ python -c "import numpy;print numpy.__version__"
 \end{verbatim}
 
 \item SciPy version
 \begin{verbatim}
-$ python -c 'import scipy;print scipy.__version__'
+$ python -c "import scipy;print scipy.__version__"
 \end{verbatim}
 
 \item Feel free to add any other relevant information.
@@ -1152,6 +1152,10 @@ An example of a response function specifying \texttt{href} is
 \end{example}
 
 % ----------------------------------------------------------------------------- %
+\subsubsection{descriptor}
+\texttt{descriptor} is the name given to the response function in the output.
+
+% ----------------------------------------------------------------------------- %
 \subsubsection{function}
 \texttt{function} is the name of a builtin \gmd{} response function. Built in
 response functions are
@@ -1169,12 +1173,9 @@ Built in response functions operate only on variabes in the simulation output fi
 
 An example of a response function specifying \texttt{function} is
 \begin{example}
-<ResponseFunction href="gmd.max(PRESSURE)" descriptor="PRES"/>
+<ResponseFunction function="gmd.max(PRESSURE)"
+                  descriptor="PRES"/>
 \end{example}
-
-% ----------------------------------------------------------------------------- %
-\subsubsection{descriptor}
-\texttt{descriptor} is the name given to the response function in the output.
 
 % ----------------------------------------------------------------------------- %
 \chapter{User Input: Optimization}

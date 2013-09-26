@@ -196,12 +196,10 @@ def find_and_fill_includes(lines):
         User input, modified in place, with inserts inserted
 
     """
-    #doc = xdom.parseString(lines)
-    #includes = doc.getElementsByTagName("Include")
     #print dir(includes[0])
     #print includes
     #sys.exit('check include')
-    regex = r"(?i)<include\s(?P<include>.*)/>"
+    regex = r"(?i)<(include|insert)\s(?P<include>.*)/>"
     _lines = []
     for line in lines.split("\n"):
         if not line.split():
@@ -214,14 +212,30 @@ def find_and_fill_includes(lines):
 
         href = re.search(r"""href=["'](?P<href>.*?)["']""",
                          include.group("include"))
-        if not href:
-            raise SystemExit("expected href='...'")
-        name = href.group("href").strip()
-        fpath = os.path.realpath(os.path.expanduser(name))
-        try:
-            fill = open(fpath, "r").read()
-        except IOError:
-            raise SystemExit("{0}: include not found".format(repr(name)))
+
+        tag = re.search(r"""tag=["'](?P<tag>.*?)["']""",
+                        include.group("include"))
+        if tag and href:
+            raise SystemExit("Include: expected only one of: href, tag")
+
+        if not href and not tag:
+            raise SystemExit("Include: expected one of: href, tag")
+
+        if href:
+            name = href.group("href").strip()
+            fpath = os.path.realpath(os.path.expanduser(name))
+            try:
+                fill = open(fpath, "r").read()
+            except IOError:
+                raise SystemExit("{0}: include not found".format(repr(name)))
+        else:
+            name = tag.group("tag").strip()
+            doc = xdom.parseString(lines)
+            el = doc.getElementsByTagName(name)
+            if not el:
+                raise SystemExit("{0}: tag not found".format(repr(name)))
+            fill = "\n".join(e.toxml() for e in el[0].childNodes)
+
         _lines.extend(find_and_fill_includes(fill).split("\n"))
         continue
     return "\n".join(_lines)

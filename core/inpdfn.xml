@@ -21,6 +21,42 @@
        test: function that must return true [True]
 
   -->
+  <Element name="Permutation" n="?" conflict="Optimization">
+    <Attribute name="method" default="zip" type="string"
+	       choices="zip combine"/>
+    <Attribute name="seed" default="None" type="integer" test="ispositive"/>
+    <Attribute name="correlation" default="None" type="strlist"
+	       choices="plot table"/>
+    <Element name="Permutate" n="+">
+      <Attribute name="var" type="string"/>
+      <Attribute name="values" type="npalias"/>
+    </Element>
+    <Element name="ResponseFunction" n="?">
+      <Attribute name="function" default="None" type="responsefcn"/>
+      <Attribute name="href" default="None" type="responsefcn"/>
+      <Attribute name="descriptor" default="None" type="string"/>
+    </Element>
+  </Element>
+
+  <Element name="Optimization" n="?" conflict="Permutation">
+    <Attribute name="method" default="simplex" type="string"
+	       choices="simplex cobyla powell"/>
+    <Attribute name="maxiter" default="25" type="integer" test="ispositive"/>
+    <Attribute name="tolerance" default="1e-6" type="real" test="ispositive"/>
+    <Element name="Optimize" n="+">
+      <Attribute name="var" type="string"/>
+      <Attribute name="initial_value" type="real"/>
+      <Attribute name="bounds" type="array" default="-inf inf" len="2"/>
+    </Element>
+    <Element name="ResponseFunction" n="?">
+      <Attribute name="function" default="None" type="responsefcn"/>
+      <Attribute name="href" default="None" type="responsefcn"/>
+      <Attribute name="descriptor" default="None" type="string"/>
+    </Element>
+    <Element name="AuxiliaryFile" n="+">
+      <Attribute name="href" type="string" test="isfile"/>
+    </Element>
+  </Element>
 
   <Element name="Function" n="*" content="href then text">
     <Attribute name="id" type="integer" test="not reservedfid"/>
@@ -31,9 +67,10 @@
     <Attribute name="cols" type="indices" default="1 2" len="2"/>
   </Element>
 
-  <Element name="Physics" n="1">
+  <Element name="Physics" n="+">
     <Attribute name="driver" default="solid" type="string"
 	       choices="solid eos"/>
+    <Attribute name="runid" default="none" type="string"/>
     <Attribute name="termination_time" default="inf" type="real"
 	       test="ispositive"/>
 
@@ -80,41 +117,6 @@
 	<Attribute name="density_range" type="array"/>
 	<Attribute name="initial_temperature" type="real" test="ispositive"/>
       </Element>
-    </Element>
-  </Element>
-
-  <Element name="Permutation" n="?" conflict="Optimization">
-    <Attribute name="method" default="zip" type="string"
-	       choices="zip combine"/>
-    <Attribute name="seed" default="None" type="integer" test="ispositive"/>
-    <Attribute name="correlation" default="None" type="strlist"
-	       choices="plot table"/>
-    <Element name="Permutate" n="+">
-      <Attribute name="var" type="string"/>
-      <Attribute name="values" type="npalias"/>
-    </Element>
-    <Element name="ResponseFunction" n="?">
-      <Attribute name="function" default="None" type="responsefcn"/>
-      <Attribute name="descriptor" default="None" type="string"/>
-    </Element>
-  </Element>
-
-  <Element name="Optimization" n="?" conflict="Permutation">
-    <Attribute name="method" default="simplex" type="string"
-	       choices="simplex cobyla powell"/>
-    <Attribute name="maxiter" default="25" type="integer" test="ispositive"/>
-    <Attribute name="tolerance" default="1e-6" type="real" test="ispositive"/>
-    <Element name="Optimize" n="+">
-      <Attribute name="var" type="string"/>
-      <Attribute name="initial_value" type="real"/>
-      <Attribute name="bounds" type="array" default="-inf inf" len="2"/>
-    </Element>
-    <Element name="ResponseFunction" n="?">
-      <Attribute name="function" default="None" type="string"/>
-      <Attribute name="descriptor" default="VAR_{N}" type="string"/>
-    </Element>
-    <Element name="AuxiliaryFile" n="+">
-      <Attribute name="href" type="string" test="isfile"/>
     </Element>
   </Element>
 

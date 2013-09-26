@@ -149,13 +149,14 @@ def read_gmd_evaldb(filepath):
         parameters.append(zip(enames, evars))
 
         # get responses
-        nresponses = evaluation.getElementsByTagName(U_RESP)[0]
-        rvars, rnames = [], []
-        for i in range(nresponses.attributes.length):
-            attr = nresponses.attributes.item(i)
-            rnames.append(attr.name)
-            rvars.append(float(attr.value))
-        responses.append(zip(rnames, rvars))
+        nresponses = evaluation.getElementsByTagName(U_RESP)
+        if nresponses:
+            rvars, rnames = [], []
+            for i in range(nresponses[0].attributes.length):
+                attr = nresponses.attributes.item(i)
+                rnames.append(attr.name)
+                rvars.append(float(attr.value))
+            responses.append(zip(rnames, rvars))
 
     return sources, parameters, responses
 
