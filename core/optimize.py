@@ -15,8 +15,7 @@ import utils.pprepro as pprepro
 
 IOPT = -1
 HUGE = 1.e80
-OPT_METHODS = {"simplex": "fmin", "powell": "fmin_powell",
-               "cobyla": "fmin_cobyla"}
+OPT_METHODS = ("simplex", "powell", "cobyla",)
 
 class OptimizationHandler(object):
     def __init__(self, runid, verbosity, exe, method, respfcn,
@@ -33,9 +32,10 @@ class OptimizationHandler(object):
         io.setup_logger(runid, verbosity, d=self.rootd)
 
         # check inputs
-        self.method = OPT_METHODS.get(method.lower())
-        if self.method is None:
+        self.method = method.lower()
+        if self.method not in OPT_METHODS:
             io.log_warning("{0}: unrecognized optimization method".format(method))
+
         for x in exe.split():
             if not os.path.isfile(x):
                 io.log_warning("{0}: no such file".format(x))
@@ -54,9 +54,11 @@ class OptimizationHandler(object):
         for i, (name, ival, bounds) in enumerate(parameters):
             if name not in inp_subs:
                 io.log_warning("{0}: not in xml input".format(name))
-            if any(b is not None for b in bounds):
-                if self.method in ("fmin", "fmin_powell"):
-                    io.log_warning("{0}: bounds not supported".format(method))
+
+            if any(abs(b) != np.inf for b in bounds):
+                if self.method in ("simplex", "powell"):
+                    io.log_message("*** warning: {0}: bounds not supported "
+                                   "and will be ignored".format(self.method))
 
                 if bounds[0] > bounds[1]:
                     io.log_warning("{0}: upper bound must be greater than "
@@ -95,6 +97,13 @@ class OptimizationHandler(object):
         os.chdir(self.rootd)
         cwd = os.getcwd()
         io.log_message("{0}: starting jobs".format(self.runid))
+        io.log_message("{0}: optimization method: {1}".format(
+            self.runid, self.method))
+        io.log_message("{0}: number of variables to optimize: {1}".format(
+            self.runid, len(self.names)))
+        io.log_message("{0}: variables to optimize: "
+                       "{1}".format(self.runid, ", ".join(self.names)))
+
         self.timing["start"] = time.time()
 
         # optimization methods work best with number around 1, here we
@@ -132,17 +141,17 @@ class OptimizationHandler(object):
                  self.script, self.descriptor, self.auxiliary_files,
                  self.tabular, xfac,)
 
-        if self.method == OPT_METHODS["simplex"]:
+        if self.method == "simplex":
             xopt = scipy.optimize.fmin(
                 func, x0, xtol=self.tolerance, ftol=self.tolerance,
                 maxiter=self.maxiter, args=fargs, disp=0)
 
-        elif self.method == OPT_METHODS["powell"]:
+        elif self.method == "powell":
             xopt = scipy.optimize.fmin_powell(
                 func, x0, xtol=self.tolerance, ftol=self.tolerance,
                 maxiter=self.maxiter, args=fargs, disp=0)
 
-        elif self.method == OPT_METHODS["cobyla"]:
+        elif self.method == "cobyla":
             xopt = scipy.optimize.fmin_cobyla(
                 func, x0, cons, consargs=(), args=fargs, disp=0)
 

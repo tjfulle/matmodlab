@@ -78,7 +78,15 @@ class PermutationHandler(object):
 
         os.chdir(self.rootd)
         cwd = os.getcwd()
-        io.log_message("{0}: starting {1} jobs".format(self.runid, NJOBS))
+        io.log_message("{0}: starting {1} permutation jobs".format(
+            self.runid, NJOBS))
+        io.log_message("{0}: permutation method: {1}".format(
+            self.runid, self.method))
+        io.log_message("{0}: number of variables to permutate: {1}".format(
+            self.runid, len(self.names)))
+        io.log_message("{0}: variables to permutate: "
+                       "{1}".format(self.runid, ", ".join(self.names)))
+
         self.timing["start"] = time.time()
 
         job_inp = ((i, self.exe, self.runid, self.names, self.basexml,
