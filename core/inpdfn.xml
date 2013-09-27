@@ -97,7 +97,7 @@
       <Attribute name="format" type="string" default="default"
                  choices="default table fcnspec"/>
       <Attribute name="proportional" default="false" type="boolean"/>
-      <Attribute name="ndumps" default="20" type="string"/>
+      <Attribute name="ndumps" default="all" type="string"/>
       <Attribute name="cols" default="None" type="string"/>
       <Attribute name="tfmt" default="time" type="string"
 		 choices="time dt"/>

@@ -461,15 +461,10 @@ def read_matlabel(dom, model):
         fatal_inp_error("Matlabel: expected material attribute")
         return
 
-    found = False
     if not os.path.isfile(dbfile):
         if os.path.isfile(os.path.join(cfg.I, dbfile)):
-            found = True
             dbfile = os.path.join(cfg.I, dbfile)
-        elif os.path.isfile(os.path.join(cfg.MTL_LIB, dbfile)):
-            found = True
-            dbfile = os.path.join(cfg.MTL_LIB, dbfile)
-        if not found:
+        else:
             fatal_inp_error("{0}: no such file".format(dbfile))
             return
 
@@ -656,7 +651,11 @@ def pMaterial(mtldict):
     params = np.zeros(len(pdict))
 
     # get the user give parameters
-    ui = mtldict.pop("Content")
+    try:
+        ui = mtldict.pop("Content")
+    except KeyError:
+        fatal_inp_error("no material parameters found")
+        ui = []
     istate = []
     for p in ui:
         p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]

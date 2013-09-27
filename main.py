@@ -4,6 +4,7 @@ import sys
 import shutil
 import random
 import argparse
+from os.path import splitext
 
 from __config__ import cfg, SPLASH, ROOT_D, LIB_D
 import core.inpparse as inp
@@ -80,7 +81,7 @@ def main(argv=None):
 
         # parse the user input
         basename = re.sub(".preprocessed$", "", os.path.basename(source))
-        runid = os.path.splitext(basename)[0]
+        runid = splitext(basename)[0]
 
         if args.clean:
             clean_all_output(runid)
@@ -94,10 +95,10 @@ def main(argv=None):
             if not os.path.isfile(source):
                 source += ".xml"
                 if not os.path.isfile(source):
-                    logerr("{0}: no such file".format(args.source))
+                    logerr("{0}: no such file".format(source))
                     continue
 
-            if os.path.splitext(basename)[1] != ".xml":
+            if splitext(basename)[1] != ".xml":
                 logerr("*** gmd: expected .xml file extension")
                 continue
             mm_input = inp.parse_input(source, argp=args.p)
@@ -176,6 +177,16 @@ def stop(message):
 
 
 def clean_all_output(runid):
+    if runid == "all":
+        # collect all runids
+        cwd = os.getcwd()
+        files = os.listdir(cwd)
+        runids = [splitext(f)[0] for f in files if f.endswith(".xml") or
+                  all(splitext(f)[0] + e in files for e in (".exo", ".log"))]
+        for runid in runids:
+            if "all" in runid: continue
+            clean_all_output(runid)
+
     for ext in (".exo", ".log", ".out", ".xml.preprocessed"):
         try: os.remove(runid + ext)
         except OSError: pass
