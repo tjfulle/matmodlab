@@ -174,6 +174,11 @@ class OptimizationHandler(object):
         # close the log
         io.close_and_reset_logger()
 
+        # write out optimized params
+        with open(os.path.join(self.rootd, "params.opt"), "w") as fobj:
+            for (i, name) in enumerate(self.names):
+                fobj.write("{0} = {1: .18f}\n".format(name, self.xopt[i]))
+
     def output(self):
         return self.tabular._filepath
 

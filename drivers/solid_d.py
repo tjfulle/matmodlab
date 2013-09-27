@@ -769,8 +769,8 @@ def _format_path(path, pathdict, tterm):
             if 3 in control:
                 fatal_inp_error("initial stress rate ambiguous")
 
-            elif 4 in control and any(x != 4 for x in control):
-                fatal_inp_error("Mixed initial state not allowed")
+            elif 4 in control and any(x != 0. for x in Cij):
+                fatal_inp_error("nonzero initial stress not yet supported")
 
         # Replace leg with modfied values
         leg = [termination_time, num_steps]

@@ -10,6 +10,7 @@
 \usepackage{adjustbox}
 \usepackage{changepage}
 \usepackage{verbatim}
+\usepackage{fancybox}
 %\setlength{\parskip}{\baselineskip}%
 \setlength{\parindent}{0pt}%
 \definecolor{shadecolor}{rgb}{.9, .9, .9}
@@ -42,6 +43,9 @@
 \newcommand{\pprepro}[1]{{\texttt{pprepro}}}
 \newcommand{\us}{\underline{  }}
 \newcommand{\uus}{\us\us{}}
+\newcommand{\sol}{\texttt{solid}}
+\newcommand{\eos}{\texttt{eos}}
+\newcommand{\wf}{\Tensor{w}{}{}}
 
 % --- xml
 \renewcommand{\tag}[1]{\texttt{<#1>}}
@@ -154,6 +158,14 @@ models.
 \section{Obtaining \gmd{}}
 \gmd{} is an open source project licensed under the MIT license. A copy of may
 be obtained from \url{https://github.com/tjfulle/gmd}
+
+% ----------------------------------------------------------------------------- %
+\section{About This Guide}
+\gmd{} is developed as a tool for developers and analysts who care to
+understand the responses of material models to specific deformation paths. The
+target audience is assumed to have a basic knowledge of continuum mechanics
+and familiarity with other finite element codes.  This guide provides what
+would more aptly be considered an API reference manual.
 
 % ----------------------------------------------------------------------------- %
 \chapter{\gmd{} Quick Start Guide}
@@ -334,22 +346,162 @@ $ python -c "import scipy;print scipy.__version__"
 % ----------------------------------------------------------------------------- %
 \chapter{\gmd{} Solution Method}
 \gmd{} exercises a material model directly by ``driving'' it through user
-specified paths using a specified driver.  Currently installed drivers are the
-\texttt{solid} and \texttt{eos} drivers.  The details of the solution method
-depend on the driver and are described in the sections to follow.
-
-In solid mechanics inevitably run in to the momentum equation.  In equation is
-stress, need a constitutive model for stress.
+specified paths using a designated driver. Currently installed drivers are the
+\sol{} and \eos{} drivers. For each driver type, \gmd{} computes an increment
+in deformation for a given step and requires that the material model update
+the stress in the material to the end of that step, given the current state
+and an increment in deformation. Because of the similarity of the material
+model interface in \gmd{} with many commercial finite element codes,
+transitioning material models developed and tested in \gmd{} to full finite
+element codes should be an easy process. In this chapter, the role and
+importance of the material model in a finite element procedure is reviewed.
+The solution method adopted by each driver in \gmd{} is then described and
+compared with that of finite elements.
 
 % ----------------------------------------------------------------------------- %
-\section{Supported Drivers}
+\section{The Role of the Material Model}
+Conservation of mass, momentum, and energy are the central tenets of the
+analysis of the response of a continuous media to deformation and/or load.
+Each conservation law can be summarized by the following statement
 
-% ----------------------------------------------------------------------------- %
-\subsection{Solid}
-The \texttt{solid} driver is designed to exercises material models designed to
-predict an increment in the material state given the current state and an
-increment in strain.
+\begin{minipage}{\textwidth}
+\begin{center}
+  \fbox{\begin{Bcenter}Time rate of\\ change of\\ quantity\end{Bcenter}} =
+  \fbox{\begin{Bcenter}Rate of\\ production\\ in the\\ interior\end{Bcenter}} +
+  \fbox{\begin{Bcenter}Flux\\ through the\\ boundary\end{Bcenter}}
+\end{center}
+\end{minipage}
+
+Mathematically, the conservation laws for a point in the continuum are
 %
+\begin{itemize}
+  \item Conservation of mass
+  \begin{displaymath}
+    \dDensity + \Density\Del\DotProd\dDisplacement = 0
+  \end{displaymath}
+
+  \item Conservtion of momentum per unit volume
+  \begin{displaymath}
+    \Density\Der{}{t}\dDisplacement =
+    \underset{\text{internal forces}}{\boxed{\Del\DotProd\Stress}} +
+    \underset{\text{body forces}}{\boxed{\BodyForce}}
+  \end{displaymath}
+
+  \item Conservation of energy per unit volume
+  \begin{displaymath}
+    \Density\Der{}{t}\Energy =
+    \underset{\text{heat source}}{\boxed{\Density s}} +
+    \underset{\text{strain energy}}{\boxed{\Stress\DDotProd\dStrain}} +
+    \underset{\text{heat flux}}{\boxed{\Del\DotProd\HeatFlux}}
+  \end{displaymath}
+\end{itemize}
+%
+where $\Displacement$ is the displacement, $\Density$ the mass density,
+$\Stress$ the stress, $\dStrain$ the rate of strain, $\BodyForce$ the body
+force per unit volume, $\HeatFlux$ the heat flux, $s$ the heat source, and
+$\Energy$ is the internal energy per unit mass.
+
+In solid mechanics, mass is conserved trivially, and many problems are
+adiabatic or isotrhermal, so that only the momentum balance is explicitly
+solved
+\begin{equation}
+  \label{eq:mbal}
+  \Density\Der{}{t}\dDisplacement =
+  \underset{\text{internal forces}}{\boxed{\Del\DotProd\Stress}} +
+  \underset{\text{body forces}}{\boxed{\BodyForce}}
+\end{equation}
+
+The balance of linear momentum is the continuum mechanics generalization of
+Newton's second law $F=ma$.
+
+The first term on the RHS of \eqref{eq:mbal} represents the internal
+forces, which arise in the medium to resist imposed deformation. This
+resistance is a fundamental response of matter and is given by the divergence
+of the stress field.
+
+The balance of linear momentum represents an initial boundary value problem
+for applications of interest in solid dynamics:
+
+\begin{equation}
+  \label{eq:ibvp}
+  \begin{aligned}
+    \Density\Der{}{t}\dDisplacement = \Del\DotProd\Stress + \BodyForce&
+    &&\quad\text{in }\Omega \\
+    \Displacement = \Displacement_0& &&\quad\text{on }\Gamma_0 \\
+    \Stress\DotProd\normal = \Traction& &&\quad\text{on }\Gamma_t \\
+    \dDisplacement\left(\position, 0\right) =
+    \dDisplacement_0\left(\position\right)&
+    &&\quad\text{on }\position\in\Omega
+  \end{aligned}
+\end{equation}
+
+This form of the momentum equation is termed the \textbf{strong} form. The
+strong form of the initial BVP problem can also be expressed in the weak form
+by introducing a test function $\wf$ and integrating over space
+\begin{equation}
+  \label{eq:ibvp-1}
+  \begin{aligned}
+    \int_{\Omega}\wf\left(
+      \Del\DotProd\Stress + \BodyForce - \Density\Der{}{t}\dDisplacement
+    \right)\,d\Omega& &&\quad \forall \wf \\
+    \Displacement = \Displacement_0& &&\quad\text{on }\Gamma_0 \\
+    \Stress\DotProd\normal = \Traction& &&\quad\text{on }\Gamma_t \\
+    \dDisplacement\left(\position, 0\right) =
+    \dDisplacement_0\left(\position\right)&
+    &&\quad\text{on }\position\in\Omega
+  \end{aligned}
+\end{equation}
+
+Integrating \eqref{eq:ibvp-1} by parts allows the traction boundary conditions
+to be incorporated in to the governing equations
+\begin{equation}
+  \label{eq:weak}
+  \begin{aligned}
+    \int_{\Omega}\Density\wf\DotProd\Acceleration +
+    \Stress\DDotProd\Del\wf\,d\Omega
+    = \int_{\Omega}\wf\DotProd\BodyForce\,d\Omega +
+    \int_{\Gamma}\wf\DotProd\Traction\,d\Gamma_{t}& &&\forall \wf \\
+    %
+    \Displacement = \Displacement_0& &&\quad\text{on }\Gamma_0 \\
+    \dDisplacement\left(\position, 0\right) =
+    \dDisplacement_0\left(\position\right)&
+    &&\quad\text{on }\position\in\Omega
+  \end{aligned}
+\end{equation}
+
+This form of the IBVP is called the \textbf{weak} form.  The weak form
+poses the IBVP as a integro-differential equation and eliminates singularities
+that may arise in the strong form.  Traction boundary conditions are
+incorporated in the governing equations.  The weak form forms the basis for
+finite element methods.
+
+In the finite element method, forms of $\wf$ are assumed in subdomains
+(elements) in $\Omega$ and displacements are sought such that the force
+imbalance $R$ is minimized:
+
+\begin{equation}
+  \label{eq:resid}
+  R = \int_{\Omega}\wf\DotProd\BodyForce\,d\Omega +
+  \int_{\Gamma}\wf\DotProd\Traction\,d\Gamma_{t} -
+ \int_{\Omega}\Density\wf\DotProd\Acceleration + \Stress\DDotProd\Del\wf\,d\Omega
+\end{equation}
+
+The equations of motion as described in \eqref{eq:resid} are not closed, but
+require relationships relating $\Stress$ to $\Displacement$
+
+\begin{center}
+  \fbox{Constitutive model $\longrightarrow$ relationship between $\Stress$
+    and $\Displacement$}
+\end{center}
+
+
+% ----------------------------------------------------------------------------- %
+\section{Solid Driver}
+As the name implies, the \sol{} driver is designed to exercise the type of
+material models encountered in solid mechanics. The solution method is similar
+to that of many finite element codes, so that material models developed and
+tested in \gmd{} can be easily transitioned to them.
+
 \begin{equation}
   \label{eq:solid-0}
   \Stress = f\left[\Stress, \ISV, \dStrain\right]
@@ -396,7 +548,7 @@ file, and \texttt{runid.xml} the input file.
 
 
 % ----------------------------------------------------------------------------- %
-\chapter{User Input: GMDSpec}
+\chapter{User Input: Overview}
 User input is via xml control files. In general, tags use CamelCase and
 attributes lower case.  Attributes are described in this document as
 %
@@ -774,7 +926,7 @@ common names for each (there is some ambiguity in the names) are:
 \label{sec:colspec}
 The columns to read from a table or the \texttt{fcnspec} leg are specified by
 the \texttt{cols} attribute.  \texttt{cols} are specified as a space separated
-list of columns.  Number is 1 based.  Ranges can be specified using Python
+list of columns.  Numbering is 1 based.  Ranges can be specified using Python
 slice syntax.
 
 The following input stubs demonstrate two equivalent ways to to read columns
@@ -887,8 +1039,8 @@ Subelements of \reqdtag{Material} are
 *\tag{Key} is a valid material parameter name.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Attributes of Material}
-\subsubsection{Model}
+\subsection{Material Attributes}
+\subsubsection{model}
 The name of the material model.
 
 % ----------------------------------------------------------------------------- %
@@ -899,12 +1051,13 @@ Insert model parameters from a database file.
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{href}
+\subsubsection{Matlabel Attributes}
+\paragraph{href}
 The path to the database file. Defaults to\\
 \verb:$GMDROOT/materials/material_properties.db: if no file is given.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{material}
+\paragraph{material}
 Name of material as given in the database file.
 
 The following input stub demonstrates the use of \tag{Matlabel}
@@ -944,7 +1097,8 @@ Specify individual parameters as xml text nodes
 <Key> float </Key>
 \end{inpusage}
 
-The following stub inputs demonstrate the \reqdtag{Material} input
+\tag{Key} is replaced by specific material model parameters. The following
+stub inputs demonstrate the \reqdtag{Material} input
 \begin{example}
 <Material model="elastic">
   <G>  54E+09 </G>
@@ -971,7 +1125,7 @@ Recognized subelements of \tag{Extract} are
 * \texttt{eos} driver only
 
 % ----------------------------------------------------------------------------- %
-\subsection{Attributes of Extract}
+\subsection{Extract Attributes}
 \subsubsection{format}
 The format to write the output.  \texttt{ascii} format writes out columnar
 data as an ascii text file, \texttt{mathematica} writes an ascii text file
@@ -1050,7 +1204,7 @@ The following input stub demonstrates extracting Hugoniot and Isotherm paths
 % ----------------------------------------------------------------------------- %
 \chapter{User Input: Permutation}
 Permutate model input parameters, running jobs with different realization of
-parameters. Good for investigating model sensitivities.
+parameters. Ideal for investigating model sensitivities.
 %
 \begin{inpusage}
 <Permutation method="str[zip]{zip,combine,shotgun}"
@@ -1061,13 +1215,25 @@ parameters. Good for investigating model sensitivities.
 Recognized subelements of \tag{Permutation} are
 
 \begin{itemize}
-  \item \tag{Permutate}
+  \item \reqdtag{Permutate}
   \item \tag{ResponseFunction}
 \end{itemize}
 
+Each \tag{Permutation} job creates a directory \texttt{runid.eval}
+\begin{verbatim}
+$ ls runid.eval
+eval_0/    eval_2/    gmd-evaldb.xml
+eval_1/    ...        runid.log
+\end{verbatim}
+
+The \texttt{eval\us{}i} directory holds the output of the
+\texttt{i}$^{\text{th}}$ job, including \texttt{params.in} with the values of
+each permutated parameter for that job. \texttt{gmd-tabular.xml} contains a
+summary of each job run. \gmdviz{} recognizes \texttt{gmd-tabular.xml} files.
+
 % ----------------------------------------------------------------------------- %
-\subsection{Attributes of Permutation}
-\subsubsection{method}
+\section{Permutation Attributes}
+\subsection{method}
 The \texttt{method} attribute describes which method to use to determine
 parameter combinations to run.
 
@@ -1075,17 +1241,17 @@ The \texttt{zip} method runs one job for each set of parameters (and, thus,
 the number of realizations for each parameter must be identical), the
 \texttt{combine} method runs every combination of parameters.
 
-\subsubsection{correlation}
+\subsection{correlation}
 Create correlation table and plots of relating permutated parameters and value
 of response function. \texttt{correlation} is only meaningful if a
 \tag{ResponseFunction} is specified.
 
-\subsubsection{seed}
+\subsection{seed}
 The seed for the random number generator. \texttt{date} is todays date in
 seconds.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Permutate}
+\section{Permutate}
 Specify the paramaters to permutate.
 \begin{inpusage}
 <Permutate var="str"
@@ -1093,6 +1259,7 @@ Specify the paramaters to permutate.
                         normal,percentage}"
 \end{inpusage}
 
+\subsection{Permutate Attributes}
 \subsubsection{var}
 \texttt{var} is the name of the variabe and should occur elsewhere in
 the input file in preprocessing braces.
@@ -1127,7 +1294,7 @@ specified as
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\subsection{ResponseFunction}
+\section{ResponseFunction}
 The \tag{ResponseFunction} returns the response from permutation or
 optimization jobs.
 \begin{inpusage}
@@ -1136,6 +1303,11 @@ optimization jobs.
 \end{inpusage}
 
 One of \texttt{href} or \texttt{function} must be specified.
+
+% ----------------------------------------------------------------------------- %
+\subsection{ResponseFunction Attributes}
+\subsubsection{descriptor}
+\texttt{descriptor} is the name given to the response function in the output.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{href}
@@ -1150,10 +1322,6 @@ An example of a response function specifying \texttt{href} is
 \begin{example}
 <ResponseFunction href="./scriptname" descriptor="PRES"/>
 \end{example}
-
-% ----------------------------------------------------------------------------- %
-\subsubsection{descriptor}
-\texttt{descriptor} is the name given to the response function in the output.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{function}
@@ -1189,33 +1357,48 @@ Optimize specified parameters against user specified objective function.
 Recognized subelements of \tag{Optimization} are
 
 \begin{itemize}
-  \item \tag{Optimize}
+  \item \reqdtag{Optimize}
+  \item \reqdtag{ResponseFunction}
   \item \tag{AuxiliaryFile}
-  \item \tag{ResponseFunction}
 \end{itemize}
 
+Like \tag{Permutation} jobs, each \tag{Optimization} job creates a directory
+\texttt{runid.eval}
+\begin{verbatim}
+$ ls runid.eval
+eval_0/    eval_2/    gmd-evaldb.xml     runid.log
+eval_1/    ...        params.opt
+\end{verbatim}
+
+The \texttt{eval\us{}i} directory holds the output of the
+\texttt{i}$^{\text{th}}$ job, including \texttt{params.in} with the values of
+each parameter for that job. \texttt{gmd-tabular.xml} contains a
+summary of each job run. \gmdviz{} recognizes \texttt{gmd-tabular.xml} files.
+\texttt{params.opt} has the final, optimized, parameters.
+
 % ----------------------------------------------------------------------------- %
-\subsection{Attributes of Optimization}
-\subsubsection{method}
+\section{Optimization Attributes}
+\subsection{method}
 \texttt{method} specifies the optimization method.  All optimization routines
 utilize the scipy.optimize module.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{maxiter}
+\subsection{maxiter}
 \texttt{maxiter} is the maximum number of iterations.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{tolerance}
+\subsection{tolerance}
 \texttt{tolerance} is the optimization tolerance.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Optimize}
+\section{Optimize}
 Specify the variable to be optimized.
 \begin{inpusage}
 <Optimize var="str" initial_value="real" bounds="list[]"/>
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
+\subsection{Optimize Attributes}
 \subsubsection{var}
 \texttt{var} is the name of the variabe and should occur elsewhere in
 the input file in preprocessing braces.
@@ -1230,14 +1413,14 @@ the input file in preprocessing braces.
 \texttt{cobyla} method accepts bounds.
 
 % ----------------------------------------------------------------------------- %
-\subsection{AuxiliaryFile}
+\section{AuxiliaryFile}
 Path to any auxiliary file needed by the optimization objective function.
 \begin{inpusage}
 <AuxiliaryFile href="str"/>
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
-\subsection{ResponseFunction}
+\section{ResponseFunction}
 Same as for \tag{Permutation}, except that auxiliary files are also passed to
 the function. The value returned from the response function is interpreted as
 the error to be minimized.
@@ -1247,7 +1430,7 @@ If the \tag{ResponseFunction} is given by \texttt{href}, it is called as
 % ./scriptname runid.exo [AuxFile1[AuxFile2[...]]]
 \end{verbatim}
 
-\subsection{Example}
+\section{Example}
 Optimize the \texttt{K} and \texttt{G} parameters
 \begin{example}
 <Optimization method="simplex" maxiter="25" tolerance="1e-4">
@@ -1473,8 +1656,8 @@ User materials are built by the \texttt{makemf} function of the
 % ----------------------------------------------------------------------------- %
 \subsection{Building Materials with \fpy{}}
 \label{sec:bldf2py}
-Material models written in Fortran should be built in to Python shared object
-libraries with \fpy{}.  The function \texttt{utils.gmdf2py.f2yp} provides an
+Material models written in Fortran must compiled in to a Python shared object
+library with \fpy{}. The function \texttt{utils.gmdf2py.f2yp} provides an
 interface to \fpy{}.
 \begin{interface}
 \textbf{utils.gmdf2py.f2py: Interface}

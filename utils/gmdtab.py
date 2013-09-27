@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import argparse
 import numpy as np
 import xml.dom.minidom as xdom
 
@@ -153,7 +154,7 @@ def read_gmd_evaldb(filepath):
         if nresponses:
             rvars, rnames = [], []
             for i in range(nresponses[0].attributes.length):
-                attr = nresponses.attributes.item(i)
+                attr = nresponses[0].attributes.item(i)
                 rnames.append(attr.name)
                 rvars.append(float(attr.value))
             responses.append(zip(rnames, rvars))
@@ -215,6 +216,9 @@ def plot_correlations(filepath):
 
     # set up subplots
     fig, axs = plt.subplots(1, len(keys), sharey=True)
+    if len(keys) == 1:
+        axs = [axs]
+
     axs[0].set_ylabel(head[-1])
     for i, key in enumerate(keys):
         x = data[:, i][sort]
@@ -230,13 +234,14 @@ def plot_correlations(filepath):
 
     return
 
+def main(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", choices=("plot", "table"))
+    parser.add_argument("filepath")
+    args = parser.parse_args(argv)
+    if args.action == "plot":
+        sys.exit(plot_correlations(args.filepath))
+    sys.exit(correlations(args.filepath))
+
 if __name__ == "__main__":
-    #Test it out
-    xl = GMDTabularWriter(1, "foo")
-    parameters = [["K", 23], ["G", 12]]
-    i = 0
-    for i in range(3):
-        parameters[0][1] += 1
-        parameters[1][1] += 1
-        xl.write_entry(i, i, i, parameters)
-    xl.close()
+    main(sys.argv[1:])
