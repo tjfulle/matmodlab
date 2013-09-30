@@ -85,8 +85,9 @@ def log_message(message):
 
 def log_warning(message, limit=False):
     increment_warning()
-    if limit and WARNINGS_LOGGED >= 100:
-        if WARNINGS_LOGGED == 100:
+    max_warn = 10
+    if limit and WARNINGS_LOGGED >= max_warn:
+        if WARNINGS_LOGGED == max_warn:
             LOGGER.warning("maximum number of warnings reached, "
                            "remainder suppressed")
         return

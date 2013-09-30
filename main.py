@@ -36,9 +36,9 @@ def main(argv=None):
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("-B", metavar="material",
         help="Build material model before running [default: %(default)s]")
-    parser.add_argument("--clean", default=False, action="store_true",
+    parser.add_argument("--clean", const=1, default=False, nargs="?",
         help=argparse.SUPPRESS)
-    parser.add_argument("--restart", const=-1, default=False, nargs="?",
+    parser.add_argument("--restart", const=-1, default=0, type=int, nargs="?",
         help=argparse.SUPPRESS)
     parser.add_argument("sources", nargs="+", help="Source file paths")
     args = parser.parse_args(argv)
@@ -78,7 +78,7 @@ def main(argv=None):
         runid = splitext(basename)[0]
 
         if args.clean:
-            clean_all_output(runid)
+            clean_all_output(runid, args.clean)
             continue
 
         elif args.restart:
@@ -121,7 +121,7 @@ def main(argv=None):
             runid_ = mm_input[1]
             if not runid_:
                 runid_ = runid
-                if ninp > 1:
+                if ninp > 1 and len([x for x in all_input if x[0] == runid]) > 1:
                     runid_ += "-" + str(iinp)
             model = PhysicsHandler(runid_, args.v, *mm_input[2:])
 
@@ -170,7 +170,11 @@ def stop(message):
     raise SystemExit(2)
 
 
-def clean_all_output(runid):
+def clean_all_output(runid, const):
+    exts = [".log", ".out", ".xml.preprocessed"]
+    if const > 1:
+        exts.append(".exo")
+
     if runid == "all":
         # collect all runids
         cwd = os.getcwd()
@@ -179,9 +183,9 @@ def clean_all_output(runid):
                   all(splitext(f)[0] + e in files for e in (".exo", ".log"))]
         for runid in runids:
             if "all" in runid: continue
-            clean_all_output(runid)
+            clean_all_output(runid, const)
 
-    for ext in (".exo", ".log", ".out", ".xml.preprocessed"):
+    for ext in exts:
         try: os.remove(runid + ext)
         except OSError: pass
     for ext in (".eval",):

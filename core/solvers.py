@@ -166,7 +166,6 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
         continue
 
     # didn't converge, restore restore data and exit
-    io.log_warning("newton: failed to find converged solution")
     return None
 
 
