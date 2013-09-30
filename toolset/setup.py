@@ -195,22 +195,22 @@ def main(argv=None):
 
     write_exe("gmd", tools, os.path.join(root, "main.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
-              {"GMDMTLS": mtldirs}, deprecate="mmd")
+              {"MMLMTLS": mtldirs}, deprecate="mmd")
 
     write_exe("mmd", tools, os.path.join(root, "main.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
-              {"GMDMTLS": mtldirs})
+              {"MMLMTLS": mtldirs})
 
     write_exe("mml", tools, os.path.join(vizd, "main.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
-              {"GMDMTLS": mtldirs})
+              {"MMLMTLS": mtldirs})
 
     write_exe("buildmtls", tools, os.path.join(core, "build.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
-              {"GMDMTLS": mtldirs})
+              {"MMLMTLS": mtldirs})
 
     write_exe("runtests", tools, os.path.join(core, "test.py"),
-              pyexe, pyopts, {"PYTHONPATH": pypath}, {"GMDTESTS": testdirs})
+              pyexe, pyopts, {"PYTHONPATH": pypath}, {"MMLTESTS": testdirs})
 
     write_exe("gmddump", tools, os.path.join(utld, "exodump.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath}, deprecate="exdump")

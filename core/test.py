@@ -17,7 +17,7 @@ from __config__ import SPLASH
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
 TESTS = [os.path.join(R, "tests")]
-TESTS.extend([x for x in os.getenv("GMDTESTS", "").split(os.pathsep) if x])
+TESTS.extend([x for x in os.getenv("MMLTESTS", "").split(os.pathsep) if x])
 PATH = os.getenv("PATH", "").split(os.pathsep)
 PLATFORM = sys.platform.lower()
 PATH.append(os.path.join(R, "tpl/exowrap/Build_{0}/bin".format(PLATFORM)))
