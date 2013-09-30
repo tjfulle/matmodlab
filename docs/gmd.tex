@@ -46,6 +46,7 @@
 \newcommand{\sol}{\texttt{solid}}
 \newcommand{\eos}{\texttt{eos}}
 \newcommand{\wf}{\Tensor{w}{}{}}
+\newcommand{\vc}{\text{v}}
 
 % --- xml
 \renewcommand{\tag}[1]{\texttt{<#1>}}
@@ -74,6 +75,7 @@
 
 % ----------------------------------------------------------------------------- %
 \chapter{Introduction to \gmd}
+\label{chap:intro}
 \gmd{} is a \textbf{G}eneral \textbf{M}aterial model \textbf{D}river designed
 for rapid development and testing of material models. \gmd{} can be thought to
 drive a single material point of a finite element simulation through very
@@ -81,10 +83,9 @@ specific user designed paths. This permits exercising material models in ways
 not possible in finite element calculations, desgining verification and
 validation tests of the material response, among others. \gmd{} is a small
 tool at the developers disposal to aid in the design and implementation of
-material models in larger finite element host codes. \gmd{} is the successor
-the \texttt{payette} material model \cite{payette} which was itself based in
-part on Tom Pucick's \texttt{MMD} \cite{pucick} and Rebecca Brannon's
-\texttt{MED} \cite{brandriver} drivers.
+material models in larger finite element host codes.  It is also a useful tool
+to analysists for understanding and parameterizing a material's response to
+deformation.
 
 The core of the \gmd{} code base is written in Python and leverages Python's
 object oriented programming (OOP) design. OOP techniques are used throughout
@@ -155,6 +156,38 @@ Python's object oriented nature allows for rapid installation of new material
 models.
 
 % ----------------------------------------------------------------------------- %
+\section{Historical Background}
+When I was a graduate student at the University of Utah I had the good fortune
+to have as my advisor Dr.~Rebecca Brannon. Prof.~Brannon instilled in me the
+necessity to develop material models in small special purpose drivers, free
+from the complexities of larger finite element codes. To this end, I began
+developing material models in Prof.~Brannon's \texttt{MED} driver (available
+upon request from Prof.~Brannon). The \texttt{MED} driver was a special
+purpose driver for driving material models through predefined strain paths.
+After completing graduate school I began employment as a member of the
+Technical Staff at Sandia National Labs. Among the many projects I worked on
+was the development of material models for geologic applications. There, I
+found need to drive the material models through prescribed stress paths to
+match experimental records. This capability was not present in the
+\texttt{MED} and I sought a different solution. The solution came from the
+\texttt{mmd} driver, created years earlier at Sandia, by Tom Pucick. The
+\texttt{mmd} driver had the capability to drive material models through
+prescribed stress and strain paths, but also lacked many of the IO features of
+the \texttt{MED}. And so, for some time I used both the \texttt{MED} and
+\texttt{mmd} drivers in applications that suited their respective strengths.
+After some time using both drivers, I decided to combine the best features of
+each in to my own driver. Both the \texttt{MED} and \texttt{mmd} drivers were
+written in Fortran and I decided to write the new driver in Python so that I
+could leverage the large number of builtin libraries. The Numpy and Scipy
+Python libraries would be used for handling most number crunching. The new
+driver came to be known as \texttt{payette}. \texttt{payette} added many
+unique capabilities and became a capable piece of software used by other staff
+members at Sandia. But, \texttt{payette} suffered from the fact that it was my
+first foray in to programming with Python. After some time, the bloat and bad
+programming practices with \texttt{payette} caused me to spend a few weekends
+re-writing it in to what is now known as \gmd{}.
+
+% ----------------------------------------------------------------------------- %
 \section{Obtaining \gmd{}}
 \gmd{} is an open source project licensed under the MIT license. A copy of may
 be obtained from \url{https://github.com/tjfulle/gmd}
@@ -164,11 +197,13 @@ be obtained from \url{https://github.com/tjfulle/gmd}
 \gmd{} is developed as a tool for developers and analysts who care to
 understand the responses of material models to specific deformation paths. The
 target audience is assumed to have a basic knowledge of continuum mechanics
-and familiarity with other finite element codes.  This guide provides what
-would more aptly be considered an API reference manual.
+and familiarity with other finite element codes.  Accordingly, concepts of
+continuum mechanics and finite element methods are not described in detail and
+programing techniques are also not described.
 
 % ----------------------------------------------------------------------------- %
 \chapter{\gmd{} Quick Start Guide}
+\label{chap:quick}
 This guide provides an outline for building and running \gmd.
 
 \textbf{Build \gmd{}} See Chapter \ref{chap:build}.
@@ -178,8 +213,8 @@ This guide provides an outline for building and running \gmd.
   \item \$ \texttt{buildmtls}
 \end{itemize}
 
-\textbf{Prepare Input} Inputs are xml specification files. See Chapter
-\ref{chap:input}.
+\textbf{Prepare Input} Inputs are xml specification files. See Chapters
+\ref{chap:inpov} - \ref{chap:inpopt}.
 \begin{itemize}
   \item Set up the desired simulation path.
   \item Add material model.
@@ -345,6 +380,7 @@ $ python -c "import scipy;print scipy.__version__"
 
 % ----------------------------------------------------------------------------- %
 \chapter{\gmd{} Solution Method}
+\label{chap:solmeth}
 \gmd{} exercises a material model directly by ``driving'' it through user
 specified paths using a designated driver. Currently installed drivers are the
 \sol{} and \eos{} drivers. For each driver type, \gmd{} computes an increment
@@ -359,7 +395,11 @@ The solution method adopted by each driver in \gmd{} is then described and
 compared with that of finite elements.
 
 % ----------------------------------------------------------------------------- %
-\section{The Role of the Material Model}
+\section{The Role of the Material Model in Continuum Mechanics}
+\label{sec:roleofmatmod}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Conservation Laws}
 Conservation of mass, momentum, and energy are the central tenets of the
 analysis of the response of a continuous media to deformation and/or load.
 Each conservation law can be summarized by the following statement
@@ -435,13 +475,16 @@ for applications of interest in solid dynamics:
   \end{aligned}
 \end{equation}
 
-This form of the momentum equation is termed the \textbf{strong} form. The
-strong form of the initial BVP problem can also be expressed in the weak form
-by introducing a test function $\wf$ and integrating over space
+\subsection{The Finite Element Method}
+\label{sec:femeth}
+The form of the momentum equation in \eqref{eq:ibvp} is termed the
+\textbf{strong} form. The strong form of the initial BVP problem can also be
+expressed in the weak form by introducing a test function $\wf$ and
+integrating over space
 \begin{equation}
   \label{eq:ibvp-1}
   \begin{aligned}
-    \int_{\Omega}\wf\left(
+    \int_{\Omega}\wf\DotProd\left(
       \Del\DotProd\Stress + \BodyForce - \Density\Der{}{t}\dDisplacement
     \right)\,d\Omega& &&\quad \forall \wf \\
     \Displacement = \Displacement_0& &&\quad\text{on }\Gamma_0 \\
@@ -494,50 +537,174 @@ require relationships relating $\Stress$ to $\Displacement$
     and $\Displacement$}
 \end{center}
 
+In the typical finite element procedure, the host finite element code passes
+to the constitutive routine the stress and material state at the beginning of
+a finite step (in time) and kinematic quantities at the end of the step. The
+constitutive routine is responsible for updating the stress to the end of the
+step. At the completion of the step, the host code then uses the updated
+stress to compute kinematic quantities at the end of the next step. This
+process is continued until the simulation is completed. The host finite
+element handles the allocation and management of all memory, including memory
+required for material variables.
 
 % ----------------------------------------------------------------------------- %
-\section{Solid Driver}
+\section{\gmd{} Solution Procedure}
+\label{sec:gmdsol}
+In addition to providing a platform for material model developers to formulate
+and test constitutive routines, \gmd{} aims to provide users of material
+models an independent platform to exercise, parameterize, and compare material
+responses against single element finite element simulations. To this end, the
+solution procedure in \gmd{} is similar to that of the finite element method,
+in that the host code (\gmd{}) provides to the constitutive routine a measure
+of deformation at the end of a finite step and expects the updated stress in
+return. However, rather than solve the momentum equation at the beginning of
+each step and advancing kinematic quantities to the step's end, \gmd{}
+retrieves updated kinematic quantities from user defined tables and/or
+functions.
+
+The path through which a material is exercised is defined by piecewise
+continuous ``legs'' in which components of the ``control type'' $c_{i}$ are
+specified at discrete points in time, shown in Figure \ref{fig:path}.  The
+$c_{i}$ are used to obtain a sequence of piecewise constant strain rates that
+are used to advance the kinematic state.  Supported control types are strain,
+strain rate, stress, stress rate, deformation gradient, displacement, and
+velocity.  ``Mixed-modes'' of strain and stress (and their rates) are
+supported.  Components of displacement and velocity control are applied only
+to the ``+'' faces of a unit cube centered at the coordinate origin.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=.75\textwidth]{path.pdf}
+  \caption{User defined path for the $i^{\text{th}}$ component of ``$c$''.
+    $c$ may represent strain, strain rate, stress, stress rate, deformation
+    gradient, displacement, or velocity.}
+  \label{fig:path}
+\end{figure}
+
+The components of strain are defined by
+
+\begin{equation}
+  \Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)
+\end{equation}
+%
+where $\RightStretch$ is the right Cauchy stretch tensor, defined by the polar
+decomposition of the deformation gradient $\DefGrad =
+\Rotation\DotProd\RightStretch$, and $\kappa$ is a user specified
+``Seth-Hill'' parameter that controls the strain definition. Choosing
+$\kappa=2$ gives the Lagrange strain, which might be useful when testing
+models cast in a reference coordinate system. The choice $\kappa=1$, which
+gives the engineering strain, is convenient when driving a problem over the
+same strain path as was used in an experiment. The choice $\kappa=0$
+corresponds to the logarithmic (Hencky) strain. Common values of $\kappa$ and
+the associated names for each (there is some ambiguity in the names) are
+listed in Table \ref{tab:kappa}.
+
+\begin{table}[h]
+  \label{tab:kappa}
+  \centering
+  \begin{tabular}{ll}
+    \hline
+    $\kappa$ &  Name(s) \\
+    \hline
+    -2 & Green \\
+    -1 & True, Cauchy \\
+     0 & Logarithmic, Hencky, True \\
+     1 & Engineering, Swainger \\
+     2 & Lagrange, Almansi \\
+     \hline
+  \end{tabular}
+\end{table}
+
+The volumetric strain $\Strain[v]$ is defined
+
+\begin{equation}
+  \label{eq:volstrain}
+  \Strain[v] =
+  \begin{cases}
+    \OneOver{\kappa}\left(\Jacobian^{\kappa} - 1\right)
+    & \text{if }\kappa \ne 0 \\
+    \ln{\Jacobian} & \text{if }\kappa = 0
+  \end{cases}
+\end{equation}
+
+where the Jacobian $\Jacobian$ is the determinant of the deformation gradient.
+
+Each leg in the control table, from time $t=0$ to $t=t_f$ is subdivided into
+a user-specified number of steps and the material model evaluated at each
+step.  When volumetric strain, deformation gradient, displacement, or velocity
+are specified for a leg, \gmd{} internally determines the corresponding strain
+components.  If a component of stress is specified, \gmd{} determines the
+strain increment that minimizes the distance between the prescribed stress
+component and model response.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Strain Rate from Prescribed Stress}
+\label{sec:sig2d}
+The approach to determining unknown components of the strain rate from the
+prescribed stress is an iterative scheme employing a multidimensional Newton's
+method that satisfies
+%
+\begin{displaymath}
+  \Stress\left(\dStrain\,[\vc]\right) = \Stress^{p}
+\end{displaymath}
+%
+where, $\vc$ is a vector subscript array containing the components for which
+stresses (or stress rates) are prescribed, and $\Stress^{p}$ are the
+components of prescribed stress.
+
+Each iteration begins by determining the submatrix of the material
+stiffness
+\begin{displaymath}
+  \Stiffness_{\vc} = \Stiffness\,[\vc, \vc]
+\end{displaymath}
+%
+where $\Stiffness$ is the full stiffness matrix
+$\Stiffness=d\Stress/d\Strain$. The value of $\dStrain\,[\vc]$ is then updated
+according to
+%
+\begin{displaymath}
+  \dStrain\,[\vc] = \dStrain\,[\vc] -
+                   \Stiffness_{\vc}\DDotProd\Stress^{*}(\dStrain\,[\vc])/dt
+\end{displaymath}
+%
+where
+%
+\begin{displaymath}
+  \Stress^{*}(\dStrain\,[\vc]) = \Stress(\dStrain\,[\vc]) - \Stress^{p}
+\end{displaymath}
+
+The Newton procedure will converge for valid stress states.  However, it is
+possible to prescribe invalid stress state, e.g.~a stress state beyond the
+material's elastic limit.  In these cases, the Newton procedure may not
+converge to within the acceptable tolerance and a Nelder-Mead simplex method
+is used as a back up procedure.  A warning is logged in these cases.
+
+% ----------------------------------------------------------------------------- %
+\subsection{Solid Driver}
 As the name implies, the \sol{} driver is designed to exercise the type of
 material models encountered in solid mechanics. The solution method is similar
 to that of many finite element codes, so that material models developed and
 tested in \gmd{} can be easily transitioned to them.
-
-\begin{equation}
-  \label{eq:solid-0}
-  \Stress = f\left[\Stress, \ISV, \dStrain\right]
-\end{equation}
-%
-where $\Stress$ is the stress state, $\ISV$ are a set of path dependent
-internal state variables, and $\dStrain$ is the strain rate. The definitions
-of $\Stress$ and $\dStrain$ are left intentionally vague, except that the pair
-is work conjugate.  Further explanation of $\Stress$ and $\dStrain$ are
-deferred until a later section.  Users drive the material through specified
-deformation paths.  The path can also be a specified stress, in which case we
-solve for $\dStrain$ to be
-%
-\begin{equation}
-  \label{eq:inv-prob-0}
-  \dStrain = \dStrain_0 + f^{-1}\left[\Stress, \ISV,
-    \dStrain\right]\left(\Stress - \Stress_0\right)
-\end{equation}
-
-Mixed modes are also allowed.  Paths can be prescribed by specifying the
-components of strain and their rates, components of deformation gradient,
-displacements of boundary of unit cube, components of stress and their rates.
-Mixed modes involving strains and stresses allowed.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Electrical}
 Electric field can be prescribed for testing piezoelectric models.
 
 % ----------------------------------------------------------------------------- %
-\chapter{Running}
+\chapter{Running Simulations with \gmd{}}
+\label{chap:run}
+\gmd{} is a command line driven programming.  To run a simulation with \gmd{},
+be sure that \verb|$GMDROOT| is on your path and execute
 
 \begin{verbatim}
 $ gmd runid[.xml]
 \end{verbatim}
 
-The following files will be produced
+where \texttt{runid} is the basename of the input file. Input file formatting
+is covered in Chapters \ref{chap:inpov} - \ref{chap:inpopt}.
+
+The following files will be produced by \gmd{} in the current working
+directory
 \begin{verbatim}
 $ ls runid.*
 runid.exo       runid.log       runid.xml
@@ -546,9 +713,15 @@ runid.exo       runid.log       runid.xml
 \texttt{runid.exo} is the \exodusii{} output database, \texttt{runid.log} the log
 file, and \texttt{runid.xml} the input file.
 
+For a complete list of options, execute
+\begin{verbatim}
+$ gmd -h
+\end{verbatim}
+
 
 % ----------------------------------------------------------------------------- %
 \chapter{User Input: Overview}
+\label{chap:inpov}
 User input is via xml control files. In general, tags use CamelCase and
 attributes lower case.  Attributes are described in this document as
 %
@@ -682,7 +855,7 @@ $ cat file.dat
 
 % ----------------------------------------------------------------------------- %
 \chapter{User Input: Physics}
-\label{chap:input}
+\label{chap:inpphys}
 Define the physics of the simulation. If specified, \verb:termination_time:
 defines the termination time for the simulation. If not specified, termination
 time is taken as final time in \reqdtag{Path}.
@@ -757,7 +930,6 @@ deformation are specified for each leg as in the following stub input
 
 See Section \ref{sec:cfmt} for a full description of the control format
 \texttt{cfmt} and its relationship with the \texttt{c1, c2, c3, ...}.
-
 
 % ----------------------------------------------------------------------------- %
 \paragraph{Format: table}
@@ -891,36 +1063,6 @@ as the termination time for the leg. For \texttt{tfmt="dt"} the first value
 of each leg is interpreted as a time increment.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{kappa}
-\label{sec:kappa}
-The attribute \texttt{kappa} is only used/defined for the purposes of strain
-or strain rate control. It refers to the coefficient used in the Seth-Hill
-generalized strain definition
-%
-\begin{equation}
-  \Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)
-\end{equation}
-%
-where $\kappa$ is the keyword \texttt{kappa}, $\Strain$ is the strain tensor,
-$\RightStretch$ is the right Cauchy stretch tensor, and $\SOIdentity$ is the
-second order identity tensor. Common values of $\kappa$ and the associated
-common names for each (there is some ambiguity in the names) are:
-
-\begin{table}[h]
-  \centering
-  \begin{tabular}{ll}
-    \hline
-    $\kappa$ &  Name(s) \\
-    \hline
-    -2 & Green \\
-    -1 & True, Cauchy \\
-     0 & Logarithmic, Hencky, True \\
-     1 & Engineering, Swainger \\
-     2 & Lagrange, Almansi \\
-     \hline
-  \end{tabular}
-\end{table}
-
 % ----------------------------------------------------------------------------- %
 \subsubsection{The Column Specifier}
 \label{sec:colspec}
@@ -938,6 +1080,11 @@ cols="1 3 4 5 8 9 13"
 \begin{example}
 cols="1 3:5 8:9 13"
 \end{example}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{kappa}
+\texttt{kappa} is the Seth-Hill strain definition parameter $\kappa$ described
+in section \ref{sec:gmdsol}.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{Step Multiplier}
@@ -1203,6 +1350,7 @@ The following input stub demonstrates extracting Hugoniot and Isotherm paths
 
 % ----------------------------------------------------------------------------- %
 \chapter{User Input: Permutation}
+\label{chap:inpperm}
 Permutate model input parameters, running jobs with different realization of
 parameters. Ideal for investigating model sensitivities.
 %
@@ -1347,6 +1495,7 @@ An example of a response function specifying \texttt{function} is
 
 % ----------------------------------------------------------------------------- %
 \chapter{User Input: Optimization}
+\label{chap:inpopt}
 Optimize specified parameters against user specified objective function.
 %
 \begin{inpusage}
@@ -1565,25 +1714,32 @@ The material state is updated to the end of the step via the
 \begin{interface}
   \textbf{Material.update\us{}state: Interface}
 \end{interface}
-\usage{stress, xtra = mtl.update\us{}state(dt, d, sig, xtra, *args)}\\[5pt]
+\usage{stress, xtra = mtl.update\us{}state(dt, d, sig, xtra,\\
+  \indent\hspace{3.2in}f, ef, t, rho, tmpr, *args)}\\[5pt]
 \param{real dt}{timestep size}
 \param{ndarray d}{rate of deformation}
 \param{ndarray sig}{stress at beginning of step}
 \param{ndarray xtra}{extra state variables at beginning of step}
-\param{tuple args}{(\texttt{defgrad}, \texttt{efield}, \texttt{time},
-  \texttt{rho}, \texttt{tmpr}) extra positional arguments.}
+\param{ndarray f}{deformation gradient at end of step}
+\param{ndarray ef}{electric field}
+\param{real t}{time}
+\param{real rho}{density at end of step}
+\param{real tmpr}{temperature at end of step}
+\param{tuple args}{extra args (not used)}
 \param{dict kwargs}{extra keyword args (not used)}
 \param{ndarray stress}{stress at end of step}
 \param{ndarray xtra}{extra state variables at end of step}
 
 The following code segment is used by the driver to update the material state
 \begin{example}
-args = (f, ef, t, None, None)
-sig, xtra = mtl.update_state(dt, d, sig, xtra, *args)
+args = []
+sig, xtra = mtl.update_state(dt, d, sig, xtra,
+                             f, ef, t, rho, tmpr, *args)
 \end{example}
 
 \subsection{Example}
-A complete example
+The following example demonstrates the implementation of a simple elastic
+model.
 \begin{example}
 import numpy as np
 from materials._material import Material

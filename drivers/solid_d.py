@@ -5,17 +5,21 @@ import numpy as np
 from numpy.linalg import solve, lstsq
 
 from __config__ import cfg, RESTART
-import utils.tensor as tensor
 import utils.xmltools as xmltools
+from lib.mmlabpack import mmlabpack
 from drivers.driver import Driver
-from core.kinematics import deps2d, sig2d, update_deformation
-from utils.tensor import NSYMM, NTENS, I9
+from core.kinematics import sig2d
 from core.io import fatal_inp_error, input_errors, log_message, Error1
 from materials.material import create_material
 try:
     import gmd_user_sub as usr
 except ImportError:
     usr = None
+
+NSYMM = 6
+NTENS = 9
+I9 = np.eye(3).reshape(9)
+DI3 = [[0, 1, 2], [0, 1, 2]]
 
 np.set_printoptions(precision=4)
 
@@ -187,7 +191,7 @@ class SolidDriver(Driver):
             if not nv:
                 # strain or strain rate prescribed and d is constant over
                 # entire leg
-                d = deps2d(dt, kappa, eps, depsdt)
+                d = mmlabpack.deps2d(dt, kappa, eps, depsdt)
 
                 if cfg.sqa and kappa == 0.:
                     if not np.allclose(d, depsdt):
@@ -223,7 +227,7 @@ class SolidDriver(Driver):
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
-                f, eps = update_deformation(dt, kappa, f, d)
+                f, eps = mmlabpack.update_deformation(dt, kappa, f, d)
 
                 # update material state
                 sigsave = np.array(sig)
@@ -701,9 +705,9 @@ def _format_path(path, pathdict, tterm):
             if np.max(np.abs(Rij - np.eye(3))) > np.finfo(np.float).eps:
                 fatal_inp_error("Rotation encountered in leg {0}. "
                                 "Rotations are not supported".format(leg_num))
-            Uij = tensor.asarray(np.dot(Rij.T, np.dot(Vij, Rij)))
+            Uij = np.dot(Rij.T, np.dot(Vij, Rij))
+            Cij = mmlabpack.u2e(Uij, kappa)
             Rij = np.reshape(Rij, (NTENS,))
-            Cij = tensor.u2e(Uij, kappa)
 
             # deformation gradient now converted to strains
             control = np.array([2] * NSYMM, dtype=np.int)
@@ -711,9 +715,9 @@ def _format_path(path, pathdict, tterm):
         elif 8 in control:
             # displacement control check
             # convert displacments to strains
-            Uij = np.zeros(NSYMM)
-            Uij[:3] = dfac * Cij[:3] + 1.
-            Cij = tensor.u2e(Uij, kappa)
+            Uij = np.zeros((3, 3))
+            Uij[DI3] = dfac * Cij[:3] + 1.
+            Cij = mmlabpack.u2e(Uij, kappa, 1)
 
             # displacements now converted to strains
             control = np.array([2] * NSYMM, dtype=np.int)

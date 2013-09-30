@@ -7,11 +7,16 @@ def makeut(destd, fc):
     """Make fortran based utils
 
     """
-    utils = [("linalg", os.path.join(D, "linalg.f90")),]
+    utils = [("mmlabpack", [os.path.join(D, "mmlabpack.f90"),
+                            os.path.join(D, "dgpadm.f"),]),]
     stats = 0
-    for (name, filepath) in utils:
-        stat = f2py(name, [filepath], None, fc, None)
+    for (name, source_files) in utils:
+        stat = f2py(name, source_files, None, fc, None)
         if stat == 0:
             shutil.move(name + ".so", os.path.join(destd, name + ".so"))
         stats += stat
     return stats
+
+
+if __name__ == "__main__":
+    makeut(os.path.join(D, "../lib"), "/usr/local/bin/gfortran")

@@ -8,12 +8,14 @@ from itertools import product
 from __config__ import cfg, RESTART
 import utils.xmltools as xmltools
 from drivers.driver import Driver
-from utils.tensor import I9, Z6
 from core.io import fatal_inp_error, input_errors, log_message, log_error, Error1
 from materials.material import create_material
 
+
 np.set_printoptions(precision=4)
 EF = np.zeros(3)
+I9 = np.eye(3).reshape(9)
+Z6 = np.zeros(6)
 
 class EOSDriver(Driver):
     name = "eos"

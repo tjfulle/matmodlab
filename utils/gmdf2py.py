@@ -48,3 +48,7 @@ def f2py(name, source_files, signature, fc, incd):
     sys.stderr.flush()
 
     return built
+
+if __name__ == "__main__":
+    name = sys.argv[1]
+    built = f2py(name, [name + ".f90"], None, "gfortran", os.getcwd())
