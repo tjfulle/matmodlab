@@ -421,7 +421,7 @@ def expm(a, strict=False):
     elif strict:
         a = np.real(scipy.linalg.expm(a))
     else:
-        a = linalg.expm(a)
+        a = scipy.linalg.expm(a)
     return a
 
 
