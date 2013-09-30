@@ -30,7 +30,7 @@ GDICT = {"__builtins__": None}
 EPSILON = np.finfo(np.float).eps
 SIZE = (700, 600)
 LS = ['dot dash', 'dash', 'dot', 'long dash']
-F_EVALDB = "gmd-evaldb.xml"
+F_EVALDB = "mml-evaldb.xml"
 L_EXO_EXT = [".exo", ".base_exo", ".e"]
 L_DAT_EXT = [".out",]
 L_REC_EXT = L_EXO_EXT + L_DAT_EXT
@@ -739,7 +739,8 @@ def create_model_plot(sources, handler=None, metadata=None):
         if logerr():
             stop("***error: stopping due to previous errors")
         variables = [""] * len(filepaths)
-        runid = "GMD VIZ" if len(filepaths) > 1 else genrunid(filepaths[0])
+        runid = ("Material Model Laboratory" if len(filepaths) > 1
+                 else genrunid(filepaths[0]))
 
     view = tuiapi.View(tuiapi.HSplit(
         tuiapi.VGroup(
@@ -796,11 +797,11 @@ def logerr(message=None, errors=[0]):
 
 
 def readtabular(source):
-    """Read in the gmd-tabular.dat file
+    """Read in the mml-tabular.dat file
 
     """
-    from utils.gmdtab import read_gmd_evaldb
-    sources, paraminfo, _ = read_gmd_evaldb(source)
+    from utils.mmltab import read_mml_evaldb
+    sources, paraminfo, _ = read_mml_evaldb(source)
     for (i, info) in enumerate(paraminfo):
         paraminfo[i] = ", ".join("{0}={1:.2g}".format(n, v) for (n, v) in info)
     return sources, paraminfo

@@ -859,9 +859,7 @@ $ cat file.dat
 % ----------------------------------------------------------------------------- %
 \chapter{User Input: Physics}
 \label{chap:inpphys}
-Define the physics of the simulation. If specified, \verb:termination_time:
-defines the termination time for the simulation. If not specified, termination
-time is taken as final time in \reqdtag{Path}.
+Define the physics of the simulation.
 
 \begin{inpusage}
 <Physics driver="str[solid]{solid, eos}"
@@ -870,12 +868,22 @@ time is taken as final time in \reqdtag{Path}.
 
 Recognized subelements of \reqdtag{Physics} are
 %
-%
 \begin{itemize}
   \item \reqdtag{Path}
   \item \reqdtag{Material}
   \item \tag{Extract}
 \end{itemize}
+
+
+\section{Physics Attributes}
+\subsection{driver}
+\texttt{driver} specifies the driver type to use.  Defaults to \texttt{solid}.
+
+\subsection{termination\_time}
+If specified, \verb:termination_time: defines the termination time for the
+simulation. If not specified, termination time is taken as final time in
+\reqdtag{Path}.
+
 
 % ----------------------------------------------------------------------------- %
 \section{Path}
