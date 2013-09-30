@@ -37,7 +37,7 @@ def stop(msg=""):
 
 
 def main(argv=None):
-    """Setup the gmd executable
+    """Setup the executables
 
     """
     if argv is None:
@@ -73,7 +73,7 @@ def main(argv=None):
     pypath = [root]
 
     path = os.getenv("PATH", "").split(os.pathsep)
-    log_message("setup: gmd {0}".format(version))
+    log_message("setup: Material Model Laboratory {0}".format(version))
 
     mtldirs = [os.path.realpath(d) for d in args.mtldirs]
     for d in mtldirs:
@@ -112,7 +112,7 @@ def main(argv=None):
     log_message("checking for 64 bit python", end="... ")
     if sys.maxsize < 2 ** 32:
         log_message("no")
-        logerr("gmd requires 64 bit python (due to exowrap)")
+        logerr("matmodlab requires 64 bit python (due to exowrap)")
     else: log_message("yes")
 
     # --- numpy
@@ -195,6 +195,14 @@ def main(argv=None):
 
     write_exe("gmd", tools, os.path.join(root, "main.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
+              {"GMDMTLS": mtldirs}, deprecate="mmd")
+
+    write_exe("mmd", tools, os.path.join(root, "main.py"),
+              pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
+              {"GMDMTLS": mtldirs})
+
+    write_exe("mml", tools, os.path.join(vizd, "main.py"),
+              pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
               {"GMDMTLS": mtldirs})
 
     write_exe("buildmtls", tools, os.path.join(core, "build.py"),
@@ -205,12 +213,21 @@ def main(argv=None):
               pyexe, pyopts, {"PYTHONPATH": pypath}, {"GMDTESTS": testdirs})
 
     write_exe("gmddump", tools, os.path.join(utld, "exodump.py"),
+              pyexe, pyopts, {"PYTHONPATH": pypath}, deprecate="exdump")
+
+    write_exe("exdump", tools, os.path.join(utld, "exodump.py"),
+              pyexe, pyopts, {"PYTHONPATH": pypath})
+
+    write_exe("mmv", tools, os.path.join(vizd, "plot2d.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath})
 
     write_exe("gmdviz", tools, os.path.join(vizd, "plot2d.py"),
-              pyexe, pyopts, {"PYTHONPATH": pypath})
+              pyexe, pyopts, {"PYTHONPATH": pypath}, deprecate="mmv")
 
-    write_exe("gmddiff", tools, os.path.join(utld, "gmddiff.py"),
+    write_exe("gmddiff", tools, os.path.join(utld, "exodiff.py"),
+              pyexe, pyopts, {"PYTHONPATH": pypath}, deprecate="exdiff")
+
+    write_exe("exdiff", tools, os.path.join(utld, "exodiff.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath})
 
     log_message("setup: Setup complete")
@@ -237,7 +254,8 @@ def remove(paths):
     return
 
 
-def write_exe(name, destd, pyfile, pyexe, pyopts, env, gmdvars=None):
+def write_exe(name, destd, pyfile, pyexe, pyopts, env, mmlvars=None,
+              deprecate=None):
     exe = os.path.join(destd, name)
     remove(exe)
     log_message("writing {0}".format(os.path.basename(exe)), end="...  ")
@@ -247,16 +265,26 @@ def write_exe(name, destd, pyfile, pyexe, pyopts, env, gmdvars=None):
 
     # set environment variables in scripts
     env = ["export {0}={1}".format(k, v) for (k, v) in env.items()]
-    if gmdvars:
-        # if user set gmd variable on command line (gmdvar), add it to the
-        # already recognized gmd environment variable
-        for (k, v) in gmdvars.items():
+    if mmlvars:
+        # if user set mml variable on command line (mmlvar), add it to the
+        # already recognized mml environment variable
+        for (k, v) in mmlvars.items():
             if not v.split():
                 continue
             env.append("export {0}={1}{2}${0}".format(k, v, os.pathsep))
     env = "\n".join(env)
 
+    if deprecate is not None:
+        deprecate = """echo -e '
+******************************************************************************\n
+                         *** deprecation warning ***\n
+                    {0} has been deprecated in favor of {1}\n
+******************************************************************************\n'
+""".format(name, deprecate)
+
     with open(exe, "w") as fobj:
+        if deprecate:
+            fobj.write(deprecate)
         fobj.write("#!/bin/sh -f\n")
         fobj.write("{0}\n".format(env))
         fobj.write("export PYTHON={0}\n".format(pyexe))

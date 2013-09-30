@@ -416,13 +416,11 @@ contains
     real(kind=8) :: deta
     real(kind=8) :: cof(3,3)
     deta = det(a)
-
     if (abs(deta) .le. epsilon(deta)) then
        inv = zero
        print *, "non-invertible matrix sent to inv"
        stop
     end if
-
     cof(1,1) = +(a(2,2)*a(3,3)-a(2,3)*a(3,2))
     cof(1,2) = -(a(2,1)*a(3,3)-a(2,3)*a(3,1))
     cof(1,3) = +(a(2,1)*a(3,2)-a(2,2)*a(3,1))
@@ -432,12 +430,8 @@ contains
     cof(3,1) = +(a(1,2)*a(2,3)-a(1,3)*a(2,2))
     cof(3,2) = -(a(1,1)*a(2,3)-a(1,3)*a(2,1))
     cof(3,3) = +(a(1,1)*a(2,2)-a(1,2)*a(2,1))
-
     inv = transpose(cof) / deta
-
     return
-
   end function inv
-
 
 end module mmlabpack

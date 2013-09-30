@@ -10,7 +10,7 @@ import datetime
 from __config__ import cfg
 import core.io as io
 from core.respfcn import evaluate_response_function
-from utils.gmdtab import GMDTabularWriter
+from utils.mmltab import MMLTabularWriter
 import utils.pprepro as pprepro
 
 IOPT = -1
@@ -82,7 +82,7 @@ class OptimizationHandler(object):
         self.maxiter = maxiter
         self.basexml = basexml
         self.auxiliary_files = auxiliary
-        self.tabular = GMDTabularWriter(runid, self.rootd)
+        self.tabular = MMLTabularWriter(runid, self.rootd)
         self.timing = {}
 
     def setup(self):

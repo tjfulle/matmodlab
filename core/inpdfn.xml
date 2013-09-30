@@ -1,6 +1,6 @@
-<Root name="GMDSpec">
+<Root name="MMLSpec">
 
-  <!-- Keyword definitions for gmd input decks
+  <!-- Keyword definitions for Material Model Laboratory input decks
 
        Element - Recognized input tags
        ...............................

@@ -1,4 +1,4 @@
-<GMDDiff>
+<ExDiff>
   <Variable name="STRESS_XX"/>
   <Variable name="STRESS_YY"/>
   <Variable name="STRESS_ZZ"/>
@@ -11,4 +11,4 @@
   <Variable name="STRAIN_XY"/>
   <Variable name="STRAIN_YZ"/>
   <Variable name="STRAIN_XZ"/>
-</GMDDiff>
+</ExDiff>

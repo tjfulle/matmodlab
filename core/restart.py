@@ -7,8 +7,8 @@ from __config__ import __version__
 
 RESTART_VERSION = 1
 
-S_GMD_DECL = "GMD: START INFORMATION RECORD"
-S_GMD_FINI = "GMD: END INFORMATION RECORD"
+S_MML_DECL = "MML: START INFORMATION RECORD"
+S_MML_FINI = "MML: END INFORMATION RECORD"
 S_REST_VERS = "RESTART VERSION"
 S_MTL = "MATERIAL"
 S_MTL_PARAMS = "MATERIAL PARAMETERS"
@@ -44,7 +44,7 @@ def format_exrestart_info(material, driver, extract):
 
     """
     ex_info = []
-    ex_info.append(S_GMD_DECL)
+    ex_info.append(S_MML_DECL)
     ex_info.append(S_REST_VERS)
     ex_info.append(RESTART_VERSION)
 
@@ -86,7 +86,7 @@ def format_exrestart_info(material, driver, extract):
             ex_info.extend(path[1]) # list of density bounds (len = 2)
             ex_info.append(path[2]) # initial temperature
 
-    ex_info.append(S_GMD_FINI)
+    ex_info.append(S_MML_FINI)
 
     return ["{0:{1}s}".format(str(x).strip(), MAX_LINE_LENGTH)[:MAX_LINE_LENGTH]
             for x in ex_info]
@@ -118,10 +118,10 @@ def read_exrestart_info(filepath, time=-1):
     all_ex_info = exof.get_info()
 
     try:
-        start = all_ex_info.index(S_GMD_DECL)
+        start = all_ex_info.index(S_MML_DECL)
     except ValueError:
         return
-    end = all_ex_info.index(S_GMD_FINI)
+    end = all_ex_info.index(S_MML_FINI)
 
     ex_info = all_ex_info[start+1:end]
 

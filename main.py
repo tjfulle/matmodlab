@@ -40,7 +40,7 @@ def main(argv=None):
         help=argparse.SUPPRESS)
     parser.add_argument("--restart", const=-1, default=False, nargs="?",
         help=argparse.SUPPRESS)
-    parser.add_argument("sources", nargs="*", help="Source file paths")
+    parser.add_argument("sources", nargs="+", help="Source file paths")
     args = parser.parse_args(argv)
     cfg.debug = args.dbg
     cfg.sqa = args.sqa
@@ -57,12 +57,6 @@ def main(argv=None):
         b = build.main("-m {0}".format(args.B).split())
         if b != 0:
             raise SystemExit("failed to build")
-
-    if not args.sources:
-        raise SystemExit("GUI not yet functional")
-        import viz.select as vs
-        window = vs.MaterialModelSelector(model_type="any")
-        sys.exit(window.configure_traits())
 
     if args.p:
         tup = lambda a: (a[0].strip(), a[1].strip())
@@ -99,7 +93,7 @@ def main(argv=None):
                     continue
 
             if splitext(basename)[1] != ".xml":
-                logerr("*** gmd: expected .xml file extension")
+                logerr("*** mmd: expected .xml file extension")
                 continue
             mm_input = inp.parse_input(source, argp=args.p)
 
@@ -167,12 +161,12 @@ def write_newline(n=1):
 def logerr(message=None, errors=[0]):
     if message is None:
         return errors[0]
-    sys.stderr.write("*** gmd: error: {0}\n".format(message))
+    sys.stderr.write("*** mmd: error: {0}\n".format(message))
     errors[0] += 1
 
 
 def stop(message):
-    sys.stderr.write("*** gmd: error: {0}\n".format(message))
+    sys.stderr.write("*** mmd: error: {0}\n".format(message))
     raise SystemExit(2)
 
 

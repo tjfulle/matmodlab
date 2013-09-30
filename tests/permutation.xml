@@ -1,7 +1,7 @@
-<GMDSpec>
+<MMLSpec>
 
   <Permutation method="zip" seed="42" correlation="table">
-    <ResponseFunction function="gmd.max(PRESSURE)" descriptor="PRES"/>
+    <ResponseFunction function="mml.max(PRESSURE)" descriptor="PRES"/>
     <Permutate var="K" values="weibull(125.e9, 14, 3)"/>
     <Permutate var="G" values="percentage(45.e9, 10, 3)"/>
   </Permutation>
@@ -25,4 +25,4 @@
 
   </Physics>
 
-</GMDSpec>
+</MMLSpec>

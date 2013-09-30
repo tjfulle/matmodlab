@@ -77,9 +77,16 @@ def main(argv=None):
         help="Directory to run tests [default: %(default)s]")
     parser.add_argument("-w", default=False, action="store_true",
         help="Wipe test directory before running tests [default: %(default)s]")
+    parser.add_argument("--rebaseline", default=False, action="store_true",
+        help="Rebaseline test in current directory [default: %(default)s]")
+    parser.add_argument("--run-failed", default=False, action="store_true",
+        help="Run tests that previously had failed [default: %(default)s]")
     parser.add_argument("tests", nargs="*",
         help="Specific tests to run [default: %(default)s]")
     args = parser.parse_args(argv)
+
+    if args.rebaseline:
+        sys.exit(_rebaseline_tests(d=os.getcwd()))
 
     log = sys.stdout
 
@@ -106,7 +113,11 @@ def main(argv=None):
     timing.start = time.time()
 
     # find the rtests
-    rtests = find_rtests(dirs, args.k, args.K, args.tests)
+    if args.run_failed:
+        rtests = get_completed_rtests(testd, True)
+        args.F = True
+    else:
+        rtests = find_rtests(dirs, args.k, args.K, args.tests)
     ntests = len(rtests)
     timing.tests_found = time.time()
 
@@ -491,7 +502,7 @@ def run_rtest(args):
         out.close()
         times.append(time.time())
         if status[-1] != 0:
-            if exe == "gmd":
+            if exe == "mmd":
                 status[-1] = 2
             break
 
@@ -553,7 +564,7 @@ def dump_rtests_to_file(testd, rtests):
         pickle.dump(rtests, fobj)
 
 
-def get_completed_rtests(testd):
+def get_completed_rtests(testd, failed_only=False):
     """Get rtests previously dumped to a file
 
     """
@@ -562,6 +573,10 @@ def get_completed_rtests(testd):
         return {}
     with open(rtests_dump, "r") as fobj:
         dumped_rtests = pickle.load(fobj)
+    if failed_only:
+        for (rtest, info) in dumped_rtests.items():
+            if info[S_STAT] == PASS_STATUS:
+                del dumped_rtests[rtest]
     return dumped_rtests
 
 
@@ -644,6 +659,31 @@ def generate_rtest_html_summary(rtest, details, testd):
     rtest_html_summary.append("</ul>")
     rtest_html_summary.append("</ul>\n")
     return "\n".join(rtest_html_summary)
+
+
+def _rebaseline_tests(d=None):
+    from os.path import isfile, join, splitext, realpath, basename
+    _runid = lambda s: splitext(basename(s))[0]
+    if d is None:
+        d = os.getcwd()
+    log_message("finding tests to rebaseline in {0}".format(d))
+
+    # find tests to rebaseline
+    tests = []
+    for f in os.listdir(d):
+        if not f.endswith(".xml"): continue
+        f = realpath(f)
+        runid = _runid(f)
+        base = realpath(join(d, runid + ".base_exo"))
+        exo = realpath(join(d, runid + ".exo"))
+        if not isfile(base): continue
+        if not isfile(exo): continue
+        tests.append((f, base, exo))
+
+    for (inp, base, exo) in tests:
+        log_message("{0}: rebaselining".format(_runid(inp)))
+        shutil.copyfile(exo, base)
+
 
 if __name__ == "__main__":
     sys.exit(main())

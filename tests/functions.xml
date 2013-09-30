@@ -1,5 +1,5 @@
-#!/usr/bin/env gmd
-<GMDSpec>
+#!/usr/bin/env mmd
+<MMLSpec>
 
   <!-- {K = 10.e9} -->
   <!-- {G = 3.75e9} -->
@@ -35,4 +35,4 @@
 
   </Physics>
 
-</GMDSpec>
+</MMLSpec>

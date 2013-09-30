@@ -19,6 +19,7 @@ def f2py(name, source_files, signature, fc, incd):
             "--f77exec={0}".format(fc),
             "--f90exec={0}".format(fc),
             "-DIMPLNONE", "-Dpycallback",
+            "--link-lapack_opt",
             signature if signature else None,
             "--quiet"]
     argv.extend(source_files)
@@ -39,7 +40,7 @@ def f2py(name, source_files, signature, fc, incd):
                 print re.sub(r"error: ", "", e.message)
                 built = 1
             except:
-                print "failed to build geomodel with f2py"
+                print "failed to build {0} with f2py".format(name)
                 built = 1
 
     sys.argv = [x for x in hold]

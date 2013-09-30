@@ -45,7 +45,7 @@ class PhysicsHandler(object):
         # get global and element info to write to exodus file
         glob_var_names = self.driver.glob_vars()
         ele_var_names = self.driver.elem_vars()
-        title = "gmd {0} simulation".format(self.driver.name)
+        title = "mmd {0} simulation".format(self.driver.name)
         info = [(self.driver.material.name, self.driver.material._param_vals),
                 (self.driver.name, self.driver.path, self.driver.opts),
                 self.extract]

@@ -1,4 +1,4 @@
-<GMDSpec>
+<MMLSpec>
 
   <Optimization method="cobyla" maxiter="25" tolerance="1e-4">
     <ResponseFunction function="opt-pres-v-evol" descriptor="PRES_V_EVOL"/>
@@ -19,4 +19,4 @@
     </Path>
 
   </Physics>
-</GMDSpec>
+</MMLSpec>

@@ -21,7 +21,7 @@ DIFFTOL = 1.E-06
 FAILTOL = 1.E-04
 FLOOR = 1.E-12
 
-EXE= "gmddiff"
+EXE= "exdiff"
 
 
 def main(argv=None):
@@ -256,14 +256,14 @@ def read_diff_file(filepath):
     -----
     The diff instruction file has the following format
 
-    <GMDDiff [ftol="real"] [dtol="real"] [floor="real"]>
+    <ExDiff [ftol="real"] [dtol="real"] [floor="real"]>
       <Variable name="string" [ftol="real"] [dtol="real"] [floor="real"]/>
-    </GMDDiff>
+    </ExDiff>
 
     It lets you specify:
-      global failure tolerance (GMDDiff ftol attribute)
-      global diff tolerance (GMDDiff dtol attribute)
-      global floor (GMDDiff floor attribute)
+      global failure tolerance (ExDiff ftol attribute)
+      global diff tolerance (ExDiff dtol attribute)
+      global floor (ExDiff floor attribute)
 
       individual variables to specify (Variable tags)
       individual failure tolerance (Variable ftol attribute)
@@ -273,30 +273,30 @@ def read_diff_file(filepath):
     """
     doc = xdom.parse(filepath)
     try:
-        gmddiff = doc.getElementsByTagName("GMDDiff")[0]
+        exdiff = doc.getElementsByTagName("ExDiff")[0]
     except IndexError:
-        LOG.error("{0}: expected root element 'GMDDiff'".format(filepath))
+        LOG.error("{0}: expected root element 'ExDiff'".format(filepath))
         sys.exit(2)
-    ftol = gmddiff.getAttribute("ftol")
+    ftol = exdiff.getAttribute("ftol")
     if ftol: ftol = float(ftol)
     else: ftol = FAILTOL
-    dtol = gmddiff.getAttribute("dtol")
+    dtol = exdiff.getAttribute("dtol")
     if dtol: dtol = float(dtol)
     else: dtol = DIFFTOL
-    floor = gmddiff.getAttribute("floor")
+    floor = exdiff.getAttribute("floor")
     if floor: floor = float(floor)
     else: floor = FLOOR
 
     variables = []
-    for var in gmddiff.getElementsByTagName("Variable"):
+    for var in exdiff.getElementsByTagName("Variable"):
         name = var.getAttribute("name")
-        vftol = gmddiff.getAttribute("ftol")
+        vftol = exdiff.getAttribute("ftol")
         if vftol: vftol = float(vftol)
         else: vftol = ftol
-        vdtol = gmddiff.getAttribute("dtol")
+        vdtol = exdiff.getAttribute("dtol")
         if vdtol: vdtol = float(vdtol)
         else: vdtol = dtol
-        vfloor = gmddiff.getAttribute("floor")
+        vfloor = exdiff.getAttribute("floor")
         if vfloor: vfloor = float(vfloor)
         else: vfloor = floor
         variables.append((name, vdtol, vftol, floor))

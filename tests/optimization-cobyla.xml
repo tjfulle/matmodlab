@@ -1,4 +1,4 @@
-<GMDSpec>
+<MMLSpec>
 
   <Optimization method="cobyla" maxiter="25" tolerance="1e-4">
     <ResponseFunction function="opt-sig-v-time" descriptor="SIG_V_TIME"/>
@@ -18,4 +18,4 @@
 	  href="exmpls.tbl"/>
 
   </Physics>
-</GMDSpec>
+</MMLSpec>

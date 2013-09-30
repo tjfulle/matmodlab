@@ -1,4 +1,4 @@
-<GMDSpec>
+<MMLSpec>
 
   <Physics driver="eos">
 
@@ -24,4 +24,4 @@
 
   </Physics>
 
-</GMDSpec>
+</MMLSpec>

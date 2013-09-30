@@ -1,4 +1,4 @@
-<rtest name="gmd/permutation-combi">
+<rtest name="mmd/permutation-combi">
 
   <keywords> builtin long elastic permutation </keywords>
 
@@ -6,6 +6,6 @@
     {NAME}.rxml {NAME}.xml
   </link_files>
 
-  <execute name="gmd"> {NAME}.xml </execute>
+  <execute name="mmd"> {NAME}.xml </execute>
 
 </rtest>

@@ -10,7 +10,57 @@ import core.io as io
 EPS = np.finfo(np.float).eps
 
 
-def newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
+def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional, *args):
+    """Determine the symmetric part of the velocity gradient given stress
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+
+    Approach
+    --------
+    Seek to determine the unknown components of the symmetric part of
+    velocity gradient d[v] satisfying
+
+                               P(d[v]) = Ppres[:]                      (1)
+
+    where P is the current stress, d the symmetric part of the velocity
+    gradient, v is a vector subscript array containing the components for
+    which stresses (or stress rates) are prescribed, and Ppres[:] are the
+    prescribed values at the current time.
+
+    Solution is found iteratively in (up to) 3 steps
+      1) Call newton to solve 1, return stress, xtra, d if converged
+      2) Call newton with d[v] = 0. to solve 1, return stress, xtra, d
+         if converged
+      3) Call simplex with d[v] = 0. to solve 1, return stress, xtra, d
+
+    """
+    dsave = d.copy()
+
+    if not proportional:
+        d = _newton(material, dt, d, sig, xtra, v, sigspec, *args)
+        if d is not None:
+            return d
+
+        # --- didn't converge, try Newton's method with initial
+        # --- d[v]=0.
+        d = dsave.copy()
+        d[v] = np.zeros(len(v))
+        d = _newton(material, dt, d, sig, xtra, v, sigspec, *args)
+        if d is not None:
+            return d
+
+    # --- Still didn't converge. Try downhill simplex method and accept
+    #     whatever answer it returns:
+    d = dsave.copy()
+    return _simplex(material, dt, d, sig, xtra, v, sigspec, proportional,
+                    *args)
+
+
+def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
     """Seek to determine the unknown components of the symmetric part of velocity
     gradient d[v] satisfying
 
@@ -95,7 +145,8 @@ def newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
 
         except:
             d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
-            io.log_warning("Using least squares approximation to matrix inverse")
+            io.log_warning("newton: using least squares approximation "
+                           "to matrix inverse", limit=True)
 
         if (depsmag(d) > depsmax):
             # increment too large
@@ -115,11 +166,12 @@ def newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
         continue
 
     # didn't converge, restore restore data and exit
+    io.log_warning("newton: failed to find converged solution")
     return None
 
 
-def simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
-            *args):
+def _simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
+             *args):
     """Perform a downhill simplex search to find sym_velgrad[v] such that
 
                         sig(sym_velgrad[v]) = sigspec[v]

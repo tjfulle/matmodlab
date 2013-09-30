@@ -1,4 +1,4 @@
-<GMDSpec>
+<MMLSpec>
 
   <Permutation method="combine" seed="12">
     <Permutate var="K" values="weibull(125.e9, 14, 3)"/>
@@ -24,4 +24,4 @@
 
   </Physics>
 
-</GMDSpec>
+</MMLSpec>

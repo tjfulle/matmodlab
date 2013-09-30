@@ -1,4 +1,4 @@
-<rtest name="gmd/optimization-simplex">
+<rtest name="mmd/optimization-simplex">
 
   <keywords> builtin long elastic optimization </keywords>
 
@@ -6,6 +6,6 @@
     {NAME}.rxml {NAME}.xml exmpls.tbl opt-pres-v-evol opt-baseline.dat
   </link_files>
 
-  <execute name="gmd"> {NAME}.xml </execute>
+  <execute name="mmd"> {NAME}.xml </execute>
 
 </rtest>

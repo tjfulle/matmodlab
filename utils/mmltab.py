@@ -6,8 +6,8 @@ import numpy as np
 import xml.dom.minidom as xdom
 
 
-F_EVALDB = "gmd-evaldb.xml"
-U_ROOT = u"GMDTabular"
+F_EVALDB = "mml-evaldb.xml"
+U_ROOT = u"MMLTabular"
 U_RUNID = u"runid"
 U_DATE = u"date"
 U_EVAL = u"Evaluation"
@@ -19,7 +19,7 @@ U_RESP = u"Responses"
 IND = "  "
 
 
-class GMDTabularWriter(object):
+class MMLTabularWriter(object):
 
     def __init__(self, runid, d=None):
         """Set up a logger object, which takes evaluation events and outputs
@@ -110,8 +110,8 @@ class GMDTabularWriter(object):
         return
 
 
-def read_gmd_evaldb(filepath):
-    """Read the GMD tabular file
+def read_mml_evaldb(filepath):
+    """Read the Material Model Laboratory tabular file
 
     Parameters
     ----------
@@ -162,8 +162,8 @@ def read_gmd_evaldb(filepath):
     return sources, parameters, responses
 
 
-def read_gmd_evaldb_nd(filepath):
-    sources, parameters, responses = read_gmd_evaldb(filepath)
+def read_mml_evaldb_nd(filepath):
+    sources, parameters, responses = read_mml_evaldb(filepath)
     head = [x[0] for x in parameters[0]]
     head.extend([x[0] for x in responses[0]])
     data = []
@@ -177,8 +177,8 @@ def read_gmd_evaldb_nd(filepath):
 
 
 def correlations(filepath):
-    title = "CORRELATIONS AMONG INPUT AND OUTPUT VARIABLES CREATED BY GMD"
-    head, data, nresp = read_gmd_evaldb_nd(filepath)
+    title = "CORRELATIONS AMONG INPUT AND OUTPUT VARIABLES CREATED BY MMD"
+    head, data, nresp = read_mml_evaldb_nd(filepath)
     H = " " * 13 + " ".join("{0:>12s}".format(x) for x in head)
     with open(os.path.splitext(filepath)[0] + ".corr", "w") as fobj:
         fobj.write("{0}\n".format(title))
@@ -201,7 +201,7 @@ def plot_correlations(filepath):
     except ImportError:
         print "unable to import matplotlib"
         return
-    head, data, nresp = read_gmd_evaldb_nd(filepath)
+    head, data, nresp = read_mml_evaldb_nd(filepath)
 
     # create xy scatter plots
     y = data[:, -nresp]

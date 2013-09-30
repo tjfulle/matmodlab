@@ -12,7 +12,7 @@ from utils.mtldb import read_material_params_from_db
 from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
-from core.respfcn import check_response_function, GMD_RESP_FCN_RE
+from core.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.io import fatal_inp_error, input_errors
 from core.restart import read_exrestart_info
 from materials.material import get_material_from_db
@@ -760,7 +760,7 @@ def pPermutation(permdict, basexml):
             fcn = href
         dsc = respfcn["descriptor"]
         if dsc is None:
-            s = re.search(GMD_RESP_FCN_RE, fcn)
+            s = re.search(MML_RESP_FCN_RE, fcn)
             dsc = s.group("var")
         respfcn = (dsc, fcn)
 

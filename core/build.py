@@ -13,7 +13,7 @@ MTLDIRS.extend([x for x in os.getenv("GMDMTLS", "").split(os.pathsep) if x])
 FC = os.getenv("FC", "gfortran")
 LIBD = os.path.join(R, "lib")
 UTLD = os.path.join(R, "utils")
-FIO = os.path.join(UTLD, "gmdfio.f90")
+FIO = os.path.join(UTLD, "mmlfio.f90")
 VERSION = ".".join(str(x) for x in __version__)
 
 from materials.material import write_mtldb
@@ -35,7 +35,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     sys.stdout.write(SPLASH)
-    log_message("gmd {0}".format(VERSION))
+    log_message("Material Model Laboratory {0}".format(VERSION))
     log_message("looking for makemf files")
 
     allbuilt = []

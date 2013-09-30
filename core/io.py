@@ -50,13 +50,13 @@ def setup_logger(runid, verbosity, d=None, mode="w"):
     logfile = os.path.join(d, runid + ".log")
 
     logging.basicConfig(level=logging.DEBUG,
-        format="gmd: %(asctime)s %(levelname)s: %(message)s",
+        format="mml: %(asctime)s %(levelname)s: %(message)s",
         datefmt="%b %d %Y, %H:%M:%S", filename=logfile, filemode=mode)
 
     # console logging
     ch = logging.StreamHandler()
     ch.setLevel(LEVELS.get(verbosity, logging.INFO))
-    cf = logging.Formatter("gmd: %(levelname)s: %(message)s")
+    cf = logging.Formatter("mml: %(levelname)s: %(message)s")
     ch.setFormatter(cf)
     logging.getLogger("").addHandler(ch)
 
@@ -83,8 +83,13 @@ def log_message(message):
     LOGGER.info(message)
 
 
-def log_warning(message):
+def log_warning(message, limit=False):
     increment_warning()
+    if limit and WARNINGS_LOGGED >= 100:
+        if WARNINGS_LOGGED == 100:
+            LOGGER.warning("maximum number of warnings reached, "
+                           "remainder suppressed")
+        return
     LOGGER.warning(message)
 
 
@@ -171,7 +176,7 @@ class ExoManager(object):
         hour = now.strftime("%H:%M:%S")
         num_qa_rec = 1
         vers = ".".join(str(x) for x in __version__)
-        qa_title = "GMD {0} simulation".format(vers)
+        qa_title = "MML {0} simulation".format(vers)
         qa_record = np.array([[qa_title, self.runid, day, hour]])
         self.exofile.put_qa(num_qa_rec, qa_record)
 

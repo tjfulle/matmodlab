@@ -1,15 +1,15 @@
-<rtest name="gmd/path-cycle">
+<rtest name="mmd/path-cycle">
 
   <keywords> builtin fast elastic mixed </keywords>
 
   <link_files>
-    base.gmddiff {NAME}.rxml {NAME}.xml {NAME}.base_exo
+    base.exdiff {NAME}.rxml {NAME}.xml {NAME}.base_exo
   </link_files>
 
-  <execute name="gmd"> {NAME}.xml </execute>
+  <execute name="mmd"> {NAME}.xml </execute>
 
-  <execute name="gmddiff">
-    -f base.gmddiff {NAME}.exo {NAME}.base_exo
+  <execute name="exdiff">
+    -f base.exdiff {NAME}.exo {NAME}.base_exo
   </execute>
 
 </rtest>

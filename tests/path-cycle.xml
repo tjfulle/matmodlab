@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<GMDSpec>
+<MMLSpec>
   <Physics>
     <Material model="elastic">
       <G> 5.300000E+10</G>
@@ -20,4 +20,4 @@
       1.000000E+01 100 555555555  1.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  1.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  1.000000E+00
     </Path>
   </Physics>
-</GMDSpec>
+</MMLSpec>

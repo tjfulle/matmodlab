@@ -14,14 +14,14 @@ cfg.sqa = False
 cfg.I = None
 
 SPLASH = """\
-                    GGGGGGG      M           M    DDDDDDD
-                  G             M M       M M    D      D
-                G              M   M   M   M    D       D
-               G   GGGGGGG    M     M     M    D       D
-              G         G    M           M    D       D
-             G         G    M           M    D       D
-             G       G     M           M    D      D
-              GGGGGG      M           M    DDDDDDD
-                 Generalized Model Driver v {0}
+                  M           M    M           M    L
+                 M M       M M    M M       M M    L
+                M   M   M   M    M   M   M   M    L
+               M     M     M    M     M     M    L
+              M           M    M           M    L
+             M           M    M           M    L
+            M           M    M           M    L
+           M           M    M           M    LLLLLLLLL
+                     Material Model Laboratory v {0}
 
 """.format(".".join("{0}".format(i) for i in __version__))

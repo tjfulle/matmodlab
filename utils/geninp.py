@@ -5,11 +5,11 @@ import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
 
-def create_gmd_input(runid, driver, pathtype, pathopts, path, mtlmdl, mtlparams,
+def create_mml_input(runid, driver, pathtype, pathopts, path, mtlmdl, mtlparams,
                      write=0):
     xmlf = runid + ".xml"
     doc = xdom.Document()
-    root = doc.createElement("GMDSpec")
+    root = doc.createElement("MMLSpec")
     xphys = doc.createElement("Physics")
     xphys.setAttribute("driver", driver)
 
@@ -63,5 +63,5 @@ if __name__ == "__main__":
     mtlmdl = "elastic"
     mtlparams = (("K", 13.e9), ("G", 5.4e9))
 
-    inp = create_gmd_input(runid, driver, pathtype, pathopts, path,
+    inp = create_mml_input(runid, driver, pathtype, pathopts, path,
                            mtlmdl, mtlparams, write=0)

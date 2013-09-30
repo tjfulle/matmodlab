@@ -11,10 +11,10 @@ from itertools import izip, product
 
 import core.io as io
 from __config__ import cfg
-from utils.gmdtab import GMDTabularWriter
+from utils.mmltab import MMLTabularWriter
 from utils.pprepro import find_and_make_subs
-from core.respfcn import evaluate_response_function, GMD_RESP_FCN_RE
-import utils.gmdtab as gmdtab
+from core.respfcn import evaluate_response_function, MML_RESP_FCN_RE
+import utils.mmltab as mmltab
 
 
 PERM_METHODS = ("zip", "combine", )
@@ -64,8 +64,8 @@ class PermutationHandler(object):
 
         NJOBS = len(self.ranges)
 
-        # setup the gmd-evaldb file
-        self.tabular = GMDTabularWriter(self.runid, d=self.rootd)
+        # setup the mml-evaldb file
+        self.tabular = MMLTabularWriter(self.runid, d=self.rootd)
 
         # write to the log file the
         io.log_debug("Permutated parameters:")
@@ -117,9 +117,9 @@ class PermutationHandler(object):
         if self.respfcn and self.correlation:
             io.log_message("{0}: creating correlation matrix".format(self.runid))
             if "table" in self.correlation:
-                gmdtab.correlations(self.tabular._filepath)
+                mmltab.correlations(self.tabular._filepath)
             if "plot" in self.correlation:
-                gmdtab.plot_correlations(self.tabular._filepath)
+                mmltab.plot_correlations(self.tabular._filepath)
 
         # close the log
         io.close_and_reset_logger()

@@ -8,7 +8,7 @@ from __config__ import cfg, RESTART
 import utils.xmltools as xmltools
 from lib.mmlabpack import mmlabpack
 from drivers.driver import Driver
-from core.kinematics import sig2d
+from core.solvers import sig2d
 from core.io import fatal_inp_error, input_errors, log_message, Error1
 from materials.material import create_material
 try:
