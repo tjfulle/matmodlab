@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
-python module gmd__user__routines
-    interface gmd_user_interface
+python module mml__user__routines
+    interface mml_user_interface
         subroutine log_message(message)
             intent(callback) log_message
             character*(*) :: message
@@ -12,15 +12,15 @@ python module gmd__user__routines
             character*(*) :: message
             real intent(callback) :: log_message
         end subroutine report_and_raise_error
-    end interface gmd_user_interface
-end python module gmd__user__routines
+    end interface mml_user_interface
+end python module mml__user__routines
 
 
 python module plastic ! in
 interface  ! in :plastic
    subroutine plastic_check(ui)
      use plastic, only: pchk
-     use gmd__user__routines
+     use mml__user__routines
      intent(callback) log_error
      external log_error
      intent(callback) log_message
@@ -30,7 +30,7 @@ interface  ! in :plastic
    end subroutine plastic_check
    subroutine plastic_update_state(dt,ui,d,stress)
      use plastic, only: pcalc
-     use gmd__user__routines
+     use mml__user__routines
      intent(callback) log_error
      external log_error
      intent(callback) log_message

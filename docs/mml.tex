@@ -34,8 +34,9 @@
   \begin{adjustwidth}{2.5em}{0pt}#2\end{adjustwidth}}
 \newcommand{\usage}[1]{\indent\hspace{2.5em}\texttt{#1}}
 
-\newcommand{\gmd}{\texttt{gmd}}
-\newcommand{\gmdviz}{\texttt{gmdviz}}
+\newcommand{\mml}{\texttt{matmodlab}}
+\newcommand{\mmd}{\texttt{mmd}}
+\newcommand{\mmv}{\texttt{mmv}}
 \newcommand{\bldm}{\texttt{buildmtls}}
 \newcommand{\exodusii}{{\sc\texttt{ExodusII}}}
 \newcommand{\fpy}[1]{\texttt{f2py}}
@@ -67,44 +68,45 @@
       \texttt{#1="#2[#3]\{#4\}"}}}}
 
 
-\title{\gmd{} \\ a General Material Model Driver}
+\title{\mml{} \\ a Material Model Laboratory}
 \author{Tim Fuller}
 
 \begin{document}
 \maketitle
 
 % ----------------------------------------------------------------------------- %
-\chapter{Introduction to \gmd}
+\chapter{Introduction to \mml{}}
 \label{chap:intro}
-\gmd{} is a \textbf{G}eneral \textbf{M}aterial model \textbf{D}river designed
-for rapid development and testing of material models. \gmd{} can be thought to
-drive a single material point of a finite element simulation through very
-specific user designed paths. This permits exercising material models in ways
-not possible in finite element calculations, desgining verification and
-validation tests of the material response, among others. \gmd{} is a small
-tool at the developers disposal to aid in the design and implementation of
-material models in larger finite element host codes.  It is also a useful tool
-to analysists for understanding and parameterizing a material's response to
-deformation.
+\mml{} (Material Model Laboratory) is a suite of tools whose purpose is to aid
+in the rapid development and testing of material models. \mml{} is made up of
+several components, the most notable being the Material Model Driver \mmd{}.
+\mmd{} can be thought to drive a single material point of a finite element
+simulation through very specific user designed paths. This permits exercising
+material models in ways not possible in finite element calculations, desgining
+verification and validation tests of the material response, among others.
+\mml{} is a small suite of tools at the developers disposal to aid in the
+design and implementation of material models in larger finite element host
+codes. It is also a useful tool to analysists for understanding and
+parameterizing a material's response to deformation.
 
-The core of the \gmd{} code base is written in Python and leverages Python's
+The core of the \mml{} code base is written in Python and leverages Python's
 object oriented programming (OOP) design. OOP techniques are used throughout
-\gmd{} to setup and manage simulation data. Computationally heavy portions of
+\mml{} to setup and manage simulation data. Computationally heavy portions of
 the code, and the material models themselves are written in Fortran for its
 speed and ubiquity in scientific computing. Calling Fortran procedures from
 Python is made possible by the \fpy{} module, standard in Numpy, that compiles
 and creates Python shared object libraries from Fortran sources.
 
-Output files from \gmd{} simulations are in the \exodusii{} \cite{exodus}
+Output files from \mml{} simulations are in the \exodusii{} \cite{exodus}
 database format, devloped at Sandia National Labs for storing finite element
-simulation data. Since \gmd{} is designed to be used by material model
+simulation data. Since \mml{} is designed to be used by material model
 developers, it is expected that the typical user will want access to
 \emph{all} all available output from a material model, thus all simulation
 data is written to the output database. \exodusii{} database files can be post
-processed via the \gmdviz{} utility, in addition to other visualization
+processed via the \mmv{} utility, in addition to other visualization
 packages such as \paraview{} \cite{paraview}.
 
-\gmd{} is free software released under the MIT License.
+\mml{} is free software released under the MIT License.
 
 % ----------------------------------------------------------------------------- %
 \section{Why a Single Element Driver?}
@@ -113,12 +115,12 @@ for constitutive model development. In addition, features such as artificial
 viscosity can mask the actual material response from constitutive model
 development. Single element drivers allow the constituive model developer to
 concentrate on model development and not the finite element response. Other
-advantages of the \gmd{} (or, more generally, of any stand-alone
+advantages of the \mml{} (or, more generally, of any stand-alone
 constitutive model driver) are
 
 \begin{itemize}
-  \item \gmd{} is a very small, special purpose, code. Thus, maintaining and
-  adding new features to \gmd{} is very easy.
+  \item \mml{} is a very small, special purpose, code. Thus, maintaining and
+  adding new features to \mml{} is very easy.
 
   \item Simulations are not affected by irrelevant artifacts such as
   artificial viscosity or uncertainty in the handling of boundary conditions.
@@ -170,13 +172,13 @@ was the development of material models for geologic applications. There, I
 found need to drive the material models through prescribed stress paths to
 match experimental records. This capability was not present in the
 \texttt{MED} and I sought a different solution. The solution came from the
-\texttt{mmd} driver, created years earlier at Sandia, by Tom Pucick. The
-\texttt{mmd} driver had the capability to drive material models through
+\texttt{MMD} driver, created years earlier at Sandia, by Tom Pucick. The
+\texttt{MMD} driver had the capability to drive material models through
 prescribed stress and strain paths, but also lacked many of the IO features of
 the \texttt{MED}. And so, for some time I used both the \texttt{MED} and
-\texttt{mmd} drivers in applications that suited their respective strengths.
+\texttt{MMD} drivers in applications that suited their respective strengths.
 After some time using both drivers, I decided to combine the best features of
-each in to my own driver. Both the \texttt{MED} and \texttt{mmd} drivers were
+each in to my own driver. Both the \texttt{MED} and \texttt{MMD} drivers were
 written in Fortran and I decided to write the new driver in Python so that I
 could leverage the large number of builtin libraries. The Numpy and Scipy
 Python libraries would be used for handling most number crunching. The new
@@ -185,16 +187,16 @@ unique capabilities and became a capable piece of software used by other staff
 members at Sandia. But, \texttt{payette} suffered from the fact that it was my
 first foray in to programming with Python. After some time, the bloat and bad
 programming practices with \texttt{payette} caused me to spend a few weekends
-re-writing it in to what is now known as \gmd{}.
+re-writing it in to what is now known as \mml{}.
 
 % ----------------------------------------------------------------------------- %
-\section{Obtaining \gmd{}}
-\gmd{} is an open source project licensed under the MIT license. A copy of may
-be obtained from \url{https://github.com/tjfulle/gmd}
+\section{Obtaining \mml{}}
+\mml{} is an open source project licensed under the MIT license. A copy of may
+be obtained from \url{https://github.com/tjfulle/matmodlab}
 
 % ----------------------------------------------------------------------------- %
 \section{About This Guide}
-\gmd{} is developed as a tool for developers and analysts who care to
+\mml{} is developed as a tool for developers and analysts who care to
 understand the responses of material models to specific deformation paths. The
 target audience is assumed to have a basic knowledge of continuum mechanics
 and familiarity with other finite element codes.  Accordingly, concepts of
@@ -202,14 +204,14 @@ continuum mechanics and finite element methods are not described in detail and
 programing techniques are also not described.
 
 % ----------------------------------------------------------------------------- %
-\chapter{\gmd{} Quick Start Guide}
+\chapter{\mml{} Quick Start Guide}
 \label{chap:quick}
-This guide provides an outline for building and running \gmd.
+This guide provides an outline for building and running \mml{}.
 
-\textbf{Build \gmd{}} See Chapter \ref{chap:build}.
+\textbf{Build \mml{}} See Chapter \ref{chap:build}.
 \begin{itemize}
-  \item Download \gmd{} and setup environment
-  \item \$ \verb|cd $GMDROOT/toolset && ./setup.py|
+  \item Download \mml{} and setup environment
+  \item \$ \verb|cd $MMLROOT/toolset && ./setup.py|
   \item \$ \texttt{buildmtls}
 \end{itemize}
 
@@ -223,34 +225,34 @@ This guide provides an outline for building and running \gmd.
 
 \textbf{Run}
 \begin{itemize}
-  \item \$ \gmd{} [options] \emph{runid} [,\emph{runid\_1}, $\ldots$,
+  \item \$ \mmd{} [options] \emph{runid} [,\emph{runid\_1}, $\ldots$,
   \emph{runid\_n}]\\
   \emph{runid} is prefix of ``.xml'' file.
-  \item Complete list of options given by \\ \$ \texttt{gmd -h}
+  \item Complete list of options given by \\ \$ \texttt{mmd -h}
 \end{itemize}
 
 \textbf{Postprocess}
 \begin{itemize}
-  \item \$ \gmdviz{} \emph{runid} [,\emph{runid\_1}, $\ldots$,
+  \item \$ \mmv{} \emph{runid} [,\emph{runid\_1}, $\ldots$,
   \emph{runid\_n}]
   \item \paraview{} also reads exodus files.
 \end{itemize}
 
 
 % ----------------------------------------------------------------------------- %
-\chapter{Building \gmd{}}
+\chapter{Building \mml{}}
 \label{chap:build}
-\gmd{}'s code base is largely written in Python and requires no additional
+\mml{}'s code base is largely written in Python and requires no additional
 compiling.  However, the \exodusii{} third party library and material models
 written in fortran must be built.
 
 % ----------------------------------------------------------------------------- %
 \section{System and Software Requirements}
-\gmd{} has been built and tested extensively on several versions of linux and
-the Apple Mac OSX operating systems. It is unknown whether or not \gmd{}
+\mml{} has been built and tested extensively on several versions of linux and
+the Apple Mac OSX operating systems. It is unknown whether or not \mml{}
 will run on Windows.
 
-\gmd{} requires the following software installed for your platform:
+\mml{} requires the following software installed for your platform:
 
 \begin{itemize}
   \item Python 2.7
@@ -263,22 +265,22 @@ The required software may be obtained in several ways, though all development
 has been made using Enthought Canopy (\url{http://http://www.enthought.com}).
 
 A note on the fortran compiler.  It is recommended to use the same fortran
-compiler to build the \gmd{} components that was used to build SciPy.
+compiler to build the \mml{} components that was used to build SciPy.
 
 % ----------------------------------------------------------------------------- %
 \section{Installation}
-Ensure that all \gmd{} prerequisites are installed and working properly before
+Ensure that all \mml{} prerequisites are installed and working properly before
 proceeding.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Set Environment and Path}
 
-\begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{GMDTESTS}}]
-  \item[\texttt{GMDROOT}] Optional, name of installation directory
-  \item[\texttt{PATH}] \verb|$GMDROOT/toolset:$PATH|
-  \item[\texttt{GMDMTLS}] ``:'' separated list of paths to directories
+\begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{MMLTESTS}}]
+  \item[\texttt{MMLROOT}] Optional, name of installation directory
+  \item[\texttt{PATH}] \verb|$MMLROOT/toolset:$PATH|
+  \item[\texttt{MMLMTLS}] ``:'' separated list of paths to directories
   containing user defined material models. See Section \ref{sec:usrbld}.
-  \item[\texttt{GMDTESTS}] ``:'' separated list of paths to directories
+  \item[\texttt{MMLTESTS}] ``:'' separated list of paths to directories
   containing user defined regression tests. See Section \ref{sec:usrtests}.
 \end{description}
 
@@ -287,7 +289,7 @@ proceeding.
 Set up and build the TPLs.
 %
 \begin{verbatim}
-$ cd $GMDROOT/toolset
+$ cd $MMLROOT/toolset
 $ python setup.py
 \end{verbatim}
 %
@@ -296,17 +298,17 @@ executable scripts
 %
 \begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{buildmtls}}]
   \item[\texttt{buildmtls}] Build material models
-  \item[\texttt{gmd}] Run \gmd{} simulations
-  \item[\texttt{gmddump}] Read a \gmd{} output and dumps requested variables
+  \item[\texttt{mml}] Run \mml{} simulations
+  \item[\texttt{exdump}] Read a \mml{} output and dumps requested variables
   to ascii columnar files
-  \item[\texttt{gmdviz}] 2D plots of \gmd{} output
+  \item[\texttt{mmv}] 2D plots of \mml{} output
   \item[\texttt{runtests}] Run the regression tests
 \end{description}
 %
-Each script is a wrapper to another \gmd{} Python file. In the wrapper,
+Each script is a wrapper to another \mml{} Python file. In the wrapper,
 relevant environment variables are set (e.g., \verb|$PYTHONPATH|) and the
 correct Python executable (the one used to set up) is used to interpret the
-\gmd{} source file.  The full set of options for each script is obtained by
+\mml{} source file.  The full set of options for each script is obtained by
 %
 \begin{verbatim}
 $ scriptname -h
@@ -314,7 +316,7 @@ $ scriptname -h
 %
 where \texttt{scriptname} is the name of the script.
 
-The TPLs will build the first time \gmd{} is setup.
+The TPLs will build the first time \mml{} is setup.
 Thereafter after, only the executable scripts are rewritten.  Execute
 
 \begin{verbatim}
@@ -331,18 +333,18 @@ $ buildmtls
 
 % ----------------------------------------------------------------------------- %
 \subsection{Test the Installation}
-To test \gmd{} after installation, execute
+To test \mml{} after installation, execute
 
 \begin{verbatim}
 $ runtests [-j N]
 \end{verbatim}
 %
-which will run the \gmd{} regression tests.
+which will run the \mml{} regression tests.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Troubleshooting}
-If you experience problems when building/installing/testing \gmd{}, you can
-ask help from the \gmd{} developers. Please include the following information
+If you experience problems when building/installing/testing \mml{}, you can
+ask help from the \mml{} developers. Please include the following information
 in your message:
 
 \begin{itemize}
@@ -379,19 +381,19 @@ $ python -c "import scipy;print scipy.__version__"
 \end{itemize}
 
 % ----------------------------------------------------------------------------- %
-\chapter{\gmd{} Solution Method}
+\chapter{\mml{} Solution Method}
 \label{chap:solmeth}
-\gmd{} exercises a material model directly by ``driving'' it through user
+\mml{} exercises a material model directly by ``driving'' it through user
 specified paths using a designated driver. Currently installed drivers are the
-\sol{} and \eos{} drivers. For each driver type, \gmd{} computes an increment
+\sol{} and \eos{} drivers. For each driver type, \mml{} computes an increment
 in deformation for a given step and requires that the material model update
 the stress in the material to the end of that step, given the current state
 and an increment in deformation. Because of the similarity of the material
-model interface in \gmd{} with many commercial finite element codes,
-transitioning material models developed and tested in \gmd{} to full finite
+model interface in \mml{} with many commercial finite element codes,
+transitioning material models developed and tested in \mml{} to full finite
 element codes should be an easy process. In this chapter, the role and
 importance of the material model in a finite element procedure is reviewed.
-The solution method adopted by each driver in \gmd{} is then described and
+The solution method adopted by each driver in \mml{} is then described and
 compared with that of finite elements.
 
 % ----------------------------------------------------------------------------- %
@@ -548,17 +550,17 @@ element handles the allocation and management of all memory, including memory
 required for material variables.
 
 % ----------------------------------------------------------------------------- %
-\section{\gmd{} Solution Procedure}
-\label{sec:gmdsol}
+\section{\mml{} Solution Procedure}
+\label{sec:mmlsol}
 In addition to providing a platform for material model developers to formulate
-and test constitutive routines, \gmd{} aims to provide users of material
+and test constitutive routines, \mml{} aims to provide users of material
 models an independent platform to exercise, parameterize, and compare material
 responses against single element finite element simulations. To this end, the
-solution procedure in \gmd{} is similar to that of the finite element method,
-in that the host code (\gmd{}) provides to the constitutive routine a measure
+solution procedure in \mml{} is similar to that of the finite element method,
+in that the host code (\mml{}) provides to the constitutive routine a measure
 of deformation at the end of a finite step and expects the updated stress in
 return. However, rather than solve the momentum equation at the beginning of
-each step and advancing kinematic quantities to the step's end, \gmd{}
+each step and advancing kinematic quantities to the step's end, \mml{}
 retrieves updated kinematic quantities from user defined tables and/or
 functions.
 
@@ -632,8 +634,8 @@ where the Jacobian $\Jacobian$ is the determinant of the deformation gradient.
 Each leg in the control table, from time $t=0$ to $t=t_f$ is subdivided into
 a user-specified number of steps and the material model evaluated at each
 step.  When volumetric strain, deformation gradient, displacement, or velocity
-are specified for a leg, \gmd{} internally determines the corresponding strain
-components.  If a component of stress is specified, \gmd{} determines the
+are specified for a leg, \mml{} internally determines the corresponding strain
+components.  If a component of stress is specified, \mml{} determines the
 strain increment that minimizes the distance between the prescribed stress
 component and model response.
 
@@ -684,26 +686,27 @@ is used as a back up procedure.  A warning is logged in these cases.
 As the name implies, the \sol{} driver is designed to exercise the type of
 material models encountered in solid mechanics. The solution method is similar
 to that of many finite element codes, so that material models developed and
-tested in \gmd{} can be easily transitioned to them.
+tested in \mml{} can be easily transitioned to them.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Electrical}
 Electric field can be prescribed for testing piezoelectric models.
 
 % ----------------------------------------------------------------------------- %
-\chapter{Running Simulations with \gmd{}}
+\chapter{Running Simulations with \mml{}}
 \label{chap:run}
-\gmd{} is a command line driven programming.  To run a simulation with \gmd{},
-be sure that \verb|$GMDROOT| is on your path and execute
+\mml{} is a command line driven programming through the \mmd{} executable. To
+run a simulation with \mml{}, be sure that \verb|$MMLROOT| is on your path and
+execute
 
 \begin{verbatim}
-$ gmd runid[.xml]
+$ mmd runid[.xml]
 \end{verbatim}
 
 where \texttt{runid} is the basename of the input file. Input file formatting
 is covered in Chapters \ref{chap:inpov} - \ref{chap:inpopt}.
 
-The following files will be produced by \gmd{} in the current working
+The following files will be produced by \mmd{} in the current working
 directory
 \begin{verbatim}
 $ ls runid.*
@@ -715,7 +718,7 @@ file, and \texttt{runid.xml} the input file.
 
 For a complete list of options, execute
 \begin{verbatim}
-$ gmd -h
+$ mmd -h
 \end{verbatim}
 
 
@@ -737,13 +740,13 @@ Lists are given as space separated lists (e.g., "1 2 3").
 In the following, elements shown in \Red{red} are required input.
 
 % ----------------------------------------------------------------------------- %
-\section{GMDSpec}
-All input files must have as their root element \reqdtag{GMDSpec}.
+\section{MMLSpec}
+All input files must have as their root element \reqdtag{MMLSpec}.
 \begin{inpusage}
-<GMDSpec>
+<MMLSpec>
 \end{inpusage}
 
-Recognized subelements of \reqdtag{GMDSpec} are
+Recognized subelements of \reqdtag{MMLSpec} are
 %
 \begin{itemize}
   \item \reqdtag{Physics}
@@ -776,7 +779,7 @@ The following input stub demonstrates specifying the \reqdtag{Material}
 parameter \texttt{K} and \texttt{G}, and \tag{Path} parameter \texttt{estar}
 as variables
 \begin{example}
-<GMDSpec>
+<MMLSpec>
   <!-- {random_seed = 7}
        {G = 54e9 * random()}
        {K = 23e9}
@@ -791,7 +794,7 @@ as variables
       ...
     </Path>
   </Physics>
-</GMDSpec>
+</MMLSpec>
 \end{example}
 
 % ----------------------------------------------------------------------------- %
@@ -1084,7 +1087,7 @@ cols="1 3:5 8:9 13"
 % ----------------------------------------------------------------------------- %
 \subsubsection{kappa}
 \texttt{kappa} is the Seth-Hill strain definition parameter $\kappa$ described
-in section \ref{sec:gmdsol}.
+in section \ref{sec:mmlsol}.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{Step Multiplier}
@@ -1201,7 +1204,7 @@ Insert model parameters from a database file.
 \subsubsection{Matlabel Attributes}
 \paragraph{href}
 The path to the database file. Defaults to\\
-\verb:$GMDROOT/materials/material_properties.db: if no file is given.
+\verb:$MMLROOT/materials/material_properties.db: if no file is given.
 
 % ----------------------------------------------------------------------------- %
 \paragraph{material}
@@ -1370,14 +1373,14 @@ Recognized subelements of \tag{Permutation} are
 Each \tag{Permutation} job creates a directory \texttt{runid.eval}
 \begin{verbatim}
 $ ls runid.eval
-eval_0/    eval_2/    gmd-evaldb.xml
+eval_0/    eval_2/    mml-evaldb.xml
 eval_1/    ...        runid.log
 \end{verbatim}
 
 The \texttt{eval\us{}i} directory holds the output of the
 \texttt{i}$^{\text{th}}$ job, including \texttt{params.in} with the values of
-each permutated parameter for that job. \texttt{gmd-tabular.xml} contains a
-summary of each job run. \gmdviz{} recognizes \texttt{gmd-tabular.xml} files.
+each permutated parameter for that job. \texttt{mml-tabular.xml} contains a
+summary of each job run. \mmv{} recognizes \texttt{mml-tabular.xml} files.
 
 % ----------------------------------------------------------------------------- %
 \section{Permutation Attributes}
@@ -1446,7 +1449,7 @@ specified as
 The \tag{ResponseFunction} returns the response from permutation or
 optimization jobs.
 \begin{inpusage}
-<ResponseFunction href="str" function="gmdfcn"
+<ResponseFunction href="str" function="mmlfcn"
                   descriptor="str[]"/>
 \end{inpusage}
 
@@ -1473,23 +1476,23 @@ An example of a response function specifying \texttt{href} is
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{function}
-\texttt{function} is the name of a builtin \gmd{} response function. Built in
+\texttt{function} is the name of a builtin \mml{} response function. Built in
 response functions are
 %
 \begin{itemize}
-  \item \texttt{gmd.max} maximum value of a simulation variable output
-  \item \texttt{gmd.min} minimum value of a simulation variable output
-  \item \texttt{gmd.mean} mean value of a simulation variable output
-  \item \texttt{gmd.ave} average value of a simulation variable output
-  \item \texttt{gmd.absmax} maximum absolute value of a simulation variable output
-  \item \texttt{gmd.absmin} minimum absolute value of a simulation variable output
+  \item \texttt{mml.max} maximum value of a simulation variable output
+  \item \texttt{mml.min} minimum value of a simulation variable output
+  \item \texttt{mml.mean} mean value of a simulation variable output
+  \item \texttt{mml.ave} average value of a simulation variable output
+  \item \texttt{mml.absmax} maximum absolute value of a simulation variable output
+  \item \texttt{mml.absmin} minimum absolute value of a simulation variable output
 \end{itemize}
 %
 Built in response functions operate only on variabes in the simulation output file.
 
 An example of a response function specifying \texttt{function} is
 \begin{example}
-<ResponseFunction function="gmd.max(PRESSURE)"
+<ResponseFunction function="mml.max(PRESSURE)"
                   descriptor="PRES"/>
 \end{example}
 
@@ -1515,14 +1518,14 @@ Like \tag{Permutation} jobs, each \tag{Optimization} job creates a directory
 \texttt{runid.eval}
 \begin{verbatim}
 $ ls runid.eval
-eval_0/    eval_2/    gmd-evaldb.xml     runid.log
+eval_0/    eval_2/    mml-evaldb.xml     runid.log
 eval_1/    ...        params.opt
 \end{verbatim}
 
 The \texttt{eval\us{}i} directory holds the output of the
 \texttt{i}$^{\text{th}}$ job, including \texttt{params.in} with the values of
-each parameter for that job. \texttt{gmd-tabular.xml} contains a
-summary of each job run. \gmdviz{} recognizes \texttt{gmd-tabular.xml} files.
+each parameter for that job. \texttt{mml-tabular.xml} contains a
+summary of each job run. \mmv{} recognizes \texttt{mml-tabular.xml} files.
 \texttt{params.opt} has the final, optimized, parameters.
 
 % ----------------------------------------------------------------------------- %
@@ -1602,17 +1605,17 @@ are specified as
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\chapter{\gmd{} User Material Interface}
+\chapter{\mml{} User Material Interface}
 \label{chap:usrmtl}
-\gmd{} can be made to find, build, and execute user materials outside of
-\verb|$GMDROOT|.  User materials can be written in Python or Fortran and and
-\gmd{} interacts with them through the application programming interface
+\mml{} can be made to find, build, and execute user materials outside of
+\verb|$MMLROOT|.  User materials can be written in Python or Fortran and and
+\mml{} interacts with them through the application programming interface
 (API).  In general, the following pattern is followed for exercising a
-material model with \gmd{}:
+material model with \mml{}:
 %
 \begin{enumerate}
   \item create a material model interface (MMI)
-  \item build and link the material model to \gmd{}
+  \item build and link the material model to \mml{}
   \item exercise the model
 \end{enumerate}
 %
@@ -1620,16 +1623,16 @@ material model with \gmd{}:
 % ----------------------------------------------------------------------------- %
 \section{Material Model Interface}
 \label{sec:usrint}
-\gmd{} interacts with materials through a material interface file. The
+\mml{} interacts with materials through a material interface file. The
 material interface file defines the material class which must be a subclass of\\
-\verb|$GMDROOT/materials._material.Material|.  In this section, methods of the
+\verb|$MMLROOT/materials._material.Material|.  In this section, methods of the
 \verb|Material| class are described.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Material Class Instantiation}
 \label{sec:basecls}
-The base class \verb|Material| in \verb|$GMDROOT/materials._material| creates
-new \gmd{} materials and provides the interface with which \gmd{} interacts.
+The base class \verb|Material| in \verb|$MMLROOT/materials._material| creates
+new \mml{} materials and provides the interface with which \mml{} interacts.
 Each class must define its name (\verb|Material.name|) and an ordered list of
 material parameter names (\verb|Material.param_names|) as they appear in the
 input file.  The class should not define an \texttt{\uus{}init\uus{}} method
@@ -1675,9 +1678,9 @@ def setup(self, params):
     self.shear_modulus = G
 \end{example}
 
-\subsection{Store Parameter Array with \gmd{}}
+\subsection{Store Parameter Array with \mml{}}
 The method \verb|set_param_vals| stores the checked parameter values with
-\gmd{}.  It must be called by each instance of the material model.
+\mml{}.  It must be called by each instance of the material model.
 
 \begin{interface}
   \textbf{Material.set\us{}param\us{}vals: Interface}
@@ -1775,11 +1778,11 @@ class Elastic(Material):
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\section{Building and Linking Materials to \gmd{}}
+\section{Building and Linking Materials to \mml{}}
 \label{sec:usrbld}
-\bldm{} builds the \gmd{} materials by searching the subdirectories of\\
-\verb|$GMDROOT/materials/library| and the directories specified by the
-\verb|$GMDMTLS| environment variables and building materials it finds.  It
+\bldm{} builds the \mml{} materials by searching the subdirectories of\\
+\verb|$MMLROOT/materials/library| and the directories specified by the
+\verb|$MMLMTLS| environment variables and building materials it finds.  It
 does so by searching for a single file \texttt{makemf.py} in each directory.
 \texttt{makemf.py} is responsible for building the materials and communicating
 back to \bldm{}.
@@ -1813,10 +1816,10 @@ User materials are built by the \texttt{makemf} function of the
 \subsection{Building Materials with \fpy{}}
 \label{sec:bldf2py}
 Material models written in Fortran must compiled in to a Python shared object
-library with \fpy{}. The function \texttt{utils.gmdf2py.f2yp} provides an
+library with \fpy{}. The function \texttt{utils.if2py.f2yp} provides an
 interface to \fpy{}.
 \begin{interface}
-\textbf{utils.gmdf2py.f2py: Interface}
+\textbf{utils.if2py.f2py: Interface}
 \end{interface}
 \usage{stat = f2py(name, source\us{}files, signature, fc, incd=None)}
 
@@ -1829,9 +1832,9 @@ interface to \fpy{}.
 
 \param{int stat}{returns 0 if successful, 1 otherwise}
 
-Below is an example of using \texttt{gmdf2py.f2py}
+Below is an example of using \texttt{if2py.f2py}
 \begin{example}
-from utils.gmdf2py import f2py
+from utils.if2py import f2py
 def makemf(destd, fc, fio, materials=None, *args)
     ...
     stat = f2py(name, source_files, signature, fc, incd)

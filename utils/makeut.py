@@ -1,7 +1,7 @@
 import os
 import sys
 import shutil
-from utils.gmdf2py import f2py
+from utils.if2py import f2py
 D = os.path.dirname(os.path.realpath(__file__))
 def makeut(destd, fc):
     """Make fortran based utils
