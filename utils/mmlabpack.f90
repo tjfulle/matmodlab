@@ -82,8 +82,14 @@ contains
     integer, parameter :: m=3, ldh=3, ideg=7, lwsp=4*m*m+ideg+1
     real(kind=8) :: t, wsp(lwsp)
     integer :: ipiv(m), iexph, ns, iflag
+    expm = zero
     if (all(abs(a) <= epsilon(a))) then
-       call ident(expm)
+       expm = eye(3)
+       return
+    else if (isdiag(a)) then
+       expm(1,1) = exp(a(1,1))
+       expm(2,2) = exp(a(2,2))
+       expm(3,3) = exp(a(3,3))
        return
     end if
     t = one
@@ -104,6 +110,13 @@ contains
     integer :: info
     ! eigenvalues/vectors of a
     v = a
+    powm = zero
+    if (isdiag(a)) then
+       powm(1,1) = a(1,1) ** m
+       powm(2,2) = a(2,2) ** m
+       powm(3,3) = a(3,3) ** m
+       return
+    end if
     call dsyev("V", "L", 3, v, 3, w, work, lwork, info)
     l = zero
     l(1,1) = w(1) ** m
@@ -123,6 +136,13 @@ contains
     integer, parameter :: n=3, lwork=3*n-1
     real(kind=8) :: w(n), work(lwork), v(3,3), l(3,3)
     integer :: info
+    sqrtm = zero
+    if (isdiag(a)) then
+       sqrtm(1,1) = sqrt(a(1,1))
+       sqrtm(2,2) = sqrt(a(2,2))
+       sqrtm(3,3) = sqrt(a(3,3))
+       return
+    end if
     ! eigenvalues/vectors of a
     v = a
     call dsyev("V", "L", 3, v, 3, w, work, lwork, info)
@@ -213,7 +233,7 @@ contains
 
     ! convert 1x6 arrays to 3x3 matrices for easier processing
     ! strain
-    call ident(i)
+    i = eye(3)
     eps = as3x3(e)
     depsdt = as3x3(de)
     epsf = eps + depsdt * dt
@@ -238,11 +258,16 @@ contains
 
   end function deps2d
 
-  subroutine ident(i)
-    real(kind=8), intent(out) :: i(3,3)
-    i = reshape([1,0,0,0,1,0,0,0,1], shape(i))
+  function eye(n)
+    integer, intent(in) :: n
+    real(kind=8) :: eye(n,n)
+    integer :: i
+    eye = zero
+    do i=1, n
+       eye(i,i) = one
+    end do
     return
-  end subroutine ident
+  end function eye
 
   function matinv(A)
     ! This procedure computes the inverse of a real, general matrix using Gauss-
@@ -370,7 +395,7 @@ contains
     ! convert arrays to matrices for upcoming operations
     f0 = transpose(reshape(farg, shape(f0)))
     d = as3x3(darg)
-    call ident(i)
+    i = eye(3)
 
     ff = matmul(expm(d * dt), f0)
     u = sqrtm(matmul(transpose(ff), ff))

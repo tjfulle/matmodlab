@@ -1,17 +1,20 @@
-<Model>
+<MMLSpec>
 
-  <Path type="prdef" kappa="0" tstar="1" sstar="-1.e6" amplitude="1" nfac="1000" ratfac="1">
+  <Physics>
+  <Path type="prdef" kappa="0" tstar="1"
+	sstar="-1.e6" amplitude="1" nfac="1000" ratfac="1">
     <!-- termination time, number of steps, control, Cij -->
-    0 0 444444 0 0 0 0 0 0
-    1 1 444444 1 0 0 0 0 0
-    2 1 444444 2 0 0 0 0 0
-    3 1 444444 1 0 0 0 0 0
-    4 1 444444 0 0 0 0 0 0
+    0 0 444 0 0 0
+    1 1 444 1 0 0
+    2 1 444 2 0 0
+    3 1 444 1 0 0
+    4 1 444 0 0 0
   </Path>
 
   <Material model="elastic">
     <K> 9.980040E+09 </K>
     <G> 3.750938E+09 </G>
   </Material>
+  </Physics>
 
-</Model>
+</MMLSpec>
