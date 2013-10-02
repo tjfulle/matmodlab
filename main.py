@@ -4,6 +4,7 @@ import sys
 import shutil
 import random
 import argparse
+import multiprocessing as mp
 from os.path import splitext
 
 from __config__ import cfg, SPLASH, ROOT_D, LIB_D
@@ -105,44 +106,18 @@ def main(argv=None):
         continue
 
     # --- run all input
-    output = []
     ninp = len(all_input)
-    for (iinp, (runid, mm_input)) in enumerate(all_input):
-        stype = mm_input[0]
-        if stype in ("Optimization", "Permutation"):
-            exe = "{0} {1}".format(sys.executable, FILE)
-            if stype == "Permutation":
-                model = PermutationHandler(runid, args.v, exe, args.j,
-                                           *mm_input[1:])
-            else:
-                model = OptimizationHandler(runid, args.v, exe, *mm_input[1:])
-
-        elif stype == "Physics":
-            runid_ = mm_input[1]
-            if not runid_:
-                runid_ = runid
-                if ninp > 1 and len([x for x in all_input if x[0] == runid]) > 1:
-                    runid_ += "-" + str(iinp)
-            model = PhysicsHandler(runid_, args.v, *mm_input[2:])
-
-        else:
-            logerr("{0}: unrecognized simulation type".format(mm_input.stype))
-            continue
-
-        # Run the problems
-        try:
-            model.run()
-        except Error1, e:
-            logerr("{0}: failed to run with message: {1}".format(
-                model.runid, e.message))
-
-        model.finish()
-        output.append(model.output())
-        del model
-
-        if args.v and iinp + 1 != ninp:
-            # separate screen output of different runs
-            write_newline(n=2)
+    nproc = min(min(mp.cpu_count(), args.j), ninp)
+    fargs = [(iinp, ninp, args.v, args.j, (runid, mm_input)) for
+             (iinp, (runid, mm_input)) in enumerate(all_input)]
+    if nproc == 1:
+        output = [func(farg) for farg in fargs]
+    else:
+        pool = mp.Pool(processes=nproc)
+        output = pool.map(func, fargs)
+        pool.close()
+        pool.join()
+        output = [o for o in output if o]
 
     if args.v:
         # a fun quote to end with
@@ -152,6 +127,47 @@ def main(argv=None):
     if args.V and output:
         from viz.plot2d import create_model_plot
         create_model_plot(output)
+
+
+def func(fargs):
+    iinp, ninp, verb, nproc, (runid, mm_input) = fargs
+    stype = mm_input[0]
+    if stype in ("Optimization", "Permutation"):
+        exe = "{0} {1}".format(sys.executable, FILE)
+        if stype == "Permutation":
+            model = PermutationHandler(runid, verb, exe, nproc, *mm_input[1:])
+        else:
+            model = OptimizationHandler(runid, verb, exe, *mm_input[1:])
+
+    elif stype == "Physics":
+        runid_ = mm_input[1]
+        if not runid_:
+            runid_ = runid
+            if ninp > 1 and len([x for x in all_input if x[0] == runid]) > 1:
+                runid_ += "-" + str(iinp)
+        model = PhysicsHandler(runid_, verb, *mm_input[2:])
+
+    else:
+        logerr("{0}: unrecognized simulation type".format(mm_input.stype))
+        return
+
+    # Run the problems
+    try:
+        model.run()
+    except Error1, e:
+        logerr("{0}: failed to run with message: {1}".format(
+            model.runid, e.message))
+        return
+
+    model.finish()
+    out = model.output()
+
+    if verb and iinp + 1 != ninp:
+        # separate screen output of different runs
+        write_newline(n=2)
+
+    del model
+    return out
 
 
 def write_newline(n=1):

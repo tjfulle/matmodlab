@@ -11,6 +11,9 @@
 docs/auto
 docs/*.aux
 docs/*.log
+docs/*.lof
+docs/*.lot
+docs/*.toc
 docs/*.synctex.gz
 
 lib/material_models.db

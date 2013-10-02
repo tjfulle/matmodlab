@@ -1,4 +1,10 @@
-\documentclass[12pt]{report}
+\documentclass[pdf,ps2pdf,12pt,report,strict]{SANDreport/SANDreport}
+\usepackage{pslatex}
+\usepackage{mathptmx}	% Use the Postscript Times font
+\usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
+\usepackage[dvips,light,first,bottomafter]{draftcopy}
+\draftcopyName{Draft, contains no OUO}{70}
+\usepackage{draftwatermark}
 \usepackage{ifthen}
 \usepackage{nomenclature}
 \usepackage{url}
@@ -11,8 +17,9 @@
 \usepackage{changepage}
 \usepackage{verbatim}
 \usepackage{fancybox}
+
 %\setlength{\parskip}{\baselineskip}%
-\setlength{\parindent}{0pt}%
+%\setlength{\parindent}{0pt}%
 \definecolor{shadecolor}{rgb}{.9, .9, .9}
 \definecolor{yelgr}{RGB}{154, 205, 50}
 \definecolor{lemon}{RGB}{255, 215, 0}
@@ -68,11 +75,45 @@
       \texttt{#1="#2[#3]\{#4\}"}}}}
 
 
+% ---------------------------------------------------------------------------- %
 \title{\mml{} \\ a Material Model Laboratory}
-\author{Tim Fuller}
+\author{Tim Fuller \\
+  Computational Structural Mechanics and Applications \\
+  Sandia National Laboratories\\
+  P.O. Box 5800\\
+  Albuquerque, NM 87185-9999 \\
+  tjfulle@sandia.gov }
+\date{}
+
+
+% ---------------------------------------------------------------------------- %
+\SANDnum{SAND2002-xxxx}
+\SANDprintDate{October 2013}
+\SANDauthor{Tim Fuller}
 
 \begin{document}
 \maketitle
+
+\begin{abstract}
+  \mml{} (Material Model Laboratory) is a suite of tools whose purpose is to aid
+  in the rapid development and testing of material models. \mml{} is made up of
+  several components, the most notable being the Material Model Driver \mmd{}.
+  \mmd{} can be thought to drive a single material point of a finite element
+  simulation through very specific user designed paths. This permits exercising
+  material models in ways not possible in finite element calculations, desgining
+  verification and validation tests of the material response, among others.
+  \mml{} is a small suite of tools at the developers disposal to aid in the
+  design and implementation of material models in larger finite element host
+  codes. It is also a useful tool to analysists for understanding and
+  parameterizing a material's response to deformation.
+\end{abstract}
+
+\cleardoublepage		% TOC needs to start on an odd page
+\tableofcontents
+\listoffigures
+\listoftables
+
+\SANDmain		% Start the main part of the report
 
 % ----------------------------------------------------------------------------- %
 \chapter{Introduction to \mml{}}
@@ -1007,7 +1048,8 @@ The control format \texttt{cfmt} is concatenated integer list specifying in
 its $i^\text{ith}$ component the $i^\text{th}$ component of deformation, i.e.,
 \texttt{cfmt[i]} instructs the driver as to the type of deformation
 represented by \texttt{Cij[i]}. Types of deformation represented by
-\texttt{cfmt} are shown in Table \ref{tab:cfmt}.
+\texttt{cfmt} are shown in Table \ref{tab:cfmt} for the \sol{} driver and
+Table \ref{tab:cfmt-1} for the \eos{} driver.
 
 For example, the following \texttt{cfmt} instructs the driver that the
 components of \texttt{Cij} represent [stress, strain, stress rate, strain
@@ -1019,7 +1061,9 @@ cfmt="423122"
 
 Mixed modes are allowed only for components of strain rate, strain, stress
 rate, and stress. Electric field components can be included with any
-deformation type.
+deformation type.  If only one component of stress rate, stress, strain rate,
+or strain is specified, the component \texttt{Cij} is taken to be either the
+pressure of volumetric strain.
 
 The components \texttt{Cij} take the following order
 
@@ -1154,6 +1198,17 @@ The following examples will help clarify the \reqdtag{Path} input syntax
   0 0 222 0 0 0
   1 1 244 {epsmax} 0 0
   4 1 244 0 0 0
+</Path>
+\end{example}
+
+\begin{example}
+<!-- volumetric strain -->
+<Path type="prdef" kappa="0" estar="-.5">
+  0   0 2 0
+  1 100 2 1
+  2 100 2 2
+  3 100 2 1
+  4 100 2 0
 </Path>
 \end{example}
 
@@ -1804,7 +1859,7 @@ User materials are built by the \texttt{makemf} function of the
 \begin{interface}
 \textbf{makemf.makemf: Interface}
 \end{interface}
-\usage{blt, fld, skp = makemf(destd, fc, fio, materials=None, *args)}
+\usage{built, failed, skipped = makemf(destd, fc, fio, materials=None, *args)}
 
 \param{str dest}{path to directory to copy built shared object libraries (if
   any)}
@@ -1857,6 +1912,22 @@ def makemf(destd, fc, fio, materials=None, *args)
 
 % ----------------------------------------------------------------------------- %
 \chapter{Regression Testing}
+
+\nocite{*}
+
+
+% ---------------------------------------------------------------------- %
+% References
+%
+\clearpage
+% If hyperref is included, then \phantomsection is already defined.
+% If not, we need to define it.
+\providecommand*{\phantomsection}{}
+\phantomsection
+\addcontentsline{toc}{chapter}{References}
+\bibliographystyle{plain}
+\bibliography{literature}
+
 
 \end{document}
 
