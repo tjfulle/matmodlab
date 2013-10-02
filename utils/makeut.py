@@ -19,4 +19,9 @@ def makeut(destd, fc):
 
 
 if __name__ == "__main__":
-    makeut(os.path.join(D, "../lib"), "/usr/local/bin/gfortran")
+    for d in ("/usr/local/bin", "/usr/bin", "/opt/local/bin"): 
+        gfortran = os.path.join(d, "gfortran")
+        if os.path.isfile(gfortran): break
+    else:
+        sys.exit("gfortran not found")
+    makeut(os.path.join(D, "../lib"), gfortran)

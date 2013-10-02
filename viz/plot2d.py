@@ -56,13 +56,16 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("sources", nargs="+")
     args = parser.parse_args()
+    sources = []
     for source in args.sources:
         if not os.path.isfile(source):
             logerr("{0}: no such file".format(source))
+            continue
+        sources.append(os.path.realpath(source))
     if logerr():
         stop("*** error: stopping due to previous errors")
 
-    create_model_plot(args.sources)
+    create_model_plot(sources)
 
 
 class Plot2D(tapi.HasTraits):
@@ -193,6 +196,7 @@ class Plot2D(tapi.HasTraits):
 
         # loop through plot data and plot it
         overlays_plotted = False
+        fnams = []
         for d in range(len(self.plot_data)):
 
             if not self.runs_shown[d]:
@@ -220,6 +224,9 @@ class Plot2D(tapi.HasTraits):
             # indices, determine the name from the first file's header and
             # find the x and y index in the file of interest
             fnam, header = self.get_info(d)
+            if fnam in fnams:
+                fnam += "-{0}".format(len(fnams))
+            fnams.append(fnam)
             for i, idx in enumerate(indices):
                 yname = mheader[idx]
 

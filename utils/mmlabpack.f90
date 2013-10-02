@@ -44,13 +44,29 @@ contains
     real(kind=8) :: u2e(6)
     real(kind=8), intent(in) :: u(3,3), kappa
     real(kind=8) :: x(3,3)
+    u2e = zero
     if (kappa /= zero) then
        x = one / kappa * (powm(u, kappa) - one)
     else
        x = logm(u)
     end if
-    call asarray(x, 6, u2e)
+    u2e = symarray(x)
   end function u2e
+
+  ! ------------------------------------------------------------------------- !
+  function symarray(a)
+    real(kind=8) :: symarray(6)
+    real(kind=8), intent(in) :: a(3,3)
+    real(kind=8) :: x(3,3)
+    x = half * (a + transpose(a))
+    symarray(1) = x(1,1)
+    symarray(2) = x(2,2)
+    symarray(3) = x(3,3)
+    symarray(4) = x(1,2)
+    symarray(5) = x(2,3)
+    symarray(6) = x(1,3)
+    return
+  end function symarray
 
   ! ------------------------------------------------------------------------- !
   subroutine asarray(a, n, arr)
@@ -58,14 +74,9 @@ contains
     real(kind=8), intent(in) :: a(3,3)
     real(kind=8), intent(out) :: arr(n)
     real(kind=8) :: x(3,3)
+    arr = zero
     if (n == 6) then
-       x = half * (a + transpose(a))
-       arr(1) = x(1,1)
-       arr(2) = x(2,2)
-       arr(3) = x(3,3)
-       arr(4) = x(1,2)
-       arr(5) = x(2,3)
-       arr(6) = x(1,3)
+       arr = symarray(a)
     else if (n == 9) then
        arr = reshape(a, shape(arr))
     end if
@@ -229,10 +240,11 @@ contains
     real(kind=8) :: deps2d(6)
     real(kind=8), intent(in) :: dt, k, e(6), de(6)
     real(kind=8) :: eps(3,3), depsdt(3,3), epsf(3,3), u(3,3), i(3,3), x(3,3)
-    real(kind=8) :: d(3,3), L(3,3), du(3,3)
+    real(kind=8) :: d(3,3), L(3,3), du(3,3), foo(6)
 
     ! convert 1x6 arrays to 3x3 matrices for easier processing
     ! strain
+    deps2d = zero
     i = eye(3)
     eps = as3x3(e)
     depsdt = as3x3(de)
@@ -253,7 +265,7 @@ contains
     L = matmul(du, inv(u))
     d = half * (L + transpose(L))
 
-    call asarray(d, 6, deps2d)
+    deps2d = symarray(d)
     return
 
   end function deps2d
@@ -405,23 +417,22 @@ contains
        eps = one / k * (powm(u, k) - i)
     end if
     if (det(ff) <= zero) then
-       print *, "negative Jacobian encountered"
-       stop
+       stop "negative Jacobian encountered"
     end if
     f = reshape(transpose(ff), shape(f))
-    call asarray(eps, 6, e)
+    e = symarray(eps)
     return
   end subroutine update_deformation
 
   ! ------------------------------------------------------------------------- !
-  function det (a)
+  function det(a)
     ! ----------------------------------------------------------------------- !
     ! determinant of 3x3
     ! ----------------------------------------------------------------------- !
     implicit none
     real(kind=8) :: det
     real(kind=8), intent(in) :: a(3,3)
-    det =   a(1,1)*a(2,2)*a(3,3)  &
+    det = a(1,1)*a(2,2)*a(3,3)  &
         - a(1,1)*a(2,3)*a(3,2)  &
         - a(1,2)*a(2,1)*a(3,3)  &
         + a(1,2)*a(2,3)*a(3,1)  &
@@ -443,8 +454,7 @@ contains
     deta = det(a)
     if (abs(deta) .le. epsilon(deta)) then
        inv = zero
-       print *, "non-invertible matrix sent to inv"
-       stop
+       stop "non-invertible matrix sent to inv"
     end if
     cof(1,1) = +(a(2,2)*a(3,3)-a(2,3)*a(3,2))
     cof(1,2) = -(a(2,1)*a(3,3)-a(2,3)*a(3,1))
