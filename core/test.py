@@ -348,7 +348,11 @@ def find_rtests(search_dirs, include, exclude, tests=None):
         if name is None:
             raise Error("{0}: rtest: name attribute required".format(
                 os.path.basename(test_file)))
-        bdir, name = os.path.split(str(name.value.strip()))
+        try:
+            bdir, name = os.path.split(str(name.value.strip()))
+        except AttributeError:
+            bdir = "orphaned"
+            name = str(name.value.strip())
 
         # --- keywords
         keywords = rtest.getElementsByTagName("keywords")

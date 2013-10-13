@@ -14,6 +14,8 @@ docs/*.log
 docs/*.lof
 docs/*.lot
 docs/*.toc
+docs/*.bbl
+docs/*.blg
 docs/*.synctex.gz
 
 lib/material_models.db

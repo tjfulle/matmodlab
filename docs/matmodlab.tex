@@ -1,15 +1,11 @@
-\documentclass[12pt]{report}
-%\documentclass[pdf,ps2pdf,12pt,report,strict]{SANDreport/SANDreport}
+%\documentclass[12pt]{report}
+\documentclass[12pt,report,strict]{SANDreport/SANDreport}
 \usepackage{pslatex}
-\usepackage{mathptmx}	% Use the Postscript Times font
 \usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
-\usepackage[dvips,light,first,bottomafter]{draftcopy}
-\draftcopyName{Draft, contains no OUO}{70}
 \usepackage{draftwatermark}
 \usepackage{ifthen}
 \usepackage{nomenclature}
 \usepackage{url}
-\usepackage{calc}
 \usepackage{enumitem}
 \usepackage{multirow}
 \usepackage{fancyvrb}
@@ -18,11 +14,12 @@
 \usepackage{changepage}
 \usepackage{verbatim}
 \usepackage{fancybox}
+\usepackage[linkcolor=red]{hyperref}
 
-\def\SANDmain{}
-\def\SANDauthor{}
-\def\SANDnum{}
-\def\SANDprintDate{}
+%\def\SANDmain{}
+%\def\SANDauthor{}
+%\def\SANDnum{}
+%\def\SANDprintDate{}
 
 %\setlength{\parskip}{\baselineskip}%
 %\setlength{\parindent}{0pt}%
@@ -43,14 +40,16 @@
    {\par\noindent\adjustbox{margin=1ex,bgcolor=lemon,margin=0ex
        \medskipamount}\bgroup\minipage\textwidth}%
    {\endminipage\egroup}
-\newcommand{\param}[2]{\texttt{#1}%
+\newcommand{\param}[2]{\noindent\texttt{#1}%
   \begin{adjustwidth}{2.5em}{0pt}#2\end{adjustwidth}}
 \newcommand{\usage}[1]{\indent\hspace{2.5em}\texttt{#1}}
 
+\newcommand{\vnv}{V\&V}
 \newcommand{\mml}{\texttt{matmodlab}}
 \newcommand{\mmd}{\texttt{mmd}}
 \newcommand{\mmv}{\texttt{mmv}}
 \newcommand{\bldm}{\texttt{buildmtls}}
+\newcommand{\runtests}{\texttt{runtests}}
 \newcommand{\exodusii}{{\sc\texttt{ExodusII}}}
 \newcommand{\fpy}[1]{\texttt{f2py}}
 \newcommand{\paraview}[1]{{\sc\texttt{paraview}}}
@@ -61,6 +60,7 @@
 \newcommand{\eos}{\texttt{eos}}
 \newcommand{\wf}{\Tensor{w}{}{}}
 \newcommand{\vc}{\text{v}}
+\newcommand{\PrescStress}{\Tensor{\sigma}{}{p}}
 
 % --- xml
 \renewcommand{\tag}[1]{\texttt{<#1>}}
@@ -93,25 +93,25 @@
 
 
 % ---------------------------------------------------------------------------- %
-%-- \SANDnum{SAND2002-xxxx}
-%-- \SANDprintDate{October 2013}
-%-- \SANDauthor{Tim Fuller}
+\SANDnum{SAND2002-xxxx}
+\SANDprintDate{October 2013}
+\SANDauthor{Tim Fuller}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-  \mml{} (Material Model Laboratory) is a suite of tools whose purpose is to aid
-  in the rapid development and testing of material models. \mml{} is made up of
-  several components, the most notable being the Material Model Driver \mmd{}.
-  \mmd{} can be thought to drive a single material point of a finite element
-  simulation through very specific user designed paths. This permits exercising
-  material models in ways not possible in finite element calculations, desgining
-  verification and validation tests of the material response, among others.
-  \mml{} is a small suite of tools at the developers disposal to aid in the
-  design and implementation of material models in larger finite element host
-  codes. It is also a useful tool to analysists for understanding and
-  parameterizing a material's response to deformation.
+  The Material Model Laboratory (\mml{}) is a suite of tools whose purpose is
+  to aid in the rapid development and testing of material models. \mml{} is
+  made up of several components, the most notable being the Material Model
+  Driver \mmd{}. \mmd{} can be thought to drive a single material point of a
+  finite element simulation through very specific user designed paths. This
+  permits exercising material models in ways not possible in finite element
+  calculations, desgining verification and validation tests of the material
+  response, among others. \mml{} is a small suite of tools at the developers
+  disposal to aid in the design and implementation of material models in
+  larger finite element host codes. It is also a useful tool to analysists for
+  understanding and parameterizing a material's response to deformation.
 \end{abstract}
 
 \cleardoublepage		% TOC needs to start on an odd page
@@ -124,19 +124,19 @@
 % ----------------------------------------------------------------------------- %
 \chapter{Introduction to \mml{}}
 \label{chap:intro}
-\mml{} (Material Model Laboratory) is a suite of tools whose purpose is to aid
-in the rapid development and testing of material models. \mml{} is made up of
-several components, the most notable being the Material Model Driver \mmd{}.
-\mmd{} can be thought to drive a single material point of a finite element
-simulation through very specific user designed paths. This permits exercising
-material models in ways not possible in finite element calculations, desgining
-verification and validation tests of the material response, among others.
-\mml{} is a small suite of tools at the developers disposal to aid in the
-design and implementation of material models in larger finite element host
-codes. It is also a useful tool to analysists for understanding and
-parameterizing a material's response to deformation.
+The Material Model Laboratory (\mml{}) is a suite of tools whose purpose is to
+aid in the rapid development and testing of material models. \mml{} is made up
+of several components, the most notable being the Material Model Driver
+\mmd{}. \mmd{} can be thought to drive a single material point of a finite
+element simulation through very specific user designed paths. This permits
+exercising material models in ways not possible in finite element
+calculations, desgining verification and validation tests of the material
+response, among others. \mml{} is a small suite of tools at the developers
+disposal to aid in the design and implementation of material models in larger
+finite element host codes. It is also a useful tool to analysists for
+understanding and parameterizing a material's response to deformation.
 
-The core of the \mml{} code base is written in Python and leverages Python's
+The core of \mml{} code base is written in Python and leverages Python's
 object oriented programming (OOP) design. OOP techniques are used throughout
 \mml{} to setup and manage simulation data. Computationally heavy portions of
 the code, and the material models themselves are written in Fortran for its
@@ -157,12 +157,13 @@ packages such as \paraview{} \cite{paraview}.
 
 % ----------------------------------------------------------------------------- %
 \section{Why a Single Element Driver?}
+\label{sec:why}
 Due to their complexity, it is often over kill to use a finite element code
 for constitutive model development. In addition, features such as artificial
 viscosity can mask the actual material response from constitutive model
 development. Single element drivers allow the constituive model developer to
 concentrate on model development and not the finite element response. Other
-advantages of the \mml{} (or, more generally, of any stand-alone
+advantages of \mml{} (or, more generally, of any stand-alone
 constitutive model driver) are
 
 \begin{itemize}
@@ -186,6 +187,7 @@ constitutive model driver) are
 
 % ----------------------------------------------------------------------------- %
 \section{Why Python?}
+\label{sec:why-python}
 Python is an interpreted, high level object oriented language. It allows for
 writing programs rapidly and, because it is an interpreted language, does not
 require a compiling step. While this might make programs written in python
@@ -206,6 +208,7 @@ models.
 
 % ----------------------------------------------------------------------------- %
 \section{Historical Background}
+\label{sec:background}
 When I was a graduate student at the University of Utah I had the good fortune
 to have as my advisor Dr.~Rebecca Brannon. Prof.~Brannon instilled in me the
 necessity to develop material models in small special purpose drivers, free
@@ -238,11 +241,13 @@ re-writing it in to what is now known as \mml{}.
 
 % ----------------------------------------------------------------------------- %
 \section{Obtaining \mml{}}
+\label{sec:obtain}
 \mml{} is an open source project licensed under the MIT license. A copy of may
 be obtained from \url{https://github.com/tjfulle/matmodlab}
 
 % ----------------------------------------------------------------------------- %
 \section{About This Guide}
+\label{sec:about}
 \mml{} is developed as a tool for developers and analysts who care to
 understand the responses of material models to specific deformation paths. The
 target audience is assumed to have a basic knowledge of continuum mechanics
@@ -295,6 +300,7 @@ written in fortran must be built.
 
 % ----------------------------------------------------------------------------- %
 \section{System and Software Requirements}
+\label{sec:sys}
 \mml{} has been built and tested extensively on several versions of linux and
 the Apple Mac OSX operating systems. It is unknown whether or not \mml{}
 will run on Windows.
@@ -312,15 +318,17 @@ The required software may be obtained in several ways, though all development
 has been made using Enthought Canopy (\url{http://http://www.enthought.com}).
 
 A note on the fortran compiler.  It is recommended to use the same fortran
-compiler to build the \mml{} components that was used to build SciPy.
+compiler to build \mml{} components that was used to build SciPy.
 
 % ----------------------------------------------------------------------------- %
 \section{Installation}
+\label{sec:install}
 Ensure that all \mml{} prerequisites are installed and working properly before
 proceeding.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Set Environment and Path}
+\label{sec:setup}
 
 \begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{MMLTESTS}}]
   \item[\texttt{MMLROOT}] Optional, name of installation directory
@@ -328,11 +336,12 @@ proceeding.
   \item[\texttt{MMLMTLS}] ``:'' separated list of paths to directories
   containing user defined material models. See Section \ref{sec:usrbld}.
   \item[\texttt{MMLTESTS}] ``:'' separated list of paths to directories
-  containing user defined regression tests. See Section \ref{sec:usrtests}.
+  containing user defined regression tests. See Chapter \ref{chap:rtest}.
 \end{description}
 
 % ----------------------------------------------------------------------------- %
 \subsection{Set Up}
+\label{sec:setup-1}
 Set up and build the TPLs.
 %
 \begin{verbatim}
@@ -373,6 +382,7 @@ for options to rebuild the TPLs.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Build}
+\label{sec:bld}
 Build the material libraries
 \begin{verbatim}
 $ buildmtls
@@ -380,18 +390,20 @@ $ buildmtls
 
 % ----------------------------------------------------------------------------- %
 \subsection{Test the Installation}
+\label{sec:test-install}
 To test \mml{} after installation, execute
 
 \begin{verbatim}
 $ runtests [-j N]
 \end{verbatim}
 %
-which will run the \mml{} regression tests.
+which will run \mml{} regression tests.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Troubleshooting}
+\label{sec:trouble}
 If you experience problems when building/installing/testing \mml{}, you can
-ask help from the \mml{} developers. Please include the following information
+ask help from \mml{} developers. Please include the following information
 in your message:
 
 \begin{itemize}
@@ -449,6 +461,7 @@ compared with that of finite elements.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Conservation Laws}
+\label{sec:cons-laws}
 Conservation of mass, momentum, and energy are the central tenets of the
 analysis of the response of a continuous media to deformation and/or load.
 Each conservation law can be summarized by the following statement
@@ -597,7 +610,7 @@ element handles the allocation and management of all memory, including memory
 required for material variables.
 
 % ----------------------------------------------------------------------------- %
-\section{\mml{} Solution Procedure}
+\section{Solution Procedure}
 \label{sec:mmlsol}
 In addition to providing a platform for material model developers to formulate
 and test constitutive routines, \mml{} aims to provide users of material
@@ -694,11 +707,11 @@ prescribed stress is an iterative scheme employing a multidimensional Newton's
 method that satisfies
 %
 \begin{displaymath}
-  \Stress\left(\dStrain\,[\vc]\right) = \Stress^{p}
+  \Stress\left(\dStrain\,[\vc]\right) = \PrescStress
 \end{displaymath}
 %
 where, $\vc$ is a vector subscript array containing the components for which
-stresses (or stress rates) are prescribed, and $\Stress^{p}$ are the
+stresses (or stress rates) are prescribed, and $\PrescStress$ are the
 components of prescribed stress.
 
 Each iteration begins by determining the submatrix of the material
@@ -719,7 +732,7 @@ according to
 where
 %
 \begin{displaymath}
-  \Stress^{*}(\dStrain\,[\vc]) = \Stress(\dStrain\,[\vc]) - \Stress^{p}
+  \Stress^{*}(\dStrain\,[\vc]) = \Stress(\dStrain\,[\vc]) - \PrescStress
 \end{displaymath}
 
 The Newton procedure will converge for valid stress states.  However, it is
@@ -730,6 +743,7 @@ is used as a back up procedure.  A warning is logged in these cases.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Solid Driver}
+\label{sec:solid-driver}
 As the name implies, the \sol{} driver is designed to exercise the type of
 material models encountered in solid mechanics. The solution method is similar
 to that of many finite element codes, so that material models developed and
@@ -737,10 +751,11 @@ tested in \mml{} can be easily transitioned to them.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Electrical}
+\label{sec:elec}
 Electric field can be prescribed for testing piezoelectric models.
 
 % ----------------------------------------------------------------------------- %
-\chapter{Running Simulations with \mml{}}
+\chapter{Running Simulations in \mml{}}
 \label{chap:run}
 \mml{} is a command line driven programming through the \mmd{} executable. To
 run a simulation with \mml{}, be sure that \verb|$MMLROOT| is on your path and
@@ -788,6 +803,7 @@ In the following, elements shown in \Red{red} are required input.
 
 % ----------------------------------------------------------------------------- %
 \section{MMLSpec}
+\label{sec:mmlspec}
 All input files must have as their root element \reqdtag{MMLSpec}.
 \begin{inpusage}
 <MMLSpec>
@@ -813,6 +829,7 @@ are described separately in their own chapters.
 
 % ----------------------------------------------------------------------------- %
 \section{Preprocessing}
+\label{sec:pre}
 Preprocessing allows specifying variables in the input inside of comment tags
 for use in other parts of the input. Syntax mirrors that of \texttt{aprepro}.
 Preprocessor also evaluates (nearly) any Python expression.
@@ -846,6 +863,7 @@ as variables
 
 % ----------------------------------------------------------------------------- %
 \section{Include}
+\label{sec:inc}
 Path to file to be included as if its contents were inplace in the input file
 
 \begin{inpusage}
@@ -859,6 +877,7 @@ The following stub input demonstrates how to include a file in place
 
 % ----------------------------------------------------------------------------- %
 \section{Function}
+\label{sec:func}
 Define functions to be used elsewhere in input. \texttt{id=0} and
 \texttt{id=1} are reserved for the constant $0$ and $1$ functions,
 respectively. \texttt{href} is the path to a file containing the function
@@ -922,11 +941,17 @@ Recognized subelements of \reqdtag{Physics} are
 \end{itemize}
 
 
+% ----------------------------------------------------------------------------- %
 \section{Physics Attributes}
+\label{sec:phys-attr}
+
+% ----------------------------------------------------------------------------- %
 \subsection{driver}
+\label{sec:driv-attr}
 \texttt{driver} specifies the driver type to use.  Defaults to \texttt{solid}.
 
-\subsection{termination\_time}
+\subsection{termination time}
+\label{sec:tterm-attr}
 If specified, \verb:termination_time: defines the termination time for the
 simulation. If not specified, termination time is taken as final time in
 \reqdtag{Path}.
@@ -934,6 +959,7 @@ simulation. If not specified, termination time is taken as final time in
 
 % ----------------------------------------------------------------------------- %
 \section{Path}
+\label{sec:path-attr}
 Define deformation paths through with the material will be exercised.
 
 \begin{inpusage}
@@ -948,9 +974,11 @@ Define deformation paths through with the material will be exercised.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Path Attributes}
+\label{sec:path}
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{type}
+\label{sec:path-type}
 The type of path specified.  Valid types are \texttt{prdef} and
 \texttt{surface}.
 
@@ -967,6 +995,7 @@ shown in Table \ref{tab:cfmt-1}.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{Format}
+\label{sec:path-format}
 The format by which the legs of the deformation path are specified. Valid
 formats are \texttt{default}, \texttt{table}, and \texttt{fcnspec}. In the
 following subsections, the different formats are described.
@@ -1025,7 +1054,7 @@ from an external file.
 
 % ----------------------------------------------------------------------------- %
 \paragraph{Format: fcnspec}
-\label{sec:tblform}
+\label{sec:fcnspec}
 The \texttt{fcnspec} format allows defining a deformation path by a function.
 A deformation path defined by \texttt{fcnspec} must have only 1 leg defining
 the termination time and the function specifier defining the values of the
@@ -1035,8 +1064,9 @@ components of deformation.  The function specifier is of the form
 function_id[:scale]
 \end{example}
 
-where \texttt{function\us{}id} is the ID of the function as specified in its
-\tag{Function} element.  The optional scale is multiplied by the function.
+\noindent where \texttt{function\us{}id} is the ID of the function as
+specified in its \tag{Function} element. The optional scale is multiplied by
+the function.
 
 The following input stub demonstrates uniaxial strain deformation, using a
 user defined function to specify the 11 component of strain through time.
@@ -1048,7 +1078,8 @@ user defined function to specify the 11 component of strain through time.
 </Path>
 \end{example}
 
-\subsubsection{Control Format}
+% ----------------------------------------------------------------------------- %
+\subsubsection{cfmt}
 \label{sec:cfmt}
 The control format \texttt{cfmt} is concatenated integer list specifying in
 its $i^\text{ith}$ component the $i^\text{th}$ component of deformation, i.e.,
@@ -1117,17 +1148,17 @@ components are assumed to be zero strain.
 \end{table}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{Time Format}
+\subsubsection{tfmt}
+\label{sec:tfmt}
 The \texttt{tfmt=["time"]\{"time","dt"\}} flag specifies the time format.
 If \texttt{tfmt="time"} (default) the first value of each leg is interpreted
 as the termination time for the leg. For \texttt{tfmt="dt"} the first value
 of each leg is interpreted as a time increment.
 
 % ----------------------------------------------------------------------------- %
-% ----------------------------------------------------------------------------- %
-\subsubsection{The Column Specifier}
+\subsubsection{cols}
 \label{sec:colspec}
-The columns to read from a table or the \texttt{fcnspec} leg are specified by
+The columns to be read from a table or the \texttt{fcnspec} leg are specified by
 the \texttt{cols} attribute.  \texttt{cols} are specified as a space separated
 list of columns.  Numbering is 1 based.  Ranges can be specified using Python
 slice syntax.
@@ -1144,15 +1175,18 @@ cols="1 3:5 8:9 13"
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{kappa}
+\label{sec:kappa}
 \texttt{kappa} is the Seth-Hill strain definition parameter $\kappa$ described
 in section \ref{sec:mmlsol}.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{Step Multiplier}
+\subsubsection{nfac}
+\label{sec:nfac}
 \texttt{nfac} is a multiplier on the number of steps for each leg.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{Amplitude}
+\subsubsection{amplitude}
+\label{sec:ampl}
 \texttt{amplitude} is a factor multiplied to all components of deformation.
 
 % ----------------------------------------------------------------------------- %
@@ -1171,6 +1205,7 @@ effectively increasing the rate of deformation.
 
 % ----------------------------------------------------------------------------- %
 \subsection{More Examples}
+\label{sec:more-ex}
 The following examples will help clarify the \reqdtag{Path} input syntax
 
 \begin{example}
@@ -1218,7 +1253,8 @@ The following examples will help clarify the \reqdtag{Path} input syntax
 </Path>
 \end{example}
 
-\subsubsection{Example of \texttt{type="surface"}}
+\subsubsection{Example of type="surface"}
+\label{sec:more-ex-1}
 The following examples demonstrate the \texttt{type="surface"}
 \begin{example}
 <Path type="surface">
@@ -1240,6 +1276,7 @@ The following examples demonstrate the \texttt{type="surface"}
 
 % ----------------------------------------------------------------------------- %
 \section{Material}
+\label{sec:mtl}
 Define the material model.
 
 \begin{inpusage}
@@ -1259,11 +1296,16 @@ Subelements of \reqdtag{Material} are
 
 % ----------------------------------------------------------------------------- %
 \subsection{Material Attributes}
+\label{sec:mtl-attr}
+
+% ----------------------------------------------------------------------------- %
 \subsubsection{model}
+\label{sec:model}
 The name of the material model.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Matlabel}
+\label{sec:matlabel}
 Insert model parameters from a database file.
 \begin{inpusage}
 <Matlabel href="str[F_MTL_PARAM_DB]" material="str"/>
@@ -1271,6 +1313,7 @@ Insert model parameters from a database file.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{Matlabel Attributes}
+\label{sec:matlabel-attr}
 \paragraph{href}
 The path to the database file. Defaults to\\
 \verb:$MMLROOT/materials/material_properties.db: if no file is given.
@@ -1287,6 +1330,7 @@ The following input stub demonstrates the use of \tag{Matlabel}
 \end{example}
 
 \subsection{ParameterArray}
+\label{sec:param-array}
 Specify the parameter array for the material as whitespace separated list of
 floats.  The list of values must be the same length as the parameter array for
 the material or an error will occur.
@@ -1298,6 +1342,7 @@ the material or an error will occur.
 
 % ----------------------------------------------------------------------------- %
 \subsection{InitialState}
+\label{sec:initial-state}
 Specify the initial state of the material as a whitespace separated list of
 floats. Six stress values must be followed by material variables (if any). The
 length of the material variables must be the same as the length of the
@@ -1311,6 +1356,7 @@ implementation is material model specific.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Specify Individual Parameters}
+\label{sec:ind-params}
 Specify individual parameters as xml text nodes
 \begin{inpusage}
 <Key> float </Key>
@@ -1327,6 +1373,7 @@ stub inputs demonstrate the \reqdtag{Material} input
 
 % ----------------------------------------------------------------------------- %
 \section{Extract}
+\label{sec:extract}
 Extract variables and paths from \exodusii{} output and (optionally) write to
 different formats.
 \begin{inpusage}
@@ -1353,14 +1400,17 @@ file in the numpy .npy binary format.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{step}
+\label{sec:step}
 Extract every \texttt{step}th timestep.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{ffmt}
+\label{sec:ffmt}
 The string format used write out variables.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Variables}
+\label{sec:vars}
 Variables to extract from the \exodusii{} output database. Variables are specified
 children of the \tag{Variables} element. All components of vector and tensor
 variables will be extracted if only the basename is specified. Time is always
@@ -1403,6 +1453,7 @@ Extract all variables
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{Path}
+\label{sec:vars-path}
 Extract a specified path from the equation of state surface through the
 specified density range starting at the initial temperature.
 \begin{inpusage}
@@ -1453,7 +1504,11 @@ summary of each job run. \mmv{} recognizes \texttt{mml-tabular.xml} files.
 
 % ----------------------------------------------------------------------------- %
 \section{Permutation Attributes}
+\label{sec:perm-attr}
+
+% ----------------------------------------------------------------------------- %
 \subsection{method}
+\label{sec:perm-meth}
 The \texttt{method} attribute describes which method to use to determine
 parameter combinations to run.
 
@@ -1461,17 +1516,22 @@ The \texttt{zip} method runs one job for each set of parameters (and, thus,
 the number of realizations for each parameter must be identical), the
 \texttt{combine} method runs every combination of parameters.
 
+% ----------------------------------------------------------------------------- %
 \subsection{correlation}
+\label{sec:perm-corr}
 Create correlation table and plots of relating permutated parameters and value
 of response function. \texttt{correlation} is only meaningful if a
 \tag{ResponseFunction} is specified.
 
+% ----------------------------------------------------------------------------- %
 \subsection{seed}
+\label{sec:perm-seed}
 The seed for the random number generator. \texttt{date} is todays date in
 seconds.
 
 % ----------------------------------------------------------------------------- %
 \section{Permutate}
+\label{sec:permutate}
 Specify the paramaters to permutate.
 \begin{inpusage}
 <Permutate var="str"
@@ -1479,12 +1539,19 @@ Specify the paramaters to permutate.
                         normal,percentage}"
 \end{inpusage}
 
+% ----------------------------------------------------------------------------- %
 \subsection{Permutate Attributes}
+\label{sec:permutate-attr}
+
+% ----------------------------------------------------------------------------- %
 \subsubsection{var}
+\label{perm-var}
 \texttt{var} is the name of the variabe and should occur elsewhere in
 the input file in preprocessing braces.
 
+% ----------------------------------------------------------------------------- %
 \subsubsection{values}
+\label{sec:perm-vals}
 \texttt{values} are the specific values. The
 \texttt{range,list,weibull,uniform,normal,percentage} are all specified as
 functions with the following form
@@ -1515,6 +1582,7 @@ specified as
 
 % ----------------------------------------------------------------------------- %
 \section{ResponseFunction}
+\label{sec:perm-resp-func}
 The \tag{ResponseFunction} returns the response from permutation or
 optimization jobs.
 \begin{inpusage}
@@ -1526,11 +1594,16 @@ One of \texttt{href} or \texttt{function} must be specified.
 
 % ----------------------------------------------------------------------------- %
 \subsection{ResponseFunction Attributes}
+\label{sec:perm-resp-func-attr}
+
+% ----------------------------------------------------------------------------- %
 \subsubsection{descriptor}
+\label{sec:perm-resp-func-attr-desc}
 \texttt{descriptor} is the name given to the response function in the output.
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{href}
+\label{sec:perm-resp-func-attr-href}
 \texttt{href} is the path to an executable file script containing the response
 function. The script is called from the command line as
 
@@ -1545,6 +1618,7 @@ An example of a response function specifying \texttt{href} is
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{function}
+\label{sec:perm-resp-func-attr-fcn}
 \texttt{function} is the name of a builtin \mml{} response function. Built in
 response functions are
 %
@@ -1599,20 +1673,27 @@ summary of each job run. \mmv{} recognizes \texttt{mml-tabular.xml} files.
 
 % ----------------------------------------------------------------------------- %
 \section{Optimization Attributes}
+\label{sec:opt}
+
+% ----------------------------------------------------------------------------- %
 \subsection{method}
+\label{sec:opt-meth}
 \texttt{method} specifies the optimization method.  All optimization routines
 utilize the scipy.optimize module.
 
 % ----------------------------------------------------------------------------- %
 \subsection{maxiter}
+\label{sec:maxiter}
 \texttt{maxiter} is the maximum number of iterations.
 
 % ----------------------------------------------------------------------------- %
 \subsection{tolerance}
+\label{sec:tol}
 \texttt{tolerance} is the optimization tolerance.
 
 % ----------------------------------------------------------------------------- %
 \section{Optimize}
+\label{sec:optimize}
 Specify the variable to be optimized.
 \begin{inpusage}
 <Optimize var="str" initial_value="real" bounds="list[]"/>
@@ -1620,21 +1701,28 @@ Specify the variable to be optimized.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Optimize Attributes}
+\label{sec:optimize-attr}
+
+% ----------------------------------------------------------------------------- %
 \subsubsection{var}
+\label{sec:optimize-attr-val}
 \texttt{var} is the name of the variabe and should occur elsewhere in
 the input file in preprocessing braces.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{initial\us{}value}
+\subsubsection{initial value}
+\label{sec:optimize-attr-ival}
 \texttt{initial\us{}value} is the initial value of \texttt{var}
 
 % ----------------------------------------------------------------------------- %
 \subsubsection{bounds}
+\label{sec:optimize-attr-bounds}
 \texttt{bounds} specifies lower and upper bounds on \texttt{var}. Only the
 \texttt{cobyla} method accepts bounds.
 
 % ----------------------------------------------------------------------------- %
 \section{AuxiliaryFile}
+\label{sec:optimize-aux-file}
 Path to any auxiliary file needed by the optimization objective function.
 \begin{inpusage}
 <AuxiliaryFile href="str"/>
@@ -1642,6 +1730,7 @@ Path to any auxiliary file needed by the optimization objective function.
 
 % ----------------------------------------------------------------------------- %
 \section{ResponseFunction}
+\label{sec:optimize-resp-fcn}
 Same as for \tag{Permutation}, except that auxiliary files are also passed to
 the function. The value returned from the response function is interpreted as
 the error to be minimized.
@@ -1651,7 +1740,9 @@ If the \tag{ResponseFunction} is given by \texttt{href}, it is called as
 % ./scriptname runid.exo [AuxFile1[AuxFile2[...]]]
 \end{verbatim}
 
+% ----------------------------------------------------------------------------- %
 \section{Example}
+\label{sec:optimize-ex}
 Optimize the \texttt{K} and \texttt{G} parameters
 \begin{example}
 <Optimization method="simplex" maxiter="25" tolerance="1e-4">
@@ -1674,7 +1765,7 @@ are specified as
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\chapter{\mml{} User Material Interface}
+\chapter{User Material Interface}
 \label{chap:usrmtl}
 \mml{} can be made to find, build, and execute user materials outside of
 \verb|$MMLROOT|.  User materials can be written in Python or Fortran and and
@@ -1722,7 +1813,9 @@ class Elastic(Material)
     param_names = ['K', 'G']
 \end{example}
 
+% ----------------------------------------------------------------------------- %
 \subsection{Setup the Material}
+\label{sec:setup-mtl}
 The method \texttt{setup} sets up the material model by checking and setting
 the material parameter array, requesting allocation of storage of material
 variables, and computing and storing the \verb|bulk_modulus| and
@@ -1747,7 +1840,9 @@ def setup(self, params):
     self.shear_modulus = G
 \end{example}
 
-\subsection{Store Parameter Array with \mml{}}
+% ----------------------------------------------------------------------------- %
+\subsection{Storing the Parameter Array}
+\label{sec:store-param}
 The method \verb|set_param_vals| stores the checked parameter values with
 \mml{}.  It must be called by each instance of the material model.
 
@@ -1765,8 +1860,9 @@ params = self._check_params(params)
 self.set_param_val(params)
 \end{example}
 
-
+% ----------------------------------------------------------------------------- %
 \subsection{Adjust the Initial State}
+\label{sec:adjust-istate}
 The method \texttt{adjust\us{}initial\us{}state} adjusts the initial state
 after the material is setup. Method provided by base class should be adequate
 for most materials. A material should only overide the base method if
@@ -1778,7 +1874,9 @@ absolutely necessary.
 \usage{mtl.adjust\us{}initial\us{}state(xtra)}\\[5pt]
 \param{ndarray xtra}{Material variables}
 
+% ----------------------------------------------------------------------------- %
 \subsection{Update the Material State}
+\label{sec:update-state}
 The material state is updated to the end of the step via the
 \verb|update_state| method. Each material model must provide its own
 \verb|update_state| method.
@@ -1809,7 +1907,9 @@ sig, xtra = mtl.update_state(dt, d, sig, xtra,
                              f, ef, t, rho, tmpr, *args)
 \end{example}
 
+% ----------------------------------------------------------------------------- %
 \subsection{Example}
+\label{sec:update-state-ex}
 The following example demonstrates the implementation of a simple elastic
 model.
 \begin{example}
@@ -1847,9 +1947,9 @@ class Elastic(Material):
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\section{Building and Linking Materials to \mml{}}
+\section{Building and Linking Materials}
 \label{sec:usrbld}
-\bldm{} builds the \mml{} materials by searching the subdirectories of\\
+\bldm{} builds \mml{} materials by searching the subdirectories of\\
 \verb|$MMLROOT/materials/library| and the directories specified by the
 \verb|$MMLMTLS| environment variables and building materials it finds.  It
 does so by searching for a single file \texttt{makemf.py} in each directory.
@@ -1858,6 +1958,7 @@ back to \bldm{}.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Building User Materials}
+\label{sec:bld-usr}
 User materials are built by the \texttt{makemf} function of the
 \texttt{makemf.py} scripts
 
@@ -1874,18 +1975,18 @@ User materials are built by the \texttt{makemf} function of the
 \param{list materials}{list of materials to build.  if empty, build all}
 \param{tuple args}{not used}
 
-\param{tuple blt}{\texttt{(name, interface, mclass, parameters)}.
+\param{tuple built}{\texttt{(name, interface, mclass, parameters)}.
   \texttt{name} is the name of the material, \texttt{interface} the file path
   to the interface file, \texttt{mclass} the material model class name in
   \texttt{interface}, \texttt{parameters} an order list of parameter names}
-\param{list fld}{list of names of materials that failed to build}
-\param{list skp}{list of names of materials that were skipped}
+\param{list failed}{list of names of materials that failed to build}
+\param{list skipped}{list of names of materials that were skipped}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Building Materials with \fpy{}}
+\subsection{Building Materials with f2py}
 \label{sec:bldf2py}
 Material models written in Fortran must compiled in to a Python shared object
-library with \fpy{}. The function \texttt{utils.if2py.f2yp} provides an
+library with \fpy{}. The function \texttt{utils.if2py.f2py} provides an
 interface to \fpy{}.
 \begin{interface}
 \textbf{utils.if2py.f2py: Interface}
@@ -1918,17 +2019,203 @@ def makemf(destd, fc, fio, materials=None, *args)
 
 % ----------------------------------------------------------------------------- %
 \chapter{Regression Testing}
+\label{chap:rtest}
 
-\nocite{*}
+% ----------------------------------------------------------------------------- %
+\section{Introduction}
+\label{sec:rtest-intro}
+Regression testing is crucial to the model development process. Regression
+tests in \mml{} are special purpose problems that serve several purposes, most
+notably, component tests for the core capabilities of \mml{}, and verification
+and validation (\vnv{}) of material models. In the first role, problems are
+fast running and exercise specific features of \mml{} in a unit-test type
+fashion. In the second, material models are exercised through specific paths
+with known, or expected outcomes.
+
+% ----------------------------------------------------------------------------- %
+\section{The runtests Tool}
+\label{sec:rtest-run}
+\runtests{} gathers, runs, and analyzes tests. To run the tests with
+\mml{}, be sure that \verb|$MMLROOT| is on your path and execute
+
+\begin{verbatim}
+$ runtests
+\end{verbatim}
+
+\runtests{} will create a results directory \verb|TestResults.<platform>|,
+where \texttt{<platform>} is is the machine platform (as determined by
+Python's sys.platform) on which the tests are being run. The following files
+and directories will be produced by \runtests{} in the
+\verb|TestResults.<platform>|, directory
+\begin{verbatim}
+$ ls TestsResults.darwin
+completed_tests.db mmd/ summary.html
+\end{verbatim}
+%
+\texttt{completed\_tests.db} is a database file containing information on all
+completed tests and \texttt{summary.html} is an html summary file, viewable in
+any web browser.
+
+% ----------------------------------------------------------------------------- %
+\section{runtests Options}
+\label{sec:rtest-options}
+The full list of options to \runtests{} is
+\begin{verbatim}
+$ runtests -h
+usage: test.py [-h] [-k K] [-K K] [-j J] [-F] [--plot-failed] [--plot-all]
+               [--list] [--testdirs TESTDIRS] [-D D] [-w] [--rebaseline]
+               [--run-failed]
+               [tests [tests ...]]
+
+positional arguments:
+  tests                Specific tests to run [default: None]
+
+optional arguments:
+  -h, --help           show this help message and exit
+  -k K                 Keywords of tests to include [default: []]
+  -K K                 Keywords of tests to exclude [default: []]
+  -j J                 Number of simultaneous tests [default: 1]
+  -F                   Force tests previously run to rerun [default: False]
+  --plot-failed        Create overlay plots for failed tests [default: False]
+  --plot-all           Create overlay plots for completed tests [default:
+                       False]
+  --list               List matching tests and exit [default: False]
+  --testdirs TESTDIRS  Additional directories to find tests [default: []]
+  -D D                 Directory to run tests [default: /Users/tjfulle/Develop
+                       er/Applications/matmodlab/tests/TestResults.darwin]
+  -w                   Wipe test directory before running tests [default:
+                       False]
+  --rebaseline         Rebaseline test in current directory [default: False]
+  --run-failed         Run tests that previously had failed [default: False]
+\end{verbatim}
+
+% ----------------------------------------------------------------------------- %
+\section{Regression Test Specification File}
+\label{sec:rtest-spec}
+\runtests{} searches for test specification files in the \verb|$MMLROOT/tests|
+directory and directories in the \texttt{MMLMTLS} environment variable. The
+tests specification files xml files with a \texttt{.rxml} extension. All test
+files must have as their root element \reqdtag{rtest}.
+
+\begin{inpusage}
+<rtest name="str" repeat="int[1]">
+\end{inpusage}
+
+Recognized subelements of \reqdtag{rtest} are
+%
+\begin{itemize}
+  \item \reqdtag{keywords}
+  \item \reqdtag{execute name=lstr"}
+  \item \tag{link\_files}
+\end{itemize}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Attributes of rtest}
+\label{sec:rtest-attr}
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{name}
+\label{sec:rtest-name}
+\texttt{name} is the name of the test.  The name should include a directory
+name and test name.  For example \verb|<rtest name="dir/test_name">|.  The test
+will then run and in \verb|TestResults.<platform>/dir/test_name/|.  If no
+directory name is given, it will default to \texttt{orphaned}.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{repeat}
+\label{sec:rtest-repeat}
+\texttt{repeat} tells \runtests{} to repeat the test \texttt{repeat} times.
+Useful for tests that have random inputs and should be run for various
+realizations of those inputs.
+
+An example \reqdtag{rtest} is
+\begin{example}
+<rtest name="mml/super" repeat="3">
+...
+</rtest>
+\end{example}
+
+% ----------------------------------------------------------------------------- %
+\subsection{Name Substitution}
+\label{sec:rtest-name-sub}
+\runtests{} performs string substitution for strings in braces when processing
+the test specification file. The following string/substitute are currently
+recognized
+
+\begin{description}
+  \item[NAME] The test base name
+\end{description}
+
+Additionally, environment variables are expanded.
+
+% ----------------------------------------------------------------------------- %
+\subsection{keywords}
+\label{sec:rtest-kw}
+Regression test keywords
+\begin{inpusage}
+<keywords> kw_1 kw_2 ... kw_n </keywords>
+\end{inpusage}
+
+One of \verb|[long,medium,fast]| must be specified as a keyword for every
+test. Fast tests are defined as those that run in less than 5 seconds, medium
+in up to 25 seconds, and long any test that takes longer than 25 seconds to
+execute.  When \runtests{} is executed with the \texttt{-k kw} option, only
+tests of \texttt{kw} will be run.
+
+An example keywords block is
+\begin{example}
+<keywords> fast elastic super </keywords>
+\end{example}
+
+% ----------------------------------------------------------------------------- %
+\subsection{link\_files}
+\label{sec:rtest-link}
+Link files to the test directory
+\begin{inpusage}
+<link_files> file_1 file_2 ... file_n </link_files>
+\end{inpusage}
+
+% ----------------------------------------------------------------------------- %
+\subsection{execute}
+\label{sec:rtest-exe}
+Execute the executable given by \texttt{name}
+\begin{inpusage}
+<execute name="exe"> args </execute>
+\end{inpusage}
+
+\texttt{exe} is the name of an executable and must be on your \verb|$PATH|.
+\texttt{args} are the arguments to \texttt{exe} as if called from the command
+line. When a test is run, \runtests{} executes the executable in a shell as
+specified by each \reqdtag{execute} tag in the order encountered.
+
+% ----------------------------------------------------------------------------- %
+\section{Examples}
+\label{sec:rtest-ex}
+In the following example, a simulation is run with \mmd{} and \texttt{exdif}
+is used to determine if the output differs from a known base result
+\texttt{example.base\_exo}
+
+\begin{example}
+<rtest name="example">
+  <keywords> fast elastic </keywords>
+
+  <link_files>
+    base.exdiff {NAME}.rxml {NAME}.xml {NAME}.base_exo
+  </link_files>
+
+  <execute name="mmd"> {NAME}.xml </execute>
+
+  <execute name="exdiff">
+    -f base.exdiff {NAME}.exo {NAME}.base_exo
+  </execute>
+</rtest>
+\end{example}
 
 
 % ---------------------------------------------------------------------- %
 % References
 %
 \clearpage
-% If hyperref is included, then \phantomsection is already defined.
-% If not, we need to define it.
-\providecommand*{\phantomsection}{}
 \phantomsection
 \addcontentsline{toc}{chapter}{References}
 \bibliographystyle{plain}
