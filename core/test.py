@@ -16,12 +16,12 @@ from __config__ import SPLASH
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
-TESTS = [os.path.join(R, "tests")]
-TESTS.extend([x for x in os.getenv("MMLTESTS", "").split(os.pathsep) if x])
+TESTS = os.path.join(R, "tests")
 PATH = os.getenv("PATH", "").split(os.pathsep)
 PLATFORM = sys.platform.lower()
 PATH.append(os.path.join(R, "tpl/exowrap/Build_{0}/bin".format(PLATFORM)))
 D_TESTS =  os.path.join(os.getcwd(), "TestResults.{0}".format(PLATFORM))
+RTEST_STAT_F = ".rtest-status"
 NOTRUN_STATUS = -1
 PASS_STATUS = 0
 DIFF_STATUS = 1
@@ -49,13 +49,13 @@ WIDTH = 70
 
 class Error(Exception):
     def __init__(self, message):
-        sys.stderr.write(message + "\n")
+        sys.stderr.write("*** error: runtests: {0}\n".format(message))
         raise SystemExit(2)
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     parser.add_argument("-k", action="append", default=[],
         help="Keywords of tests to include [default: %(default)s]")
     parser.add_argument("-K", action="append", default=[],
@@ -71,8 +71,6 @@ def main(argv=None):
     parser.add_argument("--list", action="store_true", default=False,
         dest="list_and_exit",
         help="List matching tests and exit [default: %(default)s]")
-    parser.add_argument("--testdirs", action="append", default=[],
-        help="Additional directories to find tests [default: %(default)s]")
     parser.add_argument("-D", default=D_TESTS,
         help="Directory to run tests [default: %(default)s]")
     parser.add_argument("-w", default=False, action="store_true",
@@ -81,8 +79,9 @@ def main(argv=None):
         help="Rebaseline test in current directory [default: %(default)s]")
     parser.add_argument("--run-failed", default=False, action="store_true",
         help="Run tests that previously had failed [default: %(default)s]")
-    parser.add_argument("tests", nargs="*",
-        help="Specific tests to run [default: %(default)s]")
+    parser.add_argument("path", nargs="*",
+        help="""Path[s] to directory[ies] to find tests, or to test
+                specific test file[s] [default: %(default)s]""")
     args = parser.parse_args(argv)
 
     if args.rebaseline:
@@ -91,12 +90,24 @@ def main(argv=None):
     log = sys.stdout
 
     # Directory to find tests
-    dirs = TESTS
-    for d in args.testdirs:
-        if not os.path.isdir(d):
-            log_warning("{0}: no such directory".format(d))
-            continue
-        dirs.append(d)
+    dirs, tests = [], []
+    if not args.path:
+        if os.path.isfile(RTEST_STAT_F):
+            sys.exit(run_rtest_in_cwd())
+        parser.print_help()
+        raise Error("too few arguments: path not specified")
+
+    for p in args.path:
+        p = os.path.realpath(p)
+        if os.path.isfile(p):
+            tests.append(p)
+        elif os.path.isdir(p):
+            dirs.append(p)
+        else:
+            log_warning("{0}: no such file or directory".format(p))
+
+    if not dirs and not tests:
+        raise Error("no test dirs or tests found")
 
     # --- root directory to run tests
     testd = args.D
@@ -114,10 +125,10 @@ def main(argv=None):
 
     # find the rtests
     if args.run_failed:
-        rtests = get_completed_rtests(testd, True)
+        rtests = get_completed_rtests(testd, failed_only=True)
         args.F = True
     else:
-        rtests = find_rtests(dirs, args.k, args.K, args.tests)
+        rtests = find_rtests(dirs, args.k, args.K, tests)
     ntests = len(rtests)
     timing.tests_found = time.time()
 
@@ -335,92 +346,97 @@ def find_rtests(search_dirs, include, exclude, tests=None):
     # put all found tests in the rtests dictionary
     rtests = {}
     for test_file in test_files:
-        test_file_d = os.path.dirname(test_file)
-
-        doc = xdom.parse(test_file)
-        try:
-            rtest = doc.getElementsByTagName("rtest")[0]
-        except IndexError:
-            raise Error("Expected root element rtest in {0}".format(test_file))
-
-        # --- name
-        name = rtest.attributes.get("name")
-        if name is None:
-            raise Error("{0}: rtest: name attribute required".format(
-                os.path.basename(test_file)))
-        try:
-            bdir, name = os.path.split(str(name.value.strip()))
-        except AttributeError:
-            bdir = "orphaned"
-            name = str(name.value.strip())
-
-        # --- keywords
-        keywords = rtest.getElementsByTagName("keywords")
-        if keywords is None:
-            raise Error("{0}: rtest: keyword element required".format(name))
-        keywords = xmltools.child2list(keywords, "lower")
-
-        # --- repeat test
-        repeat = rtest.attributes.get("repeat")
-        if repeat is None:
-            Nrepeat = 1
-        else:
-            try:
-                Nrepeat = int(repeat.value)
-            except ValueError:
-                raise Error("{0}: rtest: invalid value for 'repeat'".format(
-                          name))
-
-        # --- link_files
-        link_files = rtest.getElementsByTagName("link_files")
-        if link_files:
-            link_files = [os.path.join(test_file_d, f).format(NAME=name)
-                          for f in xmltools.child2list(link_files)]
-            for link_file in link_files:
-                if not os.path.isfile(link_file):
-                    raise Error("{0}: no such file".format(link_file))
-
-        # --- execute
-        execute = []
-        exct = rtest.getElementsByTagName("execute")
-        if exct is None:
-            raise Error("{0}: rtest: execute element "
-                        "required".format(name))
-        for item in exct:
-            exe = item.attributes.get("name")
-            if exe is None:
-                raise Error("{0}: execute: name attribute "
-                            "required".format(name))
-            exe = exe.value.strip()
-            if "$" in exe:
-                # Expand environmental variables
-                exe = exe.split()
-                for idx in range(0, len(exe)):
-                    if exe[idx].startswith("$"):
-                        exe[idx] = os.environ[exe[idx].lstrip("$")]
-                exe = " ".join(exe)
-            x = which(exe)
-            if x is None:
-                raise Error("{0}: {1}: executable not found".format(name, exe))
-            opts = [s.format(NAME=name) for s in xmltools.child2list([item])]
-            if exe == "exodiff":
-                opts = ["-status", "-allow_name_mismatch"] + opts
-            execute.append([x] + opts)
-
-        if Nrepeat == 1:
-            rtests[name] = {S_BDIR: bdir, S_EXEC: execute, S_LNFL: link_files,
-                            S_KWS: keywords}
-        else:
-            # Add multiple instances of the same test (for use with random inputs)
-            Ndigits = len("{0:d}".format(Nrepeat))
-            for idx in range(1, Nrepeat + 1):
-                suffix = "_{0:0{1}d}".format(idx, Ndigits)
-                rtests[name + suffix] = {S_BDIR: bdir,
-                                         S_EXEC: execute, S_LNFL: link_files,
-                                         S_KWS: keywords}
-        doc.unlink()
+        rtests.update(parse_rxml(test_file))
 
     return filter_rtests(rtests, include, exclude)
+
+
+def parse_rxml(test_file):
+
+    details = {}
+    test_file_d = os.path.dirname(test_file)
+
+    doc = xdom.parse(test_file)
+    try:
+        rtest = doc.getElementsByTagName("rtest")[0]
+    except IndexError:
+        raise Error("expected root element rtest in {0}".format(test_file))
+
+    # --- name
+    name = rtest.attributes.get("name")
+    if name is None:
+        raise Error("{0}: rtest: name attribute required".format(
+            os.path.basename(test_file)))
+    try:
+        bdir, name = os.path.split(str(name.value.strip()))
+    except AttributeError:
+        bdir = "orphaned"
+        name = str(name.value.strip())
+
+    # --- keywords
+    keywords = rtest.getElementsByTagName("keywords")
+    if keywords is None:
+        raise Error("{0}: rtest: keyword element required".format(name))
+    keywords = xmltools.child2list(keywords, "lower")
+
+    # --- repeat test
+    repeat = rtest.attributes.get("repeat")
+    if repeat is None:
+        Nrepeat = 1
+    else:
+        try:
+            Nrepeat = int(repeat.value)
+        except ValueError:
+            raise Error("{0}: rtest: invalid value for 'repeat'".format(name))
+
+    # --- link_files
+    link_files = rtest.getElementsByTagName("link_files")
+    if link_files:
+        link_files = [os.path.join(test_file_d, f).format(NAME=name)
+                      for f in xmltools.child2list(link_files)]
+        for link_file in link_files:
+            if not os.path.isfile(link_file):
+                raise Error("{0}: no such file".format(link_file))
+
+    # --- execute
+    execute = []
+    exct = rtest.getElementsByTagName("execute")
+    if exct is None:
+        raise Error("{0}: rtest: execute element required".format(name))
+    for item in exct:
+        exe = item.attributes.get("name")
+        if exe is None:
+            raise Error("{0}: execute: name attribute required".format(name))
+        exe = exe.value.strip()
+        if "$" in exe:
+            # Expand environmental variables
+            exe = exe.split()
+            for idx in range(0, len(exe)):
+                if exe[idx].startswith("$"):
+                    exe[idx] = os.environ[exe[idx].lstrip("$")]
+            exe = " ".join(exe)
+        x = which(exe)
+        if x is None:
+            raise Error("{0}: {1}: executable not found".format(name, exe))
+        opts = [s.format(NAME=name) for s in xmltools.child2list([item])]
+        if exe == "exodiff":
+            opts = ["-status", "-allow_name_mismatch"] + opts
+        execute.append([x] + opts)
+
+    if Nrepeat == 1:
+        details[name] = {S_BDIR: bdir, S_EXEC: execute, S_LNFL: link_files,
+                         S_KWS: keywords}
+    else:
+        # Add multiple instances of the same test (for use with random inputs)
+        Ndigits = len("{0:d}".format(Nrepeat))
+        for idx in range(1, Nrepeat + 1):
+            suffix = "_{0:0{1}d}".format(idx, Ndigits)
+            details[name + suffix] = {S_BDIR: bdir,
+                                      S_EXEC: execute, S_LNFL: link_files,
+                                      S_KWS: keywords}
+    doc.unlink()
+    return details
+
 
 
 def filter_rtests(rtests, include, exclude):
@@ -475,7 +491,17 @@ def run_rtests(testd, rtests, nproc):
     return statuses[0]
 
 
-def run_rtest(args):
+def run_rtest_in_cwd():
+    try:
+        rxml = [f for f in os.listdir(os.getcwd()) if f.endswith(".rxml")][-1]
+    except IndexError:
+        raise Error("no test found in PWD")
+    details = parse_rxml(rxml)
+    for (rtest, details) in details.items():
+        break
+    run_rtest((None, rtest, details), inplace=True)
+
+def run_rtest(args, inplace=True):
     """Run the rtest
 
     """
@@ -484,16 +510,20 @@ def run_rtest(args):
     times = [time.time()]
     log_message("{0:{1}s} running".format(rtest + ":", WIDTH))
     # make the test directory
-    rtestd = os.path.join(testd, details[S_BDIR], rtest)
-    if os.path.isdir(rtestd):
-        shutil.rmtree(rtestd)
-    os.makedirs(rtestd)
+    if inplace:
+        rtestd = os.getcwd()
+    else:
+        rtestd = os.path.join(testd, details[S_BDIR], rtest)
+        if os.path.isdir(rtestd):
+            shutil.rmtree(rtestd)
+        os.makedirs(rtestd)
     os.chdir(rtestd)
 
     # link the files
-    for src in details[S_LNFL]:
-        dst = os.path.join(rtestd, os.path.basename(src))
-        os.symlink(src, dst)
+    if not inplace:
+        for src in details[S_LNFL]:
+            dst = os.path.join(rtestd, os.path.basename(src))
+            os.symlink(src, dst)
 
     # run each command
     status = []
@@ -520,6 +550,11 @@ def run_rtest(args):
     details[S_TESTD] = rtestd
     details[S_STAT] = status
     details[S_TIME] = t
+
+    now = datetime.datetime.now()
+    with open(RTEST_STAT_F, "w") as fobj:
+        fobj.write("ran: {0}\n".format(now))
+        fobj.write("status: {0}\n".format(stat))
 
     return {rtest: details}
 

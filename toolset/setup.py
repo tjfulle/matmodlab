@@ -52,8 +52,6 @@ def main(argv=None):
         help="Force rebuild of TPLs [default: %(default)s]")
     parser.add_argument("--mtldirs", default=[], action="append",
         help="Additional directories to find makemf.py files [default: None]")
-    parser.add_argument("--testdirs", default=[], action="append",
-        help="Additional directories to find test files [default: None]")
     args = parser.parse_args(argv)
 
     log_message(SPLASH)
@@ -81,13 +79,6 @@ def main(argv=None):
             logerr("{0}: no such material directory".format(d))
             continue
     mtldirs = os.pathsep.join(list(set(mtldirs)))
-
-    testdirs = [os.path.realpath(d) for d in args.testdirs]
-    for d in testdirs:
-        if not os.path.isdir(d):
-            logerr("{0}: no such test directory".format(d))
-            continue
-    testdirs = os.pathsep.join(list(set(testdirs)))
 
     # --- system
     log_message("checking host platform", end="... ")
@@ -210,7 +201,7 @@ def main(argv=None):
               {"MMLMTLS": mtldirs})
 
     write_exe("runtests", tools, os.path.join(core, "test.py"),
-              pyexe, pyopts, {"PYTHONPATH": pypath}, {"MMLTESTS": testdirs})
+              pyexe, pyopts, {"PYTHONPATH": pypath})
 
     write_exe("gmddump", tools, os.path.join(utld, "exodump.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath}, deprecate="exdump")

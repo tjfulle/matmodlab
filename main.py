@@ -88,10 +88,11 @@ def main(argv=None):
 
         else:
             if not os.path.isfile(source):
-                source += ".xml"
-                if not os.path.isfile(source):
+                _ = source + ".xml"
+                if not os.path.isfile(_):
                     logerr("{0}: no such file".format(source))
                     continue
+                source = _
 
             if splitext(basename)[1] != ".xml":
                 logerr("*** mmd: expected .xml file extension")
@@ -110,6 +111,9 @@ def main(argv=None):
     nproc = min(min(mp.cpu_count(), args.j), ninp)
     fargs = [(iinp, ninp, args.v, args.j, (runid, mm_input)) for
              (iinp, (runid, mm_input)) in enumerate(all_input)]
+    if not ninp:
+        sys.exit("mmd: nothing to do")
+
     if nproc == 1:
         output = [func(farg) for farg in fargs]
     else:

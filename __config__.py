@@ -5,7 +5,7 @@ LIB_D = os.path.join(ROOT_D, "lib")
 MTL_DB_D = os.path.join(ROOT_D, "materials/db")
 F_MTL_PARAM_DB = os.path.join(MTL_DB_D, "material_properties.db")
 F_MTL_MODEL_DB = os.path.join(ROOT_D, "lib/material_models.db")
-F_EVALDB = "gmd-evaldb.xml"
+F_EVALDB = "mml-evaldb.xml"
 RESTART = -2
 from utils.namespace import Namespace
 cfg = Namespace()
