@@ -21,7 +21,6 @@ PATH = os.getenv("PATH", "").split(os.pathsep)
 PLATFORM = sys.platform.lower()
 PATH.append(os.path.join(R, "tpl/exowrap/Build_{0}/bin".format(PLATFORM)))
 D_TESTS =  os.path.join(os.getcwd(), "TestResults.{0}".format(PLATFORM))
-RTEST_STAT_F = ".rtest-status"
 NOTRUN_STATUS = -1
 PASS_STATUS = 0
 DIFF_STATUS = 1
@@ -36,6 +35,7 @@ S_KWS = "Keywords"
 S_TESTD = "Test Directory"
 S_TIME = "Completion Time"
 
+F_RTEST_STAT = ".rtest-status"
 F_SUMMARY = "summary.html"
 F_POST = "graphics.html"
 F_DUMP = "completed_tests.db"
@@ -48,8 +48,8 @@ WIDTH = 70
 
 
 class Error(Exception):
-    def __init__(self, message):
-        sys.stderr.write("*** error: runtests: {0}\n".format(message))
+    def __init__(self, message, pre=""):
+        sys.stderr.write("{0}*** error: runtests: {1}\n".format(pre, message))
         raise SystemExit(2)
 
 def main(argv=None):
@@ -62,6 +62,8 @@ def main(argv=None):
         help="Keywords of tests to exclude [default: %(default)s]")
     parser.add_argument("-j", default=1, type=int,
         help="Number of simultaneous tests [default: %(default)s]")
+    parser.add_argument("-i", action="store_true", default=False,
+        help="Run in place [default: %(default)s]")
     parser.add_argument("-F", action="store_true", default=False,
         help="Force tests previously run to rerun [default: %(default)s]")
     parser.add_argument("--plot-failed", action="store_true", default=False,
@@ -92,10 +94,10 @@ def main(argv=None):
     # Directory to find tests
     dirs, tests = [], []
     if not args.path:
-        if os.path.isfile(RTEST_STAT_F):
+        if os.path.isfile(F_RTEST_STAT):
             sys.exit(run_rtest_in_cwd())
         parser.print_help()
-        raise Error("too few arguments: path not specified")
+        raise Error("too few arguments: path to tests not specified", pre="\n")
 
     for p in args.path:
         p = os.path.realpath(p)
@@ -167,16 +169,16 @@ def main(argv=None):
 
     else:
         log_message("Running {0} tests".format(len(rtests)))
-        rtests = run_rtests(testd, rtests, args.j)
+        rtests = run_rtests(testd, rtests, args.j, args.i)
         timing.tests_finished = time.time()
         statuses.extend([details[S_STAT] for (rtest, details) in rtests.items()])
         log_message("{0} tests ran in {1:.2f}s".format(
             ntests, timing.tests_finished - timing.start))
 
-    npass = len([s for s in statuses if s == PASS_STATUS])
-    nfail = len([s for s in statuses if s == FAIL_STATUS])
-    ndiff = len([s for s in statuses if s == DIFF_STATUS])
-    nnrun = len([s for s in statuses if s == NOTRUN_STATUS])
+    npass = statuses.count(PASS_STATUS)
+    nfail = statuses.count(FAIL_STATUS)
+    ndiff = statuses.count(DIFF_STATUS)
+    nnrun = statuses.count(NOTRUN_STATUS)
     if npass: log_message("  {0}/{1} tests passed".format(npass, ntests))
     if ndiff: log_message("  {0}/{1} tests diffed".format(ndiff, ntests))
     if nfail: log_message("  {0}/{1} tests failed".format(nfail, ntests))
@@ -310,8 +312,10 @@ def create_overlay_plots(rtest, destd, file1, file2=None):
     return
 
 
-def log_message(message, exe="runtests"):
-    sys.stdout.write("{0}: {1}\n".format(exe, message))
+def log_message(message, exe="runtests", pre=None):
+    if pre is None:
+        pre = "{0}: ".format(exe)
+    sys.stdout.write("{0}{1}\n".format(pre, message))
     sys.stdout.flush()
 
 
@@ -470,11 +474,11 @@ def filter_rtests(rtests, include, exclude):
     return rtests
 
 
-def run_rtests(testd, rtests, nproc):
+def run_rtests(testd, rtests, nproc, inplace):
     """Run all of the rtests
 
     """
-    test_inp = ((testd, rtest, rtests[rtest])
+    test_inp = ((testd, rtest, rtests[rtest], inplace)
                 for rtest in sorted(rtests, key=lambda x: rtests[x]["order"]))
     nproc = min(min(mp.cpu_count(), nproc), len(rtests))
     if nproc == 1:
@@ -499,13 +503,13 @@ def run_rtest_in_cwd():
     details = parse_rxml(rxml)
     for (rtest, details) in details.items():
         break
-    run_rtest((None, rtest, details), inplace=True)
+    run_rtest((None, rtest, details, True))
 
-def run_rtest(args, inplace=True):
+def run_rtest(args):
     """Run the rtest
 
     """
-    (testd, rtest, details) = args[:3]
+    (testd, rtest, details, inplace) = args[:4]
     bdir = details[S_BDIR]
     times = [time.time()]
     log_message("{0:{1}s} running".format(rtest + ":", WIDTH))
@@ -552,16 +556,26 @@ def run_rtest(args, inplace=True):
     details[S_TIME] = t
 
     now = datetime.datetime.now()
-    with open(RTEST_STAT_F, "w") as fobj:
-        fobj.write("ran: {0}\n".format(now))
-        fobj.write("status: {0}\n".format(stat))
+    with open(F_RTEST_STAT, "a") as fobj:
+        fobj.write("name: {0}\ndate: {1}\ntiming: {2}\nstatus: {3}".format(
+            rtest, now, t, stat))
 
     return {rtest: details}
 
 
 def list_rtests(rtests):
+    pre = ""
+    log_message("found {0} tests".format(len(rtests)), pre=pre)
+    i = max(len(k) for k in rtests)
+    fmt = lambda t, k: "{0:{1}s} {2}".format(t, i, k)
+    hline = "{0} {1}".format("-" * i, "-" * (80 - i))
+    log_message(hline, pre=pre)
+    log_message(fmt("name", "keywords"), pre=pre)
+    log_message(hline, pre=pre)
     for (rtest, details) in rtests.items():
-        log_message("{0}: {1}".format(rtest, " ".join(details[S_KWS])))
+        kws = details[S_KWS]
+        log_message(fmt(rtest, ", ".join(details[S_KWS])), pre=pre)
+    log_message(hline, pre=pre)
     return 0
 
 
