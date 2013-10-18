@@ -35,6 +35,7 @@ S_KWS = "Keywords"
 S_TESTD = "Test Directory"
 S_TIME = "Completion Time"
 
+F_RTEST_EXT = ".rxml"
 F_RTEST_STAT = ".rtest-status"
 F_SUMMARY = "summary.html"
 F_POST = "graphics.html"
@@ -83,7 +84,8 @@ def main(argv=None):
         help="Run tests that previously had failed [default: %(default)s]")
     parser.add_argument("path", nargs="*",
         help="""Path[s] to directory[ies] to find tests, or to test
-                specific test file[s] [default: %(default)s]""")
+                specific test file[s].  Specify a file name with a newline
+                separated list of paths by @filename. [default: %(default)s]""")
     args = parser.parse_args(argv)
 
     if args.rebaseline:
@@ -101,15 +103,23 @@ def main(argv=None):
 
     for p in args.path:
         p = os.path.realpath(p)
-        if os.path.isfile(p):
-            tests.append(p)
-        elif os.path.isdir(p):
+        if os.path.isdir(p):
             dirs.append(p)
+        elif os.path.isfile and p.endswith(F_RTEST_EXT):
+            tests.append(p)
         else:
-            log_warning("{0}: no such file or directory".format(p))
+            f, _ = os.path.splitext(p)
+            if os.path.isfile(f + F_RTEST_EXT):
+                tests.append(f + F_RTEST_EXT)
+            else:
+                log_warning("{0}: no such file or directory".format(p))
 
     if not dirs and not tests:
-        raise Error("no test dirs or tests found")
+        raise Error("no test directories or files found")
+
+    if not dirs and len(tests) == 1:
+        # run inplace
+        args.i = True
 
     # --- root directory to run tests
     testd = args.D
@@ -337,7 +347,7 @@ def find_rtests(search_dirs, include, exclude, tests=None):
         for d in search_dirs:
             for (dirname, dirs, files) in os.walk(d):
                 test_files.extend([os.path.join(dirname, f) for f in files
-                                   if f.endswith(".rxml")])
+                                   if f.endswith(F_RTEST_EXT)])
     else:
         # user supplied test file
         if not isinstance(tests, (tuple, list)):
@@ -502,7 +512,7 @@ def run_rtests(testd, rtests, nproc, inplace):
 
 def run_rtest_in_cwd():
     try:
-        rxml = [f for f in os.listdir(os.getcwd()) if f.endswith(".rxml")][-1]
+        rxml = [f for f in os.listdir(os.getcwd()) if f.endswith(F_RTEST_EXT)][-1]
     except IndexError:
         raise Error("no test found in PWD")
     details = parse_rxml(rxml)
@@ -660,7 +670,7 @@ def write_html_summary(testd, tests_to_summarize):
     fobj.write("<ul>\n")
     fobj.write("<li> Directory: {0} </li>\n".format(testd))
     fobj.write("<li> Date: {0} </li>\n".format(now.ctime()))
-    options = " ".join(arg for arg in sys.argv[1:] if not arg.endswith(".rxml"))
+    options = " ".join(arg for arg in sys.argv[1:] if not arg.endswith(F_RTEST_EXT))
     fobj.write("<li> Options: {0} </li>\n".format(options))
     groups = []
     for (code, group) in rtests:

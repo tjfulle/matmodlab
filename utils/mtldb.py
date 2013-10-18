@@ -30,10 +30,15 @@ def read_material_params_from_db(matname, mdlname, dbfile):
         return
 
     # check if material defines parameters for requested model
-    models = material.getElementsByTagName("MaterialModels")[0]
-    for model in models.getElementsByTagName("Model"):
+    tag = "MaterialModels"
+    el = material.getElementsByTagName(tag)
+    if not el:
+        missing_tag(tag)
+        return
+    for model in el[0].getElementsByTagName("Model"):
         if mdlname in [model.getAttribute(s) for s in ("name", "short_name")]:
             mdlname = model.getAttribute("name")
+            # model now is the correct Model element
             break
     else:
         log_error("material {0} does not define parameters "
@@ -42,8 +47,12 @@ def read_material_params_from_db(matname, mdlname, dbfile):
 
     # get the material properties
     props = {}
-    mtlprops = material.getElementsByTagName("MaterialProperties")[0]
-    for prop in mtlprops.getElementsByTagName("Property"):
+    tag = "MaterialProperties"
+    el = material.getElementsByTagName(tag)
+    if not el:
+        missing_tag(tag, dbfile)
+        return
+    for prop in el[0].getElementsByTagName("Property"):
         name = prop.getAttribute("name")
         val = prop.getAttribute("value")
         if not val:
@@ -54,10 +63,17 @@ def read_material_params_from_db(matname, mdlname, dbfile):
 
     # get the mapping from the material parameter to property
     params = {}
-    mdlparams = model.getElementsByTagName("Parameters")[0]
-    for i in range(mdlparams.attributes.length):
-        p = mdlparams.attributes.item(i)
-        params[p.name] = props[p.value]
+    tag = "Parameters"
+    el = model.getElementsByTagName(tag)
+    if not el:
+        missing_tag(tag)
+        return
+    for (name, value) in el[0].attributes.items():
+        params[name] = props[value]
         continue
 
     return params
+
+
+def missing_tag(tag, filepath):
+    log_error("{0}: expected {0} tag".format(tag, os.path.basename(filepath)))

@@ -143,20 +143,18 @@ def read_mml_evaldb(filepath):
         # get parameters
         nparams = evaluation.getElementsByTagName(U_PARAMS)[0]
         evars, enames = [], []
-        for i in range(nparams.attributes.length):
-            attr = nparams.attributes.item(i)
-            enames.append(attr.name)
-            evars.append(float(attr.value))
+        for (name, value) in nparams.attributes.items():
+            enames.append(name)
+            evars.append(float(value))
         parameters.append(zip(enames, evars))
 
         # get responses
         nresponses = evaluation.getElementsByTagName(U_RESP)
         if nresponses:
             rvars, rnames = [], []
-            for i in range(nresponses[0].attributes.length):
-                attr = nresponses[0].attributes.item(i)
-                rnames.append(attr.name)
-                rvars.append(float(attr.value))
+            for (name, value) in nresponses[0].attributes.items():
+                rnames.append(name)
+                rvars.append(float(value))
             responses.append(zip(rnames, rvars))
 
     return sources, parameters, responses

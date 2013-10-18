@@ -401,8 +401,7 @@ def inp2dict(parent, dom):
 
             child_elements[name].append({})
 
-            for a in range(el.attributes.length):
-                n, v = nandv(el.attributes.item(a))
+            for (n, v) in el.attributes.items():
                 child[i].setattrib(n, v)
                 if n == "seed":
                     set_random_seed(int(v))
@@ -423,23 +422,8 @@ def inp2dict(parent, dom):
     return child_elements
 
 
-def nandv(item):
-    name = item.name.encode("utf-8").strip()
-    value = " ".join(item.value.split())
-    return name, value
-
-
 def inp_warning(message):
     sys.stderr.write("*** warning: {0}\n".format(message))
-
-
-def get_content_from_children(lmn):
-    for node in lmn.childNodes:
-        if node.nodeType != node.ELEMENT_NODE:
-            continue
-        name = node.nodeName
-        val = node.firstChild.data.strip()
-        param_map[name] = val
 
 
 def read_matlabel(dom, model):
@@ -448,8 +432,7 @@ def read_matlabel(dom, model):
     """
     dbfile = F_MTL_PARAM_DB
     material = None
-    for a in range(dom.attributes.length):
-        n, v = nandv(dom.attributes.item(a))
+    for (n, v) in dom.attributes.items():
         if n == "href":
             dbfile = v
         elif n == "material":
