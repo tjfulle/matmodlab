@@ -45,6 +45,9 @@
 \newcommand{\usage}[1]{\indent\hspace{2.5em}\texttt{#1}}
 
 \newcommand{\vnv}{V\&V}
+\newcommand{\payette}{\texttt{payette}}
+\newcommand{\med}{\texttt{MED}}
+\newcommand{\pmd}{\texttt{MMD}}
 \newcommand{\mml}{\texttt{matmodlab}}
 \newcommand{\mmd}{\texttt{mmd}}
 \newcommand{\mmv}{\texttt{mmv}}
@@ -71,14 +74,7 @@
   \indent\hspace{#1}\tag{#2 #3}\\%
   \indent\hspace{.2in}#4\\%
   \indent\hspace{#1}\gat{#2}}
-\newcommand{\attr}[4]{%
-  \ifthenelse{\equal{#3}{}}{%
-    \ifthenelse{\equal{#4}{}}{%
-      \texttt{#1="#2"}}{%
-      \texttt{#1="#2\{#4\}"}}}{%
-    \ifthenelse{\equal{#4}{}}{%
-      \texttt{#1="#2[#3]"}}{%
-      \texttt{#1="#2[#3]\{#4\}"}}}}
+\newcommand{\attr}[2][]{\ifthenelse{\equal{#1}{}}{\texttt{#2}}{\texttt{#2="#1"}}}
 
 
 % ---------------------------------------------------------------------------- %
@@ -149,9 +145,9 @@ database format, devloped at Sandia National Labs for storing finite element
 simulation data. Since \mml{} is designed to be used by material model
 developers, it is expected that the typical user will want access to
 \emph{all} all available output from a material model, thus all simulation
-data is written to the output database. \exodusii{} database files can be post
-processed via the \mmv{} utility, in addition to other visualization
-packages such as \paraview{} \cite{paraview}.
+data is written to the output database. \exodusii{} database files can be
+visualized via the \mmv{} utility, in addition to other visualization packages
+such as \paraview{} \cite{paraview}.
 
 \mml{} is free software released under the MIT License.
 
@@ -213,31 +209,30 @@ When I was a graduate student at the University of Utah I had the good fortune
 to have as my advisor Dr.~Rebecca Brannon. Prof.~Brannon instilled in me the
 necessity to develop material models in small special purpose drivers, free
 from the complexities of larger finite element codes. To this end, I began
-developing material models in Prof.~Brannon's \texttt{MED} driver (available
-upon request from Prof.~Brannon). The \texttt{MED} driver was a special
-purpose driver for driving material models through predefined strain paths.
-After completing graduate school I began employment as a member of the
-Technical Staff at Sandia National Labs. Among the many projects I worked on
-was the development of material models for geologic applications. There, I
-found need to drive the material models through prescribed stress paths to
-match experimental records. This capability was not present in the
-\texttt{MED} and I sought a different solution. The solution came from the
-\texttt{MMD} driver, created years earlier at Sandia, by Tom Pucick. The
-\texttt{MMD} driver had the capability to drive material models through
-prescribed stress and strain paths, but also lacked many of the IO features of
-the \texttt{MED}. And so, for some time I used both the \texttt{MED} and
-\texttt{MMD} drivers in applications that suited their respective strengths.
-After some time using both drivers, I decided to combine the best features of
-each in to my own driver. Both the \texttt{MED} and \texttt{MMD} drivers were
-written in Fortran and I decided to write the new driver in Python so that I
-could leverage the large number of builtin libraries. The Numpy and Scipy
-Python libraries would be used for handling most number crunching. The new
-driver came to be known as \texttt{payette}. \texttt{payette} added many
-unique capabilities and became a capable piece of software used by other staff
-members at Sandia. But, \texttt{payette} suffered from the fact that it was my
-first foray in to programming with Python. After some time, the bloat and bad
-programming practices with \texttt{payette} caused me to spend a few weekends
-re-writing it in to what is now known as \mml{}.
+developing material models in Prof.~Brannon's \med{} driver (available upon
+request from Prof.~Brannon). The \med{} driver was a special purpose driver
+for driving material models through predefined strain paths. After completing
+graduate school I began employment as a member of the Technical Staff at
+Sandia National Labs. Among the many projects I worked on was the development
+of material models for geologic applications. There, I found need to drive the
+material models through prescribed stress paths to match experimental records.
+This capability was not present in the \med{} and I sought a different
+solution. The solution came from the \pmd{} driver, created years earlier at
+Sandia, by Tom Pucick. The \pmd{} driver had the capability to drive material
+models through prescribed stress and strain paths, but also lacked many of the
+IO features of the \med{}. And so, for some time I used both the \med{} and
+\pmd{} drivers in applications that suited their respective strengths. After
+some time using both drivers, I decided to combine the best features of each
+in to my own driver. Both the \med{} and \pmd{} drivers were written in
+Fortran and I decided to write the new driver in Python so that I could
+leverage the large number of builtin libraries. The Numpy and Scipy Python
+libraries would be used for handling most number crunching. The new driver
+came to be known as \payette{}. \payette{} added many unique capabilities and
+became a capable piece of software used by other staff members at Sandia. But,
+\payette{} suffered from the fact that it was my first foray in to programming
+with Python. After some time, the bloat and bad programming practices with
+\payette{} caused me to spend a few weekends re-writing it in to what is now
+known as \mml{}.
 
 % ----------------------------------------------------------------------------- %
 \section{Obtaining \mml{}}
@@ -264,7 +259,7 @@ This guide provides an outline for building and running \mml{}.
 \begin{itemize}
   \item Download \mml{} and setup environment
   \item \$ \verb|cd $MMLROOT/toolset && ./setup.py|
-  \item \$ \texttt{buildmtls}
+  \item \$ \bldm{}
 \end{itemize}
 
 \textbf{Prepare Input} Inputs are xml specification files. See Chapters
@@ -295,8 +290,8 @@ This guide provides an outline for building and running \mml{}.
 \chapter{Building \mml{}}
 \label{chap:build}
 \mml{}'s code base is largely written in Python and requires no additional
-compiling.  However, the \exodusii{} third party library and material models
-written in fortran must be built.
+compiling. However, several fortran procedures, the \exodusii{} third party
+library, and material models written in fortran must be built.
 
 % ----------------------------------------------------------------------------- %
 \section{System and Software Requirements}
@@ -330,13 +325,11 @@ proceeding.
 \subsection{Set Environment and Path}
 \label{sec:setup}
 
-\begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{MMLTESTS}}]
+\begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{MMLMTLS}}]
   \item[\texttt{MMLROOT}] Optional, name of installation directory
   \item[\texttt{PATH}] \verb|$MMLROOT/toolset:$PATH|
   \item[\texttt{MMLMTLS}] ``:'' separated list of paths to directories
   containing user defined material models. See Section \ref{sec:usrbld}.
-  \item[\texttt{MMLTESTS}] ``:'' separated list of paths to directories
-  containing user defined regression tests. See Chapter \ref{chap:rtest}.
 \end{description}
 
 % ----------------------------------------------------------------------------- %
@@ -757,16 +750,16 @@ Electric field can be prescribed for testing piezoelectric models.
 % ----------------------------------------------------------------------------- %
 \chapter{Running Simulations in \mml{}}
 \label{chap:run}
-\mml{} is a command line driven programming through the \mmd{} executable. To
-run a simulation with \mml{}, be sure that \verb|$MMLROOT| is on your path and
-execute
+The command line utility \mmd{} is the main program with which users interact
+with \mml{}. To run a simulation with \mml{}, be sure that \verb|$MMLROOT| is
+on your path and execute
 
 \begin{verbatim}
 $ mmd runid[.xml]
 \end{verbatim}
-
-where \texttt{runid} is the basename of the input file. Input file formatting
-is covered in Chapters \ref{chap:inpov} - \ref{chap:inpopt}.
+%
+where \texttt{runid} is the basename of the input file. Input file
+formatting is covered in Chapters \ref{chap:inpov} - \ref{chap:inpopt}.
 
 The following files will be produced by \mmd{} in the current working
 directory
@@ -774,9 +767,9 @@ directory
 $ ls runid.*
 runid.exo       runid.log       runid.xml
 \end{verbatim}
-
-\texttt{runid.exo} is the \exodusii{} output database, \texttt{runid.log} the log
-file, and \texttt{runid.xml} the input file.
+%
+\texttt{runid.exo} is the \exodusii{} output database, \texttt{runid.log} the
+log file, and \texttt{runid.xml} the input file.
 
 For a complete list of options, execute
 \begin{verbatim}
@@ -802,7 +795,7 @@ Lists are given as space separated lists (e.g., "1 2 3").
 In the following, elements shown in \Red{red} are required input.
 
 % ----------------------------------------------------------------------------- %
-\section{MMLSpec}
+\section{\reqdtag{MMLSpec}}
 \label{sec:mmlspec}
 All input files must have as their root element \reqdtag{MMLSpec}.
 \begin{inpusage}
@@ -862,7 +855,7 @@ as variables
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\section{Include}
+\section{\tag{Include}}
 \label{sec:inc}
 Path to file to be included as if its contents were inplace in the input file
 
@@ -876,13 +869,13 @@ The following stub input demonstrates how to include a file in place
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\section{Function}
+\section{\tag{Function}}
 \label{sec:func}
 Define functions to be used elsewhere in input. \texttt{id=0} and
 \texttt{id=1} are reserved for the constant $0$ and $1$ functions,
-respectively. \texttt{href} is the path to a file containing the function
+respectively. \attr{href} is the path to a file containing the function
 definition (useful when the function is a large piecewise linear table).
-\texttt{cols} specifies the columns in which data is located in a piecewise
+\attr{cols} specifies the columns in which data is located in a piecewise
 linear table.
 
 \begin{inpusage}
@@ -923,13 +916,13 @@ $ cat file.dat
 \end{verbatim}
 
 % ----------------------------------------------------------------------------- %
-\chapter{User Input: Physics}
+\chapter{User Input: \reqdtag{Physics}}
 \label{chap:inpphys}
 Define the physics of the simulation.
 
 \begin{inpusage}
 <Physics driver="str[solid]{solid, eos}"
-         termination_time="real[]">
+         termination_time="real[]" runid="str[filename]">
 \end{inpusage}
 
 Recognized subelements of \reqdtag{Physics} are
@@ -942,23 +935,28 @@ Recognized subelements of \reqdtag{Physics} are
 
 
 % ----------------------------------------------------------------------------- %
-\section{Physics Attributes}
+\section{\reqdtag{Physics} Attributes}
 \label{sec:phys-attr}
 
 % ----------------------------------------------------------------------------- %
-\subsection{driver}
+\subsection{\attr{driver}}
 \label{sec:driv-attr}
-\texttt{driver} specifies the driver type to use.  Defaults to \texttt{solid}.
+\attr{driver} specifies the driver type to use.  Defaults to \texttt{solid}.
 
-\subsection{termination time}
+\subsection{\attr{termination\_time}}
 \label{sec:tterm-attr}
 If specified, \verb:termination_time: defines the termination time for the
 simulation. If not specified, termination time is taken as final time in
 \reqdtag{Path}.
 
+\subsection{\attr{runid}}
+\label{sec:tterm-attr}
+If specified, \texttt{runid} redefines the \texttt{runid} from its default
+\texttt{basename(file)}.
+
 
 % ----------------------------------------------------------------------------- %
-\section{Path}
+\section{\reqdtag{Path}}
 \label{sec:path-attr}
 Define deformation paths through with the material will be exercised.
 
@@ -973,11 +971,11 @@ Define deformation paths through with the material will be exercised.
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Path Attributes}
+\subsection{\reqdtag{Path} Attributes}
 \label{sec:path}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{type}
+\subsubsection{\attr{type}}
 \label{sec:path-type}
 The type of path specified.  Valid types are \texttt{prdef} and
 \texttt{surface}.
@@ -994,14 +992,14 @@ leg termination time is not specified. Control parameters also differ, as
 shown in Table \ref{tab:cfmt-1}.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{Format}
+\subsubsection{\attr{format}}
 \label{sec:path-format}
 The format by which the legs of the deformation path are specified. Valid
 formats are \texttt{default}, \texttt{table}, and \texttt{fcnspec}. In the
 following subsections, the different formats are described.
 
 % ----------------------------------------------------------------------------- %
-\paragraph{Format: default}
+\paragraph{\attr[default]{format}}
 \label{sec:defform}
 The \texttt{default} format offers the most control.  In this format, the
 termination time, number of steps, control format, and components of
@@ -1019,7 +1017,7 @@ See Section \ref{sec:cfmt} for a full description of the control format
 \texttt{cfmt} and its relationship with the \texttt{c1, c2, c3, ...}.
 
 % ----------------------------------------------------------------------------- %
-\paragraph{Format: table}
+\paragraph{\attr[table]{format}}
 \label{sec:tblform}
 The \texttt{table} format allows reading in deformation paths from a columnar
 table of data. Control format is uniform for all legs. Specify control format
@@ -1053,7 +1051,7 @@ from an external file.
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\paragraph{Format: fcnspec}
+\paragraph{\attr[fcnspec]{format}}
 \label{sec:fcnspec}
 The \texttt{fcnspec} format allows defining a deformation path by a function.
 A deformation path defined by \texttt{fcnspec} must have only 1 leg defining
@@ -1079,7 +1077,7 @@ user defined function to specify the 11 component of strain through time.
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{cfmt}
+\subsubsection{\attr{cfmt}}
 \label{sec:cfmt}
 The control format \texttt{cfmt} is concatenated integer list specifying in
 its $i^\text{ith}$ component the $i^\text{th}$ component of deformation, i.e.,
@@ -1148,7 +1146,7 @@ components are assumed to be zero strain.
 \end{table}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{tfmt}
+\subsubsection{\attr{tfmt}}
 \label{sec:tfmt}
 The \texttt{tfmt=["time"]\{"time","dt"\}} flag specifies the time format.
 If \texttt{tfmt="time"} (default) the first value of each leg is interpreted
@@ -1156,7 +1154,7 @@ as the termination time for the leg. For \texttt{tfmt="dt"} the first value
 of each leg is interpreted as a time increment.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{cols}
+\subsubsection{\attr{cols}}
 \label{sec:colspec}
 The columns to be read from a table or the \texttt{fcnspec} leg are specified by
 the \texttt{cols} attribute.  \texttt{cols} are specified as a space separated
@@ -1174,18 +1172,18 @@ cols="1 3:5 8:9 13"
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{kappa}
+\subsubsection{\attr{kappa}}
 \label{sec:kappa}
 \texttt{kappa} is the Seth-Hill strain definition parameter $\kappa$ described
 in section \ref{sec:mmlsol}.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{nfac}
+\subsubsection{\attr{nfac}}
 \label{sec:nfac}
 \texttt{nfac} is a multiplier on the number of steps for each leg.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{amplitude}
+\subsubsection{\attr{amplitude}}
 \label{sec:ampl}
 \texttt{amplitude} is a factor multiplied to all components of deformation.
 
@@ -1198,7 +1196,7 @@ respectively. The \texttt{[rtes(ef)]star} are first multiplied by
 \texttt{amplitude}.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{Rate Factor}
+\subsubsection{\attr{ratfac}}
 \label{sec:ratfac}
 \texttt{ratfac} is a divisor to the termination time of each leg, thereby
 effectively increasing the rate of deformation.
@@ -1253,7 +1251,7 @@ The following examples will help clarify the \reqdtag{Path} input syntax
 </Path>
 \end{example}
 
-\subsubsection{Example of type="surface"}
+\subsubsection{Example of \attr[surface]{type}}
 \label{sec:more-ex-1}
 The following examples demonstrate the \texttt{type="surface"}
 \begin{example}
@@ -1275,7 +1273,7 @@ The following examples demonstrate the \texttt{type="surface"}
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\section{Material}
+\section{\reqdtag{Material}}
 \label{sec:mtl}
 Define the material model.
 
@@ -1295,16 +1293,16 @@ Subelements of \reqdtag{Material} are
 *\tag{Key} is a valid material parameter name.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Material Attributes}
+\subsection{\reqdtag{Material} Attributes}
 \label{sec:mtl-attr}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{model}
+\subsubsection{\attr{model}}
 \label{sec:model}
 The name of the material model.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Matlabel}
+\subsection{\tag{Matlabel}}
 \label{sec:matlabel}
 Insert model parameters from a database file.
 \begin{inpusage}
@@ -1312,14 +1310,14 @@ Insert model parameters from a database file.
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{Matlabel Attributes}
+\subsubsection{\tag{Matlabel} Attributes}
 \label{sec:matlabel-attr}
-\paragraph{href}
+\paragraph{\attr{href}}
 The path to the database file. Defaults to\\
 \verb:$MMLROOT/materials/material_properties.db: if no file is given.
 
 % ----------------------------------------------------------------------------- %
-\paragraph{material}
+\paragraph{\attr{material}}
 Name of material as given in the database file.
 
 The following input stub demonstrates the use of \tag{Matlabel}
@@ -1329,7 +1327,7 @@ The following input stub demonstrates the use of \tag{Matlabel}
 </Material>
 \end{example}
 
-\subsection{ParameterArray}
+\subsection{\tag{ParameterArray}}
 \label{sec:param-array}
 Specify the parameter array for the material as whitespace separated list of
 floats.  The list of values must be the same length as the parameter array for
@@ -1341,7 +1339,7 @@ the material or an error will occur.
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
-\subsection{InitialState}
+\subsection{\tag{InitialState}}
 \label{sec:initial-state}
 Specify the initial state of the material as a whitespace separated list of
 floats. Six stress values must be followed by material variables (if any). The
@@ -1372,7 +1370,7 @@ stub inputs demonstrate the \reqdtag{Material} input
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\section{Extract}
+\section{\tag{Extract}}
 \label{sec:extract}
 Extract variables and paths from \exodusii{} output and (optionally) write to
 different formats.
@@ -1391,25 +1389,25 @@ Recognized subelements of \tag{Extract} are
 * \texttt{eos} driver only
 
 % ----------------------------------------------------------------------------- %
-\subsection{Extract Attributes}
-\subsubsection{format}
+\subsection{\tag{Extract} Attributes}
+\subsubsection{\attr{format}}
 The format to write the output.  \texttt{ascii} format writes out columnar
 data as an ascii text file, \texttt{mathematica} writes an ascii text file
 that can be read by Mathematica, and \texttt{ndarray} writes the data to a
 file in the numpy .npy binary format.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{step}
+\subsubsection{\attr{step}}
 \label{sec:step}
 Extract every \texttt{step}th timestep.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{ffmt}
+\subsubsection{\attr{ffmt}}
 \label{sec:ffmt}
 The string format used write out variables.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Variables}
+\subsection{\tag{Variables}}
 \label{sec:vars}
 Variables to extract from the \exodusii{} output database. Variables are specified
 children of the \tag{Variables} element. All components of vector and tensor
@@ -1452,7 +1450,7 @@ Extract all variables
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{Path}
+\subsubsection{\tag{Path}}
 \label{sec:vars-path}
 Extract a specified path from the equation of state surface through the
 specified density range starting at the initial temperature.
@@ -1472,7 +1470,7 @@ The following input stub demonstrates extracting Hugoniot and Isotherm paths
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\chapter{User Input: Permutation}
+\chapter{User Input: \tag{Permutation}}
 \label{chap:inpperm}
 Permutate model input parameters, running jobs with different realization of
 parameters. Ideal for investigating model sensitivities.
@@ -1503,11 +1501,11 @@ each permutated parameter for that job. \texttt{mml-tabular.xml} contains a
 summary of each job run. \mmv{} recognizes \texttt{mml-tabular.xml} files.
 
 % ----------------------------------------------------------------------------- %
-\section{Permutation Attributes}
+\section{\tag{Permutation} Attributes}
 \label{sec:perm-attr}
 
 % ----------------------------------------------------------------------------- %
-\subsection{method}
+\subsection{\attr{method}}
 \label{sec:perm-meth}
 The \texttt{method} attribute describes which method to use to determine
 parameter combinations to run.
@@ -1517,20 +1515,20 @@ the number of realizations for each parameter must be identical), the
 \texttt{combine} method runs every combination of parameters.
 
 % ----------------------------------------------------------------------------- %
-\subsection{correlation}
+\subsection{\attr{correlation}}
 \label{sec:perm-corr}
 Create correlation table and plots of relating permutated parameters and value
 of response function. \texttt{correlation} is only meaningful if a
 \tag{ResponseFunction} is specified.
 
 % ----------------------------------------------------------------------------- %
-\subsection{seed}
+\subsection{\attr{seed}}
 \label{sec:perm-seed}
 The seed for the random number generator. \texttt{date} is todays date in
 seconds.
 
 % ----------------------------------------------------------------------------- %
-\section{Permutate}
+\section{\tag{Permutate}}
 \label{sec:permutate}
 Specify the paramaters to permutate.
 \begin{inpusage}
@@ -1540,17 +1538,17 @@ Specify the paramaters to permutate.
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Permutate Attributes}
+\subsection{\tag{Permutate} Attributes}
 \label{sec:permutate-attr}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{var}
+\subsubsection{\attr{var}}
 \label{perm-var}
 \texttt{var} is the name of the variabe and should occur elsewhere in
 the input file in preprocessing braces.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{values}
+\subsubsection{\attr{values}}
 \label{sec:perm-vals}
 \texttt{values} are the specific values. The
 \texttt{range,list,weibull,uniform,normal,percentage} are all specified as
@@ -1581,7 +1579,7 @@ specified as
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\section{ResponseFunction}
+\section{\tag{ResponseFunction}}
 \label{sec:perm-resp-func}
 The \tag{ResponseFunction} returns the response from permutation or
 optimization jobs.
@@ -1593,16 +1591,16 @@ optimization jobs.
 One of \texttt{href} or \texttt{function} must be specified.
 
 % ----------------------------------------------------------------------------- %
-\subsection{ResponseFunction Attributes}
+\subsection{\tag{ResponseFunction} Attributes}
 \label{sec:perm-resp-func-attr}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{descriptor}
+\subsubsection{\attr{descriptor}}
 \label{sec:perm-resp-func-attr-desc}
 \texttt{descriptor} is the name given to the response function in the output.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{href}
+\subsubsection{\attr{href}}
 \label{sec:perm-resp-func-attr-href}
 \texttt{href} is the path to an executable file script containing the response
 function. The script is called from the command line as
@@ -1617,7 +1615,7 @@ An example of a response function specifying \texttt{href} is
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{function}
+\subsubsection{\attr{function}}
 \label{sec:perm-resp-func-attr-fcn}
 \texttt{function} is the name of a builtin \mml{} response function. Built in
 response functions are
@@ -1640,7 +1638,7 @@ An example of a response function specifying \texttt{function} is
 \end{example}
 
 % ----------------------------------------------------------------------------- %
-\chapter{User Input: Optimization}
+\chapter{User Input: \tag{Optimization}}
 \label{chap:inpopt}
 Optimize specified parameters against user specified objective function.
 %
@@ -1672,27 +1670,27 @@ summary of each job run. \mmv{} recognizes \texttt{mml-tabular.xml} files.
 \texttt{params.opt} has the final, optimized, parameters.
 
 % ----------------------------------------------------------------------------- %
-\section{Optimization Attributes}
+\section{\tag{Optimization} Attributes}
 \label{sec:opt}
 
 % ----------------------------------------------------------------------------- %
-\subsection{method}
+\subsection{\attr{method}}
 \label{sec:opt-meth}
 \texttt{method} specifies the optimization method.  All optimization routines
 utilize the scipy.optimize module.
 
 % ----------------------------------------------------------------------------- %
-\subsection{maxiter}
+\subsection{\attr{maxiter}}
 \label{sec:maxiter}
 \texttt{maxiter} is the maximum number of iterations.
 
 % ----------------------------------------------------------------------------- %
-\subsection{tolerance}
+\subsection{\attr{tolerance}}
 \label{sec:tol}
 \texttt{tolerance} is the optimization tolerance.
 
 % ----------------------------------------------------------------------------- %
-\section{Optimize}
+\section{\tag{Optimize}}
 \label{sec:optimize}
 Specify the variable to be optimized.
 \begin{inpusage}
@@ -1700,28 +1698,28 @@ Specify the variable to be optimized.
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Optimize Attributes}
+\subsection{\tag{Optimize} Attributes}
 \label{sec:optimize-attr}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{var}
+\subsubsection{\attr{var}}
 \label{sec:optimize-attr-val}
 \texttt{var} is the name of the variabe and should occur elsewhere in
 the input file in preprocessing braces.
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{initial value}
+\subsubsection{\attr{initial\_value}}
 \label{sec:optimize-attr-ival}
 \texttt{initial\us{}value} is the initial value of \texttt{var}
 
 % ----------------------------------------------------------------------------- %
-\subsubsection{bounds}
+\subsubsection{\attr{bounds}}
 \label{sec:optimize-attr-bounds}
 \texttt{bounds} specifies lower and upper bounds on \texttt{var}. Only the
 \texttt{cobyla} method accepts bounds.
 
 % ----------------------------------------------------------------------------- %
-\section{AuxiliaryFile}
+\section{\tag{AuxiliaryFile}}
 \label{sec:optimize-aux-file}
 Path to any auxiliary file needed by the optimization objective function.
 \begin{inpusage}
@@ -1729,7 +1727,7 @@ Path to any auxiliary file needed by the optimization objective function.
 \end{inpusage}
 
 % ----------------------------------------------------------------------------- %
-\section{ResponseFunction}
+\section{\reqdtag{ResponseFunction}}
 \label{sec:optimize-resp-fcn}
 Same as for \tag{Permutation}, except that auxiliary files are also passed to
 the function. The value returned from the response function is interpreted as
