@@ -481,14 +481,19 @@ def run_rtests(testd, rtests, nproc, inplace):
     test_inp = ((testd, rtest, rtests[rtest], inplace)
                 for rtest in sorted(rtests, key=lambda x: rtests[x]["order"]))
     nproc = min(min(mp.cpu_count(), nproc), len(rtests))
+    statuses = []
     if nproc == 1:
-        statuses = [run_rtest(job) for job in test_inp]
+        statuses.extend([run_rtest(job) for job in test_inp])
 
     else:
         pool = mp.Pool(processes=nproc)
-        statuses = pool.map(run_rtest, test_inp)
-        pool.close()
-        pool.join()
+        try:
+            p = pool.map_async(run_rtest, test_inp, callback=statuses.extend)
+            p.wait()
+            pool.close()
+            pool.join()
+        except KeyboardInterrupt:
+            raise SystemExit("KeyboardInterrupt caught")
 
     [statuses[0].update(d) for d in statuses[1:]]
 
@@ -509,58 +514,62 @@ def run_rtest(args):
     """Run the rtest
 
     """
-    (testd, rtest, details, inplace) = args[:4]
-    bdir = details[S_BDIR]
-    times = [time.time()]
-    log_message("{0:{1}s} running".format(rtest + ":", WIDTH))
-    # make the test directory
-    if inplace:
-        rtestd = os.getcwd()
-    else:
-        rtestd = os.path.join(testd, details[S_BDIR], rtest)
-        if os.path.isdir(rtestd):
-            shutil.rmtree(rtestd)
-        os.makedirs(rtestd)
-    os.chdir(rtestd)
+    try:
+        (testd, rtest, details, inplace) = args[:4]
+        bdir = details[S_BDIR]
+        times = [time.time()]
+        log_message("{0:{1}s} running".format(rtest + ":", WIDTH))
+        # make the test directory
+        if inplace:
+            rtestd = os.getcwd()
+        else:
+            rtestd = os.path.join(testd, details[S_BDIR], rtest)
+            if os.path.isdir(rtestd):
+                shutil.rmtree(rtestd)
+            os.makedirs(rtestd)
+        os.chdir(rtestd)
 
-    # link the files
-    if not inplace:
-        for src in details[S_LNFL]:
-            dst = os.path.join(rtestd, os.path.basename(src))
-            os.symlink(src, dst)
+        # link the files
+        if not inplace:
+            for src in details[S_LNFL]:
+                dst = os.path.join(rtestd, os.path.basename(src))
+                os.symlink(src, dst)
 
-    # run each command
-    status = []
-    for (i, cmd) in enumerate(details[S_EXEC]):
-        exe = os.path.basename(cmd[0])
-        outf = exe + ".con"
-        out = open(outf, "w")
-        status.append(subprocess.call(" ".join(cmd), shell=True,
-                                      stdout=out, stderr=subprocess.STDOUT))
-        out.close()
-        times.append(time.time())
-        if status[-1] != 0:
-            if exe == "mmd":
-                status[-1] = 2
-            break
+        # run each command
+        status = []
+        for (i, cmd) in enumerate(details[S_EXEC]):
+            exe = os.path.basename(cmd[0])
+            outf = exe + ".con"
+            out = open(outf, "w")
+            status.append(subprocess.call(" ".join(cmd), shell=True,
+                                          stdout=out, stderr=subprocess.STDOUT))
+            out.close()
+            times.append(time.time())
+            if status[-1] != 0:
+                if exe == "mmd":
+                    status[-1] = 2
+                break
 
-    status = max(status)
+        status = max(status)
 
-    stat = rtest_statuses(status)
-    t = times[-1] - times[0]
-    msg = "done({0:.2f}s) [{1}]".format(t, stat)
-    log_message("{0:{1}s} {2}".format(rtest + ":", WIDTH - len(msg) + 14, msg))
+        stat = rtest_statuses(status)
+        t = times[-1] - times[0]
+        msg = "done({0:.2f}s) [{1}]".format(t, stat)
+        log_message("{0:{1}s} {2}".format(rtest + ":", WIDTH - len(msg) + 14, msg))
 
-    details[S_TESTD] = rtestd
-    details[S_STAT] = status
-    details[S_TIME] = t
+        details[S_TESTD] = rtestd
+        details[S_STAT] = status
+        details[S_TIME] = t
 
-    now = datetime.datetime.now()
-    with open(F_RTEST_STAT, "a") as fobj:
-        fobj.write("name: {0}\ndate: {1}\ntiming: {2}\nstatus: {3}".format(
-            rtest, now, t, stat))
+        now = datetime.datetime.now()
+        with open(F_RTEST_STAT, "a") as fobj:
+            fobj.write("name: {0}\ndate: {1}\ntiming: {2}\nstatus: {3}".format(
+                rtest, now, t, stat))
 
-    return {rtest: details}
+        return {rtest: details}
+
+    except KeyboardInterrupt:
+        return
 
 
 def list_rtests(rtests):

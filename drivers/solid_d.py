@@ -86,8 +86,8 @@ class SolidDriver(Driver):
                 sig = np.zeros(NSYMM)
                 xtra = self.material.initial_state()
                 args = (I9, np.zeros(3), 0.)
-                sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
                 xtra = self.material.adjust_initial_state(xtra)
+                sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
                 gmd_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
 
             pres = -np.sum(sig[:3]) / 3.

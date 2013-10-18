@@ -219,14 +219,15 @@ def plot_correlations(filepath):
     if len(keys) == 1:
         axs = [axs]
 
-    axs[0].set_ylabel(head[-1])
+    ylabel = r"${0}$".format(head[-1])
+    axs[0].set_ylabel(ylabel)
     for i, key in enumerate(keys):
         x = data[:, i][sort]
         m2, m, b = np.polyfit(x, y, 2)
         m2, (m, b) = 0, np.polyfit(x, y, 1)
         axs[i].plot(x, y, "{0}.".format(colors[i]),
                     x, m2 * x * x + m * x + b, "-k")
-        axs[i].set_xlabel(key)
+        axs[i].set_xlabel(r"${0}$".format(key))
         plt.setp(axs[i].xaxis.get_majorticklabels(),
                  rotation=45, fontsize="small")
         continue

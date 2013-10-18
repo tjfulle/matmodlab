@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import string
 import shutil
 import random
 import argparse
@@ -15,6 +16,7 @@ from core.optimize import OptimizationHandler
 from core.io import Error1 as Error1, input_errors
 
 FILE = os.path.realpath(__file__)
+ALPHA = (x for x in string.ascii_letters)
 
 
 def main(argv=None):
@@ -76,15 +78,15 @@ def main(argv=None):
 
         # parse the user input
         basename = re.sub(".preprocessed$", "", os.path.basename(source))
-        runid = splitext(basename)[0]
+        filename = splitext(basename)[0]
 
         if args.clean:
-            clean_all_output(runid, args.clean)
+            clean_all_output(filename, args.clean)
             continue
 
         elif args.restart:
-            source = runid + ".exo"
-            mm_input = inp.parse_exo_input(source, time=float(args.restart))
+            source = filename + ".exo"
+            uinp_list = inp.parse_exo_input(source, time=float(args.restart))
 
         else:
             if not os.path.isfile(source):
@@ -97,31 +99,47 @@ def main(argv=None):
             if splitext(basename)[1] != ".xml":
                 logerr("*** mmd: expected .xml file extension")
                 continue
-            mm_input = inp.parse_input(source, argp=args.p)
+
+            uinp_list = inp.parse_input(source, argp=args.p)
 
         if input_errors():
             raise SystemExit("stopping due to input errors")
 
-        all_input.extend([(runid, _) for _ in mm_input])
+        for uinp in uinp_list:
+            runid = uinp[1]
+            if not runid:
+                runid = filename
+            if runid in [_[0] for _ in all_input]:
+                runid += "-" + ALPHA.next()
+            uinp[1] = runid
+            all_input.append(uinp)
 
         continue
 
     # --- run all input
     ninp = len(all_input)
-    nproc = min(min(mp.cpu_count(), args.j), ninp)
-    fargs = [(iinp, ninp, args.v, args.j, (runid, mm_input)) for
-             (iinp, (runid, mm_input)) in enumerate(all_input)]
     if not ninp:
-        sys.exit("mmd: nothing to do")
+        sys.exit("mmd: nothing left to do")
+
+    nproc = min(min(mp.cpu_count(), args.j), ninp)
+    fargs = [(iinp, ninp, args.v, args.j, uinp) for
+             (iinp, uinp) in enumerate(all_input)]
+    output = []
 
     if nproc == 1:
-        output = [func(farg) for farg in fargs]
+        output.extend([func(farg) for farg in fargs])
+
     else:
         pool = mp.Pool(processes=nproc)
-        output = pool.map(func, fargs)
-        pool.close()
-        pool.join()
-        output = [o for o in output if o]
+        try:
+            p = pool.map_async(func, fargs, callback=output.extend)
+            p.wait()
+            pool.close()
+            pool.join()
+        except KeyboardInterrupt:
+            raise SystemExit("KeyboardInterrupt caught")
+
+    output = [o for o in output if o]
 
     if args.v:
         # a fun quote to end with
@@ -134,44 +152,45 @@ def main(argv=None):
 
 
 def func(fargs):
-    iinp, ninp, verb, nproc, (runid, mm_input) = fargs
-    stype = mm_input[0]
-    if stype in ("Optimization", "Permutation"):
-        exe = "{0} {1}".format(sys.executable, FILE)
-        if stype == "Permutation":
-            model = PermutationHandler(runid, verb, exe, nproc, *mm_input[1:])
-        else:
-            model = OptimizationHandler(runid, verb, exe, *mm_input[1:])
-
-    elif stype == "Physics":
-        runid_ = mm_input[1]
-        if not runid_:
-            runid_ = runid
-            if ninp > 1 and len([x for x in all_input if x[0] == runid]) > 1:
-                runid_ += "-" + str(iinp)
-        model = PhysicsHandler(runid_, verb, *mm_input[2:])
-
-    else:
-        logerr("{0}: unrecognized simulation type".format(mm_input.stype))
-        return
-
-    # Run the problems
     try:
-        model.run()
-    except Error1, e:
-        logerr("{0}: failed to run with message: {1}".format(
-            model.runid, e.message))
+        (iinp, ninp, verb, nproc, uinp) = fargs
+        stype = uinp[0]
+        runid = uinp[1]
+        uinp = uinp[2:]
+        if stype in ("Optimization", "Permutation"):
+            exe = "{0} {1}".format(sys.executable, FILE)
+            if stype == "Permutation":
+                model = PermutationHandler(runid, verb, exe, nproc, *uinp)
+            else:
+                model = OptimizationHandler(runid, verb, exe, *uinp)
+
+        elif stype == "Physics":
+            model = PhysicsHandler(runid, verb, *uinp)
+
+        else:
+            logerr("{0}: unrecognized simulation type".format(stype))
+            return
+
+        # Run the problems
+        try:
+            model.run()
+        except Error1, e:
+            logerr("{0}: failed to run with message: {1}".format(
+                model.runid, e.message))
+            return
+
+        model.finish()
+        out = model.output()
+
+        if verb and iinp + 1 != ninp:
+            # separate screen output of different runs
+            write_newline(n=2)
+
+        del model
+        return out
+
+    except KeyboardInterrupt:
         return
-
-    model.finish()
-    out = model.output()
-
-    if verb and iinp + 1 != ninp:
-        # separate screen output of different runs
-        write_newline(n=2)
-
-    del model
-    return out
 
 
 def write_newline(n=1):

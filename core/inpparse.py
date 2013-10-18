@@ -513,7 +513,7 @@ def parse_input(filepath, argp=None):
     functions = pFunction(els.pop("Function"))
 
     permdict = els.pop("Permutation")
-    if permdict:
+    if permdict and not permdict["ignore"]:
         root[0].removeChild(root[0].getElementsByTagName("Permutation")[0])
         return [pPermutation(permdict, root[0].toxml())]
 
@@ -612,6 +612,8 @@ def pPhysics(physdict, functions):
         mdl, params, istate = pMaterial(physdict["Elements"].pop("Material"))
     except ValueError:
         raise UserInputError("failed to parse material")
+    if input_errors():
+        raise UserInputError("failed to parse material")
 
     dcls = getdrvcls(physdict["driver"])
     p = dcls.format_path_and_opts(
@@ -627,7 +629,7 @@ def pPhysics(physdict, functions):
     runid = physdict.get("runid")
 
     # Return the physics dictionary
-    return ("Physics", runid, driver, (mdl, params, istate), extract)
+    return ["Physics", runid, driver, (mdl, params, istate), extract]
 
 
 def pMaterial(mtldict):
@@ -737,8 +739,8 @@ def pOptimization(optdict, basexml):
         else:
             auxfiles.append(os.path.realpath(auxfile))
 
-    return ("Optimization", optdict["method"], respfcn, p, optdict["tolerance"],
-            optdict["maxiter"], basexml, auxfiles)
+    return ["Optimization", None, optdict["method"], respfcn, p,
+            optdict["tolerance"], optdict["maxiter"], basexml, auxfiles]
 
 
 def pPermutation(permdict, basexml):
@@ -771,8 +773,8 @@ def pPermutation(permdict, basexml):
         values = items["values"]
         p.append([var, values])
 
-    return ("Permutation", permdict["method"], respfcn, p, basexml,
-            permdict.get("correlation"))
+    return ["Permutation", None, permdict["method"], respfcn, p, basexml,
+            permdict.get("correlation")]
 
 
 def pExtract(extdict, driver):
