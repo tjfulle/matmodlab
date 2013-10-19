@@ -2,7 +2,7 @@ from enthought.traits.api import HasStrictTraits, List, Instance, String, BaseIn
 from enthought.traits.ui.api import View, Label, Group, HGroup, VGroup, Item, UItem, TabularEditor, TableEditor, InstanceEditor, ListEditor, Spring, ObjectColumn, EnumEditor, CheckListEditor
 from enthought.traits.ui.tabular_adapter import TabularAdapter
 
-import Payette_utils as pu
+import viz.vizutl as vu
 
 import random
 
@@ -21,10 +21,10 @@ class TraitPositiveInteger(BaseInt):
         return 'a positive integer'
 
 
-class GMDModelParameter(HasStrictTraits):
+class MMLModelParameter(HasStrictTraits):
     name = String
     description = String
-    distribution = Enum('Specified', '+/-', 'Range', 'Uniform',
+    distribution = Enum('Specified', 'Percentage', 'Range', 'Uniform',
                         'Normal', 'AbsGaussian', 'Weibull')
     value = Property
     default = Property
@@ -33,32 +33,39 @@ class GMDModelParameter(HasStrictTraits):
     minimum = Float(0.0)
     maximum = Float(1.0)
     mean = Property(Float)
-    std_dev = Float(1.0)
+    stdev = Float(1.0)
     scale = Float(1.0)
     shape = Float(1.0)
     samples = Int(10)
 
     def _get_value(self):
+        ffmt = lambda r: "{0:12.6E}".format(r)
+        default = ffmt(float(self.specified))
         if self.distribution == 'Specified':
-            return self.specified
-        elif self.distribution == '+/-':
-            return "%s +/- %s%%" % (self.specified, self.percent)
+            return default
+        elif self.distribution == 'Percentage':
+            return "{0} +/- {1}%".format(default, self.percent)
         elif self.distribution == 'Range':
-            return "Range(start = %s, end = %s, steps = %d)" % (self.minimum, self.maximum, self.samples)
+            return "Range(start={0}, end={1}, N={2})".format(
+                ffmt(self.minimum), ffmt(self.maximum), self.samples)
         elif self.distribution == 'Uniform':
-            return "Uniform(min = %s, max = %s, N = %d)" % (self.minimum, self.maximum, self.samples)
+            return "Uniform(min={0}, max={1}, N={2})".format(
+                ffmt(self.minimum), ffmt(self.maximum), self.samples)
         elif self.distribution == 'Normal':
-            return "Normal(mean = %s, std. dev = %s, N = %d)" % (self.mean, self.std_dev, self.samples)
+            return "Normal(mean={0}, std. dev={1}, N={2})".format(
+                ffmt(self.mean), ffmt(self.stdev), self.samples)
         elif self.distribution == 'AbsGaussian':
-            return "Abs. Gaussian(mean = %s, std. dev = %s, N = %d)" % (self.mean, self.std_dev, self.samples)
+            return "Abs. Gaussian(mean={0}, std. dev={1}, N={2})".format(
+                ffmt(self.mean), ffmt(self.stdev), self.samples)
         elif self.distribution == 'Weibull':
-            return "Weibull(scale = %s, shape = %s, N = %d)" % (self.scale, self.shape, self.samples)
+            return "Weibull(scale={0}, shape={1}, N={2})".format(
+                self.scale, self.shape, self.samples)
         return "#ERR"
 
     def _get_default(self):
         if self.distribution == 'Specified':
             return self.specified
-        elif self.distribution == '+/-':
+        elif self.distribution == 'Percentage':
             return self.specified
         elif self.distribution == 'Range':
             return self.minimum
@@ -87,28 +94,18 @@ class GMDModelParameter(HasStrictTraits):
                 Item('specified', label='Value'),
                 visible_when="distribution == 'Specified'"
             ),
-            VGroup(
-                Item('specified', label='Value'),
-                Item('percent'),
-                visible_when="distribution == '+/-'"
+            VGroup(Item('specified', label='Value'),
+                   Item('percent'), visible_when="distribution == 'percentage'"
             ),
-            VGroup(
-                Item('minimum', label='Start'),
-                Item('maximum', label='End'),
-                Item('samples', label='Steps'),
-                visible_when="distribution == 'Range'"
+            VGroup(Item('minimum', label='Start'), Item('maximum', label='End'),
+                   Item('samples', label='Steps'),
+                   visible_when="distribution == 'Range'"
             ),
-            VGroup(
-                Item('minimum', label='Min'),
-                Item('maximum', label='Max'),
-                Item('samples'),
-                visible_when="distribution == 'Uniform'"
+            VGroup(Item('minimum', label='Min'), Item('maximum', label='Max'),
+                   Item('samples'), visible_when="distribution == 'Uniform'"
             ),
-            VGroup(
-                Item('mean'),
-                Item('std_dev'),
-                Item('samples'),
-                visible_when="distribution == 'Normal' or distribution == 'AbsGaussian'"
+            VGroup(Item('mean'), Item('stdev'), Item('samples'),
+                   visible_when="distribution == 'Normal' or distribution == 'AbsGaussian'"
             ),
             VGroup(
                 Item('scale'),
@@ -122,23 +119,21 @@ class GMDModelParameter(HasStrictTraits):
     )
 
 
-class GMDMaterialParameter(HasStrictTraits):
+class MMLMaterialParameter(HasStrictTraits):
     name = String
     default = String
 
 
-class GMDMaterial(HasStrictTraits):
+class MMLMaterial(HasStrictTraits):
     name = String
-    aliases = String
-    defaults = List(Instance(GMDMaterialParameter))
+    defaults = List(Instance(MMLMaterialParameter))
 
 
-class GMDMaterialAdapter(TabularAdapter):
-    columns = [('Materials Available for Selected Model', 'name'), (
-        'Description/Aliases', 'aliases')]
+class MMLMaterialAdapter(TabularAdapter):
+    columns = [('Materials Defined for Selected Model', 'name')]
 
 
-class GMDEOSBoundary(HasStrictTraits):
+class MMLEOSBoundary(HasStrictTraits):
     path_increments = TraitPositiveInteger(10000)
     surface_increments = TraitPositiveInteger(20)
     min_density = Float(8.0)
@@ -157,7 +152,7 @@ class GMDEOSBoundary(HasStrictTraits):
         self.auto_density = False
 
 
-class GMDLeg(HasStrictTraits):
+class MMLLeg(HasStrictTraits):
     time = Float(0.0)
     nsteps = Int(0)
     types = String
@@ -173,14 +168,14 @@ class GMDLeg(HasStrictTraits):
     )
 
 
-class GMDModel(HasStrictTraits):
-    model_name = String
+class MMLModel(HasStrictTraits):
+    name = String
     model_type = List(String)
-    parameters = List(Instance(GMDModelParameter))
-    selected_parameter = Instance(GMDModelParameter)
-    materials = List(Instance(GMDMaterial))
-    selected_material = Instance(GMDMaterial)
-    eos_boundary = Instance(GMDEOSBoundary, GMDEOSBoundary())
+    parameters = List(Instance(MMLModelParameter))
+    selected_parameter = Instance(MMLModelParameter)
+    materials = List(Instance(MMLMaterial))
+    selected_material = Instance(MMLMaterial)
+    eos_boundary = Instance(MMLEOSBoundary, MMLEOSBoundary())
     TSTAR = Float(1.0)
     FSTAR = Float(1.0)
     SSTAR = Float(1.0)
@@ -194,7 +189,7 @@ class GMDModel(HasStrictTraits):
                              ['Custom', 'Uniaxial Strain', 'Biaxial Strain',
                               'Spherical Strain', 'Uniaxial Stress',
                               'Biaxial Stress', 'Spherical Stress'])
-    legs = List(GMDLeg, [GMDLeg()])
+    legs = List(MMLLeg, [MMLLeg()])
     supplied_data = List(Tuple(String, File))
     supplied_data_names = Property(List(String), depends_on='supplied_data')
     leg_data_name = String
@@ -208,18 +203,15 @@ class GMDModel(HasStrictTraits):
     leg_data_time_names = Property(String, depends_on='leg_data_time')
     selected_leg_data_time = String
     leg_data_type = Dict(String, Tuple(String, Int),
-                         {
-                             'Strain Rate': ('strain rate', 6),
-                             'Strain': ('strain', 6),
-                             'Stress Rate': ('stress rate', 6),
-                             'Stress': ('stress', 6),
-                             'Deformation Gradient': ('deformation gradient', 9),
-                             'Electric Field': ('electric field', 3),
-                             'Displacement': ('displacement', 3),
-                             'VStrain': ('vstrain', 1),
-                             'Pressure': ('pressure', 1),
-                         }
-                         )
+                         {'Strain Rate': ('strain rate', 6),
+                          'Strain': ('strain', 6),
+                          'Stress Rate': ('stress rate', 6),
+                          'Stress': ('stress', 6),
+                          'Deformation Gradient': ('deformation gradient', 9),
+                          'Electric Field': ('electric field', 3),
+                          'Displacement': ('displacement', 3),
+                          'VStrain': ('vstrain', 1),
+                          'Pressure': ('pressure', 1),})
     leg_data_type_names = Property(String, depends_on='leg_data_type')
     selected_leg_data_type = String
     leg_data_columns = List(String)
@@ -263,7 +255,7 @@ class GMDModel(HasStrictTraits):
         if len(self.leg_data_file) < 1:
             return ['']
 
-        columns = pu.get_header(self.leg_data_file)
+        columns = vu.loadhead(self.leg_data_file)
         if columns is None:
             columns = ['']
         self.leg_data_columns = columns
@@ -276,7 +268,11 @@ class GMDModel(HasStrictTraits):
             for param in self.parameters:
                 if param.name == default.name:
                     param.distribution = 'Specified'
-                    param.specified = default.default
+                    default = float(default.default)
+                    param.specified = "{0:12.6E}".format(default)
+                    param.minimum = default - .1 * default
+                    param.maximum = default + .1 * default
+                    param.mean = default
                     break
 
     def update_density(self, param):
@@ -298,51 +294,51 @@ class GMDModel(HasStrictTraits):
     def _leg_defaults_changed(self, info):
         if info == 'Uniaxial Strain':
             self.legs = [
-                GMDLeg(time=0, nsteps=0,
-                           types='222222', components='0 0 0 0 0 0'),
-                GMDLeg(time=1, nsteps=100,
-                           types='222222', components='1 0 0 0 0 0'),
+                MMLLeg(time=0, nsteps=0,
+                       types='222222', components='0 0 0 0 0 0'),
+                MMLLeg(time=1, nsteps=100,
+                       types='222222', components='1 0 0 0 0 0'),
             ]
         elif info == 'Biaxial Strain':
             self.legs = [
-                GMDLeg(time=0, nsteps=0,
-                           types='222222', components='0 0 0 0 0 0'),
-                GMDLeg(time=1, nsteps=100,
-                           types='222222', components='1 1 0 0 0 0'),
+                MMLLeg(time=0, nsteps=0,
+                       types='222222', components='0 0 0 0 0 0'),
+                MMLLeg(time=1, nsteps=100,
+                       types='222222', components='1 1 0 0 0 0'),
             ]
         elif info == 'Spherical Strain':
             self.legs = [
-                GMDLeg(time=0, nsteps=0,
-                           types='222222', components='0 0 0 0 0 0'),
-                GMDLeg(time=1, nsteps=100,
-                           types='222222', components='1 1 1 0 0 0'),
+                MMLLeg(time=0, nsteps=0,
+                       types='222222', components='0 0 0 0 0 0'),
+                MMLLeg(time=1, nsteps=100,
+                       types='222222', components='1 1 1 0 0 0'),
             ]
         elif info == 'Uniaxial Stress':
             self.legs = [
-                GMDLeg(time=0, nsteps=0,
-                           types='444444', components='0 0 0 0 0 0'),
-                GMDLeg(time=1, nsteps=100,
-                           types='444444', components='1 0 0 0 0 0'),
+                MMLLeg(time=0, nsteps=0,
+                       types='444444', components='0 0 0 0 0 0'),
+                MMLLeg(time=1, nsteps=100,
+                       types='444444', components='1 0 0 0 0 0'),
             ]
         elif info == 'Biaxial Stress':
             self.legs = [
-                GMDLeg(time=0, nsteps=0,
+                MMLLeg(time=0, nsteps=0,
                            types='444444', components='0 0 0 0 0 0'),
-                GMDLeg(time=1, nsteps=100,
+                MMLLeg(time=1, nsteps=100,
                            types='444444', components='1 1 0 0 0 0'),
             ]
         elif info == 'Spherical Stress':
             self.legs = [
-                GMDLeg(time=0, nsteps=0,
+                MMLLeg(time=0, nsteps=0,
                            types='444444', components='0 0 0 0 0 0'),
-                GMDLeg(time=1, nsteps=100,
+                MMLLeg(time=1, nsteps=100,
                            types='444444', components='1 1 1 0 0 0'),
             ]
 
     def _legs_changed(self, info):
         for i in range(len(info)):
             if info[i] is None:
-                info[i] = GMDLeg()
+                info[i] = MMLLeg()
 
     param_view = View(
         UItem('parameters',
@@ -368,7 +364,7 @@ class GMDModel(HasStrictTraits):
               show_titles=True,
               selected='selected_material',
               editable=False,
-              adapter=GMDMaterialAdapter()),
+              adapter=MMLMaterialAdapter()),
               )
     )
 

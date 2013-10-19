@@ -5,6 +5,7 @@ from core.io import Error1
 class Material(object):
 
     def __init__(self):
+        self.mtldb = None
         self.ndata = 0
         self.nxtra = 0
         self.xinit = np.zeros(self.nxtra)

@@ -465,8 +465,13 @@ def parse_input(filepath, argp=None):
     """
     if argp is None:
         argp = {}
+
+    if filepath[0] == "string":
+        lines = filepath[1].split("\n")
+    else:
+        lines = open(filepath, "r").readlines()
+
     # remove the shebang, if any
-    lines = open(filepath, "r").readlines()
     if re.search("#!/", lines[0]):
         lines = lines[1:]
 
@@ -712,7 +717,7 @@ def pOptimization(optdict, basexml):
     for item in elements["AuxiliaryFile"]:
         auxfile = item.get("href")
         if auxfile == NOT_SPECIFIED:
-            # error already printed
+            # error already logged
             continue
         if not auxfile:
             fatal_inp_error("pOptimization: expected href attribute to "

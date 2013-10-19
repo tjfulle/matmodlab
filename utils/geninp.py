@@ -5,8 +5,12 @@ import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
 
+PERM_FCNS = {0: "percentage", 1: "range", 2: "uniform", 3: "normal", 4: "list",
+             5: "weibull"}
+
+
 def create_mml_input(runid, driver, pathtype, pathopts, path, mtlmdl, mtlparams,
-                     write=0):
+                     permutation=None, write=0):
     xmlf = runid + ".xml"
     doc = xdom.Document()
     root = doc.createElement("MMLSpec")
@@ -35,9 +39,22 @@ def create_mml_input(runid, driver, pathtype, pathopts, path, mtlmdl, mtlparams,
     xphys.appendChild(xmaterial)
     xphys.appendChild(xpath)
     root.appendChild(xphys)
+
+    # --- permutation
+    if permutation is not None:
+        xpermutation = doc.createElement("Permutation")
+        xpermutation.setAttribute("method", permutation[0])
+        for pinfo in permutation[1]:
+            fcn = PERM_FCNS[pinfo[1]]
+            vals = "{0}({1})".format(fcn, ", ".join(str(a) for a in pinfo[2:]))
+            xpermutate = doc.createElement("Permutate")
+            xpermutate.setAttribute("var", pinfo[0])
+            xpermutate.setAttribute("values", vals)
+            xpermutation.appendChild(xpermutate)
+        root.appendChild(xpermutation)
     doc.appendChild(root)
 
-    xmlstr = doc.toprettyxml()
+    xmlstr = doc.toprettyxml(newl="\n", indent="  ")
     if not write:
         return xmlstr
 

@@ -19,6 +19,20 @@ def get_material_from_db(matname, mtldb=[None]):
     return mtldb[0].get(matname)
 
 
+def instantiate_material(matname):
+    """Create a material object from the material name
+
+    """
+    # Instantiate the material object
+    model = get_material_from_db(matname)
+    if model is None:
+        return
+    mtli, mtlc, mtlp = model
+    mtlmod = load_file(mtli)
+    mclass = getattr(mtlmod, mtlc)
+    return mclass()
+
+
 def create_material(matname, matparams):
     """Create a material object from the material name
 
@@ -26,7 +40,7 @@ def create_material(matname, matparams):
     # Instantiate the material object
     model = get_material_from_db(matname)
     if model is None:
-        return None
+        return
     mtli, mtlc, mtlp = model
     mtlmod = load_file(mtli)
     mclass = getattr(mtlmod, mtlc)
@@ -40,7 +54,7 @@ def read_mtldb():
 
     """
     if not os.path.isfile(F_MTL_MODEL_DB):
-        return None
+        return
 
     try:
         doc = xdom.parse(F_MTL_MODEL_DB)

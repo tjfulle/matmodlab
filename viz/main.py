@@ -1,4 +1,5 @@
-raise SystemExit("Material Model Lab GUI interface not yet completed")
+#raise SystemExit("Material Model Lab GUI interface not yet completed")
+import sys
 import viz.mllab as mllab
-window = mllab.MaterialModelSelector(model_type="any")
+window = mllab.MMLMaterialModelSelector()
 sys.exit(window.configure_traits())

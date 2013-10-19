@@ -3,11 +3,29 @@ import sys
 import xml.dom.minidom as xdom
 
 
+from __config__ import F_MTL_PARAM_DB
+
+
 def log_error(m):
     sys.stderr.write("*** error: {0}\n".format(m))
 
 
-def read_material_params_from_db(matname, mdlname, dbfile):
+def read_all_material_params_from_db(mdlname, dbfile=None):
+    materials = {}
+    if dbfile is None:
+        dbfile = F_MTL_PARAM_DB
+    doc = xdom.parse(dbfile)
+
+    # check if material in database
+    for material in doc.getElementsByTagName("Material"):
+        mtlname = material.getAttribute("name")
+        params = read_material_params_from_db(mtlname, mdlname, dbfile, error=0)
+        if params is not None:
+            materials[mtlname] = params
+    return materials
+
+
+def read_material_params_from_db(matname, mdlname, dbfile, error=1):
     """Read the material parameters from the specified database file
 
     """
@@ -41,8 +59,9 @@ def read_material_params_from_db(matname, mdlname, dbfile):
             # model now is the correct Model element
             break
     else:
-        log_error("material {0} does not define parameters "
-                  "for model {1}".format(matname, mdlname))
+        if error:
+            log_error("material {0} does not define parameters "
+                      "for model {1}".format(matname, mdlname))
         return
 
     # get the material properties

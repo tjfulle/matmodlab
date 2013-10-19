@@ -210,4 +210,28 @@
       </Model>
     </MaterialModels>
   </Material>
+  <Material name="Al 6061">
+    <MaterialProperties>
+      <Property name="BULK_MODULUS"
+		desc="bulk modulus"
+		units="PRESSURE_UNITS"
+		value="6.888622E+10"/>
+      <Property name="SHEAR_MODULUS"
+		desc="shear modulus"
+		units="PRESSURE_UNITS"
+		value="2.583815E+10"/>
+      <Property name="SHEAR_STRENGTH"
+		desc="shear strength"
+		units="PRESSURE_UNITS"
+		value="241E+06"/>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="elastic">
+	<Parameters K="BULK_MODULUS" G="SHEAR_MODULUS"/>
+      </Model>
+      <Model name="plastic">
+	<Parameters K="BULK_MODULUS" G="SHEAR_MODULUS" Y="SHEAR_STRENGTH"/>
+      </Model>
+    </MaterialModels>
+  </Material>
 </Materials>

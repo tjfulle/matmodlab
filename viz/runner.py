@@ -1,4 +1,3 @@
-import StringIO
 import sys
 import random
 import os
@@ -6,9 +5,10 @@ import datetime
 
 from enthought.traits.api import HasStrictTraits, List, Instance, String, Interface
 
-import Source.Payette_run as pr
-import Source.Payette_utils as pu
-from viz.mdldat import GMDModel
+from core.inpparse import parse_input
+from core.main import run_all_inputs
+from utils.geninp import create_mml_input, PERM_FCNS
+from viz.mdldat import MMLModel
 from viz.metadat import VizMetaData
 from viz.plot2d import create_model_plot
 
@@ -17,42 +17,40 @@ class IModelRunnerCallbacks(Interface):
     def RunFinished(self, metadata):
         ''' Called when a run completes or fails. '''
 
+class ModelRunnerError(Exception):
+    pass
+
 
 class ModelRunner(HasStrictTraits):
-    simulation_name = String
-    material_models = List(Instance(GMDModel))
+    runid = String
+    material_models = List(Instance(MMLModel))
     callbacks = Instance(IModelRunnerCallbacks)
 
     def RunModels(self):
         for material in self.material_models:
-            inputString = self.CreateModelInputString(material)
-
-            self.RunInputString(inputString, material)
+            inpstr = self.CreateModelInputString(material)
+            self.RunInputString(inpstr, material)
 
     def RunOptimization(self, optimizer):
         if len(self.material_models) != 1:
-            pu.report_and_raise_error("Optimization supports only one model!")
+            raise ModelRunnerError("Optimization supports only one model!")
             return
 
         material = self.material_models[0]
+        inpstr = self.CreateModelInputString(material, optimizer)
+        self.RunInputString(inpstr, material, 'Optimization')
 
-        inputString = self.CreateModelInputString(material, optimizer)
-
-        self.RunInputString(inputString, material, 'Optimization')
-
-    def RunInputString(self, inputString, material, run_type='Simulation'):
-        # output = StringIO.StringIO()
-        oldout = sys.stdout
-        # sys.stdout = output
-
+    def RunInputString(self, inpstr, material, run_type='Simulation'):
         # tjf: run_payette can be invoked with disp=1 and then it returns a
         # tjf: dictionary with some extra information. I pass that extra
         # tjf: information to the CreatePlotWindow method.
-        siminfo = pr.run_payette(siminp=inputString, disp=1)[0]
-        sys.stdout = oldout
+        uinp = parse_input(["string", inpstr])[0]
+        uinp[1] = self.runid
+        output = run_all_inputs([uinp], 0, 1)
 
         if self.callbacks is None:
-            self.CreatePlotWindow(siminfo)
+            self.CreatePlotWindow(output)
+
         else:
             now = datetime.datetime.now()
             index_file = siminfo.get('index file')
@@ -77,7 +75,7 @@ class ModelRunner(HasStrictTraits):
                 path_files = []
 
             metadata = VizMetaData(
-                name=self.simulation_name,
+                name=self.runid,
                 base_directory=base_dir,
                 index_file=index_file,
                 out_file=output_file,
@@ -88,25 +86,27 @@ class ModelRunner(HasStrictTraits):
                 created_date=now.date(),
                 created_time=now.time(),
                 successful=True,
-                model=material
-            )
+                model=material)
 
             self.callbacks.RunFinished(metadata)
 
-    def CreatePlotWindow(self, siminfo):
-        # siminfo is a dictionary containing extra output information from the
-        # simulation. Pass it directly to create_Viz_ModelPlot
-        create_Viz_ModelPlot(self.simulation_name, **siminfo)
+    def CreatePlotWindow(self, simout):
+        create_model_plot(simout)
 
     def CreateModelInputString(self, material, optimization=None):
-        result = (
-            "begin simulation %s\n"
-            "  begin material\n"
-            "    constitutive model %s\n"
-            % (self.simulation_name, material.model_name))
+        runid = self.runid
+        driver = "solid"
+        pathtype = "prdef"
+        mtlmdl = material.name
+        model_type = str(material.model_type).lower()
 
+        if 'eos' in model_type:
+            path, pathopts = self.CreateEOSBoundaryInput(material)
+        else:
+            path, pathopts = self.CreateMechanicalBoundaryInput(material)
+
+        mtlparams = []
         for p in material.parameters:
-
             # For permutation and optimization jobs, the parameter is not
             # specified as
             #    key = val
@@ -114,7 +114,6 @@ class ModelRunner(HasStrictTraits):
             #    key = {key}
             # so that the input parser can preprocess key with the current
             # value.  Here we determine how to set key
-
             if p.distribution != "Specified":
                 val = "{{{0}}}".format(p.name)
             else:
@@ -122,66 +121,47 @@ class ModelRunner(HasStrictTraits):
             if optimization is not None:
                 #@tjf: code to determine if p is optimized or not so that the
                 # proper form for "val" can be written to the input
-                pu.report_and_raise_error("Support code needed")
-            result += "    %s = %s\n" % (p.name, val)
+                raise ModelRunnerError("Support code needed")
+            mtlparams.append((p.name, val))
 
-        result += "  end material\n"
-
-        model_type = str(material.model_type).lower()
-        if 'eos' in model_type:
-            result += self.CreateEOSBoundaryInput(material)
-
-        elif 'mechanical' in model_type:
-            result += self.CreateMechanicalBoundaryInput(material)
-
-        result += self.CreatePermutation(material)
-
-        if optimization is not None:
-            result += self.CreateOptimization(optimization)
-
-        result += "end simulation\n"
-        return result
+        perm = self.CreatePermutation(material)
+        opt = self.CreateOptimization(optimization)
+        inpstr = create_mml_input(runid, driver, pathtype, pathopts, path,
+                                  mtlmdl, mtlparams, permutation=perm, write=0)
+        return inpstr
 
     def CreatePermutation(self, material):
-        needsPermutation = False
-        for p in material.parameters:
-            if p.distribution != 'Specified':
-                needsPermutation = True
+        if not any([p.distribution == "Specified" for p in material.parameters]):
+            return
 
-        if not needsPermutation:
-            return ""
-
-        result = ("  begin permutation\n"
-                  "    method %s\n"
-                  % material.permutation_method.lower())
+        method = material.permutation_method.lower()
+        permutate = []
+        def get_key(d, v):
+            for (k, _) in d.items():
+                if _ == v: return k
         for p in material.parameters:
-            if p.distribution == '+/-':
-                result += "    permutate %s, +/-(%s, %s)\n" % (
-                    p.name, p.specified, p.percent)
-            elif p.distribution == 'Range':
-                result += "    permutate %s, range(%s, %s, %s)\n" % (
-                    p.name, p.minimum, p.maximum, p.samples)
-            elif p.distribution == 'Uniform':
-                result += "    permutate %s, uniform(%s, %s, %s)\n" % (
-                    p.name, p.minimum, p.maximum, p.samples)
-            elif p.distribution == 'Normal':
-                result += "    permutate %s, normal(%s, %s, %s)\n" % (
-                    p.name, p.mean, p.std_dev, p.samples)
-            elif p.distribution == 'AbsGaussian':
+            distr = p.distribution.lower()
+            _id = get_key(PERM_FCNS, distr)
+            if distr == "percentage":
+                permutate.append((p.name, _id, p.specified, p.percent, p.samples))
+            elif distr == 'range':
+                permutate.append((p.name, _id, p.minimum, p.maximum, p.samples))
+            elif distr == 'uniform':
+                permutate.append((p.name, _id, p.minimum, p.maximum, p.samples))
+            elif distr == 'normal':
+                permutate.append((p.name, _id, p.mean, p.stdev, p.samples))
+            elif distr == 'absgaussian':
                 vals = []
                 for i in range(p.samples):
-                    vals.append(abs(random.normalvariate(p.mean, p.std_dev)))
-                result += "    permutate %s, sequence = %s\n" % (
-                    p.name, str(tuple(vals)))
-            elif p.distribution == 'Weibull':
-                result += "    permutate %s, weibull(%s, %s, %s)\n" % (
-                    p.name, p.scale, p.shape, p.samples)
+                    vals.append(abs(random.normalvariate(p.mean, p.stdev)))
+                permutate.append((p.name, PERM_FCNS["list"], vals))
+            elif p.distribution == 'weibull':
+                permutate.append((p.name, _id, p.scale, p.shape, p.samples))
 
-        result += "  end permutation\n"
-
-        return result
+        return method, permutate
 
     def CreateOptimization(self, optimization):
+        return
         optimize_params = ""
         for param in optimization.optimize_vars:
             if not param.enabled:
@@ -267,30 +247,17 @@ class ModelRunner(HasStrictTraits):
         return result
 
     def CreateMechanicalBoundaryInput(self, material):
-        result = (
-            "  begin boundary\n"
-            "    kappa = 0.\n"
-            "    tstar = %f\n"
-            "    fstar = %f\n"
-            "    sstar = %f\n"
-            "    dstar = %f\n"
-            "    estar = %f\n"
-            "    efstar = %f\n"
-            "    ampl = %f\n"
-            "    ratfac = %f\n"
-            "    begin legs\n"
-            % (material.TSTAR, material.FSTAR, material.SSTAR, material.DSTAR,
-               material.ESTAR, material.EFSTAR, material.AMPL, material. RATFAC)
-        )
-
-        leg_num = 0
-        for leg in material.legs:
-            result += "      %d %f %d %s %s\n" % (
-                leg_num, leg.time, leg.nsteps, leg.types, leg.components)
-            leg_num += 1
-
-        result += (
-            "    end legs\n"
-            "  end boundary\n"
-        )
-        return result
+        pathopts = (("kappa", 0.),
+                    ("nfac", 1),
+                    ("format", "default"),
+                    ("tstar", material.TSTAR),
+                    ("fstar", material.FSTAR),
+                    ("sstar", material.SSTAR),
+                    ("dstar", material.DSTAR),
+                    ("estar", material.ESTAR),
+                    ("efstar", material.EFSTAR),
+                    ("amplitude", material.AMPL),
+                    ("ratfac", material. RATFAC))
+        path = ["{0:f} {1:d} {2} {3}".format(
+            l.time, l.nsteps, l.types, l.components) for l in material.legs]
+        return path, pathopts

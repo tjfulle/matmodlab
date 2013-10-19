@@ -184,11 +184,11 @@ def main(argv=None):
     log_message("setup: writing executable scripts")
     pyopts = "" if not sys.dont_write_bytecode else "-B"
 
-    write_exe("gmd", tools, os.path.join(root, "main.py"),
+    write_exe("gmd", tools, os.path.join(core, "main.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
               {"MMLMTLS": mtldirs}, deprecate="mmd")
 
-    write_exe("mmd", tools, os.path.join(root, "main.py"),
+    write_exe("mmd", tools, os.path.join(core, "main.py"),
               pyexe, pyopts, {"PYTHONPATH": pypath, "FC": gfortran},
               {"MMLMTLS": mtldirs})
 

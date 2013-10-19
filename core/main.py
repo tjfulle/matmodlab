@@ -117,12 +117,25 @@ def main(argv=None):
         continue
 
     # --- run all input
-    ninp = len(all_input)
-    if not ninp:
+    if not all_input:
         sys.exit("mmd: nothing left to do")
 
-    nproc = min(min(mp.cpu_count(), args.j), ninp)
-    fargs = [(iinp, ninp, args.v, args.j, uinp) for
+    output = run_all_inputs(all_input, args.v, args.j)
+
+    if args.v:
+        # a fun quote to end with
+        ol = open(os.path.join(ROOT_D, "utils/zol")).readlines()
+        sys.stdout.write("\n" + ol[random.randint(0, len(ol)-1)])
+
+    if args.V and output:
+        from viz.plot2d import create_model_plot
+        create_model_plot(output)
+
+
+def run_all_inputs(all_input, verb, nproc):
+    ninp = len(all_input)
+    nproc = min(min(mp.cpu_count(), nproc), ninp)
+    fargs = [(iinp, ninp, verb, nproc, uinp) for
              (iinp, uinp) in enumerate(all_input)]
     output = []
 
@@ -139,16 +152,7 @@ def main(argv=None):
         except KeyboardInterrupt:
             raise SystemExit("KeyboardInterrupt caught")
 
-    output = [o for o in output if o]
-
-    if args.v:
-        # a fun quote to end with
-        ol = open(os.path.join(ROOT_D, "utils/zol")).readlines()
-        sys.stdout.write("\n" + ol[random.randint(0, len(ol)-1)])
-
-    if args.V and output:
-        from viz.plot2d import create_model_plot
-        create_model_plot(output)
+    return [o for o in output if o]
 
 
 def func(fargs):
@@ -230,6 +234,7 @@ def clean_all_output(runid, const):
     for ext in (".eval",):
         try: shutil.rmtree(runid + ext)
         except OSError: pass
+
 
 if __name__ == "__main__":
     main()

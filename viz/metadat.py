@@ -2,7 +2,7 @@ import uuid
 
 from enthought.traits.api import HasStrictTraits, String, List, File, Date, Time, Bool, Enum, Instance, Directory, Tuple
 
-from viz.mdldat import GMDModel
+from viz.mdldat import MMLModel
 from viz.plot2d import ModelPlot
 
 
@@ -14,14 +14,13 @@ class VizMetaData(HasStrictTraits):
     log_file = File
     surface_file = File
     data_type = Enum('Simulation', 'Optimization', 'Visualization', 'Imported')
-    model_type = String
     path_files = List(Tuple(String, File))
     created_date = Date
     created_time = Time
     object_id = String
     session_id = String
     successful = Bool(False)
-    model = Instance(GMDModel)
+    model = Instance(MMLModel)
     plot = Instance(ModelPlot)
 
     def __init__(self, **traits):
