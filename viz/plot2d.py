@@ -373,8 +373,6 @@ class Plot2D(tapi.HasTraits):
         return x_scale, y_scale
 
 
-
-
 class ChangeAxisHandler(tuiapi.Handler):
 
     def closed(self, info, is_ok):
@@ -620,6 +618,9 @@ class ModelPlot(tapi.HasStrictTraits):
         return
 
     def _Reload_Data_fired(self):
+        self.reload_data()
+
+    def reload_data(self):
         fileinfo = get_sorted_fileinfo(self.filepaths)
         data = []
         for idx, (fnam, fhead, fdata) in enumerate(fileinfo):
@@ -778,6 +779,7 @@ def create_model_plot(sources, handler=None, metadata=None):
 
     main_window = ModelPlot(filepaths=filepaths, file_variables=variables)
     main_window.configure_traits(view=view, handler=handler)
+    return main_window
 
 
 def getidx(a, name, comments="#"):

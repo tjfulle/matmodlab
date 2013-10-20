@@ -7,6 +7,7 @@ from enthought.traits.ui.api import (View, Label, Group, HGroup, VGroup, Item,
 from enthought.traits.ui.tabular_adapter import TabularAdapter
 
 from viz.mdldat import MMLModel
+from viz.plot2d import ModelPlot, create_model_plot
 from viz.runner import ModelRunner, IModelRunnerCallbacks
 from viz.models import load_models
 
@@ -42,7 +43,9 @@ class MMLMaterialModelSelector(HasStrictTraits):
     run_button = Button("Run Material Model")
     rerun = Bool(False)
     supplied_data = List(Tuple(String, File))
+    runner = Instance(ModelRunner)
     callbacks = Instance(IModelRunnerCallbacks)
+    model_plot = Instance(ModelPlot)
 
     def __init__(self, **traits):
         HasStrictTraits.__init__(self, **traits)
@@ -70,14 +73,24 @@ class MMLMaterialModelSelector(HasStrictTraits):
             self.auto_generated = True
 
     def _run_button_fired(self, event):
-        runner = ModelRunner(runid=self.runid,
-                             material_models=[self.selected_model],
-                             callbacks=self.callbacks)
-        runner.RunModels()
+        self.runner = ModelRunner(runid=self.runid,
+                                  material_model=self.selected_model,
+                                  callbacks=self.callbacks)
+        self.runner.run_model()
+        if self.model_plot is None:
+            self.create_plot()
+        else:
+            self.refresh_plot()
+
+    def create_plot(self):
+        self.model_plot = create_model_plot(self.runner.model_output)
+
+    def refresh_plot(self):
+        self.model_plot.reload_data()
 
     def _show_button_fired(self, event):
         runner = ModelRunner(runid=self.runid,
-                             material_models=[self.selected_model],
+                             material_model=self.selected_model,
                              callbacks=self.callbacks)
         inpstr = runner.CreateModelInputString(self.selected_model)
         preview = MMLInputStringPreview(

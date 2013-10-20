@@ -3,14 +3,14 @@ import random
 import os
 import datetime
 
-from enthought.traits.api import HasStrictTraits, List, Instance, String, Interface
+from enthought.traits.api import (HasStrictTraits, List, Instance, String,
+                                  Interface, Int)
 
 from core.inpparse import parse_input
 from core.main import run_all_inputs
 from utils.geninp import create_mml_input, PERM_FCNS
 from viz.mdldat import MMLModel
 from viz.metadat import VizMetaData
-from viz.plot2d import create_model_plot
 
 
 class IModelRunnerCallbacks(Interface):
@@ -23,35 +23,28 @@ class ModelRunnerError(Exception):
 
 class ModelRunner(HasStrictTraits):
     runid = String
-    material_models = List(Instance(MMLModel))
+    material_model = Instance(MMLModel)
     callbacks = Instance(IModelRunnerCallbacks)
+    model_output = List(String)
 
-    def RunModels(self):
-        for material in self.material_models:
-            inpstr = self.CreateModelInputString(material)
-            self.RunInputString(inpstr, material)
+    def run_model(self):
+        inpstr = self.gen_inpstr(self.material_model)
+        self.model_output = self.run_inpstr(inpstr, self.material_model)
 
-    def RunOptimization(self, optimizer):
-        if len(self.material_models) != 1:
-            raise ModelRunnerError("Optimization supports only one model!")
-            return
 
-        material = self.material_models[0]
-        inpstr = self.CreateModelInputString(material, optimizer)
-        self.RunInputString(inpstr, material, 'Optimization')
+    def run_opt_model(self, optimizer):
+        inpstr = self.gen_inpstr(self.material_model, optimizer)
+        output = self.run_inpstr(inpstr, self.material_model, 'Optimization')
 
-    def RunInputString(self, inpstr, material, run_type='Simulation'):
+    def run_inpstr(self, inpstr, material, run_type='Simulation'):
         # tjf: run_payette can be invoked with disp=1 and then it returns a
         # tjf: dictionary with some extra information. I pass that extra
-        # tjf: information to the CreatePlotWindow method.
+        # tjf: information to the create_or_refresh_plot method.
         uinp = parse_input(["string", inpstr])[0]
         uinp[1] = self.runid
         output = run_all_inputs([uinp], 0, 1)
 
-        if self.callbacks is None:
-            self.CreatePlotWindow(output)
-
-        else:
+        if self.callbacks is not None:
             now = datetime.datetime.now()
             index_file = siminfo.get('index file')
             if index_file is None:
@@ -90,10 +83,9 @@ class ModelRunner(HasStrictTraits):
 
             self.callbacks.RunFinished(metadata)
 
-    def CreatePlotWindow(self, simout):
-        create_model_plot(simout)
+        return output
 
-    def CreateModelInputString(self, material, optimization=None):
+    def gen_inpstr(self, material, optimization=None):
         runid = self.runid
         driver = "solid"
         pathtype = "prdef"
@@ -101,9 +93,9 @@ class ModelRunner(HasStrictTraits):
         model_type = str(material.model_type).lower()
 
         if 'eos' in model_type:
-            path, pathopts = self.CreateEOSBoundaryInput(material)
+            path, pathopts = self.gen_eos_path(material)
         else:
-            path, pathopts = self.CreateMechanicalBoundaryInput(material)
+            path, pathopts = self.gen_prdef_path(material)
 
         mtlparams = []
         for p in material.parameters:
@@ -124,14 +116,14 @@ class ModelRunner(HasStrictTraits):
                 raise ModelRunnerError("Support code needed")
             mtlparams.append((p.name, val))
 
-        perm = self.CreatePermutation(material)
-        opt = self.CreateOptimization(optimization)
+        perm = self.gen_perminp(material)
+        opt = self.gen_optinp(optimization)
         inpstr = create_mml_input(runid, driver, pathtype, pathopts, path,
                                   mtlmdl, mtlparams, permutation=perm, write=0)
         return inpstr
 
-    def CreatePermutation(self, material):
-        if not any([p.distribution == "Specified" for p in material.parameters]):
+    def gen_perminp(self, material):
+        if all([p.distribution == "Specified" for p in material.parameters]):
             return
 
         method = material.permutation_method.lower()
@@ -160,7 +152,7 @@ class ModelRunner(HasStrictTraits):
 
         return method, permutate
 
-    def CreateOptimization(self, optimization):
+    def gen_optinp(self, optimization):
         return
         optimize_params = ""
         for param in optimization.optimize_vars:
@@ -204,7 +196,7 @@ class ModelRunner(HasStrictTraits):
                   )
         return result
 
-    def CreateEOSBoundaryInput(self, material):
+    def gen_eos_path(self, material):
         # XXX Need a less hardcoded way to do this
         T0 = 0.0
         R0 = 0.0
@@ -246,7 +238,7 @@ class ModelRunner(HasStrictTraits):
 
         return result
 
-    def CreateMechanicalBoundaryInput(self, material):
+    def gen_prdef_path(self, material):
         pathopts = (("kappa", 0.),
                     ("nfac", 1),
                     ("format", "default"),
@@ -256,7 +248,7 @@ class ModelRunner(HasStrictTraits):
                     ("dstar", material.DSTAR),
                     ("estar", material.ESTAR),
                     ("efstar", material.EFSTAR),
-                    ("amplitude", material.AMPL),
+                    ("amplitude", material.AMPLITUDE),
                     ("ratfac", material. RATFAC))
         path = ["{0:f} {1:d} {2} {3}".format(
             l.time, l.nsteps, l.types, l.components) for l in material.legs]
