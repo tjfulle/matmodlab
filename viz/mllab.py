@@ -77,16 +77,11 @@ class MMLMaterialModelSelector(HasStrictTraits):
                                   material_model=self.selected_model,
                                   callbacks=self.callbacks)
         self.runner.run_model()
+
         if self.model_plot is None:
-            self.create_plot()
+            self.model_plot = create_model_plot(self.runner.model_output)
         else:
-            self.refresh_plot()
-
-    def create_plot(self):
-        self.model_plot = create_model_plot(self.runner.model_output)
-
-    def refresh_plot(self):
-        self.model_plot.reload_data()
+            self.model_plot.reload_data()
 
     def _show_button_fired(self, event):
         runner = ModelRunner(runid=self.runid,
