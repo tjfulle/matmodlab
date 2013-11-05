@@ -3,6 +3,8 @@ import imp
 
 D = os.path.dirname(os.path.realpath(__file__))
 
+builds = ("idealgas",)
+
 def makemf(destd, fc, fio, materials=None, *args):
     """Build fortran and python material models
 
@@ -33,7 +35,7 @@ def makemf(destd, fc, fio, materials=None, *args):
         list of names of skipped models
 
     """
-    name = "idealgas"
+    name = builds[0]
     if materials and name not in [x.lower() for x in materials]:
         return [], [], [name]
     interface = os.path.join(D, name + ".py")

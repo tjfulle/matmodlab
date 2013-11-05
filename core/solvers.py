@@ -5,6 +5,7 @@ import numpy as np
 import scipy.optimize
 import sys
 
+from lib.mmlabpack import mmlabpack
 import core.io as io
 
 EPS = np.finfo(np.float).eps
@@ -139,7 +140,7 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
     for i in range(maxit2):
         sig = sigsave.copy()
         xtra = xtrasave.copy()
-        Jsub = material.jacobian(dt, d, sig, xtra, v)
+        Jsub = material.jacobian(dt, d, sig, xtra, v, *args)
         try:
             d[v] -= np.linalg.solve(Jsub, sigerr) / dt
 
@@ -201,13 +202,12 @@ def _simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
     d = darg.copy()
     sig = sigarg.copy()
     xtra = xtraarg.copy()
-    args = (material, dt, d, sig, xtra, v, sigspec, proportional)
+    args = (material, dt, d, sig, xtra, v, sigspec, proportional, args)
     d[v] = scipy.optimize.fmin(func, d[v], args=args, maxiter=20, disp=False)
     return d
 
 
-def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
-         *args):
+def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional, args):
     """Objective function to be optimized by simplex
 
     """
@@ -217,6 +217,9 @@ def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
 
     # initialize
     d[v] = x
+    f, _ = mmlabpack.update_deformation(dt, 0., args[0], d)
+    args = list(args)
+    args[0] = f
 
     # store the best guesses
     sig, xtra = material.update_state(dt, d, sig, xtra, *args)

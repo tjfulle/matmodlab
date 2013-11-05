@@ -12,9 +12,10 @@ D = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, D)
 import plastic as plastic
 
+builds = ("plastic",)
 
 def makemf(destd, fc, fio, materials=None, *args):
-    name = "plastic"
+    name = builds[0]
     if materials and name not in [m.lower() for m in materials]:
         return [], [], [name]
 

@@ -1,27 +1,42 @@
 import numpy as np
 
 from core.io import Error1
+from lib.mmlabpack import mmlabpack
 
 class Material(object):
-
     def __init__(self):
         self.mtldb = None
+        self.nparam = 0
         self.ndata = 0
         self.nxtra = 0
         self.xinit = np.zeros(self.nxtra)
         self.mtl_variables = []
-        self.param_map = {}
+        self._param_map = {}
         self.initialized = True
         if not hasattr(self, "param_names"):
             raise Error1("{0}: param_names not defined".format(self.name))
         self._register_parameters()
 
+    @staticmethod
+    def _fmt_param_name_aliases(s, mode=0):
+        s = [n.upper() for n in s.split(":")]
+        if mode == 0:
+            return s[0], s[1:]
+        return ":".join(s)
+
     def _register_parameters(self):
         self.nparam = len(self.param_names)
         for idx, name in enumerate(self.param_names):
-            name = name.upper()
-            self.param_map[name] = idx
+            name, aliases = self._fmt_param_name_aliases(name)
+            if name in self._param_map:
+                raise Error1("{0}: param already registered".format(name))
+            self._param_map[name] = idx
             setattr(self, name, idx)
+            for alias in aliases:
+                if alias in self._param_map:
+                    raise Error1("{0}: non-unique param alias".format(alias))
+                self._param_map[alias] = idx
+                setattr(self, alias, idx)
 
     def register_mtl_variable(self, var, vtype, units=None):
         self.mtl_variables.append((var, vtype))
@@ -36,7 +51,7 @@ class Material(object):
         for key in keys:
             self.register_mtl_variable(key, "SCALAR")
 
-    def jacobian(self, dt, d, sig, xtra, v):
+    def jacobian(self, dt, d, sig, xtra, v, *args):
         """Numerically compute material Jacobian by a centered difference scheme.
 
         Returns
@@ -75,21 +90,27 @@ class Material(object):
         deps =  np.sqrt(np.finfo(np.float).eps)
         Jsub = np.zeros((nv, nv))
         dt = 1 if dt == 0. else dt
+        f = args[0]
+        _a = [x for x in args[1:]]
 
         for i in range(nv):
             # perturb forward
             dp = d.copy()
             dp[v[i]] = d[v[i]] + (deps / dt) / 2.
+            fp, _ = mmlabpack.update_deformation(dt, 0., f, dp)
             sigp = sig.copy()
             xtrap = xtra.copy()
-            sigp, xtrap = self.update_state(dt, dp, sigp, xtrap)
+            ap = [fp] + _a
+            sigp, xtrap = self.update_state(dt, dp, sigp, xtrap, *ap)
 
             # perturb backward
             dm = d.copy()
             dm[v[i]] = d[v[i]] - (deps / dt) / 2.
+            fm, _ = mmlabpack.update_deformation(dt, 0., f, dm)
             sigm = sig.copy()
             xtram = xtra.copy()
-            sigm, xtram = self.update_state(dt, dm, sigm, xtram)
+            am = [fm] + _a
+            sigm, xtram = self.update_state(dt, dm, sigm, xtram, *am)
 
             # compute component of jacobian
             Jsub[i, :] = (sigp[v] - sigm[v]) / deps
@@ -99,10 +120,17 @@ class Material(object):
         return Jsub
 
     def isparam(self, param_name):
-        return param_name.upper() in self.param_map
+        return param_name.upper() in self._param_map
 
     def parameter_index(self, param_name):
-        return self.param_map.get(param_name.upper())
+        return self._param_map.get(param_name.upper())
+
+    def param_vals(self):
+        return self._param_vals
+
+    def params(self):
+        return [self._fmt_param_name_aliases(p, mode=1)
+                for p in self.param_names]
 
     def setup(self, *args, **kwargs):
         raise Error1("setup must be provided by model")
@@ -153,9 +181,3 @@ class Material(object):
          jac[2, 0], jac[2, 1]) = [threek * c2] * 6
 
         return jac[[[x] for x in v], v]
-
-    def param_vals(self):
-        return self._param_vals
-
-    def params(self):
-        return sorted(self.param_map, key=lambda x: self.param_map[x])

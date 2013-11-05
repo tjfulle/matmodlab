@@ -28,7 +28,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", action="append",
+    parser.add_argument("-m", action="append", default=[],
         help="Material to build [default: all]")
     parser.add_argument("-w", action="store_true", default=False,
         help="Wipe material database before building [default: all]")
@@ -37,6 +37,8 @@ def main(argv=None):
     sys.stdout.write(SPLASH)
     log_message("Material Model Laboratory {0}".format(VERSION))
     log_message("looking for makemf files")
+
+    mats_to_build = [m.lower() for m in args.m]
 
     allbuilt = []
     allfailed = []
@@ -48,8 +50,23 @@ def main(argv=None):
                 continue
 
             f = os.path.join(d, "makemf.py")
-            log_message("building makemf in {0}".format(d), end="... ")
             makemf = imp.load_source("makemf", os.path.join(d, "makemf.py"))
+
+            # determine apriori if the material was requested to be built
+            try:
+                builds = makemf.builds
+                if isinstance(builds, (str, basestring)):
+                    builds = [builds]
+            except AttributeError:
+                builds = None
+
+            if mats_to_build and builds:
+                if not any(_.lower() in mats_to_build for _ in builds):
+                    allskipped.extend(builds)
+                    retcode.extend([0] * len(builds))
+                    continue
+
+            log_message("building makemf in {0}".format(d), end="... ")
             built, failed, skipped = makemf.makemf(
                 LIBD, FC, FIO, materials=args.m)
             if failed:
