@@ -42,7 +42,7 @@ subroutine faterr(caller, msg)
   character*(*) caller
   character*(*) msg
   external log_error
-  jnkstr = "fio: fatal error: " // msg
+  jnkstr = "fio: fatal error: " // caller // ": " // msg
   call log_error(jnkstr)
   return
 end subroutine faterr
