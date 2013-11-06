@@ -21,7 +21,7 @@ class EOSDriver(Driver):
     name = "eos"
     def __init__(self, surface, opts, material):
         super(EOSDriver, self).__init__()
-        self.material = create_material(material[0], material[1])
+        self.material = create_material(*material[:-1])
         self.surface = surface
         self.path = self.surface
         if opts[0] == RESTART:

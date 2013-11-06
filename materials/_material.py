@@ -1,6 +1,6 @@
 import numpy as np
 
-from core.io import Error1
+from core.io import Error1, log_warning
 from lib.mmlabpack import mmlabpack
 
 class Material(object):
@@ -9,6 +9,10 @@ class Material(object):
         self.nparam = 0
         self.ndata = 0
         self.nxtra = 0
+        self._constant_jacobian = False
+        self.bulk_modulus = None
+        self.shear_modulus = None
+        self._jacobian = None
         self.xinit = np.zeros(self.nxtra)
         self.mtl_variables = []
         self._param_map = {}
@@ -37,6 +41,39 @@ class Material(object):
                     raise Error1("{0}: non-unique param alias".format(alias))
                 self._param_map[alias] = idx
                 setattr(self, alias, idx)
+
+    def set_options(self, **kwargs):
+        for (k, v) in kwargs.items():
+            setattr(self, "_{0}".format(k), v)
+
+    def set_constant_jacobian(self):
+        if not self.bulk_modulus:
+            # raise Error1("{0}: bulk modulus not defined".format(self.name))
+            log_warning("{0}: bulk modulus not defined".format(self.name))
+            return
+        if not self.shear_modulus:
+            # raise Error1("{0}: shear modulus not defined".format(self.name))
+            log_warning("{0}: shear modulus not defined".format(self.name))
+            return
+
+        self._jacobian = np.zeros((6, 6))
+        threek = 3. * self.bulk_modulus
+        twog = 2. * self.shear_modulus
+        nu = (threek - twog) / (2. * threek + twog)
+        c1 = (1. - nu) / (1. + nu)
+        c2 = nu / (1. + nu)
+
+        # set diagonal
+        for i in range(3):
+            self._jacobian[i, i] = threek * c1
+        for i in range(3, 6):
+            self._jacobian[i, i] = twog
+
+        # off diagonal
+        (self._jacobian[0, 1], self._jacobian[0, 2],
+         self._jacobian[1, 0], self._jacobian[1, 2],
+         self._jacobian[2, 0], self._jacobian[2, 1]) = [threek * c2] * 6
+        return
 
     def register_mtl_variable(self, var, vtype, units=None):
         self.mtl_variables.append((var, vtype))
@@ -84,6 +121,8 @@ class Material(object):
         Tim Fuller, Sandial National Laboratories, tjfulle@sandia.gov
 
         """
+        if self._constant_jacobian:
+            return self.constant_jacobian(v)
 
         # local variables
         nv = len(v)
@@ -162,22 +201,4 @@ class Material(object):
         return self.mtl_variables
 
     def constant_jacobian(self, v=np.arange(6)):
-        jac = np.zeros((6, 6))
-        threek = 3. * self.bulk_modulus
-        twog = 2. * self.shear_modulus
-        nu = (threek - twog) / (2. * threek + twog)
-        c1 = (1. - nu) / (1. + nu)
-        c2 = nu / (1. + nu)
-
-        # set diagonal
-        for i in range(3):
-            jac[i, i] = threek * c1
-        for i in range(3, 6):
-            jac[i, i] = twog
-
-        # off diagonal
-        (jac[0, 1], jac[0, 2],
-         jac[1, 0], jac[1, 2],
-         jac[2, 0], jac[2, 1]) = [threek * c2] * 6
-
-        return jac[[[x] for x in v], v]
+        return self._jacobian[[[x] for x in v], v]

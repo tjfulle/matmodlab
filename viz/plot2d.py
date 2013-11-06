@@ -266,7 +266,8 @@ class Plot2D(tapi.HasTraits):
                         yo = self.overlay_plot_data[fnam][:, yo_idx] * y_scale
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
-                        self.create_plot(xo, yo, yo_idx, d, entry, LS[ls_ % 4])
+                        _i = d + len(self.plot_data) + 3
+                        self.create_plot(xo, yo, yo_idx, _i, entry, LS[ls_ % 4])
                         XY_DATA.append(Namespace(key=fnam, xname=xname, x=xo,
                                                  yname=yname, y=yo, lw=3))
                         ls_ += 1

@@ -597,7 +597,7 @@ def pPhysics(physdict, functions):
 
     """
     try:
-        mdl, params, istate = pMaterial(physdict["Elements"].pop("Material"))
+        mdl, params, mopts, istate = pMaterial(physdict["Elements"].pop("Material"))
     except ValueError:
         raise UserInputError("failed to parse material")
     if input_errors():
@@ -617,7 +617,7 @@ def pPhysics(physdict, functions):
     runid = physdict.get("runid")
 
     # Return the physics dictionary
-    return ["Physics", runid, driver, (mdl, params, istate), extract]
+    return ["Physics", runid, driver, (mdl, params, mopts, istate), extract]
 
 
 def pMaterial(mtldict):
@@ -682,7 +682,9 @@ def pMaterial(mtldict):
             continue
         params[idx] = val
 
-    return model, params, istate
+    options = {}
+    options["constant_jacobian"] = mtldict["constant_jacobian"]
+    return model, params, options, istate
 
 
 def pOptimization(optdict, basexml):

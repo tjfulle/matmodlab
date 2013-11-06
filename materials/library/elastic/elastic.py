@@ -58,7 +58,7 @@ class Elastic(Material):
                                      log_error, log_message)
         return stress, xtra
 
-    def jacobian(self, dt, d, stress, xtra, v):
+    def jacobian(self, dt, d, stress, xtra, v, *args):
         """Return the constant stiffness
         dt : float
             time step

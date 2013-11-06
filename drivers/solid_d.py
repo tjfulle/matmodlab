@@ -9,7 +9,7 @@ import utils.xmltools as xmltools
 from lib.mmlabpack import mmlabpack
 from drivers.driver import Driver
 from core.solvers import sig2d
-from core.io import fatal_inp_error, input_errors, log_message, Error1
+from core.io import fatal_inp_error, input_errors, log_message, log_warning, Error1
 from materials.material import create_material
 try:
     import gmd_user_sub as usr
@@ -33,8 +33,8 @@ class SolidDriver(Driver):
         self.path = path
 
         # Create material
-        self._mtl_istate = material[2]
-        self.material = create_material(material[0], material[1])
+        self._mtl_istate = material[-1]
+        self.material = create_material(*material[:-1])
 
         # register variables
         self.register_glob_variable("TIME_STEP")
@@ -205,6 +205,7 @@ class SolidDriver(Driver):
                 except:
                     depsdt[v] -= lstsq(Jsub, (sigspec[1] - sigspec[0]) / delt)[0]
 
+            warned = False
             # process this leg
             for n in range(int(nsteps)):
 
@@ -259,8 +260,17 @@ class SolidDriver(Driver):
                 if (nsteps - n) % dump_interval == 0 or endstep:
                     iomgr(t)
 
-                if n == 0 or round(nsteps / 2.) == n or endstep:
+                if n == 0 or round((nsteps - 1) / 2.) == n or endstep:
                     log_message(consfmt.format(leg_num, n + 1, t, dt))
+
+                if n > 1 and nv and not warned:
+                    sigerr = np.sqrt(np.sum((sig[v] - sigspec[2]) ** 2))
+                    warned = True
+                    dnom = 1 if not np.amax(sigspec[2]) else np.amax(sigspec[2])
+                    if sigerr / dnom > 1.e-3:
+                        log_warning("leg: {0}, prescribed stress error: "
+                                    "{1: .3f}. consider increasing number of "
+                                    "steps".format(ileg, sigerr))
 
                 continue  # continue to next step
 

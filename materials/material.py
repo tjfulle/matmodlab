@@ -33,7 +33,7 @@ def instantiate_material(matname):
     return mclass()
 
 
-def create_material(matname, matparams):
+def create_material(matname, matparams, matopts):
     """Create a material object from the material name
 
     """
@@ -46,6 +46,8 @@ def create_material(matname, matparams):
     mclass = getattr(mtlmod, mtlc)
     material = mclass()
     material.setup(matparams)
+    material.set_constant_jacobian()
+    material.set_options(**matopts)
     return material
 
 

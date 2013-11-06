@@ -789,8 +789,9 @@ attr="type[default]{choices}"
 %
 where \texttt{default} is the default value (if any) and \texttt{\{choices\}}
 are valid choices (if any). Any attribute not having a default value is
-required. Types are \texttt{str}, \texttt{int}, \texttt{real}, \texttt{list}.
-Lists are given as space separated lists (e.g., "1 2 3").
+required. Types are \texttt{str}, \texttt{int}, \texttt{real}, \texttt{list}
+and \texttt{boolean}. Lists are given as space separated lists (e.g., "1 2
+3"), boolean arguments should be true or false.
 
 In the following, elements shown in \Red{red} are required input.
 
@@ -1278,7 +1279,7 @@ The following examples demonstrate the \texttt{type="surface"}
 Define the material model.
 
 \begin{inpusage}
-<Material model="str">
+<Material model="str" constant_jacobian="boolean[false]">
 \end{inpusage}
 
 Subelements of \reqdtag{Material} are
@@ -1300,6 +1301,11 @@ Subelements of \reqdtag{Material} are
 \subsubsection{\attr{model}}
 \label{sec:model}
 The name of the material model.
+
+% ----------------------------------------------------------------------------- %
+\subsubsection{\attr{constant\_jacobian}}
+\label{sec:constjac}
+Use the initial (constant) jacobian during inverse stress driven problems.
 
 % ----------------------------------------------------------------------------- %
 \subsection{\tag{Matlabel}}

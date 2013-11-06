@@ -77,6 +77,7 @@
 
     <Element name="Material" n="1" content="children">
       <Attribute name="model" type="string"/>
+      <Attribute name="constant_jacobian" default="false" type="boolean"/>
     </Element>
 
     <Element name="Path" n="1" content="href then text">
