@@ -45,7 +45,7 @@ def create_material(matname, matparams, matopts):
     mtlmod = load_file(mtli)
     mclass = getattr(mtlmod, mtlc)
     material = mclass()
-    material.setup(matparams)
+    material.setup_new_material(matparams)
     material.set_constant_jacobian()
     material.set_options(**matopts)
     return material

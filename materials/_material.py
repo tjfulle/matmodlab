@@ -161,15 +161,18 @@ class Material(object):
     def isparam(self, param_name):
         return param_name.upper() in self._param_map
 
-    def parameter_index(self, param_name):
-        return self._param_map.get(param_name.upper())
+    def parameters(self, ival=False, names=False):
+        if names:
+            return [self._fmt_param_name_aliases(p, mode=1)
+                    for p in self.param_names]
+        if ival:
+            return self.iparams
+        return self.params
 
-    def param_vals(self):
-        return self._param_vals
-
-    def params(self):
-        return [self._fmt_param_name_aliases(p, mode=1)
-                for p in self.param_names]
+    def setup_new_material(self, params):
+        self.iparams = np.array(params)
+        self.params = np.array(params)
+        self.setup()
 
     def setup(self, *args, **kwargs):
         raise Error1("setup must be provided by model")
@@ -187,9 +190,6 @@ class Material(object):
         dt = 1.
         d = np.zeros(6)
         return self.update_state(dt, d, stress, xtra, *args)
-
-    def set_param_vals(self, param_vals):
-        self._param_vals = np.array(param_vals)
 
     def set_initial_state(self, xtra):
         self.xinit = np.array(xtra)

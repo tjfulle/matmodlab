@@ -35,7 +35,7 @@ def makemf(destd, fc, fio, materials=None, *args):
     name = material.name
     filepath = elastic.__file__.rstrip("c")
     mclass = material.__class__.__name__
-    parameters = ", ".join(material.params()).lower()
+    parameters = ", ".join(material.parameters(names=True)).lower()
 
 
     if destd != D:

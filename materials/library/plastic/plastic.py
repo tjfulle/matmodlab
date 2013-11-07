@@ -10,20 +10,14 @@ except ImportError:
 class Plastic(Material):
     name = "plastic"
     param_names = ["K", "G", "A1", "A4"]
-    def setup(self, params):
-        """Set up the Elastic material
-
-        Parameters
-        ----------
-        params : ndarray
-            Material parameters
+    def setup(self):
+        """Set up the Plastic material
 
         """
         if plastic is None:
             raise Error1("plastic model not imported")
-        plastic.plastic_check(params, log_error, log_message)
-        K, G, = params
-        self.set_param_vals(params)
+        plastic.plastic_check(self.params, log_error, log_message)
+        K, G, = self.params
         self.bulk_modulus = K
         self.shear_modulus = G
 
@@ -53,7 +47,7 @@ class Plastic(Material):
             Updated extra variables
 
         """
-        plastic.plastic_update_state(dt, self._param_vals, d, stress,
+        plastic.plastic_update_state(dt, self.params, d, stress,
                                      log_error, log_message)
         return stress, xtra
 

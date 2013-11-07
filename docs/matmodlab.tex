@@ -1798,9 +1798,11 @@ material interface file defines the material class which must be a subclass of\\
 The base class \verb|Material| in \verb|$MMLROOT/materials._material| creates
 new \mml{} materials and provides the interface with which \mml{} interacts.
 Each class must define its name (\verb|Material.name|) and an ordered list of
-material parameter names (\verb|Material.param_names|) as they appear in the
-input file.  The class should not define an \texttt{\uus{}init\uus{}} method
-and if it does, should call the \texttt{\uus{}init\uus{}} of the base class.
+material parameter names (\verb|Material.param_names|) as they should appear
+in the input file. Parameter aliases are supported by specifying a parameter
+name as a ``:'' separated list of allowed names. The class should not define
+an \texttt{\uus{}init\uus{}} method and if it does, should call the
+\texttt{\uus{}init\uus{}} of the base class.
 
 \begin{interface}
   \textbf{Material: Interface}
@@ -1808,60 +1810,40 @@ and if it does, should call the \texttt{\uus{}init\uus{}} of the base class.
 \usage{mtl = Material()}
 
 The following is an example of a \texttt{Material} declaration for the
-\texttt{Elastic} material model
+\texttt{Elastic} material model.  Aliases for \texttt{K} are noted.
 %
 \begin{example}
 from materials._material import Material
 class Elastic(Material)
-    name = 'elastic'
-    param_names = ['K', 'G']
+    name = "elastic"
+    param_names = ["K:BMOD:B0", "G"]
 \end{example}
 
 % ----------------------------------------------------------------------------- %
 \subsection{Setup the Material}
 \label{sec:setup-mtl}
-The method \texttt{setup} sets up the material model by checking and setting
-the material parameter array, requesting allocation of storage of material
-variables, and computing and storing the \verb|bulk_modulus| and
-\verb|shear_modulus| of the material.
+Each material must provide the method \texttt{setup} that sets up the material
+model by checking and adjusting the material parameter array, requesting
+allocation of storage of material variables, and computing and storing the
+\verb|bulk_modulus| and \verb|shear_modulus| of the material. \verb|setup| is
+called by the base class method \verb|setup_new_material| that parses and
+stores the user given parameters in the \verb|Material.params| array.
 
 \begin{interface}
   \textbf{Material.setup: Interface}
 \end{interface}
-\usage{mtl.setup(params)}\\[5pt]
-\param{ndarray params}{Material parameters parsed from the input file}
+\usage{mtl.setup()}\\[5pt]
 
 The following is an example of a \texttt{setup} method
 
 \begin{example}
-def setup(self, params):
+def setup(self):
     if elastic is None:
         raise Error1("elastic model not imported")
-    elastic.elastic_check(params, log_error, log_message)
-    K, G, = params
-    self.set_param_vals(params)
+    elastic.elastic_check(self.params, log_error, log_message)
+    K, G = self.params
     self.bulk_modulus = K
     self.shear_modulus = G
-\end{example}
-
-% ----------------------------------------------------------------------------- %
-\subsection{Storing the Parameter Array}
-\label{sec:store-param}
-The method \verb|set_param_vals| stores the checked parameter values with
-\mml{}.  It must be called by each instance of the material model.
-
-\begin{interface}
-  \textbf{Material.set\us{}param\us{}vals: Interface}
-\end{interface}
-\usage{mtl.set\us{}param\us{}vals(params)}\\[5pt]
-\param{ndarray params}{Checked material parameters}
-
-The following is an example of how \verb|set_param_vals| is used within a
-mterials \verb|setup| method.
-
-\begin{example}
-params = self._check_params(params)
-self.set_param_val(params)
 \end{example}
 
 % ----------------------------------------------------------------------------- %
@@ -1931,18 +1913,16 @@ class Elastic(Material):
     def __init__(self):
         super(Elastic, self).__init__()
 
-    def setup(self, params):
+    def setup(self):
         if elastic is None:
             raise Error1("elastic model not imported")
-        elastic.elastic_check(params, log_error, log_message)
-        K, G, = params
-        self.set_param_vals(params)
+        elastic.elastic_check(self.params, log_error, log_message)
+        K, G, = self.params
         self.bulk_modulus = K
         self.shear_modulus = G
 
     def update_state(self, dt, d, stress, xtra, *args):
-        elastic.elastic_update_state(dt, self._param_vals,
-                                     d, stress,
+        elastic.elastic_update_state(dt, self.params, d, stress,
                                      log_error, log_message)
         return stress, xtra
 

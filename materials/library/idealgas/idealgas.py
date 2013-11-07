@@ -10,9 +10,7 @@ class IdealGas(Material):
     param_names = ["M", "CV"]
 
     # Public methods
-    def setup(self, params):
-
-        self.set_param_vals(params)
+    def setup(self):
 
         # Variables already registered:
         #   density, temperature, energy, pressure
@@ -37,8 +35,8 @@ class IdealGas(Material):
         rho, tmpr, enrgy = margs[-3:]
 
         # unit_system = kwargs["UNITS"]
-        M = self._param_vals[0]
-        CV = self._param_vals[1]
+        M = self.params[0]
+        CV = self.params[1]
 
         R = 8.3144621
         #R = UnitManager.transform(
