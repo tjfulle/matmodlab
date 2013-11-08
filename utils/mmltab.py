@@ -31,7 +31,8 @@ class MMLTabularWriter(object):
 
         if d is None:
             d = os.getcwd()
-        self._filepath = os.path.join(d, F_EVALDB)
+        self._evald = d
+        self._filepath = os.path.join(self._evald, F_EVALDB)
         self.start_document()
         pass
 
@@ -95,6 +96,7 @@ class MMLTabularWriter(object):
             (name, value) pairs for each response
 
         """
+        d = d.replace(self._evald, ".")
         self.start_element(U_EVAL, ((U_EVAL_N, n), (U_EVAL_S, s), (U_EVAL_D, d)))
         self.create_element(U_PARAMS, parameters)
         if responses:
@@ -136,7 +138,7 @@ def read_mml_evaldb(filepath):
     responses = []
     for evaluation in root.getElementsByTagName(U_EVAL):
         n = evaluation.getAttribute(U_EVAL_N)
-        d = evaluation.getAttribute(U_EVAL_D)
+        d = os.path.join(dirname, evaluation.getAttribute(U_EVAL_D))
         sources.append(os.path.join(d, "{0}.exo".format(runid)))
         assert os.path.isfile(sources[-1])
 

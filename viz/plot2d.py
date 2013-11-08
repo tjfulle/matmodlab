@@ -58,6 +58,8 @@ def main(argv=None):
     args = parser.parse_args()
     sources = []
     for source in args.sources:
+        if source.rstrip(os.path.sep).endswith(".eval"):
+            source = os.path.join(source, F_EVALDB)
         if not os.path.isfile(source):
             logerr("{0}: no such file".format(source))
             continue
