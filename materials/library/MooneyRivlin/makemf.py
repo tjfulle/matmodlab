@@ -26,7 +26,7 @@ def makemf(destd, fc, fio, materials=None, *args):
     source_files = [os.path.join(D, f) for f in source_files]
     source_files.append(fio)
     assert all(os.path.isfile(f) for f in source_files)
-    stat = f2py(name, source_files, signature, fc, D, disp=1)
+    stat = f2py(name, source_files, signature, fc, D)
     if stat != 0:
         return [], [name], []
 

@@ -40,13 +40,15 @@ class MooneyRivlin(Material):
         Rij = np.reshape(np.eye(3), (9,))
         Vij = mmlabpack.asarray(np.eye(3), 6)
         T = 298.
-        v = np.array([1,2,3,4,5,6], dtype=np.int)
-        self._j0 = self._jacobian_routine(Rij, Vij, T, xinit, v)
+        v = np.arange(6, dtype=np.int)
         return
 
     def update_state(self, dt, d, sig, xtra, *args):
         """ update the material state based on current state and stretch """
 
+        for row in self._jacobian:
+            print " ".join("{0: 12.6E}".format(float(x)) for x in row)
+        sys.exit()
         Fij = np.reshape(args[0], (3, 3))
 
         # left stretch
@@ -63,15 +65,20 @@ class MooneyRivlin(Material):
 
         return np.reshape(sig, (6,)), np.reshape(xtra, (self.nxtra,))
 
-    def constant_jacobian(self, *args, **kwargs):
-        return self._j0
+
+    def set_constant_jacobian(self):
+        Vij = mmlabpack.asarray(np.eye(3), 6)
+        Rij = np.reshape(np.eye(3), (9,))
+        T0 = 298. if not self.params[self.T0] else self.params[self.T0]
+        v = np.arange(6, dtype=np.int)
+        self._jacobian = self._jacobian_routine(Rij, Vij, T0, self.xinit, v)
 
     def jacobian(self, dt, d, sig, xtra, v, *args):
         Fij = np.reshape(args[0], (3, 3))
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
         Rij = np.reshape(np.dot(mmlabpack.inv(Vij), Fij), (9,))
         Vij = mmlabpack.asarray(Vij, 6)
-        T = 298.
+        T = 298. if not self.params[self.T0] else self.params[self.T0]
         return self._jacobian_routine(Rij, Vij, T, xtra, v)
 
     def _jacobian_routine(self, Rij, Vij, T, xtra, v):

@@ -1,10 +1,11 @@
 ! *************************************************************************** !
 ! Mooney-Rivlin material model
-!
-! "Public" subroutines:
-! MNRVCP : Check properties and set defaults
-! MNRVXV : Request extra variable storage
-! MNRVUS : Update state
+! Public procedures
+! ------ ----------
+! MNRVCP : Check properties
+! MNRVXV : Request extra variables
+! MNRVJM : Jacobian sub matrix
+! MNRVUS : update state
 ! *************************************************************************** !
 
 SUBROUTINE MNRVUS(NC, PROP, R, V, T, XTRA, SIG)
@@ -14,6 +15,7 @@ SUBROUTINE MNRVUS(NC, PROP, R, V, T, XTRA, SIG)
   IMPLICIT NONE
   INCLUDE "mnrv.h"
   INCLUDE "extmod.h"
+  INCLUDE "symdot.h"
   INTEGER, INTENT(IN) :: NC
   REAL(DP), INTENT(IN) :: PROP(NPROP), R(9,NC), V(6,NC), T(NC)
   REAL(DP), INTENT(INOUT) :: XTRA(NX,NC)
@@ -63,7 +65,7 @@ SUBROUTINE MNRVUS(NC, PROP, R, V, T, XTRA, SIG)
      FAC = 2.0_DP / J
      C1 = C10 + C01 * I1B
      C2 = (C10 * I1B + 2._DP * C01 * I2B) / 3._DP
-     SIG(1:6, I) = FAC * (-P / 2._DP * DELTA + C1 * BB - C01 * BBS - C2 * DELTA)
+     SIG(1:6, I) = FAC * (-P / 2._DP * I6 + C1 * BB - C01 * BBS - C2 * I6)
 
      ! Cauchy stresses in unrotated state
      CALL UNROTATE(R(1:9, I), SIG(1:6, I))
@@ -102,18 +104,6 @@ CONTAINS
     SYMDET = X(1) * X(2) * X(3) + 2._DP * X(4) * X(5) * X(6) &
            - (X(1) * X(5) * X(5) + X(2) * X(6) * X(6) + X(3) * X(4) * X(4))
   END FUNCTION SYMDET
-
-  FUNCTION SYMDOT(X, Y)
-    ! Dot product of two second-order symmetric tensors
-    REAL(DP) :: SYMDOT(6)
-    REAL(DP), INTENT(IN) :: X(6), Y(6)
-    SYMDOT(1) = X(1) * Y(1) + X(4) * Y(4) + X(6) * Y(6)
-    SYMDOT(2) = X(2) * Y(2) + X(4) * Y(4) + X(5) * Y(5)
-    SYMDOT(3) = X(3) * Y(3) + X(5) * Y(5) + X(6) * Y(6)
-    SYMDOT(4) = X(1) * Y(4) + X(2) * Y(4) + X(5) * Y(6)
-    SYMDOT(5) = X(2) * Y(5) + X(3) * Y(5) + X(4) * Y(6)
-    SYMDOT(6) = X(1) * Y(6) + X(3) * Y(6) + X(4) * Y(5)
-  END FUNCTION SYMDOT
 
 END SUBROUTINE MNRVUS
 
@@ -365,41 +355,42 @@ SUBROUTINE MNRVJM(PROP, R, V, T, XTRA, NW, W, JSUB)
   ! ------------------------------------------------------------------------- !
   IMPLICIT NONE
   INCLUDE "mnrv.h"
+  INCLUDE "symdot.h"
   INTEGER, INTENT(IN) :: NW, W(NW)
   REAL(DP), INTENT(IN) :: PROP(NPROP), R(9), V(6), T(1), XTRA(NX)
   REAL(DP), INTENT(OUT) :: JSUB(NW,NW)
-  INTEGER :: I, J
+  INTEGER :: I, J, N1, N2
   REAL(DP) :: B(6), EPS(6), DEPS(6), D
   REAL(DP) :: VP(6), XP(NX), SP(6)
   REAL(DP) :: VM(6), XM(NX), SM(6)
-  INTERFACE
-     FUNCTION SQRTT(X)
-       ! Square root of symmetric second order tensor
-       INCLUDE "mnrv.h"
-       REAL(DP) :: SQRTT(6)
-       REAL(DP), INTENT(IN) :: X(6)
-     END FUNCTION SQRTT
-  END INTERFACE
   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MNRVJM ~~~ !
   D = SQRT(EPSILON(V))
   B = SYMDOT(V(1:6), V(1:6))
   EPS = ALMANSI(B)
   DEPS = 0._DP
-  DO I = 1, NW
-     DO J = 1, I
-        DEPS(W(J)) = DEPS(W(J)) + D / 2._DP
+  JSUB = 0._DP
+  OUTER: DO N1 = 1, NW
+     I = W(N1)
+     INNER: DO N2 = 1, NW
+        J = W(N2)
+        IF (J < I) THEN
+           ! Symmetric
+           JSUB(J, I) = JSUB(I, J)
+           CYCLE INNER
+        END IF
+        DEPS(J) = D / 2._DP
         VP = LEFTV(EPS + DEPS)
         XP = XTRA
-        CALL MNRVUS(1, PROP, EYE, VP, T, XP, SP)
-        DEPS(W(J)) = DEPS(W(J)) - D
+        CALL MNRVUS(1, PROP, I9, VP, T, XP, SP)
+        DEPS(J) = -D / 2._DP
         VM = LEFTV(EPS + DEPS)
         XM = XTRA
-        CALL MNRVUS(1, PROP, EYE, VM, T, XM, SM)
+        CALL MNRVUS(1, PROP, I9, VM, T, XM, SM)
         JSUB(I, J) = (SP(I) - SM(I)) / D
         JSUB(J, I) = JSUB(I, J)
-        DEPS(W(J)) = 0._DP
-     END DO
-  END DO
+        DEPS(J) = 0._DP
+     END DO INNER
+  END DO OUTER
 
   WHERE (ABS(JSUB) / MAXVAL(JSUB) < 1.E-06_DP)
      JSUB = 0._DP
@@ -407,35 +398,23 @@ SUBROUTINE MNRVJM(PROP, R, V, T, XTRA, NW, W, JSUB)
 
 CONTAINS
 
-  FUNCTION LEFTV(E)
-    ! V = SQRT(INV(I - 2E))
+  FUNCTION LEFTV(A)
+    ! V.V = INV(I - 2A)
     REAL(DP) :: LEFTV(6)
-    REAL(DP), INTENT(IN) :: E(6)
+    REAL(DP), INTENT(IN) :: A(6)
     REAL(DP) :: VSQ(6)
-    VSQ = SYMINV(DELTA - 2._DP * E)
+    VSQ = SYMINV(I6 - 2._DP * A)
     LEFTV = SQRTT(VSQ)
   END FUNCTION LEFTV
 
   FUNCTION ALMANSI(B)
-    ! 2A = I - INV(B) = I - INV(V^2)
+    ! 2A = I - INV(B) = I - INV(V.V)
     REAL(DP) :: ALMANSI(6)
     REAL(DP), INTENT(IN) :: B(6)
     REAL(DP) :: BI(6)
     BI = SYMINV(B)
-    ALMANSI = .5_DP * (DELTA - BI)
+    ALMANSI = .5_DP * (I6 - BI)
   END FUNCTION ALMANSI
-
-  FUNCTION SYMDOT(X, Y)
-    ! Dot product of two second-order symmetric tensors
-    REAL(DP) :: SYMDOT(6)
-    REAL(DP), INTENT(IN) :: X(6), Y(6)
-    SYMDOT(1) = X(1) * Y(1) + X(4) * Y(4) + X(6) * Y(6)
-    SYMDOT(2) = X(2) * Y(2) + X(4) * Y(4) + X(5) * Y(5)
-    SYMDOT(3) = X(3) * Y(3) + X(5) * Y(5) + X(6) * Y(6)
-    SYMDOT(4) = X(1) * Y(4) + X(2) * Y(4) + X(5) * Y(6)
-    SYMDOT(5) = X(2) * Y(5) + X(3) * Y(5) + X(4) * Y(6)
-    SYMDOT(6) = X(1) * Y(6) + X(3) * Y(6) + X(4) * Y(5)
-  END FUNCTION SYMDOT
 
   FUNCTION SYMINV(X)
     ! Inverse of symmetric second-order tensor
@@ -454,62 +433,46 @@ CONTAINS
     SYMINV(6) = (X(2) * X(6) - X(4) * X(5)) / DNOM
   END FUNCTION SYMINV
 
+  FUNCTION SQRTT(X)
+    ! Square root of symmetric second order tensor
+    IMPLICIT NONE
+    INCLUDE "mnrv.h"
+    REAL(DP) :: SQRTT(6)
+    REAL(DP), INTENT(IN) :: X(6)
+    INTEGER, PARAMETER :: N=3, LWORK=3*N-1
+    REAL(DP) :: W(N), WORK(LWORK), V(3,3), L(3,3), A(3,3)
+    INTEGER :: INFO, I
+    SQRTT = 0._DP
+    IF (ALL(ABS(X(4:6)) < EPSILON(X))) THEN
+       ! Diagonal
+       SQRTT(1:3) = SQRT(X(1:3))
+       RETURN
+    END IF
+    ! eigenvalues/vectors of a
+    V(1,1) = X(1); V(1,2) = X(4); V(1,3) = X(6)
+    V(2,1) = X(4); V(2,2) = X(2); V(2,3) = X(5)
+    V(3,1) = X(6); V(3,2) = X(5); V(3,3) = X(3)
+    CALL DSYEV("V", "L", 3, V, 3, W, WORK, LWORK, INFO)
+    L = 0._DP
+    FORALL(I=1:3) L(I,I) = SQRT(W(I))
+    A = MATMUL(MATMUL(V, L ), TRANSPOSE(V))
+    SQRTT = (/A(1,1), A(2,2), A(3,3), A(1,2), A(2,3), A(1,3)/)
+  END FUNCTION SQRTT
+
 END SUBROUTINE MNRVJM
 
 ! *************************************************************************** !
 
-FUNCTION SQRTT(X)
-  ! Square root of symmetric second order tensor
+FUNCTION SYMDOT(X, Y)
+  ! Dot product of two second-order symmetric tensors
   IMPLICIT NONE
   INCLUDE "mnrv.h"
-  REAL(DP) :: SQRTT(6)
-  REAL(DP), INTENT(IN) :: X(6)
-  INTEGER, PARAMETER :: N=3, LWORK=3*N-1
-  REAL(DP) :: W(N), WORK(LWORK), V(3,3), L(3,3), A(3,3), SQRTM(3,3)
-  INTEGER :: INFO
-  A = AS3X3(X)
-  SQRTT = 0._DP
-  IF (ALL(ABS(X(4:6)) < EPSILON(X))) THEN
-     ! Diagonal
-     SQRTT(1) = SQRT(X(1))
-     SQRTT(2) = SQRT(X(2))
-     SQRTT(3) = SQRT(X(3))
-     RETURN
-  END IF
-
-  ! eigenvalues/vectors of a
-  SQRTM = 0._DP
-  V = A
-  CALL DSYEV("V", "L", 3, V, 3, W, WORK, LWORK, INFO)
-  L = 0._DP
-  L(1,1) = SQRT(W(1))
-  L(2,2) = SQRT(W(2))
-  L(3,3) = SQRT(W(3))
-  SQRTM = MATMUL(MATMUL(V, L ), TRANSPOSE(V))
-  SQRTT = ASARRAY(SQRTM)
-
-CONTAINS
-
-  FUNCTION AS3X3(X)
-    REAL(DP) :: AS3X3(3,3)
-    REAL(DP), INTENT(IN) :: X(6)
-    AS3X3(1, 1) = X(1); AS3X3(1, 2) = X(4); AS3X3(1, 3) = X(6)
-    AS3X3(2, 1) = X(4); AS3X3(2, 2) = X(2); AS3X3(2, 3) = X(5)
-    AS3X3(3, 1) = X(6); AS3X3(3, 2) = X(5); AS3X3(3, 3) = X(3)
-  END FUNCTION AS3X3
-
-  FUNCTION ASARRAY(X)
-    REAL(DP) :: ASARRAY(6)
-    REAL(DP), INTENT(IN) :: X(3,3)
-    REAL(DP) :: A(3,3)
-    A = .5_DP * (X + TRANSPOSE(X))
-    ASARRAY(1) = A(1,1)
-    ASARRAY(2) = A(2,2)
-    ASARRAY(3) = A(3,3)
-    ASARRAY(4) = A(1,2)
-    ASARRAY(5) = A(2,3)
-    ASARRAY(6) = A(1,3)
-    RETURN
-  END FUNCTION ASARRAY
-
-END FUNCTION SQRTT
+  REAL(DP) :: SYMDOT(6)
+  REAL(DP), INTENT(IN) :: X(6), Y(6)
+  SYMDOT(1) = X(1) * Y(1) + X(4) * Y(4) + X(6) * Y(6)
+  SYMDOT(2) = X(2) * Y(2) + X(4) * Y(4) + X(5) * Y(5)
+  SYMDOT(3) = X(3) * Y(3) + X(5) * Y(5) + X(6) * Y(6)
+  SYMDOT(4) = X(1) * Y(4) + X(2) * Y(4) + X(5) * Y(6)
+  SYMDOT(5) = X(2) * Y(5) + X(3) * Y(5) + X(4) * Y(6)
+  SYMDOT(6) = X(1) * Y(6) + X(3) * Y(6) + X(4) * Y(5)
+END FUNCTION SYMDOT

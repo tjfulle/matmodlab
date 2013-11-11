@@ -11,10 +11,10 @@
   INTEGER, PARAMETER :: KC10=1
   INTEGER, PARAMETER :: KC01=2
   INTEGER, PARAMETER :: KW=3
-  REAL(DP), PARAMETER :: &
-       DELTA(6)=(/1._DP,1._DP,1._DP,0._DP,0._DP,0._DP/), &
-       EYE(9)=(/1._DP,0._DP,0._DP,0._DP,1._DP,0._DP,0._DP,0._DP,1._DP/)
   REAL(DP), PARAMETER :: SPECIAL=-1._DP
+  REAL(DP), PARAMETER :: &
+       I6(6)=(/1._DP, 1._DP, 1._DP, 0._DP, 0._DP, 0._DP/), &
+       I9(9)=(/1._DP, 0._DP, 0._DP, 0._DP, 1._DP, 0._DP, 0._DP, 0._DP, 1._DP/)
 
 
 ! Local Variables:

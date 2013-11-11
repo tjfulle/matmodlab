@@ -85,8 +85,9 @@ class Material(object):
             keys = [" ".join(x.split())
                     for x in "".join(keys).split("|") if x.split()]
         self.nxtra = len(keys)
-        for key in keys:
+        for (i, key) in enumerate(keys):
             self.register_mtl_variable(key, "SCALAR")
+            setattr(self, "_x{0}".format(key), i)
 
     def jacobian(self, dt, d, sig, xtra, v, *args):
         """Numerically compute material Jacobian by a centered difference scheme.
