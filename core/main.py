@@ -133,13 +133,13 @@ def main(argv=None):
 
 
 def run_all_inputs(all_input, verb, nproc):
-    ninp = len(all_input)
-    nproc = min(min(mp.cpu_count(), nproc), ninp)
-    fargs = [(iinp, ninp, verb, nproc, uinp) for
+    njobs = len(all_input)
+    nproc = min(mp.cpu_count(), nproc)
+    fargs = [(iinp, njobs, verb, nproc, uinp) for
              (iinp, uinp) in enumerate(all_input)]
     output = []
 
-    if nproc == 1:
+    if njobs == 1 or nproc == 1:
         output.extend([func(farg) for farg in fargs])
 
     else:
@@ -157,7 +157,7 @@ def run_all_inputs(all_input, verb, nproc):
 
 def func(fargs):
     try:
-        (iinp, ninp, verb, nproc, uinp) = fargs
+        (iinp, njobs, verb, nproc, uinp) = fargs
         stype = uinp[0]
         runid = uinp[1]
         uinp = uinp[2:]
@@ -186,7 +186,7 @@ def func(fargs):
         model.finish()
         out = model.output()
 
-        if verb and iinp + 1 != ninp:
+        if verb and iinp + 1 != njobs:
             # separate screen output of different runs
             write_newline(n=2)
 

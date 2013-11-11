@@ -1,0 +1,21 @@
+<MMLSpec>
+
+  {E=6.9314718055994529E-01}
+  <Physics>
+
+    <Material model="mnrv">
+      <C10> 72 </C10>
+      <C01> 7.56 </C01>
+      <NU> .49 </NU>
+    </Material>
+
+    <Path type="prdef" format="default" nfac="100">
+      0  1 222    0 0 0
+      1 10 244  {E} 0 0
+      2 10 244    0 0 0
+      3 10 244 {-E} 0 0
+    </Path>
+
+  </Physics>
+
+</MMLSpec>

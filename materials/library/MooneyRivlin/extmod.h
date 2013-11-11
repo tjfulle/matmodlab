@@ -1,0 +1,12 @@
+  INTERFACE
+     SUBROUTINE EXTMOD(IVAL, TVAL, CVAL)
+       INCLUDE "mnrv.h"
+       INTEGER, INTENT(IN) :: IVAL
+       REAL(DP), INTENT(IN), OPTIONAL :: TVAL
+       REAL(DP), INTENT(OUT), OPTIONAL :: CVAL
+     END SUBROUTINE EXTMOD
+  END INTERFACE
+
+! Local Variables:
+! mode: f90
+! End:

@@ -2,7 +2,7 @@ import os
 import sys
 from numpy.f2py import main as f2py_main
 
-def f2py(name, source_files, signature, fc, incd):
+def f2py(name, source_files, signature, fc, incd, disp=0):
     """Build material model with f2py
 
     """
@@ -30,7 +30,10 @@ def f2py(name, source_files, signature, fc, incd):
     except OSError:
         pass
 
-    f = os.devnull
+    if disp == 0:
+        f = os.devnull
+    else:
+        f = "f2py.con"
     with open(f, "w") as sys.stdout:
         with open(f, "a") as sys.stderr:
             try:
