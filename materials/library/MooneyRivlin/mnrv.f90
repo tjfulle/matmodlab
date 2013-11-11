@@ -22,7 +22,7 @@ SUBROUTINE MNRVUS(NC, PROP, R, V, T, XTRA, SIG)
   REAL(DP), INTENT(OUT) :: SIG(6,NC)
   INTEGER :: I
   REAL(DP) :: J, CBRTJ, QBR
-  REAL(DP) :: BB(6), BBS(6), I1B, I2B
+  REAL(DP) :: BB(6), BDB(6), I1B, I2B
   REAL(DP) :: C10, C01, NU, G, K, FAC, C1, C2, P
   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MNRVUS ~~~ !
 
@@ -42,7 +42,7 @@ SUBROUTINE MNRVUS(NC, PROP, R, V, T, XTRA, SIG)
      ! Deviatoric stretch matrix [Bbar] (Left Cauchy-Green strain tensor)
      ! [Bbar] = [Fbar][Fbar]^T; [Fbar] = J^(-1/3) [F] = Jm^(-1/3)[Fm]
      ! [Bbar] = [Vbar][Vbar]^T; [Vbar] = J^(-1/3) [V]
-     ! [Bbar] = J^(-2/3) [B], the deviatoric Left C-G strain tensor
+     ! [Bbar] = J^(-2/3) [B], the Left C-G strain tensor
      !          (J = Det(V))
      CBRTJ = SIGN((ABS(J)) ** (1._DP / 3._DP), J)
      QBR = (1._DP / (CBRTJ * CBRTJ))
@@ -52,20 +52,20 @@ SUBROUTINE MNRVUS(NC, PROP, R, V, T, XTRA, SIG)
      I1B = TRACE(BB)
 
      ! Second strain invariant I2B = 0.5*(IB1^2-trace(BB.BB))
-     BBS = SYMDOT(BB, BB)
-     I2B = 0.5_DP * (I1B * I1B - TRACE(BBS))
+     BDB = SYMDOT(BB, BB)
+     I2B = 0.5_DP * (I1B * I1B - TRACE(BDB))
 
      ! Bulk response
      P = -K * (J - 1)
 
      ! Stress response
-     !     2  / p                                     1                       \
-     ! S = - | --I + (C10 + I1B C01) BB - C01 BB.BB - - (C10 I1B + 2C01 I2B) I |
-     !     J  \ 2                                     3                       /
+     !     2  /  p                                     1                       \
+     ! S = - | - -I + (C10 + I1B C01) BB - C01 BB.BB - - (C10 I1B + 2C01 I2B) I |
+     !     J  \  2                                     3                       /
      FAC = 2.0_DP / J
      C1 = C10 + C01 * I1B
      C2 = (C10 * I1B + 2._DP * C01 * I2B) / 3._DP
-     SIG(1:6, I) = FAC * (-P / 2._DP * I6 + C1 * BB - C01 * BBS - C2 * I6)
+     SIG(1:6, I) = FAC * (-P / 2._DP * I6 + C1 * BB - C01 * BDB - C2 * I6)
 
      ! Cauchy stresses in unrotated state
      CALL UNROTATE(R(1:9, I), SIG(1:6, I))
