@@ -1,0 +1,15 @@
+<ExDiff>
+  <Variable name="TIME"      table="0.0 1.0 2.0 3.0 4.0"/>
+  <Variable name="STRESS_XX" table="0.0 -11230352666.666668 -33691058000.000004 -11230352666.666668 0.0"/>
+  <Variable name="STRESS_YY" table="0.0 -11230352666.666668 -33691058000.000004 -11230352666.666668 0.0"/>
+  <Variable name="STRESS_ZZ" table="0.0 0.0 0.0 0.0 0.0"/>
+  <Variable name="STRESS_XY" table="0.0 0.0 0.0 0.0 0.0"/>
+  <Variable name="STRESS_YZ" table="0.0 0.0 0.0 0.0 0.0"/>
+  <Variable name="STRESS_XZ" table="0.0 0.0 0.0 0.0 0.0"/>
+  <Variable name="STRAIN_XX" table="0.0 -0.5 -1.0 -0.5  0.0"/>
+  <Variable name="STRAIN_YY" table="0.0 -0.5 -1.0 -0.5  0.0"/>
+  <Variable name="STRAIN_ZZ" table="0.0  0.0  0.0  0.0  0.0"/>
+  <Variable name="STRAIN_XY" table="0.0  0.0  0.0  0.0  0.0"/>
+  <Variable name="STRAIN_YZ" table="0.0  0.0  0.0  0.0  0.0"/>
+  <Variable name="STRAIN_XZ" table="0.0  0.0  0.0  0.0  0.0"/>
+</ExDiff>

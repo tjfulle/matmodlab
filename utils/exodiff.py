@@ -4,6 +4,7 @@ import time
 import numpy as np
 import argparse
 import xml.dom.minidom as xdom
+import linecache
 
 from exoreader import ExodusIIReader
 
@@ -39,9 +40,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if not os.path.isfile(args.source1):
-        error("{0}: no such file".format(args.source1))
+        LOG.error("{0}: no such file".format(args.source1))
     if not os.path.isfile(args.source2):
-        error("{0}: no such file".format(args.source2))
+        LOG.error("{0}: no such file".format(args.source2))
 
     H1, D1 = loadcontents(args.source1)
     H2, D2 = loadcontents(args.source2)

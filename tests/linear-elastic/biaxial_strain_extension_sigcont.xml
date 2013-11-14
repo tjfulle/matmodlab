@@ -1,0 +1,36 @@
+<MMLSpec>
+
+  <!--
+       K = {K = 9.980040E+09}
+       G = {G = 3.750938E+09}
+
+       Diagnostics:
+       LAM = {LAM = K - 2.0 / 3.0 * G}
+       E   = {E   = 9.0 * K * G / (3.0 * K + G)}
+       NU  = {NU  = (3.0 * K - 2.0 * G) / (2.0 * (3.0 * K + G))}
+  -->
+
+  <Physics>
+
+    <Path type="prdef" kappa="0" tstar="1" estar="1.0"
+	  amplitude="1" nfac="1000" ratfac="1" ndumps="20">
+      <!-- termination time, number of steps, control, Cij -->
+      0 0 444444           0.0                0.0                0.0      0 0 0
+      1 1 444444 11230352666.666668 11230352666.666668  7479414666.666667 0 0 0
+      2 1 444444 22460705333.333336 22460705333.333336 14958829333.333334 0 0 0
+      3 1 444444 11230352666.666668 11230352666.666668  7479414666.666667 0 0 0
+      4 1 444444           0.0                0.0                0.0      0 0 0
+    </Path>
+
+    <Material model="elastic">
+      <K> {K} </K>
+      <G> {G} </G>
+    </Material>
+
+    <Extract format="ascii" step="1" ffmt="12.6E">
+      stress strain
+    </Extract>
+
+  </Physics>
+
+</MMLSpec>

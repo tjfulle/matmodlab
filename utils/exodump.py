@@ -24,6 +24,8 @@ def main(argv=None):
         help="Output file name [default: basename(source).out]")
     parser.add_argument("--variables", action="append",
         help="Variables to dump [default: ALL]")
+    parser.add_argument("--list", default=False, action="store_true",
+        help="List variable names and exit")
     parser.add_argument("--ffmt",
         help="Output floating point format [default: .18f]")
     parser.add_argument("--ofmt", default="ascii", choices=OFMTS.keys(),
@@ -32,11 +34,12 @@ def main(argv=None):
         help="Step [default: %(default)s]")
     args = parser.parse_args(argv)
     return exodump(args.source, outfile=args.o, variables=args.variables,
-                   ffmt=args.ffmt, ofmt=args.ofmt, step=args.step)
+                   listvars=args.list, ffmt=args.ffmt, ofmt=args.ofmt,
+                   step=args.step)
 
 
-def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
-            ofmt="ascii"):
+def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
+            ffmt=None, ofmt="ascii"):
     """Read the exodus file in filepath and dump the contents to a columnar data
     file
 
@@ -74,6 +77,9 @@ def exodump(filepath, outfile=None, variables=None, step=1, ffmt=None,
     # read the data
     header, data = read_vars_from_exofile(filepath, variables=variables,
                                           step=step)
+    if listvars:
+        print("\n".join(header))
+        return 0
 
     # Floating point format for numbers
     if ffmt is None: ffmt = ".18f"
