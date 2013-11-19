@@ -592,7 +592,7 @@ def clean_matmodlab():
     """Recursively clean the project
 
     """
-    exts = (".pyc", ".o", ".a", ".con")
+    exts = (".pyc", ".o", ".a", ".con", ".so")
     cout("cleaning matmodlab", end="... ")
     for (dirname, dirs, files) in os.walk(D):
         d = os.path.basename(dirname)
