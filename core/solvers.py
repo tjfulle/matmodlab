@@ -2,7 +2,6 @@
 
 import math
 import numpy as np
-import scipy.optimize
 import sys
 
 from lib.mmlabpack import mmlabpack
@@ -199,6 +198,7 @@ def _simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
 
     """
     # --- Perform the simplex search
+    import scipy.optimize
     d = darg.copy()
     sig = sigarg.copy()
     xtra = xtraarg.copy()
