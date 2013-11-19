@@ -50,14 +50,13 @@ python module mnrv ! in
             character(len=1) dimension(30),intent(out) :: keya
             real(kind=8) dimension(3),intent(out) :: xtra
         end subroutine mnrvxv
-        subroutine mnrvjm(prop,r,v,t,xtra,nw,w,jsub) ! in :mnrv:mnrv.f90
+        subroutine mnrvjm(prop,v,t,xtra,nw,w,jsub) ! in :mnrv:mnrv.f90
             use mml__user__routines
             intent(callback) log_error
             external log_error
             intent(callback) log_message
             external log_message
             real(kind=8) dimension(6),intent(in) :: prop
-            real(kind=8) dimension(9),intent(in) :: r
             real(kind=8) dimension(6),intent(in) :: v
             real(kind=8) dimension(1),intent(in) :: t
             real(kind=8) dimension(3),intent(in) :: xtra

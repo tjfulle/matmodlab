@@ -16,7 +16,17 @@ def get_material_from_db(matname, mtldb=[None]):
         mtldb[0] = read_mtldb()
     if mtldb[0] is None:
         return None
-    return mtldb[0].get(matname)
+    material = mtldb[0].get(matname)
+    if material is None:
+        return None
+
+    # instantiate the material to get param names
+    mtlmod = load_file(material[0])
+    mclass = getattr(mtlmod, material[1])
+    params = mclass.param_names
+    del mclass
+
+    return material[0], material[1], params
 
 
 def instantiate_material(matname):
@@ -27,7 +37,7 @@ def instantiate_material(matname):
     model = get_material_from_db(matname)
     if model is None:
         return
-    mtli, mtlc, mtlp = model
+    mtli, mtlc = model
     mtlmod = load_file(mtli)
     mclass = getattr(mtlmod, mtlc)
     return mclass()
@@ -73,9 +83,7 @@ def read_mtldb():
         if not os.path.isfile(filepath):
             raise Error1("{0}: no such file".format(filepath))
         mclass = str(mtl.attributes.getNamedItem("mclass").value)
-        p = mtl.attributes.getNamedItem("parameters").value.split(",")
-        parameters = ",".join(str(x.strip().lower()) for x in p)
-        mtldb[name] = (filepath, mclass, parameters)
+        mtldb[name] = (filepath, mclass)
 
     return mtldb
 
@@ -98,21 +106,22 @@ def write_mtldb(built_mtls, wipe=False):
     if mtldb is None:
         mtldb = {}
 
-    for (name, filepath, mclass, parameters) in built_mtls:
-        mtldb[name] = (filepath, mclass, parameters)
+    for name, info in built_mtls.items():
+        filepath = info["interface_file"]
+        mclass = info["class"]
+        mtldb[name] = (filepath, mclass)
 
     doc = xdom.Document()
     root = doc.createElement("Materials")
     doc.appendChild(root)
 
-    for (name, (filepath, mclass, parameters)) in mtldb.items():
+    for (name, (filepath, mclass)) in mtldb.items():
         # create element
         child = doc.createElement("Material")
 
         child.setAttribute("name", name)
         child.setAttribute("filepath", filepath)
         child.setAttribute("mclass", mclass)
-        child.setAttribute("parameters", parameters)
 
         root.appendChild(child)
 

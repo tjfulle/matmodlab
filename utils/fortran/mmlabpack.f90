@@ -73,7 +73,6 @@ contains
     integer, intent(in) :: n
     real(kind=8), intent(in) :: a(3,3)
     real(kind=8), intent(out) :: arr(n)
-    real(kind=8) :: x(3,3)
     arr = zero
     if (n == 6) then
        arr = symarray(a)
@@ -240,7 +239,7 @@ contains
     real(kind=8) :: deps2d(6)
     real(kind=8), intent(in) :: dt, k, e(6), de(6)
     real(kind=8) :: eps(3,3), depsdt(3,3), epsf(3,3), u(3,3), i(3,3), x(3,3)
-    real(kind=8) :: d(3,3), L(3,3), du(3,3), foo(6)
+    real(kind=8) :: d(3,3), L(3,3), du(3,3)
 
     ! convert 1x6 arrays to 3x3 matrices for easier processing
     ! strain

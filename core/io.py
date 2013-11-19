@@ -4,8 +4,6 @@ import numpy as np
 import datetime
 import logging
 
-from exowriter import ExodusIIWriter
-
 from __config__ import cfg, __version__
 from core.restart import format_exrestart_info
 
@@ -127,6 +125,7 @@ class ExoManager(object):
             The simulation ID
 
         """
+        from exowriter import ExodusIIWriter
         self.runid = runid
         if filepath is not None:
             self.exofile = ExodusIIWriter.from_existing(filepath)

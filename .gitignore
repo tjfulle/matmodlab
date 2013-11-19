@@ -1,12 +1,17 @@
 *.pyc
 *.exo
 *.so
+*.con
 *.out
 *.perm
 *.eval
 *.opt
 *.log
 *.preprocessed
+*.o
+build/
+*module.c
+tpl_built=True
 
 docs/auto
 docs/*.aux

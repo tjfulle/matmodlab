@@ -1,22 +1,23 @@
-Building *gmd*
-##############
+Building
+########
 
-*gmd* is an object oriented model driver. The majority of the source code
-is written in Python and requires no additional building. Many of the material
-models, however, are written in Fortran and require a seperate compile step.
+material model laboratory (matmodlab) is an object oriented model driver. The
+majority of the source code is written in Python and requires no additional
+building. Many of the material models, however, are written in Fortran and
+require a seperate compile step.
 
 
 System Requirements
 ===================
 
-*gmd* has been built and tested extensively on several versions of linux and
-the Apple Mac OSX 10.8 operating systems.
+*matmodlab* has been built and tested extensively on several versions of linux
+and the Apple Mac OSX 10.8 operating systems.
 
 
 Required Software
 =================
 
-*gmd* requires the following software installed for your platform:
+*matmodlab* requires the following software installed for your platform:
 
 #) `Python 2.7 <http://www.python.org/>`_ or newer
 
@@ -26,53 +27,42 @@ Required Software
 
 #) A fortran compiler
 
-*gmd* is developed and tested using the `Enthought <http://http://www.enthought.com/>`_ *Python distribution*.
+*matmodlab* is developed and tested using the `Enthought <http://http://www.enthought.com/>`_ *Python distribution*.
 
 .. _installation:
 
 Installation
 ============
 
-#) Make sure that all *gmd* prerequisites are installed and working properly.
+#) Make sure that all *matmodlab* prerequisites are installed and working properly.
 
-#) Add ``GMD_ROOT/toolset`` to your ``PATH`` environment variable
+#) Add ``toolset`` to your ``PATH`` environment variable
 
-#) [Optional] Set the ``GMDMTLS`` environment variable to point to directories
-   containing additional material models (user developed, not part of *gmd*.
+#) [Optional] Set the ``MMLMTLS`` environment variable to point to directories
+   containing additional material models (user developed, not part of *matmodlab*.
 
-#) [Optional] Set the ``GMDTESTS`` environment variable to point to
-   directories containing additional tests.
+#) run::
 
-#) Change to ``GMD_ROOT/toolset`` and run::
-
-        % PYTHON setup.py
+        % PYTHON setup.py all
 
    where ``PYTHON`` is the python interpreter that has *NumPy* and *SciPy*
-   installed. :file:`setup.py` will build the third party libraries and write
-   the following executable scripts::
+   installed. :file:`setup.py` will build the third party libraries,
+   materials, and other fortran utilities and write the following executable
+   scripts::
 
        GMD_ROOT
          toolset/
            buildmtls
-           gmd
-	   gmddiff
-	   gmddump
-	   gmdviz
+           mmd
+	   exdiff
+	   exdump
+	   mmv
            runtests
-
-#) execute::
-
-	% buildmtls
-
-   which will build the *gmd* material libraries and create a database all
-   built and installed materials in
-   :file:`GMD_ROOT/materials/materials.db`
-
 
 Testing the Installation
 ========================
 
-To test *gmd* after installation, execute::
+To test *matmodlab* after installation, execute::
 
 	% runtests -k fast
 
@@ -86,9 +76,9 @@ Please note that running all of the tests takes several minutes.
 Troubleshooting
 ===============
 
-If you experience problems when building/installing/testing *gmd*, you can ask
-help from `Tim Fuller <tjfulle@sandia.gov>`_.  Please include the following
-information in your message:
+If you experience problems when building/installing/testing *matmodlab*, you
+can ask help from `Tim Fuller <tjfulle@sandia.gov>`_. Please include the
+following information in your message:
 
 #) Platform information OS, its distribution name and version information etc.::
 

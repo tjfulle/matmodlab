@@ -4,12 +4,11 @@ import time
 import subprocess
 import numpy as np
 import shutil
-import scipy.optimize
 import datetime
 
 from __config__ import cfg
 import core.io as io
-from core.respfcn import evaluate_response_function
+from utils.respfcn import evaluate_response_function
 from utils.mmltab import MMLTabularWriter
 import utils.pprepro as pprepro
 
@@ -94,6 +93,7 @@ class OptimizationHandler(object):
         Set up directory to run the optimization job and call the minimizer
 
         """
+        import scipy.optimize
         os.chdir(self.rootd)
         cwd = os.getcwd()
         io.log_message("{0}: starting jobs".format(self.runid))

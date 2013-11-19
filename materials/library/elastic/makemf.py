@@ -26,7 +26,7 @@ def makemf(destd, fc, fio, materials=None, *args):
     source_files = [os.path.join(D, f) for f in source_files]
     source_files.append(fio)
     assert all(os.path.isfile(f) for f in source_files)
-    stat = f2py(name, source_files, signature, fc, D)
+    stat = f2py(name, source_files, signature, fc, destd=destd, incd=D)
     if stat != 0:
         return [], [name], []
 
@@ -36,10 +36,6 @@ def makemf(destd, fc, fio, materials=None, *args):
     filepath = elastic.__file__.rstrip("c")
     mclass = material.__class__.__name__
     parameters = ", ".join(material.parameters(names=True)).lower()
-
-
-    if destd != D:
-        shutil.move(name + ".so", os.path.join(destd, name + ".so"))
 
     return (name, filepath, mclass, parameters), [], []
 

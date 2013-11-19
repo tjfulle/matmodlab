@@ -13,7 +13,7 @@ import core.io as io
 from __config__ import cfg
 from utils.mmltab import MMLTabularWriter
 from utils.pprepro import find_and_make_subs
-from core.respfcn import evaluate_response_function, MML_RESP_FCN_RE
+from utils.respfcn import evaluate_response_function, MML_RESP_FCN_RE
 import utils.mmltab as mmltab
 
 

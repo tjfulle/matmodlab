@@ -12,7 +12,7 @@ from utils.mtldb import read_material_params_from_db
 from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
-from core.respfcn import check_response_function, MML_RESP_FCN_RE
+from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.io import fatal_inp_error, input_errors
 from core.restart import read_exrestart_info
 from materials.material import get_material_from_db
@@ -636,7 +636,7 @@ def pMaterial(mtldict):
 
     # mtlmdl.parameters is a comma separated list of parameters
     mtli, mtlc, mtlp = mtlmdl
-    pdict = dict([(n.lower(), i) for i, n in enumerate(mtlp.split(","))])
+    pdict = dict([(n.lower(), i) for i, n in enumerate(mtlp)])
     # put the parameters in an array
     params = np.zeros(len(pdict))
 

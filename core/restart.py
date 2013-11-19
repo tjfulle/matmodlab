@@ -1,8 +1,5 @@
 import numpy as np
 
-from _exoconst import *
-from exoreader import ExodusIIReader
-
 from __config__ import __version__
 
 RESTART_VERSION = 1
@@ -43,6 +40,7 @@ def format_exrestart_info(material, driver, extract):
         Formatted list of strings to put in exodus file
 
     """
+    from _exoconst import MAX_LINE_LENGTH
     ex_info = []
     ex_info.append(S_MML_DECL)
     ex_info.append(S_REST_VERS)
@@ -111,6 +109,8 @@ def read_exrestart_info(filepath, time=-1):
 
     """
     from drivers.driver import create_driver
+    from exoreader import ExodusIIReader
+
 
     if not os.path.isfile(filepath):
         raise RestartError("{0}: no such file".format(auxfile))

@@ -53,21 +53,22 @@ def main(argv=None):
     # add the working directory to the Python path
     sys.path.insert(0, os.getcwd())
 
+    if args.v:
+        sys.stdout.write(SPLASH)
+        sys.stdout.flush()
+
     if args.B:
-        import core.build as build
+        from setup import build_material
         try: os.remove(os.path.join(LIB_D, "{0}.so".format(args.B)))
         except OSError: pass
-        b = build.main("-m {0}".format(args.B).split())
+        verbosity = 3 if args.v > 1 else 0
+        b = build_material(args.B, verbosity=verbosity)
         if b != 0:
             raise SystemExit("failed to build")
 
     if args.p:
         tup = lambda a: (a[0].strip(), a[1].strip())
         args.p = dict(tup(x.split("=")) for x in args.p)
-
-    if args.v:
-        sys.stdout.write(SPLASH)
-        sys.stdout.flush()
 
     # --- gather all input.
     # this is done in a separate loop from running the input

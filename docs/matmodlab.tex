@@ -258,8 +258,8 @@ This guide provides an outline for building and running \mml{}.
 \textbf{Build \mml{}} See Chapter \ref{chap:build}.
 \begin{itemize}
   \item Download \mml{} and setup environment
-  \item \$ \verb|cd $MMLROOT/toolset && ./setup.py|
-  \item \$ \bldm{}
+  \item \$ \verb|cd $MMLROOT|
+  \item \$ \verb|python setup.py build_all|
 \end{itemize}
 
 \textbf{Prepare Input} Inputs are xml specification files. See Chapters
@@ -306,14 +306,11 @@ will run on Windows.
   \item Python 2.7
   \item NumPy 1.6
   \item SciPy 0.10
-  \item A fortran compiler
+  \item A fortran compiler, preferably the same used to build numpy and scipy
 \end{itemize}
 
 The required software may be obtained in several ways, though all development
 has been made using Enthought Canopy (\url{http://http://www.enthought.com}).
-
-A note on the fortran compiler.  It is recommended to use the same fortran
-compiler to build \mml{} components that was used to build SciPy.
 
 % ----------------------------------------------------------------------------- %
 \section{Installation}
@@ -335,14 +332,14 @@ proceeding.
 % ----------------------------------------------------------------------------- %
 \subsection{Set Up}
 \label{sec:setup-1}
-Set up and build the TPLs.
+Set up and build TPLs, fortran utilities, and material models.
 %
 \begin{verbatim}
-$ cd $MMLROOT/toolset
-$ python setup.py
+$ cd $MMLROOT
+$ python setup.py build_all
 \end{verbatim}
 %
-In addition to building the TPLs, \texttt{setup.py} generates the following
+In addition to building components, \texttt{setup.py} generates the following
 executable scripts
 %
 \begin{description}[leftmargin=!,labelwidth=\widthof{\texttt{buildmtls}}]
@@ -366,20 +363,18 @@ $ scriptname -h
 where \texttt{scriptname} is the name of the script.
 
 The TPLs will build the first time \mml{} is setup.
-Thereafter after, only the executable scripts are rewritten.  Execute
+Thereafter after, they are only built if requested.  Execute
 
 \begin{verbatim}
-$ python setup.py -h
+$ python setup.py build_tpl --help
 \end{verbatim}
 for options to rebuild the TPLs.
 
 % ----------------------------------------------------------------------------- %
-\subsection{Build}
+\subsection{Build Materials}
 \label{sec:bld}
-Build the material libraries
-\begin{verbatim}
-$ buildmtls
-\end{verbatim}
+Material models are built during the setup stage, but can be built separately
+with the \bldm{} utility.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Test the Installation}
@@ -387,7 +382,7 @@ $ buildmtls
 To test \mml{} after installation, execute
 
 \begin{verbatim}
-$ runtests [-j N]
+$ runtests $MMLROOT/tests [-j N]
 \end{verbatim}
 %
 which will run \mml{} regression tests.
@@ -1933,70 +1928,63 @@ class Elastic(Material):
 % ----------------------------------------------------------------------------- %
 \section{Building and Linking Materials}
 \label{sec:usrbld}
-\bldm{} builds \mml{} materials by searching the subdirectories of\\
-\verb|$MMLROOT/materials/library| and the directories specified by the
-\verb|$MMLMTLS| environment variables and building materials it finds.  It
-does so by searching for a single file \texttt{makemf.py} in each directory.
-\texttt{makemf.py} is responsible for building the materials and communicating
-back to \bldm{}.
+\mml{} comes with and builds several builtin material models that are
+specified in \\
+\verb|$MMLROOT/materials/library/mmats.py|. User materials are
+found by looking in directories in the \verb|$MMLMTLS| environment variable
+for a single file \texttt{umat.py}. \texttt{umat.conf} communicates to \mml{}
+information needed to build the material's extension module.
 
 % ----------------------------------------------------------------------------- %
 \subsection{Building User Materials}
 \label{sec:bld-usr}
-User materials are built by the \texttt{makemf} function of the
-\texttt{makemf.py} scripts
+User materials are built %
+\footnote{Only pure python and fortran models have been implemented.
+  Implementing models in other languages is possible, but would have to be
+  sorted out.}
+by \mml{} using \texttt{numpy}'s distutils.  A
+material communicates to \mml{} information required by distutils back to
+\mml{} through the \texttt{umat.conf} function.
 
 % --- makemf API
 \begin{interface}
-\textbf{makemf.makemf: Interface}
+\textbf{umat.conf: Interface}
 \end{interface}
-\usage{built, failed, skipped = makemf(destd, fc, fio, materials=None, *args)}
+\usage{name, info = conf(*args)}
 
-\param{str dest}{path to directory to copy built shared object libraries (if
-  any)}
-\param{str fc}{path to fortran compiler}
-\param{str fio}{path to the fortran IO routines}
-\param{list materials}{list of materials to build.  if empty, build all}
-\param{tuple args}{not used}
+\param{tuple args}{not currently used}
 
-\param{tuple built}{\texttt{(name, interface, mclass, parameters)}.
-  \texttt{name} is the name of the material, \texttt{interface} the file path
-  to the interface file, \texttt{mclass} the material model class name in
-  \texttt{interface}, \texttt{parameters} an order list of parameter names}
-\param{list failed}{list of names of materials that failed to build}
-\param{list skipped}{list of names of materials that were skipped}
+\param{str name}{The name of the material model}
+\param{dict info}{Information dictionary}
 
 % ----------------------------------------------------------------------------- %
-\subsection{Building Materials with f2py}
-\label{sec:bldf2py}
-Material models written in Fortran must compiled in to a Python shared object
-library with \fpy{}. The function \texttt{utils.if2py.f2py} provides an
-interface to \fpy{}.
-\begin{interface}
-\textbf{utils.if2py.f2py: Interface}
-\end{interface}
-\usage{stat = f2py(name, source\us{}files, signature, fc, incd=None)}
+\subsection{The \texttt{info} Dictionary}
+\label{sec:infodict}
+The \texttt{info} dict contains the following keys
 
-\param{str name}{material model name.  will be used to set name of shared object
-  library.}
-\param{list source\us{}files}{list of absolute values of Fortran source files}
-\param{str signature}{path to signature file}
-\param{str fc}{path to Fortran compiler}
-\param{str ind}{(optional) path to include directories}
+\param{list source\us{}files}{The list of source files to be built.  If the
+  material is a pure python module, specify as \texttt{None}}
 
-\param{int stat}{returns 0 if successful, 1 otherwise}
+\param{str includ\us{}dir}{Directory to look for includes during compile
+  [default: dirname(interface\us{}file)}
 
-Below is an example of using \texttt{if2py.f2py}
+\param{str interface\us{}file}{Path to the material's interface file}
+
+\param{str class}{The name of the material model class}
+
+
+Below is an example of \texttt{umat.conf}
 \begin{example}
-from utils.if2py import f2py
-def makemf(destd, fc, fio, materials=None, *args)
-    ...
-    stat = f2py(name, source_files, signature, fc, incd)
-    if stat != 0:
-        return [], [name], []
+D = os.path.dirname(os.path.realpath(__file__))
 
-    shutil.move(name + ".so", os.path.join(destd, name + ".so"))
-    return (name, filepath, mclass, parameters), [], []
+def conf(*args):
+    name = "dsf"
+    source_files = [os.path.join(D, f) for f in ("material.F", "material.pyf")]
+    assert all(os.path.isfile(f) for f in source_files)
+    info = {"source_files": source_files, "includ_dir": D,
+            "interface_file": os.path.join(D, "material.py"),
+            "class": "MaterialModel"}
+    return name, info
 \end{example}
 
 

@@ -48,10 +48,10 @@ SUBROUTINE MNRVUS(NC, PROP, R, V, T, XTRA, SIG)
      QBR = (1._DP / (CBRTJ * CBRTJ))
      BB = QBR * SYMDOT(V(1:6,I), V(1:6,I))
 
-     ! First strain invariant IB1 = trace(BB) = I:BB
+     ! First invariant of stretch IB1 = trace(BB) = I:BB
      I1B = TRACE(BB)
 
-     ! Second strain invariant I2B = 0.5*(IB1^2-trace(BB.BB))
+     ! Second invariant of stretch I2B = 0.5 (IB1^2 - trace(BB.BB))
      BDB = SYMDOT(BB, BB)
      I2B = 0.5_DP * (I1B * I1B - TRACE(BDB))
 
@@ -90,10 +90,10 @@ CONTAINS
     REAL(DP), INTENT(IN) :: Q(3,3)
     REAL(DP), INTENT(INOUT) :: X(6)
     REAL(DP) :: Y(3,3)
-    Y = RESHAPE((/X(1),X(4),X(6),X(4),X(2),X(5),X(6),X(5),X(3)/), SHAPE(Y))
+    Y = RESHAPE([X(1),X(4),X(6),X(4),X(2),X(5),X(6),X(5),X(3)], SHAPE(Y))
     Y = MATMUL(MATMUL(TRANSPOSE(Q), Y), Q)
     Y = .5_DP * (Y + TRANSPOSE(Y))
-    X = (/Y(1,1), Y(2,2), Y(3,3), Y(1,2), Y(2,3), Y(3,1)/)
+    X = [Y(1,1), Y(2,2), Y(3,3), Y(1,2), Y(2,3), Y(3,1)]
     RETURN
   END SUBROUTINE UNROTATE
 
@@ -125,8 +125,8 @@ SUBROUTINE MNRVCP(PROP)
   NU = PROP(INU)
   T0 = PROP(IT0)
 
-  IF (ANY((/C10, C01/) == SPECIAL) .AND. T0 <= 0._DP) &
-       CALL BOMBED("MNRVCP: T0 <= 0")
+  IF (ANY([C10, C01] == SPECIAL) .AND. T0 <= 0._DP) &
+       CALL FATERR("Mooney Rivlin", "MNRVCP: T0 <= 0")
 
   IF (C10 == SPECIAL) THEN
      PROP(MC10) = SPECIAL
@@ -140,8 +140,10 @@ SUBROUTINE MNRVCP(PROP)
      CALL EXTMOD(2, T0, C01)
   END IF
 
-  IF (NU < -1._DP .OR. NU >= .5_DP) CALL BOMBED("MNRVCP: Bad NU")
+  IF (NU < -1._DP .OR. NU >= .5_DP) &
+       CALL FATERR("Mooney Rivlin", "MNRVCP: Bad NU")
 
+  ! reset with (possibly) changed props
   PROP(IC10) = C10
   PROP(IC01) = C01
   PROP(INU) = NU
@@ -158,54 +160,32 @@ SUBROUTINE MNRVXV(PROP, NXTRA, KEYA, XTRA)
   INCLUDE "mnrv.h"
   REAL(DP), INTENT(IN) :: PROP(NPROP)
   INTEGER, INTENT(OUT) :: NXTRA
-  CHARACTER(LEN=1), INTENT(OUT) :: KEYA(NX * 10)
+  CHARACTER(1), INTENT(OUT) :: KEYA(NX * 10)
   REAL(DP), INTENT(OUT) :: XTRA(NX)
   CHARACTER(LEN=9) :: KEYS(NX)
   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MNRVXV ~~~ !
 
   NXTRA = 1
-  IF (NXTRA /= KC10) CALL BOMBED("KC10 pointer wrong")
+  IF (NXTRA /= KC10) CALL FATERR("MNRVXV", "KC10 pointer wrong")
   KEYS(NXTRA) = "C10"
+  XTRA(KC10) = PROP(IC10)
 
   NXTRA = NXTRA + 1
-  IF (NXTRA /= KC01) CALL BOMBED("KC01 pointer wrong")
+  IF (NXTRA /= KC01) CALL FATERR("MNRVXV", "KC01 pointer wrong")
   KEYS(NXTRA) = "C01"
+  XTRA(KC01) = PROP(IC01)
 
   NXTRA = NXTRA + 1
-  IF (NXTRA /= KW) CALL BOMBED("W pointer wrong")
+  IF (NXTRA /= KW) CALL FATERR("MNRVXV", "W pointer wrong")
   KEYS(NXTRA) = "W"
+  XTRA(KW) = 1._DP
 
-  IF (NX /= NXTRA) CALL BOMBED("NXTRA != NX")
+  IF (NX /= NXTRA) CALL FATERR("MNRVXV", "NXTRA != NX")
 
   ! convert keys to character streams namea and keya
   CALL TOKENS(NXTRA, KEYS, KEYA)
 
-  CALL MNRVINI(PROP, XTRA)
-
 END SUBROUTINE MNRVXV
-
-! *************************************************************************** !
-
-SUBROUTINE MNRVINI(PROP, XTRA)
-  ! ------------------------------------------------------------------------- !
-  ! Initialize the Mooney-Rivlin material
-  ! ------------------------------------------------------------------------- !
-  IMPLICIT NONE
-  INCLUDE "mnrv.h"
-  INCLUDE "extmod.h"
-  REAL(DP), INTENT(IN) :: PROP(NPROP)
-  REAL(DP), INTENT(INOUT) :: XTRA(NX)
-  ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MNRVINI ~~~ !
-
-  XTRA(KC10) = PROP(IC10)
-  IF (PROP(MC10) == SPECIAL) CALL EXTMOD(1, PROP(IT0), XTRA(KC10))
-
-  XTRA(KC01) = PROP(IC01)
-  IF (PROP(MC01) == SPECIAL) CALL EXTMOD(2, PROP(IT0), XTRA(KC01))
-
-  XTRA(KW) = 1._DP
-
-END SUBROUTINE MNRVINI
 
 ! *************************************************************************** !
 
@@ -247,8 +227,11 @@ SUBROUTINE EXTMOD(IVAL, TVAL, CVAL)
      RETURN
   END IF
 
-  ! To reach this point, the temperature dependent moduli must be read in from
-  ! a file and saved to their respective arrays
+  IF (.NOT. ANY([ALLOCATED(C10), ALLOCATED(C01)])) &
+       CALL BOMBED("Mooney Rivlin: temperature dpendent moduli not initialized")
+
+  ! To reach this point, the temperature dependent moduli have not been saved
+  ! and must be read in from a file and saved to their respective arrays
 
   ! Read in moduli from external file
   SELECT CASE (IVAL)
@@ -333,7 +316,7 @@ END SUBROUTINE EXTMOD
 
 ! *************************************************************************** !
 
-SUBROUTINE MNRVJM(PROP, R, V, T, XTRA, NW, W, JSUB)
+SUBROUTINE MNRVJM(PROP, V, T, XTRA, NW, W, JSUB)
   ! ------------------------------------------------------------------------- !
   ! Compute the material Jacobian matrix dsig / deps
   !
@@ -357,9 +340,9 @@ SUBROUTINE MNRVJM(PROP, R, V, T, XTRA, NW, W, JSUB)
   INCLUDE "mnrv.h"
   INCLUDE "symdot.h"
   INTEGER, INTENT(IN) :: NW, W(NW)
-  REAL(DP), INTENT(IN) :: PROP(NPROP), R(9), V(6), T(1), XTRA(NX)
+  REAL(DP), INTENT(IN) :: PROP(NPROP), V(6), T(1), XTRA(NX)
   REAL(DP), INTENT(OUT) :: JSUB(NW,NW)
-  INTEGER :: I, J, N1, N2
+  INTEGER :: I, J
   REAL(DP) :: B(6), EPS(6), DEPS(6), D
   REAL(DP) :: VP(6), XP(NX), SP(6)
   REAL(DP) :: VM(6), XM(NX), SM(6)
@@ -369,26 +352,24 @@ SUBROUTINE MNRVJM(PROP, R, V, T, XTRA, NW, W, JSUB)
   EPS = ALMANSI(B)
   DEPS = 0._DP
   JSUB = 0._DP
-  OUTER: DO N1 = 1, NW
-     I = W(N1)
-     INNER: DO N2 = 1, NW
-        J = W(N2)
+
+  OUTER: DO I = 1, NW
+     INNER: DO J = 1, NW
         IF (J < I) THEN
            ! Symmetric
-           JSUB(J, I) = JSUB(I, J)
+           JSUB(I, J) = JSUB(J, I)
            CYCLE INNER
         END IF
-        DEPS(J) = D / 2._DP
+        DEPS(W(J)) = D / 2._DP
         VP = LEFTV(EPS + DEPS)
         XP = XTRA
         CALL MNRVUS(1, PROP, I9, VP, T, XP, SP)
-        DEPS(J) = -D / 2._DP
+        DEPS(W(J)) = -D / 2._DP
         VM = LEFTV(EPS + DEPS)
         XM = XTRA
         CALL MNRVUS(1, PROP, I9, VM, T, XM, SM)
-        JSUB(I, J) = (SP(I) - SM(I)) / D
-        JSUB(J, I) = JSUB(I, J)
-        DEPS(J) = 0._DP
+        JSUB(I, J) = (SP(W(I)) - SM(W(I))) / D
+        DEPS(W(J)) = 0._DP
      END DO INNER
   END DO OUTER
 
@@ -456,7 +437,7 @@ CONTAINS
     L = 0._DP
     FORALL(I=1:3) L(I,I) = SQRT(W(I))
     A = MATMUL(MATMUL(V, L ), TRANSPOSE(V))
-    SQRTT = (/A(1,1), A(2,2), A(3,3), A(1,2), A(2,3), A(1,3)/)
+    SQRTT = [A(1,1), A(2,2), A(3,3), A(1,2), A(2,3), A(1,3)]
   END FUNCTION SQRTT
 
 END SUBROUTINE MNRVJM
