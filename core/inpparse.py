@@ -634,9 +634,11 @@ def pMaterial(mtldict):
         fatal_inp_error("{0}: material not in database".format(model))
         return
 
-    # mtlmdl.parameters is a comma separated list of parameters
-    mtli, mtlc, mtlp = mtlmdl
-    pdict = dict([(n.lower(), i) for i, n in enumerate(mtlp)])
+    # mtli -> path to interface file
+    # mtlc -> name of class
+    # pdict -> dictionary of material property name:index
+    mtli, mtlc, pdict = mtlmdl
+
     # put the parameters in an array
     params = np.zeros(len(pdict))
 
@@ -646,6 +648,7 @@ def pMaterial(mtldict):
     except KeyError:
         fatal_inp_error("no material parameters found")
         ui = []
+
     istate = []
     for p in ui:
         p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
@@ -674,6 +677,11 @@ def pMaterial(mtldict):
             fatal_inp_error("Material: {0}: invalid parameter for the {1} "
                             "material model".format(name, model))
             continue
+        if idx == -1:
+            inp_warning("Material: {0}: parameter derived at setup by model, "
+                        "ignoring".format(name))
+            continue
+
         try:
             val = float(p[1])
         except ValueError:

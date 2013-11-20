@@ -24,9 +24,17 @@ def get_material_from_db(matname, mtldb=[None]):
     mtlmod = load_file(material[0])
     mclass = getattr(mtlmod, material[1])
     params = mclass.param_names
+    pdict = {}
+    for (i, n) in enumerate(mclass.param_names):
+        if n.startswith("-"):
+            # not to be parsed
+            n = n[1:]
+            i = -1
+        pdict[n.lower()] = i
+
     del mclass
 
-    return material[0], material[1], params
+    return material[0], material[1], pdict
 
 
 def instantiate_material(matname):
