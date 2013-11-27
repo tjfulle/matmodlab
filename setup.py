@@ -128,7 +128,9 @@ def main(argv=None):
 
     # --- check prerequisites
     if command == "build_all":
-        check_prereqs()
+        errors = check_prereqs()
+        if errors:
+            raise SystemExit("System does not satisfy prerequisites")
 
     # python passes mutables by reference. The env dictionary initialized here
     # is updated in each function it is passed to below
@@ -512,6 +514,8 @@ def check_prereqs():
     except ImportError:
         errors += 1
         cerr("no")
+
+    return errors
 
 
 def write_executables(env):
