@@ -17,6 +17,7 @@ import enthought.chaco.api as capi
 import enthought.chaco.tools.api as ctapi
 import enthought.pyface.api as papi
 
+from viz.colors import random_color
 from exoreader import ExodusIIReader
 
 EXE = "plot2d"
@@ -29,7 +30,7 @@ LDICT = {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan,
 GDICT = {"__builtins__": None}
 EPSILON = np.finfo(np.float).eps
 SIZE = (700, 600)
-LS = ['dot dash', 'dash', 'dot', 'long dash']
+LS = ['solid', 'dot dash', 'dash', 'dot', 'long dash']
 F_EVALDB = "mml-evaldb.xml"
 L_EXO_EXT = [".exo", ".base_exo", ".e"]
 L_DAT_EXT = [".out",]
@@ -87,6 +88,7 @@ class Plot2D(tapi.HasTraits):
     runs_shown = tapi.List(tapi.Bool)
     x_scale = tapi.Float
     y_scale = tapi.Float
+    _line_style_index = tapi.Int
 
     traits_view = tuiapi.View(
         tuiapi.Group(
@@ -106,6 +108,7 @@ class Plot2D(tapi.HasTraits):
         self.time_data_labels = {}
         self.x_idx = 0
         self.y_idx = 0
+        self._refresh = 1
         self.runs_shown = [True] * len(self.variables)
         self.x_scale, self.y_scale = 1., 1.
         pass
@@ -173,14 +176,16 @@ class Plot2D(tapi.HasTraits):
         self.container.overlays.append(label)
         return
 
-    def create_plot(self, x, y, di, d, plot_name, ls):
+    def create_plot(self, x, y, di, d, plot_name):
         self.container.data.set_data("x " + plot_name, x)
         self.container.data.set_data("y " + plot_name, y)
+        ls = LS[0 if self._refresh else random.randint(1, len(LS)-1)]
         self.container.plot(
             ("x " + plot_name, "y " + plot_name),
             line_width=2.0, name=plot_name,
-            color=tuple(COLOR_PALETTE[(d + di) % 10]),
+            color=random_color(lower=True),
             bgcolor="white", border_visible=True, line_style=ls)
+        self._refresh = 0
         return
 
     def change_plot(self, indices, x_scale=None, y_scale=None):
@@ -193,6 +198,7 @@ class Plot2D(tapi.HasTraits):
         self.time_data_labels = {}
         if len(indices) == 0:
             return
+        self._refresh = 1
         XY_DATA = []
         x_scale, y_scale = self.get_axis_scales(x_scale, y_scale)
 
@@ -244,7 +250,7 @@ class Plot2D(tapi.HasTraits):
                     entry = "({0}) {1}{2}".format(fnam, yname, variables)
                 else:
                     entry = "{0} {1}".format(yname, variables)
-                self.create_plot(x, y, yp_idx, d, entry, "solid")
+                self.create_plot(x, y, yp_idx, d, entry)
                 XY_DATA.append(Namespace(key=fnam, xname=xname, x=x,
                                          yname=yname, y=y, lw=1))
 
@@ -256,7 +262,6 @@ class Plot2D(tapi.HasTraits):
                 if not overlays_plotted:
                     # plot the overlay data
                     overlays_plotted = True
-                    ls_ = 0
                     for fnam, head in self.overlay_headers.items():
                         # get the x and y indeces corresponding to what is
                         # being plotted
@@ -269,10 +274,9 @@ class Plot2D(tapi.HasTraits):
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
                         _i = d + len(self.plot_data) + 3
-                        self.create_plot(xo, yo, yo_idx, _i, entry, LS[ls_ % 4])
+                        self.create_plot(xo, yo, yo_idx, _i, entry)
                         XY_DATA.append(Namespace(key=fnam, xname=xname, x=xo,
                                                  yname=yname, y=yo, lw=3))
-                        ls_ += 1
                         continue
 
         capi.add_default_grids(self.container)

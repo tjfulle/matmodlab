@@ -21,7 +21,7 @@ class Plastic(Material):
         self.bulk_modulus = K
         self.shear_modulus = G
 
-    def update_state(self, dt, d, stress, xtra, *args):
+    def update_state(self, dt, d, stress, xtra, *args, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters

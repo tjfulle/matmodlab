@@ -233,7 +233,8 @@ class SolidDriver(Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.material.update_state(dt, d, sig, xtra, *margs)
+                sig, xtra = self.material.update_state(
+                    dt, d, sig, xtra, *margs, last=True)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)

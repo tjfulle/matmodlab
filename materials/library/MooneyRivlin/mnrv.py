@@ -43,7 +43,7 @@ class MooneyRivlin(Material):
         v = np.arange(6, dtype=np.int)
         return
 
-    def update_state(self, dt, d, sig, xtra, *args):
+    def update_state(self, dt, d, sig, xtra, *args, **kwargs):
         """ update the material state based on current state and stretch """
 
         Fij = np.reshape(args[0], (3, 3))

@@ -598,7 +598,7 @@ def pPhysics(physdict, functions):
     """
     try:
         mdl, params, mopts, istate = pMaterial(physdict["Elements"].pop("Material"))
-    except ValueError:
+    except (ValueError, TypeError):
         raise UserInputError("failed to parse material")
     if input_errors():
         raise UserInputError("failed to parse material")

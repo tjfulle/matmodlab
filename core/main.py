@@ -170,7 +170,11 @@ def func(fargs):
                 model = OptimizationHandler(runid, verb, exe, *uinp)
 
         elif stype == "Physics":
-            model = PhysicsHandler(runid, verb, *uinp)
+            try:
+                model = PhysicsHandler(runid, verb, *uinp)
+            except Error1, e:
+                logerr("{0}: failed to instantiate driver with "
+                       "message: {1}".format(model.runid, e.message))
 
         else:
             logerr("{0}: unrecognized simulation type".format(stype))
@@ -182,7 +186,6 @@ def func(fargs):
         except Error1, e:
             logerr("{0}: failed to run with message: {1}".format(
                 model.runid, e.message))
-            return
 
         model.finish()
         out = model.output()

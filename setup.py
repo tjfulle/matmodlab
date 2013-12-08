@@ -444,12 +444,10 @@ def mtl_config(config, lapack, mats_to_build, mtlinfo, fflags):
         if sources:
             sources.append(FIO)
             config.add_extension(name, sources=sources, **kwargs)
-
         continue
-    if umats:
-        cout(",".join(umats))
+    cout(",".join(umats))
 
-    cout("{0} materials found: {1}".format(int2str(len(mtlinfo), c=True),
+    cout("{0} material[s] found: {1}".format(int2str(len(mtlinfo), c=True),
                                            ", ".join(x for x in mtlinfo)))
     return
 
