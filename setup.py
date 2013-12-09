@@ -487,14 +487,6 @@ def check_prereqs():
         errors += 1
         cerr("*** error: python >= 2.7 required")
 
-    # --- 64 bit python?
-    cout("Checking for 64 bit python", end="... ")
-    if sys.maxsize < 2 ** 32:
-        cout("no")
-        errors += 1
-        cerr("*** error: matmodlab requires 64 bit python (due to exowrap)")
-    else: cout("yes")
-
     # --- numpy
     cout("Checking for numpy", end="... ")
     try:
