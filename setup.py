@@ -393,9 +393,10 @@ def mtl_config(config, lapack, mats_to_build, mtlinfo, fflags):
     mats = load_file(os.path.join(D, "materials/library/mmats.py"))
     cout("  built in materials", end="... ")
     builtin = []
-    for (name, conf) in mats.conf().items():
+    for name in mats.NAMES:
         if not build_all and name not in mats_to_build:
             continue
+        conf = mats.conf(name)
         kwargs = dict(lapack)
         incd = conf.get("include_dir", os.path.dirname(conf["interface_file"]))
         kwargs.setdefault("include_dirs", []).append(incd)
@@ -423,14 +424,21 @@ def mtl_config(config, lapack, mats_to_build, mtlinfo, fflags):
         filename = os.path.join(dirname, "umat.py")
         umat = load_file(filename)
         try:
-            name, conf = umat.conf()
+            name = umat.NAME
+        except AttributeError:
+            cout("  ***error: {0}: NAME not defined".format(filename))
+            continue
+
+        if not build_all and name not in mats_to_build:
+            continue
+
+        try:
+            conf = umat.conf()
         except ValueError:
             cout("  ***error: {0}: failed to gather information".format(filename))
             continue
         except AttributeError:
             cout("  ***error: {0}: conf function not defined".format(filename))
-            continue
-        if not build_all and name not in mats_to_build:
             continue
 
         kwargs = dict(lapack)
@@ -625,7 +633,7 @@ def test_build(env):
     return stat
 
 
-def build_material(material, verbosity=0):
+def build_material(materials, verbosity=0):
     """Build a single material
 
     Parameters
@@ -639,12 +647,13 @@ def build_material(material, verbosity=0):
     running the job.
 
     """
-    cout("building {0}".format(material))
+    cout("building {0}".format(", ".join(materials)))
     hold = [x for x in sys.argv]
-    cmd = "-v {0} build_mtl -m {1}".format(verbosity, material)
+    cmd = "-v {0} build_mtl {1}".format(
+        verbosity, " ".join(["-m {0}".format(m) for m in materials]))
     stat = main(cmd.split())
     if stat == 0:
-        cout("built {0}".format(material))
+        cout("built {0}".format(",".join(materials)))
     sys.argv = [x for x in hold]
     return stat
 

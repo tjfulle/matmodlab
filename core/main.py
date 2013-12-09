@@ -22,7 +22,7 @@ ALPHA = (x for x in string.ascii_letters)
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="mmd")
     parser.add_argument("-v", default=1, type=int,
        help="Verbosity [default: %(default)s]")
     parser.add_argument("-p", action="append",
@@ -37,8 +37,8 @@ def main(argv=None):
     parser.add_argument("-V", default=False, action="store_true",
        help="Launch simulation visualizer on completion [default: %(default)s]")
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument("-B", metavar="material",
-        help="Build material model before running [default: %(default)s]")
+    parser.add_argument("-B", metavar="material", action="append",
+        help="Build material model[s] before running [default: %(default)s]")
     parser.add_argument("--clean", const=1, default=False, nargs="?",
         help=argparse.SUPPRESS)
     parser.add_argument("--restart", const=-1, default=0, type=int, nargs="?",
@@ -59,8 +59,9 @@ def main(argv=None):
 
     if args.B:
         from setup import build_material
-        try: os.remove(os.path.join(LIB_D, "{0}.so".format(args.B)))
-        except OSError: pass
+        for mtl in args.B:
+            if os.path.isfile(os.path.join(LIB_D, "{0}.so".format(mtl))):
+                os.remove(os.path.join(LIB_D, "{0}.so".format(mtl)))
         verbosity = 3 if args.v > 1 else 0
         b = build_material(args.B, verbosity=verbosity)
         if b != 0:
