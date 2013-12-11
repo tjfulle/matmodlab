@@ -180,11 +180,11 @@ class Plot2D(tapi.HasTraits):
         self.container.data.set_data("x " + plot_name, x)
         self.container.data.set_data("y " + plot_name, y)
         ls = LS[0 if self._refresh else random.randint(1, len(LS)-1)]
+        color = tuple(COLOR_PALETTE[(d + di) % 10])
         self.container.plot(
             ("x " + plot_name, "y " + plot_name),
             line_width=2.0, name=plot_name,
-            color=random_color(lower=True),
-            bgcolor="white", border_visible=True, line_style=ls)
+            color=color, bgcolor="white", border_visible=True, line_style=ls)
         self._refresh = 0
         return
 

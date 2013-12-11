@@ -174,8 +174,9 @@ def func(fargs):
             try:
                 model = PhysicsHandler(runid, verb, *uinp)
             except Error1, e:
-                logerr("{0}: failed to instantiate driver with "
-                       "message: {1}".format(model.runid, e.message))
+                logerr("failed to instantiate driver with "
+                       "message: {0}".format(e.message))
+                return
 
         else:
             logerr("{0}: unrecognized simulation type".format(stype))
