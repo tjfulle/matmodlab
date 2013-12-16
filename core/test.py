@@ -89,7 +89,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if args.rebaseline:
-        sys.exit(_rebaseline_tests(d=os.getcwd()))
+        sys.exit(_rebaseline_tests(d=os.getcwd(), files=args.path))
 
     log = sys.stdout
 
@@ -124,7 +124,7 @@ def main(argv=None):
     # --- root directory to run tests
     testd = args.D
 
-    if args.w:
+    if args.w and testd != os.getcwd():
         try: shutil.rmtree(testd)
         except OSError: pass
 
@@ -173,9 +173,10 @@ def main(argv=None):
     # run all of the tests
     if not rtests:
         log_message("No tests to run")
-        if completed_rtests:
-            dump_rtests_to_file(testd, completed_rtests)
-            write_html_summary(testd, completed_rtests)
+        if not completed_rtests:
+            return
+        dump_rtests_to_file(testd, completed_rtests)
+        write_html_summary(testd, completed_rtests)
 
     else:
         log_message("Running {0} tests".format(len(rtests)))
@@ -733,27 +734,29 @@ def generate_rtest_html_summary(rtest, details, testd):
     return "\n".join(rtest_html_summary)
 
 
-def _rebaseline_tests(d=None):
-    from os.path import isfile, join, splitext, realpath, basename
-    _runid = lambda s: splitext(basename(s))[0]
+def _rebaseline_tests(d=None, files=None):
+    from os.path import isfile, join, splitext, realpath, basename, exists
     if d is None:
         d = os.getcwd()
-    log_message("finding tests to rebaseline in {0}".format(d))
+    log_message("finding tests to rebaseline")
 
     # find tests to rebaseline
-    tests = []
-    for f in os.listdir(d):
-        if not f.endswith(".xml"): continue
-        f = realpath(f)
-        runid = _runid(f)
-        base = realpath(join(d, runid + ".base_exo"))
-        exo = realpath(join(d, runid + ".exo"))
-        if not isfile(base): continue
-        if not isfile(exo): continue
-        tests.append((f, base, exo))
+    if files:
+        tests = [splitext(realpath(f))[0] for f in files]
+    else:
+        tests = [splitext(realpath(f))[0] for f in os.listdir(d)
+                 if f.endswith(".xml")]
 
-    for (inp, base, exo) in tests:
-        log_message("{0}: rebaselining".format(_runid(inp)))
+    for test in tests:
+        print test
+        runid = basename(test)
+        base = realpath(runid + ".base_exo")
+        exo = realpath(runid + ".exo")
+        if not exists(base):
+            continue
+        if not exists(exo):
+            continue
+        log_message("{0}: rebaselining".format(runid))
         shutil.copyfile(exo, base)
 
 
