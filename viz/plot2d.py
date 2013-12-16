@@ -176,15 +176,13 @@ class Plot2D(tapi.HasTraits):
         self.container.overlays.append(label)
         return
 
-    def create_plot(self, x, y, di, d, plot_name):
+    def create_plot(self, x, y, c, ls, plot_name):
         self.container.data.set_data("x " + plot_name, x)
         self.container.data.set_data("y " + plot_name, y)
-        ls = LS[0 if self._refresh else random.randint(1, len(LS)-1)]
-        color = tuple(COLOR_PALETTE[(d + di) % 10])
         self.container.plot(
             ("x " + plot_name, "y " + plot_name),
             line_width=2.0, name=plot_name,
-            color=color, bgcolor="white", border_visible=True, line_style=ls)
+            color=c, bgcolor="white", border_visible=True, line_style=ls)
         self._refresh = 0
         return
 
@@ -250,7 +248,9 @@ class Plot2D(tapi.HasTraits):
                     entry = "({0}) {1}{2}".format(fnam, yname, variables)
                 else:
                     entry = "{0} {1}".format(yname, variables)
-                self.create_plot(x, y, yp_idx, d, entry)
+                color = random_color(lower=True)
+                ls = LS[(d + i) % len(LS)]
+                self.create_plot(x, y, color, ls, entry)
                 XY_DATA.append(Namespace(key=fnam, xname=xname, x=x,
                                          yname=yname, y=y, lw=1))
 
@@ -262,6 +262,7 @@ class Plot2D(tapi.HasTraits):
                 if not overlays_plotted:
                     # plot the overlay data
                     overlays_plotted = True
+                    ii = i + 1
                     for fnam, head in self.overlay_headers.items():
                         # get the x and y indeces corresponding to what is
                         # being plotted
@@ -274,9 +275,12 @@ class Plot2D(tapi.HasTraits):
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
                         _i = d + len(self.plot_data) + 3
-                        self.create_plot(xo, yo, yo_idx, _i, entry)
+                        color = random_color(lower=True)
+                        ls = LS[(d + ii) % len(LS)]
+                        self.create_plot(xo, yo, color, ls, entry)
                         XY_DATA.append(Namespace(key=fnam, xname=xname, x=xo,
                                                  yname=yname, y=yo, lw=3))
+                        ii += 1
                         continue
 
         capi.add_default_grids(self.container)
