@@ -140,6 +140,9 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
         sig = sigsave.copy()
         xtra = xtrasave.copy()
         Jsub = material.jacobian(dt, d, sig, xtra, v, *args)
+        if np.any(Jsub < 0.):
+            io.log_warning("newton: "
+                           "negative value encountered in material Jacobian")
         try:
             d[v] -= np.linalg.solve(Jsub, sigerr) / dt
 

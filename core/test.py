@@ -135,6 +135,10 @@ def main(argv=None):
     timing = Namespace()
     timing.start = time.time()
 
+    # perform any initialization
+    if dirs:
+        find_and_run_init(dirs, testd)
+
     # find the rtests
     if args.run_failed:
         rtests = get_completed_rtests(testd, failed_only=True)
@@ -338,6 +342,88 @@ def log_warning(message=None, warnings=[0]):
     warnings[0] += 1
 
 
+def find_and_run_init(search_dirs, testd):
+    """Find and run initialization files
+
+    """
+    # find all init.rxml files
+    init_files = []
+    for d in search_dirs:
+        for (dirname, dirs, files) in os.walk(d):
+            init_files.extend([os.path.join(dirname, f) for f in files
+                               if f == "init.rxml"])
+    # local variables
+    known_vars = {"TESTDIR": testd,
+                  "PYTHON": os.path.realpath(sys.executable)}
+
+    # run the initialization
+    for init_file in init_files:
+        dirname, filename = os.path.split(init_file)
+        known_vars["DIRNAME"] = dirname
+
+        # --- expand variables
+        lines = open(init_file).read()
+        lines = lines.format(**known_vars)
+        # environment variables
+        envars = re.findall(r"(?P<envar>\$\w+)", lines)
+        for envar in envars:
+            lines = lines.replace(envar, os.environ[envar.lstrip("$")])
+
+        # --- parse the xml file
+        doc = xdom.parseString(lines)
+        try:
+            init = doc.getElementsByTagName("init")[0]
+        except IndexError:
+            raise Error("expected root element init in {0}".format(init_file))
+
+        # --- execute
+        exe_stmnts = find_and_format_exes(init)
+        if not exe_stmnts:
+            continue
+        status = []
+        for exe_stmnt in exe_stmnts:
+            exe = os.path.basename(exe_stmnt[0])
+            outf = "_".join(exe.split()) + ".con"
+            out = open(outf, "w")
+            status.append(subprocess.call(" ".join(exe_stmnt), shell=True,
+                                          stdout=out, stderr=subprocess.STDOUT))
+            out.close()
+        status = max(status)
+
+        if status:
+            raise Error("failed to run: {0}".format(init_file))
+
+        doc.unlink()
+        continue
+
+
+    return
+
+
+def find_and_format_exes(element):
+    """Find and format the contents of an execute element
+
+    """
+    exe_els = element.getElementsByTagName("execute")
+    if not exe_els:
+        return
+
+    exe_stmnts = []
+    for exe_el in exe_els:
+        exe = exe_el.attributes.get("name")
+        if exe is None:
+            raise Error("{0}: execute: name attribute required".format(name))
+        exe = exe.value.strip()
+        x = which(exe)
+        if x is None:
+            raise Error("{0}: {1}: executable not found".format(name, exe))
+        opts = [s for s in xmltools.child2list([exe_el])]
+        if exe == "exodiff":
+            opts = ["-status", "-allow_name_mismatch"] + opts
+        exe_stmnts.append([x] + opts)
+    return exe_stmnts
+
+
 def find_rtests(search_dirs, include, exclude, tests=None):
     """Find all regression tests in search_dirs
 
@@ -348,7 +434,7 @@ def find_rtests(search_dirs, include, exclude, tests=None):
         for d in search_dirs:
             for (dirname, dirs, files) in os.walk(d):
                 test_files.extend([os.path.join(dirname, f) for f in files
-                                   if f.endswith(F_RTEST_EXT)])
+                                   if f.endswith(F_RTEST_EXT) and f != "init.rxml"])
     else:
         # user supplied test file
         if not isinstance(tests, (tuple, list)):
@@ -367,10 +453,13 @@ def find_rtests(search_dirs, include, exclude, tests=None):
 
 
 def parse_rxml(test_file):
+    """Parse the xml test file
 
+    """
     details = {}
     test_file_d = os.path.dirname(test_file)
 
+    # read the root element - for now only to get the test name
     doc = xdom.parse(test_file)
     try:
         rtest = doc.getElementsByTagName("rtest")[0]
@@ -387,6 +476,25 @@ def parse_rxml(test_file):
     except AttributeError:
         bdir = "orphaned"
         name = str(name.value.strip())
+
+    # --- reread the xml file, expanding known variables
+    del doc
+    lines = open(test_file).read()
+
+    # local variables
+    known_vars = {"NAME": name,
+                  "DIRNAME": os.path.dirname(test_file),
+                  "PYTHON": os.path.realpath(sys.executable)}
+    lines = lines.format(**known_vars)
+
+    # environment variables
+    envars = re.findall(r"(?P<envar>\$\w+)", lines)
+    for envar in envars:
+        lines = lines.replace(envar, os.environ[envar.lstrip("$")])
+
+    # --- re-parse the xml file
+    doc = xdom.parseString(lines)
+    rtest = doc.getElementsByTagName("rtest")[0]
 
     # --- keywords
     keywords = rtest.getElementsByTagName("keywords")
@@ -407,39 +515,19 @@ def parse_rxml(test_file):
     # --- link_files
     link_files = rtest.getElementsByTagName("link_files")
     if link_files:
-        link_files = [os.path.join(test_file_d, f).format(NAME=name)
+        link_files = [os.path.join(test_file_d, f)
                       for f in xmltools.child2list(link_files)]
         for link_file in link_files:
             if not os.path.isfile(link_file):
                 raise Error("{0}: no such file".format(link_file))
 
     # --- execute
-    execute = []
-    exct = rtest.getElementsByTagName("execute")
-    if exct is None:
+    exe_stmnts = find_and_format_exes(rtest)
+    if not exe_stmnts:
         raise Error("{0}: rtest: execute element required".format(name))
-    for item in exct:
-        exe = item.attributes.get("name")
-        if exe is None:
-            raise Error("{0}: execute: name attribute required".format(name))
-        exe = exe.value.strip()
-        if "$" in exe:
-            # Expand environmental variables
-            exe = exe.split()
-            for idx in range(0, len(exe)):
-                if exe[idx].startswith("$"):
-                    exe[idx] = os.environ[exe[idx].lstrip("$")]
-            exe = " ".join(exe)
-        x = which(exe)
-        if x is None:
-            raise Error("{0}: {1}: executable not found".format(name, exe))
-        opts = [s.format(NAME=name) for s in xmltools.child2list([item])]
-        if exe == "exodiff":
-            opts = ["-status", "-allow_name_mismatch"] + opts
-        execute.append([x] + opts)
 
     if Nrepeat == 1:
-        details[name] = {S_BDIR: bdir, S_EXEC: execute, S_LNFL: link_files,
+        details[name] = {S_BDIR: bdir, S_EXEC: exe_stmnts, S_LNFL: link_files,
                          S_KWS: keywords}
     else:
         # Add multiple instances of the same test (for use with random inputs)
@@ -447,11 +535,10 @@ def parse_rxml(test_file):
         for idx in range(1, Nrepeat + 1):
             suffix = "_{0:0{1}d}".format(idx, Ndigits)
             details[name + suffix] = {S_BDIR: bdir,
-                                      S_EXEC: execute, S_LNFL: link_files,
+                                      S_EXEC: exe_stmnts, S_LNFL: link_files,
                                       S_KWS: keywords}
     doc.unlink()
     return details
-
 
 
 def filter_rtests(rtests, include, exclude):
@@ -550,7 +637,7 @@ def run_rtest(args):
         status = []
         for (i, cmd) in enumerate(details[S_EXEC]):
             exe = os.path.basename(cmd[0])
-            outf = exe + ".con"
+            outf = "_".join(exe.split()) + ".con"
             out = open(outf, "w")
             status.append(subprocess.call(" ".join(cmd), shell=True,
                                           stdout=out, stderr=subprocess.STDOUT))
