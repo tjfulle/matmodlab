@@ -54,6 +54,7 @@ class Error(Exception):
         raise SystemExit(2)
 
 def main(argv=None):
+    global PATH
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
@@ -120,6 +121,7 @@ def main(argv=None):
     if not dirs and len(tests) == 1:
         # run inplace
         args.i = True
+    PATH.extend([d for d in dirs])
 
     # --- root directory to run tests
     testd = args.D
@@ -408,6 +410,7 @@ def find_and_format_exes(element):
     if not exe_els:
         return
 
+    name = element.attributes.get("name")
     exe_stmnts = []
     for exe_el in exe_els:
         exe = exe_el.attributes.get("name")
