@@ -43,7 +43,7 @@ Installation
 
 #) run::
 
-        % PYTHON setup.py all
+        % PYTHON setup.py build_all
 
    where ``PYTHON`` is the python interpreter that has *NumPy* and *SciPy*
    installed. :file:`setup.py` will build the third party libraries,
