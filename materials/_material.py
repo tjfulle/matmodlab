@@ -170,6 +170,20 @@ class Material(object):
             return self.iparams
         return self.params
 
+    @classmethod
+    def param_parse_table(cls):
+        n_no_parse = 0
+        parse_table = {}
+        for (i, param) in enumerate(cls.param_names):
+            for n in param.split(":"):
+                n = n.strip().lower()
+                if n.startswith("-"):
+                    # not to be parsed
+                    n = n[1:]
+                    i = -i
+                parse_table[n] = i
+        return parse_table
+
     def setup_new_material(self, params):
         self.iparams = np.array(params)
         self.params = np.array(params)

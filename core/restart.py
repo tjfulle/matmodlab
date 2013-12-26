@@ -113,7 +113,7 @@ def read_exrestart_info(filepath, time=-1):
 
 
     if not os.path.isfile(filepath):
-        raise RestartError("{0}: no such file".format(auxfile))
+        raise RestartError("{0}: no such file".format(filepath))
     exof = ExodusIIReader.new_from_exofile(filepath)
     all_ex_info = exof.get_info()
 

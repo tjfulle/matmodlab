@@ -636,11 +636,11 @@ def pMaterial(mtldict):
 
     # mtli -> path to interface file
     # mtlc -> name of class
-    # pdict -> dictionary of material property name:index
-    mtli, mtlc, pdict = mtlmdl
+    # param_parse_table -> dictionary of material property name:index
+    mtli, mtlc, param_parse_table = mtlmdl
 
     # put the parameters in an array
-    params = np.zeros(len(pdict))
+    params = np.zeros(len(set(param_parse_table.values())))
 
     # get the user give parameters
     try:
@@ -672,7 +672,7 @@ def pMaterial(mtldict):
 
         # not a special name -> a parameter name find its location in the
         # material parameter array and put it in the right spot
-        idx = pdict.get(name.lower())
+        idx = param_parse_table.get(name.lower())
         if idx is None:
             fatal_inp_error("Material: {0}: invalid parameter for the {1} "
                             "material model".format(name, model))
