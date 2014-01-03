@@ -54,9 +54,9 @@ Installation
          toolset/
            buildmtls
            mmd
-	   exdiff
-	   exdump
-	   mmv
+           exdiff
+           exdump
+           mmv
            runtests
 
 Testing the Installation
@@ -64,11 +64,13 @@ Testing the Installation
 
 To test *matmodlab* after installation, execute::
 
-	% runtests -k fast
+	% runtests -k fast $tests_dir
 
-which will run the "fast" tests. To run the full test suite execute::
+which will run the "fast" tests found in $tests_dir directory.
 
-	% runtests [-jN]
+To run the full test suite execute::
+
+	% runtests [-jN] $tests_dir
 
 Please note that running all of the tests takes several minutes.
 
