@@ -6,7 +6,7 @@ This file is used only during the setup phase to build and install materials.
 import os
 D = os.path.dirname(os.path.realpath(__file__))
 
-NAMES = ("idealgas", "mnrv", "plastic", "elastic")
+NAMES = ("idealgas", "mnrv", "plastic", "elastic", "pyelastic")
 
 def conf(name=None):
     """Return the material configurations for building
@@ -62,5 +62,14 @@ def conf(name=None):
         material = {"source_files": source_files, "include_dir": d,
                     "interface_file": os.path.join(d, "elastic.py"),
                     "class": "Elastic"}
+    elif nidx == 4:
+        # python Elastic
+        d = os.path.join(D, "pyelastic")
+        material = {"source_files": None, "include_dir": d,
+                    "interface_file": os.path.join(d, "pyelastic.py"),
+                    "class": "PyElastic"}
+
+
+
 
     return material
