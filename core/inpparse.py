@@ -459,12 +459,14 @@ def read_matlabel(dom, model):
     return ["{0} = {1}".format(k, v) for k, v in mtl_db_params.items()]
 
 
-def parse_input(filepath, argp=None):
+def parse_input(filepath, argp=None, mtlswapdict=None):
     """Parse the input
 
     """
     if argp is None:
         argp = {}
+    if mtlswapdict is None:
+        mtlswapdict = {}
 
     if filepath[0] == "string":
         lines = filepath[1].split("\n")
@@ -515,7 +517,7 @@ def parse_input(filepath, argp=None):
 
     allinp = []
     for phys in els.pop("Physics"):
-        allinp.append(pPhysics(phys, functions))
+        allinp.append(pPhysics(phys, functions, mtlswapdict))
     return allinp
 
 
@@ -592,12 +594,21 @@ def pFunction(flist):
     return functions
 
 
-def pPhysics(physdict, functions):
+def pPhysics(physdict, functions, mtlswapdict=None):
     """Parse the physics tag
 
+    mtlswapdict - A dictionary containing sed-like pairs of material model
+                  names. The dictionary key is the model to be replaced
+                  by its corresponding value.
+
     """
+
+    if mtlswapdict is None:
+        mtlswapdict = {}
+
     try:
-        mdl, params, mopts, istate = pMaterial(physdict["Elements"].pop("Material"))
+        mdl, params, mopts, istate = pMaterial(physdict["Elements"].pop("Material"),
+                                               mtlswapdict)
     except (ValueError, TypeError):
         raise UserInputError("failed to parse material")
     if input_errors():
@@ -620,14 +631,23 @@ def pPhysics(physdict, functions):
     return ["Physics", runid, driver, (mdl, params, mopts, istate), extract]
 
 
-def pMaterial(mtldict):
+def pMaterial(mtldict, mtlswapdict=None):
     """Parse the material block
 
     """
+    if mtlswapdict is None:
+        mtlswapdict = {}
+
     model = mtldict["model"]
     if model == NOT_SPECIFIED:
         fatal_inp_error("expeced 'model' Material attribute")
         return
+
+    # if the user requested it, replace one material model in favor of another.
+    if mtlswapdict.has_key(model):
+        newmodel = mtlswapdict[model]
+        inp_warning("Swapping out model '{0}' for '{1}'".format(model, newmodel))
+        model = newmodel
 
     mtlmdl = get_material_from_db(model)
     if mtlmdl is None:

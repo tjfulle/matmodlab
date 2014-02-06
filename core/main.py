@@ -34,6 +34,8 @@ def main(argv=None):
     parser.add_argument("-j", default=1, type=int,
        help=("Number of simultaneous jobs to run (permutation only) "
              "[default: %(default)s]"))
+    parser.add_argument("-s", metavar="\"X:Y\"", action="append", default=[],
+        help="Run simulation with model-Y instead of model-X [default: %(default)s]")
     parser.add_argument("-V", default=False, action="store_true",
        help="Launch simulation visualizer on completion [default: %(default)s]")
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
@@ -71,6 +73,14 @@ def main(argv=None):
         tup = lambda a: (a[0].strip(), a[1].strip())
         args.p = dict(tup(x.split("=")) for x in args.p)
 
+    if args.s:
+        try:
+            args.s = dict(_.split(':') for _ in args.s)
+        except (ValueError, AttributeError):
+            raise SystemExit("failed to parse material model swap string")
+
+        
+
     # --- gather all input.
     # this is done in a separate loop from running the input
     # so that we can gather all inputs from all files (a single file can
@@ -102,7 +112,7 @@ def main(argv=None):
                 logerr("*** mmd: expected .xml file extension")
                 continue
 
-            uinp_list = inp.parse_input(source, argp=args.p)
+            uinp_list = inp.parse_input(source, argp=args.p, mtlswapdict=args.s)
 
         if input_errors():
             raise SystemExit("stopping due to input errors")

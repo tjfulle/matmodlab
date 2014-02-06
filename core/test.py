@@ -64,6 +64,8 @@ def main(argv=None):
         help="Keywords of tests to exclude [default: %(default)s]")
     parser.add_argument("-j", default=1, type=int,
         help="Number of simultaneous tests [default: %(default)s]")
+    parser.add_argument("-s", metavar="\"X:Y\"", action="append", default=[],
+        help="Run simulation with model-Y instead of model-X [default: %(default)s]")
     parser.add_argument("-i", action="store_true", default=False,
         help="Run in place [default: %(default)s]")
     parser.add_argument("-F", action="store_true", default=False,
@@ -186,7 +188,7 @@ def main(argv=None):
 
     else:
         log_message("Running {0} tests".format(len(rtests)))
-        rtests = run_rtests(testd, rtests, args.j, args.i)
+        rtests = run_rtests(testd, rtests, args.j, args.i, args.s)
         timing.tests_finished = time.time()
         statuses.extend([details[S_STAT] for (rtest, details) in rtests.items()])
         log_message("{0} tests ran in {1:.2f}s".format(
@@ -575,11 +577,14 @@ def filter_rtests(rtests, include, exclude):
     return rtests
 
 
-def run_rtests(testd, rtests, nproc, inplace):
+def run_rtests(testd, rtests, nproc, inplace, mtlswaplist=None):
     """Run all of the rtests
 
     """
-    test_inp = ((testd, rtest, rtests[rtest], inplace)
+    if mtlswaplist is None:
+        mtlswaplist = []
+
+    test_inp = ((testd, rtest, rtests[rtest], inplace, mtlswaplist)
                 for rtest in sorted(rtests, key=lambda x: rtests[x]["order"]))
     nproc = min(min(mp.cpu_count(), nproc), len(rtests))
     statuses = []
@@ -616,7 +621,7 @@ def run_rtest(args):
 
     """
     try:
-        (testd, rtest, details, inplace) = args[:4]
+        (testd, rtest, details, inplace, mtlswaplist) = args[:5]
         bdir = details[S_BDIR]
         times = [time.time()]
         log_message("{0:{1}s} running".format(rtest + ":", WIDTH))
@@ -636,12 +641,17 @@ def run_rtest(args):
                 dst = os.path.join(rtestd, os.path.basename(src))
                 os.symlink(src, dst)
 
+        # Generate the material swap commands
+        mtlswapstr = " ".join("-s \"{0}\"".format(_) for _ in mtlswaplist)
+
         # run each command
         status = []
         for (i, cmd) in enumerate(details[S_EXEC]):
             exe = os.path.basename(cmd[0])
             outf = "_".join(exe.split()) + ".con"
             out = open(outf, "w")
+            if exe == "mmd" and mtlswapstr is not '':
+                cmd.insert(1, mtlswapstr)
             status.append(subprocess.call(" ".join(cmd), shell=True,
                                           stdout=out, stderr=subprocess.STDOUT))
             out.close()

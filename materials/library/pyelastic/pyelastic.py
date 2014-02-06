@@ -12,7 +12,6 @@ class PyElastic(Material):
 
         """
         # Check inputs
-        print(self.params)
         K, G, = self.params
         if K <= 0.0: log_error = "Bulk modulus K must be positive"
         if G <= 0.0: log_error = "Shear modulus G must be positive"
