@@ -148,6 +148,8 @@ def main(argv=None):
     if command in ("build_utl", "build_all"):
         utl_config(config, lapack, args.rebuild_utl or args.rebuild_all)
 
+    mtlinfo = {}
+    fflags = []
     if command in ("build_mtl", "build_all"):
         try:
             # args.mats_to_build and args.wipe_database only defined for
@@ -159,9 +161,6 @@ def main(argv=None):
         except AttributeError:
             mats_to_build = "all"
             wipe = True
-
-        mtlinfo = {}
-        fflags = []
         mtl_config(config, lapack, mats_to_build, mtlinfo, fflags)
 
     skip_build = command != "build_all" and not mtlinfo
@@ -294,7 +293,20 @@ def base_configuration():
 
     """
     config = Configuration("matmodlab", parent_package="", top_path="")
-    lapack = get_info("lapack_opt", notfound_action=2)
+    lapack = get_info("lapack_opt")
+    if not lapack:
+        import numpy as np
+        filename = "lapack_lite.so"
+        lapack = {"library_dirs": [os.path.join(sys.prefix, "lib")],
+                  "include_dirs": [os.path.join(sys.prefix, "include")],
+                  "libraries": [filename]}
+        # symlink the lapack_lite shared object file to the python lib directory
+        link = os.path.join(sys.prefix, "lib", "lib" + filename)
+        if not os.path.isfile(link):
+            src = os.path.join(os.path.dirname(np.linalg.__file__), filename)
+            assert os.path.isfile(src)
+            os.symlink(src, link)
+
     lapack.setdefault("extra_compile_args", []).extend(["-fPIC", "-shared"])
 
     return config, lapack

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import re
 import sys
@@ -5,10 +6,10 @@ import math
 import numpy as np
 import xml.dom.minidom as xdom
 
-
 # safe values to be used in eval
 GDICT = {"__builtins__": None}
 DEBUG = False
+MAGIC = -1234
 WARNINGS = 0
 RAND = np.random.RandomState()
 SAFE = {"np": np,
@@ -22,6 +23,23 @@ SAFE = {"np": np,
         "floor": np.floor, "ceil": np.ceil,
         "pi": math.pi, "G": 9.80665, "inf": np.inf, "nan": np.nan,
         "random": RAND.random_sample, "randreal": RAND.random_sample(),}
+
+
+def main(argv=None):
+    usage = """pprepro.py: Python PreProcessor
+usage: pprepro.py <file>"""
+    if argv is None:
+        argv = sys.argv[1:]
+    if not argv:
+        sys.exit(usage)
+    filepath = argv[0]
+    if not os.path.isfile(filepath):
+        sys.exit("{0}: no such file".format(filepath))
+    lines = find_and_make_subs(open(filepath, "r").read(), disp=MAGIC)
+    stream = sys.stdout
+    for line in lines.split("\n"):
+        stream.write(line + "\n")
+    return
 
 
 def update_safe(update_to_safe):
@@ -108,10 +126,11 @@ def find_and_make_subs(lines, prepro=None, disp=0, argp=None):
     if argp is None:
         argp = {}
     lines, vars_to_sub = find_vars_to_sub(lines, argp)
-    if not vars_to_sub and prepro is None:
+    if not vars_to_sub and prepro is None and disp != MAGIC:
         if disp:
             return lines, 0, 0
-        return lines
+        else:
+            return lines
     return make_var_subs(lines, vars_to_sub, disp=disp)
 
 
@@ -174,7 +193,7 @@ def make_var_subs(lines, vars_to_sub, disp=0):
             continue
         lines = re.sub(re.escape(pat), repl, lines)
 
-    if disp:
+    if disp and disp != MAGIC:
         return lines, nsubs, errors
 
     if errors:
@@ -239,3 +258,7 @@ def find_and_fill_includes(lines):
         _lines.extend(find_and_fill_includes(fill).split("\n"))
         continue
     return "\n".join(_lines)
+
+
+if __name__ == "__main__":
+    main()
