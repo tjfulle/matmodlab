@@ -12,6 +12,7 @@ from argparse import ArgumentParser, SUPPRESS
 from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
+from numpy.distutils.system_info import LapackNotFoundError
 
 from utils.impmod import load_file
 from utils.int2str import int2str
@@ -59,11 +60,13 @@ def main(argv=None):
     parser = ArgumentParser(usage="setup.py <subcommand> [options] [args]")
 
     # global options
+    parser.add_argument("--with-fortran", default=1, type=int,
+        help="Verbosity [default: %(default)s]")
     parser.add_argument("--fc", default=which("gfortran"),
         help="Path to fortran compiler [default: %(default)s]")
     parser.add_argument("-v", default=1, type=int,
         help="Verbosity [default: %(default)s]")
-    parser.set_defaults(rebuild_tpl=False, rebuild_utl=False, rebuild_all=False)
+    parser.set_defaults(rebuild_all=False)
 
     # --- subparsers
     subdesc = """Most subcommands take additional options/arguments.  To see a
@@ -78,19 +81,6 @@ def main(argv=None):
     parser_all.add_argument("--rebuild", dest="rebuild_all",
         default=False, action="store_true",
         help="Rebuild all components [default: %(default)s]")
-
-    # --- 'tpl' subparser
-    parser_tpl = subparsers.add_parser("build_tpl", help="Build only the TPLs")
-    parser_tpl.add_argument("--rebuild", dest="rebuild_tpl",
-        default=False, action="store_true",
-        help="Rebuild TPLs [default: %(default)s]")
-
-    # --- 'util' subparser
-    parser_utl= subparsers.add_parser("build_utl",
-        help="Build only the fortran utilities")
-    parser_utl.add_argument("--rebuild", dest="rebuild_utl",
-        default=False, action="store_true",
-        help="Rebuild utilities [default: %(default)s]")
 
     # --- 'material' subparser
     parser_mtl = subparsers.add_parser("build_mtl",
@@ -135,18 +125,12 @@ def main(argv=None):
     # python passes mutables by reference. The env dictionary initialized here
     # is updated in each function it is passed to below
     env = {}
-    # --- build TPLs
-    if command in ("build_tpl", "build_all"):
-        build_tpls(args.fc, args.rebuild_tpl or args.rebuild_all, env)
-        if command != "build_all":
-            os.chdir(cwd)
-            return 0
 
     # # base configuration
     config, lapack = base_configuration()
 
-    if command in ("build_utl", "build_all"):
-        utl_config(config, lapack, args.rebuild_utl or args.rebuild_all)
+    if args.with_fortran:
+        utl_config(config, lapack, args.rebuild_all)
 
     mtlinfo = {}
     fflags = []
@@ -222,6 +206,7 @@ def build_tpls(fc, rebuild, env):
     env is modified in place and passed by reference
 
     """
+    return #@tjf: this will be yanked
     rel_d = lambda d: d.replace(D + os.path.sep, "")
 
     # look for TPLs
@@ -259,7 +244,6 @@ def build_tpls(fc, rebuild, env):
 
     return
 
-
 def utl_config(config, lapack, rebuild):
     """Set up the fortran utilities distutils configuration
 
@@ -277,7 +261,6 @@ def utl_config(config, lapack, rebuild):
     the config object is modified in place and passed by reference
 
     """
-
     if os.path.isfile(os.path.join(LIB, "mmlabpack.so")) and not rebuild:
         return
 
@@ -297,17 +280,19 @@ def base_configuration():
     if not lapack:
         import numpy as np
         filename = "lapack_lite.so"
-        lapack = {"library_dirs": [os.path.join(sys.prefix, "lib")],
-                  "include_dirs": [os.path.join(sys.prefix, "include")],
-                  "libraries": [filename]}
+        src = os.path.join(os.path.dirname(np.linalg.__file__), filename)
         # symlink the lapack_lite shared object file to the python lib directory
-        link = os.path.join(sys.prefix, "lib", "lib" + filename)
+        link = os.path.join(LIB, "lib" + filename)
         if not os.path.isfile(link):
-            src = os.path.join(os.path.dirname(np.linalg.__file__), filename)
-            assert os.path.isfile(src)
-            os.symlink(src, link)
+            if os.path.isfile(src):
+                os.symlink(src, link)
+                lapack = {"library_dirs": [LIB], "include_dirs": [LIB],
+                          "libraries": [filename]}
+        os.putenv("LD_LIBRARY_PATH", LIB)
+        os.putenv("DYLD_LIBRARY_PATH", LIB)
 
-    lapack.setdefault("extra_compile_args", []).extend(["-fPIC", "-shared"])
+    if lapack:
+        lapack.setdefault("extra_compile_args", []).extend(["-fPIC", "-shared"])
 
     return config, lapack
 
@@ -542,10 +527,10 @@ def write_executables(env):
     _write_exe("mmd", os.path.join(CORE, "main.py"), env)
     _write_exe("mml", os.path.join(VIZD, "main.py"), env)
     _write_exe("runtests", os.path.join(CORE, "test.py"), env)
-    _write_exe("gmddump", os.path.join(UTLD, "exodump.py"), env)
-    _write_exe("exdump", os.path.join(UTLD, "exodump.py"), env)
+    _write_exe("gmddump", os.path.join(UTLD, "exo/exodump.py"), env)
+    _write_exe("exdump", os.path.join(UTLD, "exo/exodump.py"), env)
     _write_exe("mmv", os.path.join(VIZD, "plot2d.py"), env)
-    _write_exe("exdiff", os.path.join(UTLD, "exodiff.py"), env)
+    _write_exe("exdiff", os.path.join(UTLD, "exo/exodiff.py"), env)
     _write_exe("buildmtls", os.path.join(D, "setup.py"), env, parg="build_mtl")
     cout("Executable scripts written")
     return

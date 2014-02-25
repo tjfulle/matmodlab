@@ -34,8 +34,9 @@ def main(argv=None):
     parser.add_argument("-j", default=1, type=int,
        help=("Number of simultaneous jobs to run (permutation only) "
              "[default: %(default)s]"))
-    parser.add_argument("-s", metavar="\"X:Y\"", action="append", default=[],
-        help="Run simulation with model-Y instead of model-X [default: %(default)s]")
+    parser.add_argument("-s", metavar="\"X:Y\"", action="append",
+       help=("Run simulation with model-Y instead of model-X "
+             "[default: %(default)s]"))
     parser.add_argument("-V", default=False, action="store_true",
        help="Launch simulation visualizer on completion [default: %(default)s]")
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
@@ -79,7 +80,7 @@ def main(argv=None):
         except (ValueError, AttributeError):
             raise SystemExit("failed to parse material model swap string")
 
-        
+
 
     # --- gather all input.
     # this is done in a separate loop from running the input

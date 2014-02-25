@@ -169,7 +169,7 @@ class EOSDriver(Driver):
         if not self._paths_and_surfaces_processed:
             return
 
-        from utils.exodump import read_vars_from_exofile
+        from utils.exo.exodump import read_vars_from_exofile
         from utils.srfdump import extract_isotherm, extract_hugoniot
         # Set up options for Path
 

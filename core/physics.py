@@ -5,7 +5,6 @@ import numpy as np
 
 from __config__ import cfg, RESTART
 import core.io as io
-from utils.exodump import exodump
 from drivers.driver import create_driver
 
 class PhysicsHandler(object):
@@ -90,6 +89,7 @@ class PhysicsHandler(object):
 
     def finish(self):
         # udpate and close the file
+        from utils.exo.exodump import exodump
         self.timing["end"] = time.time()
         if self.driver._paths_and_surfaces_processed:
             io.log_message("{0}: calculations completed ({1:.4f}s)".format(

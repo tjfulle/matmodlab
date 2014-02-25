@@ -1,7 +1,10 @@
 import numpy as np
 
 from core.io import Error1, log_warning
-from lib.mmlabpack import mmlabpack
+try:
+    from lib.mmlabpack import mmlabpack
+except ImportError:
+    import utils.mmlabpack as mmlabpack
 
 class Material(object):
     def __init__(self):

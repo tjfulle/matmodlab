@@ -234,7 +234,7 @@ def rtest_statuses(status=None):
 
 def read_exo_file(filepath):
     import numpy as np
-    from exoreader import ExodusIIReader
+    from utils.exo.exofile import ExodusIIReader
     exof = ExodusIIReader.new_from_exofile(filepath)
     glob_var_names = exof.glob_var_names()
     elem_var_names = exof.elem_var_names()

@@ -6,7 +6,7 @@ import argparse
 import xml.dom.minidom as xdom
 import linecache
 
-from exoreader import ExodusIIReader
+from exofile import ExodusIIReader
 
 class Logger(object):
     def __init__(self):

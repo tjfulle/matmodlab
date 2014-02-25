@@ -125,7 +125,7 @@ class ExoManager(object):
             The simulation ID
 
         """
-        from exowriter import ExodusIIWriter
+        from utils.exo.exofile import ExodusIIWriter
         self.runid = runid
         if filepath is not None:
             self.exofile = ExodusIIWriter.from_existing(filepath)

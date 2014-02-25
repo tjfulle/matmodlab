@@ -3,7 +3,6 @@ import re
 import sys
 import subprocess
 import numpy as np
-from utils.exodump import read_vars_from_exofile
 from core.io import fatal_inp_error
 
 MML_RESP_FCNS = {"max": np.amax, "min": np.amin, "mean": np.mean,
@@ -17,6 +16,7 @@ def evaluate_response_function(respfcn, outfile, auxfiles=[]):
     """Evaluate the response function
 
     """
+    from utils.exo.exodump import read_vars_from_exofile
     if respfcn.startswith("mml."):
         s = re.search(MML_RESP_FCN_RE, respfcn)
         fcn = s.group("fcn")

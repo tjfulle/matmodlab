@@ -18,7 +18,7 @@ import enthought.chaco.tools.api as ctapi
 import enthought.pyface.api as papi
 
 from viz.colors import random_color
-from exoreader import ExodusIIReader
+from utils.exo.exofile import ExodusIIReader
 
 EXE = "plot2d"
 Change_X_Axis_Enabled = True

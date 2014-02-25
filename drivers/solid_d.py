@@ -6,11 +6,14 @@ from numpy.linalg import solve, lstsq
 
 from __config__ import cfg, RESTART
 import utils.xmltools as xmltools
-from lib.mmlabpack import mmlabpack
 from drivers.driver import Driver
 from core.solvers import sig2d
 from core.io import fatal_inp_error, input_errors, log_message, log_warning, Error1
 from materials.material import create_material
+try:
+    from lib.mmlabpack import mmlabpack
+except ImportError:
+    import utils.mmlabpack as mmlabpack
 try:
     import gmd_user_sub as usr
 except ImportError:

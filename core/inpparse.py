@@ -602,7 +602,6 @@ def pPhysics(physdict, functions, mtlswapdict=None):
                   by its corresponding value.
 
     """
-
     if mtlswapdict is None:
         mtlswapdict = {}
 

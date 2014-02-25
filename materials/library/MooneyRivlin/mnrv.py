@@ -1,9 +1,12 @@
 import sys
 import numpy as np
 
-from lib.mmlabpack import mmlabpack
 from materials._material import Material
 from core.io import Error1, log_message, log_error
+try:
+    from lib.mmlabpack import mmlabpack
+except ImportError:
+    import utils.mmlabpack as mmlabpack
 try:
     import lib.mnrv as mnrv
 except ImportError:

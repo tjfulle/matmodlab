@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import argparse
 
-from exoreader import ExodusIIReader
+from exofile import ExodusIIReader
 
 OFMTS = {"ascii": ".out", "mathematica": ".math", "ndarray": ".npy"}
 

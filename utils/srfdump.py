@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import numpy as np
-from utils.exodump import read_vars_from_exofile
+from utils.exo.exodump import read_vars_from_exofile
 from scipy.interpolate import RectBivariateSpline, SmoothBivariateSpline
 
 TOL = 1.E-09
