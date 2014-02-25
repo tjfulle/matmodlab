@@ -272,25 +272,18 @@ def utl_config(config, lapack, rebuild):
 
 
 def base_configuration():
-    """Setup the base numpy distutils configuration, including setting sys.argv
+    """Setup the base numpy distutils configuration
 
     """
+    import warnings
+    warnings.simplefilter("ignore")
     config = Configuration("matmodlab", parent_package="", top_path="")
-    lapack = get_info("lapack_opt")
+    for item in ("lapack_opt", "lapack_mkl", "lapack"):
+        lapack = get_info(item, notfound_action=0)
+        if lapack:
+            break
     if not lapack:
-        import numpy as np
-        filename = "lapack_lite.so"
-        src = os.path.join(os.path.dirname(np.linalg.__file__), filename)
-        # symlink the lapack_lite shared object file to the python lib directory
-        link = os.path.join(LIB, "lib" + filename)
-        if not os.path.isfile(link):
-            if os.path.isfile(src):
-                os.symlink(src, link)
-                lapack = {"library_dirs": [LIB], "include_dirs": [LIB],
-                          "libraries": [filename]}
-        os.putenv("LD_LIBRARY_PATH", LIB)
-        os.putenv("DYLD_LIBRARY_PATH", LIB)
-
+        cout("***warning: lapack not found")
     if lapack:
         lapack.setdefault("extra_compile_args", []).extend(["-fPIC", "-shared"])
 
