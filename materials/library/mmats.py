@@ -44,7 +44,7 @@ def conf(name=None):
         source_files = [os.path.join(d, f) for f in ("mnrv.f90", "mnrv.pyf")]
         material = {"source_files": source_files, "include_dir": d,
                     "interface_file": os.path.join(d, "mnrv.py"),
-                    "class": "MooneyRivlin"}
+                    "requires_lapack": True, "class": "MooneyRivlin"}
 
     elif nidx == 2:
         # Plastic

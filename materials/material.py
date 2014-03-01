@@ -3,11 +3,65 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
-from __config__ import F_MTL_MODEL_DB
+from __config__ import F_MTL_MODEL_DB, UMATS
 from core.io import Error1
 from utils.impmod import load_file
 
 D = os.path.dirname(os.path.realpath(__file__))
+
+
+def gather_materials(mats_to_build):
+    """Gather all of the matmodlab materials
+
+    Parameters
+    ----------
+    mats_to_build : list or str
+      list of materials to build, or 'all' if all materials are to be built
+
+    """
+    build_all = mats_to_build == "all"
+    material_info = {}
+
+    # --- builtin materials are all described in the mmats file
+    mats = load_file(os.path.join(D, "library/mmats.py"))
+    for name in mats.NAMES:
+        if not build_all and name not in mats_to_build:
+            continue
+        material_info[name] = mats.conf(name)
+
+    # --- user materials
+    for dirname in UMATS:
+        if not os.path.isdir(dirname):
+            cout("  *** warning: {0}: no such directory".format(dirname))
+            continue
+        if "umat.py" not in os.listdir(dirname):
+            cout("  *** warning: umat.py not found in {0}".format(dirname))
+            continue
+        filename = os.path.join(dirname, "umat.py")
+        umat = load_file(filename)
+        try:
+            name = umat.NAME
+        except AttributeError:
+            print("  ***error: {0}: NAME not defined".format(filename))
+            continue
+
+        if not build_all and name not in mats_to_build:
+            continue
+
+        try:
+            conf = umat.conf()
+        except ValueError:
+            print("  ***error: {0}: failed to gather information".format(filename))
+            continue
+        except AttributeError:
+            print("  ***error: {0}: conf function not defined".format(filename))
+            continue
+
+        if name in material_info:
+            print("  ***warning: {0}: duplicate material name".format(name))
+        material_info[name] = conf
+
+    return material_info
 
 
 def get_material_from_db(matname, mtldb=[None]):

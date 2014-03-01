@@ -8,39 +8,14 @@ import tempfile
 from subprocess import call, STDOUT
 from argparse import ArgumentParser, SUPPRESS
 
-# distutils
-from numpy.distutils.misc_util import Configuration
-from numpy.distutils.system_info import get_info
-from numpy.distutils.core import setup
-from numpy.distutils.system_info import LapackNotFoundError
-
 from utils.impmod import load_file
 from utils.int2str import int2str
-from materials.material import write_mtldb
-from __config__ import SPLASH
+from materials.material import write_mtldb, gather_materials
+from utils.fortran.extbuilder import FortranExtBuilder, FortranNotFoundError
+from __config__ import *
 
-UMATS = [d for d in os.getenv("MMLMTLS", "").split(os.pathsep) if d.split()]
-D = os.path.dirname(os.path.realpath(__file__))
+
 QUIET = False
-PYEXE = os.path.realpath(sys.executable)
-CORE = os.path.join(D, "core")
-VIZD = os.path.join(D, "viz")
-UTLD = os.path.join(D, "utils")
-TOOLS = os.path.join(D, "toolset")
-FIO = os.path.join(D, "utils/fortran/mmlfio.f90")
-LIB = os.path.join(D, "lib")
-BLD = os.path.join(D, "build")
-PATH = os.getenv("PATH").split(os.pathsep)
-
-
-def which(exe):
-    """Python implementation of unix which command
-
-    """
-    for d in PATH:
-        x = os.path.join(d, exe)
-        if os.path.isfile(x):
-            return x
 
 
 def main(argv=None):
@@ -62,8 +37,8 @@ def main(argv=None):
     # global options
     parser.add_argument("--with-fortran", default=1, type=int,
         help="Verbosity [default: %(default)s]")
-    parser.add_argument("--fc", default=which("gfortran"),
-        help="Path to fortran compiler [default: %(default)s]")
+    parser.add_argument("--fc", default=None,
+        help="Path to fortran compiler [default: gfortran]")
     parser.add_argument("-v", default=1, type=int,
         help="Verbosity [default: %(default)s]")
     parser.set_defaults(rebuild_all=False)
@@ -105,7 +80,7 @@ def main(argv=None):
 
     # run everything in the matmodlab directory
     cwd = os.getcwd()
-    os.chdir(D)
+    os.chdir(ROOT_D)
 
     if args.v == 0:
         QUIET = True
@@ -113,8 +88,8 @@ def main(argv=None):
     cout(SPLASH)
 
     if command == "build_all" and args.rebuild_all:
-        remove(BLD)
-        os.makedirs(BLD)
+        remove(BLD_D)
+        os.makedirs(BLD_D)
 
     # --- check prerequisites
     if command == "build_all":
@@ -126,14 +101,22 @@ def main(argv=None):
     # is updated in each function it is passed to below
     env = {}
 
-    # # base configuration
-    config, lapack = base_configuration()
+    # base configuration
+    try:
+        fb = FortranExtBuilder("matmodlab", fc=args.fc, verbosity=args.v)
+    except FortranNotFoundError:
+        fb = None
+        cout("fortran compiler not found, skipping fortran tools")
 
-    if args.with_fortran:
-        utl_config(config, lapack, args.rebuild_all)
+    if command == "build_all" and fb:
+        # build optional fortran utilities
+        ext = "mmlabpack"
+        mmlabpack = os.path.join(PKG_D, ext + ".so")
+        remove(mmlabpack)
+        sources = [os.path.join(ROOT_D, "utils/fortran/mmlabpack.f90"),
+                   os.path.join(ROOT_D, "utils/fortran/dgpadm.f")]
+        fb.add_extension(ext, sources, requires_lapack=True)
 
-    mtlinfo = {}
-    fflags = []
     if command in ("build_mtl", "build_all"):
         try:
             # args.mats_to_build and args.wipe_database only defined for
@@ -145,19 +128,52 @@ def main(argv=None):
         except AttributeError:
             mats_to_build = "all"
             wipe = True
-        mtl_config(config, lapack, mats_to_build, mtlinfo, fflags)
 
-    skip_build = command != "build_all" and not mtlinfo
-    if skip_build:
-        cout("No materials to build")
-    else:
-        build_extension_modules(config, mtlinfo, env, args.fc, fflags, args.v)
-        write_mtldb(mtlinfo, wipe)
+        cout("Gathering material[s] to be built")
+        material_info = gather_materials(mats_to_build)
+        cout("{0} material[s] found: {1}".format(
+                int2str(len(material_info), c=True),
+                ", ".join(x for x in material_info)))
+
+        for (name, conf) in material_info.items():
+            sources = conf.get("source_files")
+            if sources and not fb:
+                cerr("*** warning: fortran based models will not be built")
+                break
+            if sources:
+                # assume fortran model if source files are given
+                conf["source_files"].append(FIO)
+                ifile = conf["interface_file"]
+                include_dirs = [os.path.dirname(ifile)]
+                d = conf.get("include_dir")
+                if d and d not in include_dirs:
+                    include_dirs.append(conf["include_dir"])
+                stat = fb.add_extension(name, sources, include_dirs=include_dirs,
+                                        requires_lapack=conf.get("requires_lapack"))
+                if stat:
+                    # failed to add extension
+                    del material_info[name]
+
+    if fb and fb.exts_to_build:
+        fb.build_extension_modules()
+        for mtl in [x for x in material_info if x not in fb.built_ext_modules]:
+            # remove from the material_info list any modules with source files that
+            # didn't finish building
+            if material_info[mtl]["source_files"]:
+                cout("*** warning: {0}: failed to build".format(mtl))
+                del material_info[mtl]
+
+        # build the PYTHONPATH environment variable
+        pypath = [ROOT_D]
+        for (key, val) in material_info.items():
+            pypath.append(os.path.dirname(val["interface_file"]))
+        env.setdefault("PYTHONPATH", []).extend(pypath)
+
+        write_mtldb(material_info, wipe)
 
     if command != "build_all":
         os.chdir(cwd)
         return 0
-
 
     # convert python lists in the env dict to : separated lists for the
     # shell
@@ -165,7 +181,8 @@ def main(argv=None):
         if not isinstance(v, (basestring, str)):
             v = os.pathsep.join(x for x in v if x.split())
         env[k] = v
-    env["FC"] = args.fc
+    if fb:
+        env["FC"] = fb.fc
 
     # write executables in ./toolset
     write_executables(env)
@@ -176,278 +193,16 @@ def main(argv=None):
         cout("\n{0}\n"
              "Problems encountered during test.  To diagnose, execute\n"
              "  % runtests {1} -kfast -j4\n"
-             "{0}\n".format("*" * 78, os.path.join(D, "tests")))
+             "{0}\n".format("*" * 78, os.path.join(ROOT_D, "tests")))
     else:
-        if TOOLS not in PATH:
+        if TLS_D not in PATH:
             cout("To complete build, add {0} to the PATH "
-                 "environment variable".format(TOOLS))
+                 "environment variable".format(TLS_D))
         else:
             cout("Build complete")
 
     os.chdir(cwd)
     return stat
-
-
-def build_tpls(fc, rebuild, env):
-    """Look for and build TPLs
-
-    Parameters
-    ----------
-    fc : str
-      path to fortran executable
-    rebuild : bool
-      rebuild the TPLs if already built
-    env : dict
-      dictionary of environment variables required by TPLs to be set when
-      running any of the Material Model Laboratory executables.
-
-    Notes
-    -----
-    env is modified in place and passed by reference
-
-    """
-    return #@tjf: this will be yanked
-    rel_d = lambda d: d.replace(D + os.path.sep, "")
-
-    # look for TPLs
-    errors = 0
-    TPL = os.path.join(D, "tpl")
-    cout("Building TPLs")
-    for (dirname, dirs, files) in os.walk(TPL):
-
-        if "tpl.py" not in files:
-            continue
-
-        cout("Building TPL in {0}".format(rel_d(dirname)), end="... ")
-
-        # load the tpl file and execute its build_tpl command
-        tpl = load_file(os.path.join(dirname, "tpl.py"))
-        info = tpl.build_tpl(fc, rebuild)
-        retcode = info.pop("retcode")
-
-        if retcode == 0:
-            cout("yes")
-        elif retcode > 0:
-            errors += 1
-            cout("no")
-        else:
-            cout("previously built, --rebuild to rebuild")
-
-        # add environment to env
-        for (key, value) in info.items():
-            env.setdefault(key, []).append(value)
-
-    if errors:
-        raise SystemExit("Failed to build TPLs")
-
-    cout("TPLs built")
-
-    return
-
-def utl_config(config, lapack, rebuild):
-    """Set up the fortran utilities distutils configuration
-
-    Parameters
-    ----------
-    config : instance
-      distutils configuration instance
-    lapack : dict
-      distutils lapack_opt information
-    rebuild : bool
-      rebuild if already built
-
-    Notes
-    -----
-    the config object is modified in place and passed by reference
-
-    """
-    if os.path.isfile(os.path.join(LIB, "mmlabpack.so")) and not rebuild:
-        return
-
-    # fortran tools
-    sources = [os.path.join(D, "utils/fortran/mmlabpack.f90"),
-               os.path.join(D, "utils/fortran/dgpadm.f")]
-    config.add_extension("mmlabpack", sources=sources, **lapack)
-    return
-
-
-def base_configuration():
-    """Setup the base numpy distutils configuration
-
-    """
-    import warnings
-    warnings.simplefilter("ignore")
-    config = Configuration("matmodlab", parent_package="", top_path="")
-    for item in ("lapack_opt", "lapack_mkl", "lapack"):
-        lapack = get_info(item, notfound_action=0)
-        if lapack:
-            break
-    if not lapack:
-        cout("***warning: lapack not found")
-    if lapack:
-        lapack.setdefault("extra_compile_args", []).extend(["-fPIC", "-shared"])
-
-    return config, lapack
-
-
-def build_extension_modules(config, mtlinfo, env, fc, fflags, verbosity):
-    """Build all extension modules in config
-
-    Parameters
-    ----------
-    config : instance
-      distutils configuration instance
-    mtlinf : dict
-      information about each material model
-    env : dict
-      dictionary of environment variables needed for scripts
-    verbosity : int
-      level of verbosity
-
-    Notes
-    -----
-    env is modified in place and passed by reference
-
-    """
-
-    if verbosity < 2:
-        # redirect stderr and stdout
-        sys.stdout = open(os.devnull, "w")
-        sys.stderr = open(os.devnull, "a")
-
-    # change sys.argv for distutils
-    fexec = "--f77exec={0} --f90exec={0}".format(fc).split()
-    if fflags:
-        fflags = " ".join(fflags)
-        fflags = "--f77flags='{0}' --f90flags='{0}'".format(fflags).split()
-    sys.argv = ["./setup.py", "config_fc"] + fexec + fflags + ["build_ext", "-i"]
-
-    # build the extension modules with distutils setup
-    cout("Building extension module[s]", end="... ")
-    setup(**config.todict())
-    cout("done")
-    sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-
-    # move files
-    cout("Staging extension module[s]")
-    built = []
-    for src in glob.glob("*.so"):
-        dst = os.path.join(LIB, os.path.basename(src))
-        built.append(os.path.basename(os.path.splitext(src)[0]))
-        if os.path.isfile(dst):
-            os.remove(dst)
-        shutil.move(src, dst)
-
-    for mtl in [x for x in mtlinfo if x not in built]:
-        # remove from the mtlinfo list any modules with source files that
-        # didn't finish building
-        if mtlinfo[mtl]["source_files"]:
-            cout("*** warning: {0}: failed to build".format(mtl))
-            del mtlinfo[mtl]
-
-    # build the PYTHONPATH environment variable
-    pypath = [D]
-    for (key, val) in mtlinfo.items():
-        pypath.append(os.path.dirname(val["interface_file"]))
-    env.setdefault("PYTHONPATH", []).extend(pypath)
-
-    return
-
-
-def mtl_config(config, lapack, mats_to_build, mtlinfo, fflags):
-    """Set up the material model distutils configuration
-
-    Parameters
-    ----------
-    config : instance
-      distutils configuration instance
-    lapack : dict
-      distutils lapack_opt information
-    mats_to_build : list or str
-      list of materials to build, or 'all' if all materials are to be built
-    mtlinfo : dict
-      dict of information for each material
-    fflags : list
-      fortran compile flags
-
-    Notes
-    -----
-    the config and mtlinfo objects are modified in place and passed by
-    reference
-
-    """
-    build_all = mats_to_build == "all"
-
-    # --- builtin materials are all described in the mmats file
-    cout("Gathering material[s] to be built")
-    mats = load_file(os.path.join(D, "materials/library/mmats.py"))
-    cout("  built in materials", end="... ")
-    builtin = []
-    for name in mats.NAMES:
-        if not build_all and name not in mats_to_build:
-            continue
-        conf = mats.conf(name)
-        kwargs = dict(lapack)
-        incd = conf.get("include_dir", os.path.dirname(conf["interface_file"]))
-        kwargs.setdefault("include_dirs", []).append(incd)
-        mtlinfo[name] = conf
-        builtin.append(name)
-
-        # add extension to configuration if there are source files to build
-        sources = conf["source_files"]
-        if sources:
-            sources.append(FIO)
-            config.add_extension(name, sources=sources, **kwargs)
-    cout(",".join(builtin))
-
-    # --- user materials
-    umats = []
-    if UMATS:
-        cout("  user material[s]", end="... ")
-    for dirname in UMATS:
-        if not os.path.isdir(dirname):
-            cout("  *** warning: {0}: no such directory".format(dirname))
-            continue
-        if "umat.py" not in os.listdir(dirname):
-            cout("  *** warning: umat.py not found in {0}".format(dirname))
-            continue
-        filename = os.path.join(dirname, "umat.py")
-        umat = load_file(filename)
-        try:
-            name = umat.NAME
-        except AttributeError:
-            cout("  ***error: {0}: NAME not defined".format(filename))
-            continue
-
-        if not build_all and name not in mats_to_build:
-            continue
-
-        try:
-            conf = umat.conf()
-        except ValueError:
-            cout("  ***error: {0}: failed to gather information".format(filename))
-            continue
-        except AttributeError:
-            cout("  ***error: {0}: conf function not defined".format(filename))
-            continue
-
-        kwargs = dict(lapack)
-        incd = conf.get("include_dir", os.path.dirname(conf["interface_file"]))
-        kwargs.setdefault("include_dirs", []).append(incd)
-        if conf.get("FFLAGS"):
-            fflags.extend(conf.get("FFLAGS"))
-        mtlinfo[name] = conf
-        umats.append(name)
-        sources = conf["source_files"]
-        if sources:
-            sources.append(FIO)
-            config.add_extension(name, sources=sources, **kwargs)
-        continue
-    cout(",".join(umats))
-
-    cout("{0} material[s] found: {1}".format(int2str(len(mtlinfo), c=True),
-                                           ", ".join(x for x in mtlinfo)))
-    return
 
 
 def cout(message, end="\n"):
@@ -518,13 +273,13 @@ def write_executables(env):
     # --- executables
     cout("Writing executable scripts")
     _write_exe("mmd", os.path.join(CORE, "main.py"), env)
-    _write_exe("mml", os.path.join(VIZD, "main.py"), env)
+    _write_exe("mml", os.path.join(VIZ_D, "main.py"), env)
     _write_exe("runtests", os.path.join(CORE, "test.py"), env)
-    _write_exe("gmddump", os.path.join(UTLD, "exo/exodump.py"), env)
-    _write_exe("exdump", os.path.join(UTLD, "exo/exodump.py"), env)
-    _write_exe("mmv", os.path.join(VIZD, "plot2d.py"), env)
-    _write_exe("exdiff", os.path.join(UTLD, "exo/exodiff.py"), env)
-    _write_exe("buildmtls", os.path.join(D, "setup.py"), env, parg="build_mtl")
+    _write_exe("gmddump", os.path.join(UTL_D, "exo/exodump.py"), env)
+    _write_exe("exdump", os.path.join(UTL_D, "exo/exodump.py"), env)
+    _write_exe("mmv", os.path.join(VIZ_D, "plot2d.py"), env)
+    _write_exe("exdiff", os.path.join(UTL_D, "exo/exodiff.py"), env)
+    _write_exe("buildmtls", os.path.join(ROOT_D, "setup.py"), env, parg="build_mtl")
     cout("Executable scripts written")
     return
 
@@ -556,7 +311,7 @@ def _write_exe(name, pyfile, env, parg=""):
     """
 
     # executable path -- remove if exists
-    exe = os.path.join(TOOLS, name)
+    exe = os.path.join(TLS_D, name)
     remove(exe)
     if not os.path.isfile(pyfile):
         cerr("*** warning: {0}: no such file".format(pyfile))
@@ -586,7 +341,7 @@ def clean_matmodlab():
     """
     exts = (".pyc", ".o", ".a", ".con", ".so")
     cout("cleaning matmodlab", end="... ")
-    for (dirname, dirs, files) in os.walk(D):
+    for (dirname, dirs, files) in os.walk(ROOT_D):
         d = os.path.basename(dirname)
         if d == ".git":
             del dirs[:]
@@ -596,6 +351,7 @@ def clean_matmodlab():
             del dirs[:]
             continue
         [remove(os.path.join(dirname, f)) for f in files if f.endswith(exts)]
+    remove(F_MTL_MODEL_DB)
     cout("yes")
 
 
@@ -608,17 +364,17 @@ def test_build(env):
     os.chdir(d)
 
     # add . and ./toolset to path
-    env["PATH"] = os.pathsep.join([D, TOOLS] + PATH)
+    env["PATH"] = os.pathsep.join([ROOT_D, TLS_D] + PATH)
 
     cout("Testing installation", end="... ")
-    exe = os.path.join(D, "toolset/runtests")
-    testd = os.path.join(D, "tests")
+    exe = os.path.join(ROOT_D, "toolset/runtests")
+    testd = os.path.join(ROOT_D, "tests")
     cmd = "{0} {1} -kfast -j4".format(exe, testd)
     con = open(os.devnull, "w")
     stat = call(cmd.split(), env=env, stdout=con, stderr=STDOUT)
     if stat != 0: cout("fail")
     else: cout("pass")
-    os.chdir(D)
+    os.chdir(ROOT_D)
     shutil.rmtree(d)
     return stat
 
