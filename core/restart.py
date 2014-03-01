@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 from __config__ import __version__
@@ -111,11 +112,12 @@ def read_exrestart_info(filepath, time=-1):
     from drivers.driver import create_driver
     from utils.exo.exofile import ExodusIIReader
 
-
+    runid = os.path.splitext(os.path.basename(filepath))[0]
     if not os.path.isfile(filepath):
         raise RestartError("{0}: no such file".format(filepath))
     exof = ExodusIIReader.new_from_exofile(filepath)
     all_ex_info = exof.get_info()
+    all_ex_info = all_ex_info.tolist()
 
     try:
         start = all_ex_info.index(S_MML_DECL)
@@ -200,5 +202,5 @@ def read_exrestart_info(filepath, time=-1):
 
     exof.close()
 
-    return (mtlname, mtlparams, dname, dpath, dopts,
+    return (runid, mtlname, mtlparams, dname, dpath, dopts,
             leg_num, time, glob_data, elem_data, extract)

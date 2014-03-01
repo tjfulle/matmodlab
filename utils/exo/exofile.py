@@ -22,7 +22,8 @@ class BadActionError(Exception):
 class NotYetImplemented(Exception):
     def __init__(self, meth):
         self.message = "{0}: ExodusIIFile method not yet implemented".format(meth)
-        super(BadActionError, self).__init__(self.message)
+        super(NotYetImplemented, self).__init__(self.message)
+
 
 class ExodusIIFileError(Exception):
     pass
@@ -40,9 +41,6 @@ class ExodusIIFile(object):
 
     def ex_gp_init(self, action, *args):
         """Read/write initial data"""
-        if action not in (PUT, GET):
-            raise BadActionError(action)
-
         if action not in (PUT, GET):
             raise BadActionError(action)
 
@@ -137,6 +135,7 @@ class ExodusIIFile(object):
 
         namee = "num_el_in_blk"
         namen = "num_nod_per_el"
+        namea = "num_attr_in_blk"
         if action == GET:
             # Array of the element blocks IDs. The order of the IDs in this
             # array reflects the sequence that the element blocks were
@@ -157,16 +156,17 @@ class ExodusIIFile(object):
 
         (elem_blk_id, elem_type, num_elem_this_blk,
          num_nodes_per_elem, num_attr) = args
-        if num_attr:
-            raise ExodusIIFileError("attributes not yet supported")
 
         num_el_blk = self.db.dimensions.get("num_el_blk", -1)
-        if elem_blk_id > num_el_blk:
+        if self.num_el_blk_put == num_el_blk:
             raise ExodusIIFileError("number element blocks exceeded")
 
         # dimensioning
         self.db.createDimension(namee + str(elem_blk_id), num_elem_this_blk)
         self.db.createDimension(namen + str(elem_blk_id), num_nodes_per_elem)
+        if num_attr:
+            self.db.createDimension(namea + str(elem_blk_id), num_attr)
+        self.num_el_blk_put += 1
         return
 
     def ex_gp_elem_conn(self, action, *args):
@@ -178,7 +178,7 @@ class ExodusIIFile(object):
             elem_blk_id, blk_conn = args
             num_el_blk = self.db.dimensions.get("num_el_blk", -1)
             if elem_blk_id > num_el_blk:
-                raise ExodusIIFileError("number element blocks exceeded")
+                raise ExodusIIFileError("number of element blocks exceeded")
 
             # dimensions
             num_el_in_blk_char = "num_el_in_blk{0}".format(elem_blk_id)
@@ -202,6 +202,43 @@ class ExodusIIFile(object):
 
         return
 
+    def ex_gp_map(self, action, *args):
+        """Element map"""
+        if action not in (PUT, GET):
+            raise BadActionError(action)
+
+        var = "elem_map"
+        if action == GET:
+            try:
+                return self.db.variables[var].data[:]
+            except KeyError:
+                return
+
+        elem_map = args[0]
+        num_elem = self.db.dimensions["num_elem"]
+        if len(elem_map) > num_elem:
+            raise ExodusIIFileError("len(elem_map) > num_elem")
+        self.db.createVariable(var, "i", ("num_elem",))
+        self.db.variables[var][:] = elem_map
+
+        return
+
+    def ex_gp_prop_names(self, action, *args):
+        """Property names"""
+        if action not in (PUT, GET):
+            raise BadActionError(action)
+
+        var = "elem_map"
+        if action == GET:
+            try:
+                return self.variables[var].data[:]
+            except KeyError:
+                return
+
+        obj_type, num_props, prop_names = args
+        print obj_type
+        raise NotYetImplemented("ex_gp_prop_names")
+
     def ex_gp_qa(self, action, *args):
         """Reads/writes the QA records to the database."""
         if action not in (PUT, GET):
@@ -223,12 +260,20 @@ class ExodusIIFile(object):
         """Reads/writes information records to the database"""
         if action not in (PUT, GET):
             raise BadActionError(action)
+        if action == GET:
+            try:
+                info = self.db.variables["info_records"].data[:]
+            except KeyError:
+                return
+            return self.chara_to_text(info)
 
-        if action == PUT:
-            info = args[0]
-            for (i, info_record) in enumerate(info):
-                var = "info_rec_{0}".format(i)
-                setattr(self.db, var, info_record[:MAX_LINE_LENGTH])
+        info = args[0]
+        num_info = len(info)
+        self.db.createDimension("num_info", num_info)
+        self.db.createVariable("info_records", "c", ("num_info", "len_line"))
+        for (i, info_record) in enumerate(info):
+            self.db.variables["info_records"][i] = info_record
+
         return
 
     def ex_gp_var_param(self, action, *args):
@@ -276,7 +321,7 @@ class ExodusIIFile(object):
         if action == GET:
             if args[1:]:
                 return self.db.dimensions[dim]
-            return self.chara_to_text(self.db.variables[name].data, arr=1)
+            return self.chara_to_text(self.db.variables[name].data)
 
         num_vars, var_names = args[1:]
         self.db.createVariable(name, "c", (dim, "len_string"))
@@ -385,16 +430,10 @@ class ExodusIIFile(object):
         return "".join(s for s in vara if s.split())
 
     @staticmethod
-    def chara_to_text(chara, arr=0):
-        _join = lambda a: "".join(s for s in a if s.split())
-        if not arr:
-            return _join(chara)
-        return [_join(x) for x in chara]
-
-    @classmethod
-    def new_from_runid(cls, runid):
-        exof = cls(runid)
-        return exof
+    def chara_to_text(chara):
+        if chara.ndim == 1:
+            return "".join(chara).strip()
+        return np.array(["".join(row).strip() for row in chara])
 
 
 class ExodusIIWriter(ExodusIIFile):
@@ -403,6 +442,7 @@ class ExodusIIWriter(ExodusIIFile):
         d = os.getcwd() if d is None else d
         filepath = os.path.join(d, runid + ".exo")
         self.db = self.open_db(filepath, mode="w")
+        self.num_el_blk_put = 0
 
         self.db = nc.netcdf_file(filepath, "w")
         self.runid = os.path.splitext(os.path.basename(filepath))[0]
@@ -421,6 +461,11 @@ class ExodusIIWriter(ExodusIIFile):
         # time
         self.db.createVariable("time_whole", "d", ("time_step",))
         pass
+
+    @classmethod
+    def new_from_runid(cls, runid):
+        exof = cls(runid)
+        return exof
 
     def put_init(self, title, num_dim, num_nodes, num_elem,
                  num_el_blk, num_node_sets, num_side_sets):
@@ -515,6 +560,53 @@ class ExodusIIWriter(ExodusIIFile):
 
         """
         self.ex_gp_elem_conn(PUT, elem_blk_id, blk_conn)
+        return
+
+    def put_map(self, elem_map):
+        """Writes out the optional element order map to the database
+
+        Parameters
+        ----------
+        elem_map : array_like
+            The element map
+
+        Notes
+        -----
+        The following code generates a default element order map and outputs
+        it to an open EXODUS II file. This is a trivial case and included just
+        for illustration. Since this map is optional, it should be written out
+        only if it contains something other than the default map.
+
+        elem_map = []
+        for i in range(num_elem):
+            elem_map.append(i)
+        ExodusIIWriterError.put_map(np.array(elem_map))
+
+        """
+        self.ex_gp_map(PUT, elem_map)
+        return
+
+    def put_prop_names(self, obj_type, num_props, prop_names):
+        """Writes property names and allocates space for property arrays used
+        to assign integer properties to element blocks, node sets, or side
+        sets.
+
+        Parameters
+        ----------
+        obj_type : int
+            The type of object; use on of the following options
+            EX_ELEM_BLOCK
+            EX_NODE_SET
+            EX_SIDE_SET
+
+        num_props : int
+            The number of properties
+
+        prop_names : array_like
+            Array containing num_props names
+
+        """
+        self.ex_gp_prop_names(PUT, obj_type, num_props, prop_names)
         return
 
     def put_qa(self, num_qa_records, qa_records):
@@ -761,6 +853,8 @@ class ExodusIIReader(ExodusIIFile):
         self.elem_blk_params = self.ex_gp_elem_block(GET)
         self.elem_blk_ids = sorted(self.elem_blk_params,
                                    key=lambda k: self.elem_blk_params[k]["O"])
+        self.elem_map = self.ex_gp_map(GET)
+        pass
 
     def glob_var_names(self):
         return self.var_names["G"]
@@ -797,6 +891,31 @@ class ExodusIIReader(ExodusIIFile):
 
         """
         return self.ex_gp_time(GET, None)
+
+    def get_map(self):
+        """Returns the element map attribute
+
+        Returns
+        -------
+        elem_map : array_like
+            The element map
+
+        """
+        return self.elem_map
+
+    def get_info(self):
+        """Reads information records from the database. The records are
+        MAX_LINE_LENGTH-character strings. Memory must be allocated for the
+        information records before this call is made. The number of records
+        can be determined by invoking inquire
+
+        Returns
+        -------
+        info : array of strings
+            information stored to exodus database
+
+        """
+        return self.ex_gp_info(GET)
 
     def get_var_index(self, var_type, var_name):
         if var_type not in "GEN":

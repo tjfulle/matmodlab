@@ -522,11 +522,15 @@ def parse_input(filepath, argp=None, mtlswapdict=None):
 
 
 def parse_exo_input(source, time=-1):
-    (mtlmdl, mtlparams, dname, dpath, dopts, leg_num, time, glob_data,
+    (runid, mtlmdl, mtlparams, dname, dpath, dopts, leg_num, time, glob_data,
      elem_data, extract) = read_exrestart_info(source, time=time)
     dopts[0] = RESTART
     dopts.append([leg_num, time, glob_data, elem_data])
-    return ("Physics", (dname, dpath, dopts), (mtlmdl, mtlparams, []), extract)
+    driver = (dname, dpath, dopts)
+    material = (mtlmdl, mtlparams, {}, [])
+
+    inp = ["Physics", runid, driver, material, extract]
+    return [inp,]
 
 
 def pFunction(flist):
