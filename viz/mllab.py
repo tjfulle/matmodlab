@@ -87,7 +87,7 @@ class MMLMaterialModelSelector(HasStrictTraits):
         runner = ModelRunner(runid=self.runid,
                              material_model=self.selected_model,
                              callbacks=self.callbacks)
-        inpstr = runner.CreateModelInputString(self.selected_model)
+        inpstr = runner.gen_inpstr(self.selected_model)
         preview = MMLInputStringPreview(
             inpstr=inpstr, runner=runner, model=self.selected_model)
         preview.configure_traits()
