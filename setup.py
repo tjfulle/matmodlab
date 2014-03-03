@@ -275,10 +275,10 @@ def write_executables(env):
     _write_exe("mmd", os.path.join(CORE, "main.py"), env)
     _write_exe("mml", os.path.join(VIZ_D, "main.py"), env)
     _write_exe("runtests", os.path.join(CORE, "test.py"), env)
-    _write_exe("gmddump", os.path.join(UTL_D, "exo/exodump.py"), env)
-    _write_exe("exdump", os.path.join(UTL_D, "exo/exodump.py"), env)
+#    _write_exe("gmddump", os.path.join(UTL_D, "exo/exodump.py"), env)
+#    _write_exe("exdump", os.path.join(UTL_D, "exo/exodump.py"), env)
     _write_exe("mmv", os.path.join(VIZ_D, "plot2d.py"), env)
-    _write_exe("exdiff", os.path.join(UTL_D, "exo/exodiff.py"), env)
+#    _write_exe("exdiff", os.path.join(UTL_D, "exo/exodiff.py"), env)
     _write_exe("buildmtls", os.path.join(ROOT_D, "setup.py"), env, parg="build_mtl")
     cout("Executable scripts written")
     return

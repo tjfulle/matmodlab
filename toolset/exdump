@@ -1,8 +1,12 @@
+#!/usr/bin/python
 import os
 import re
 import sys
 import numpy as np
 import argparse
+
+gmd_d = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(gmd_d, 'utils', 'exo'))
 
 from exofile import ExodusIIReader
 
