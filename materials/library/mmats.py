@@ -6,7 +6,7 @@ This file is used only during the setup phase to build and install materials.
 import os
 D = os.path.dirname(os.path.realpath(__file__))
 
-NAMES = ("idealgas", "mnrv", "plastic", "elastic", "pyelastic")
+NAMES = ("idealgas", "mnrv", "plastic", "elastic", "pyelastic", 'vonmises')
 
 def conf(name=None):
     """Return the material configurations for building
@@ -68,8 +68,11 @@ def conf(name=None):
         material = {"source_files": None, "include_dir": d,
                     "interface_file": os.path.join(d, "pyelastic.py"),
                     "class": "PyElastic"}
-
-
-
+    elif nidx == 5:
+        # python von mises with combined hardening
+        d = os.path.join(D, "vonmises")
+        material = {"source_files": None, "include_dir": d,
+                    "interface_file": os.path.join(d, "vonmises.py"),
+                    "class": "VonMises"}
 
     return material
