@@ -357,7 +357,7 @@ def test_build(env):
 
     """
     # run tests in temporary directory
-    d = os.getcwd() #tempfile.mkdtemp()
+    d = tempfile.mkdtemp()
     os.chdir(d)
 
     # add . and ./toolset to path
@@ -372,7 +372,7 @@ def test_build(env):
     if stat != 0: cout("fail")
     else: cout("pass")
     os.chdir(ROOT_D)
-    # shutil.rmtree(d)
+    shutil.rmtree(d)
     return stat
 
 
