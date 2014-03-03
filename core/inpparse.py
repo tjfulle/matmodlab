@@ -15,7 +15,7 @@ from drivers.driver import isdriver, getdrvcls
 from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.io import fatal_inp_error, input_errors
 from core.restart import read_exrestart_info
-from materials.material import get_material_from_db
+from materials.material import MaterialDB
 
 _D = os.path.dirname(os.path.realpath(__file__))
 NOT_SPECIFIED = -64023
@@ -652,15 +652,14 @@ def pMaterial(mtldict, mtlswapdict=None):
         inp_warning("Swapping out model '{0}' for '{1}'".format(model, newmodel))
         model = newmodel
 
-    mtlmdl = get_material_from_db(model)
+    material_db = MaterialDB.gen_from_xmldb()
+    mtlmdl = material_db.get(model)
     if mtlmdl is None:
         fatal_inp_error("{0}: material not in database".format(model))
         return
 
-    # mtli -> path to interface file
-    # mtlc -> name of class
     # param_parse_table -> dictionary of material property name:index
-    mtli, mtlc, param_parse_table = mtlmdl
+    param_parse_table = mtlmdl.parse_table
 
     # put the parameters in an array
     params = np.zeros(len(set(param_parse_table.values())))
@@ -715,7 +714,7 @@ def pMaterial(mtldict, mtlswapdict=None):
 
     options = {}
     options["constant_jacobian"] = mtldict["constant_jacobian"]
-    return model, params, options, istate
+    return mtlmdl, params, options, istate
 
 
 def pOptimization(optdict, basexml):

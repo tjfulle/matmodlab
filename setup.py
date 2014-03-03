@@ -10,7 +10,7 @@ from argparse import ArgumentParser, SUPPRESS
 
 from utils.impmod import load_file
 from utils.int2str import int2str
-from materials.material import write_mtldb, gather_materials
+from materials.material import MaterialDB
 from utils.fortran.extbuilder import FortranExtBuilder, FortranNotFoundError
 from __config__ import *
 
@@ -106,13 +106,12 @@ def main(argv=None):
         fb = FortranExtBuilder("matmodlab", fc=args.fc, verbosity=args.v)
     except FortranNotFoundError:
         fb = None
-        cout("fortran compiler not found, skipping fortran tools")
+        cout("fortran compiler not found, skipping fortran components")
 
     if command == "build_all" and fb:
         # build optional fortran utilities
         ext = "mmlabpack"
-        mmlabpack = os.path.join(PKG_D, ext + ".so")
-        remove(mmlabpack)
+        remove(os.path.join(PKG_D, ext + ".so"))
         sources = [os.path.join(ROOT_D, "utils/fortran/mmlabpack.f90"),
                    os.path.join(ROOT_D, "utils/fortran/dgpadm.f")]
         fb.add_extension(ext, sources, requires_lapack=True)
@@ -130,46 +129,44 @@ def main(argv=None):
             wipe = True
 
         cout("Gathering material[s] to be built")
-        material_info = gather_materials(mats_to_build)
+        mtldb = MaterialDB.gen_from_search(mats_to_build=mats_to_build)
         cout("{0} material[s] found: {1}".format(
-                int2str(len(material_info), c=True),
-                ", ".join(x for x in material_info)))
+                int2str(len(mtldb), c=True),
+                ", ".join(x for x in mtldb.materials)))
 
-        for (name, conf) in material_info.items():
-            sources = conf.get("source_files")
-            if sources and not fb:
-                cerr("*** warning: fortran based models will not be built")
-                break
-            if sources:
+        for material in mtldb:
+            if material.source_files:
+                if not fb:
+                    cerr("*** warning: fortran based models will not be built")
+                    break
                 # assume fortran model if source files are given
-                conf["source_files"].append(FIO)
-                ifile = conf["interface_file"]
-                include_dirs = [os.path.dirname(ifile)]
-                d = conf.get("include_dir")
+                material.source_files.append(FIO)
+                include_dirs = [material.dirname]
+                d = material.include_dir
                 if d and d not in include_dirs:
-                    include_dirs.append(conf["include_dir"])
-                stat = fb.add_extension(name, sources, include_dirs=include_dirs,
-                                        requires_lapack=conf.get("requires_lapack"))
+                    include_dirs.append(d)
+                stat = fb.add_extension(material.name, material.source_files,
+                                        include_dirs=include_dirs,
+                                        requires_lapack=material.requires_lapack)
                 if stat:
                     # failed to add extension
-                    del material_info[name]
+                    mtldb.remove(material)
 
     if fb and fb.exts_to_build:
         fb.build_extension_modules()
-        for mtl in [x for x in material_info if x not in fb.built_ext_modules]:
-            # remove from the material_info list any modules with source files that
+        for mtl in [x for x in mtldb if x.name not in fb.built_ext_modules]:
+            # remove from the mtldb list any modules with source files that
             # didn't finish building
-            if material_info[mtl]["source_files"]:
-                cout("*** warning: {0}: failed to build".format(mtl))
-                del material_info[mtl]
+            if mtl.source_files:
+                cout("*** warning: {0}: failed to build".format(mtl.name))
+                mtldb.remove(mtl)
 
         # build the PYTHONPATH environment variable
         pypath = [ROOT_D]
-        for (key, val) in material_info.items():
-            pypath.append(os.path.dirname(val["interface_file"]))
+        pypath.extend(mtldb.path)
         env.setdefault("PYTHONPATH", []).extend(pypath)
 
-        write_mtldb(material_info, wipe)
+        mtldb.write_db(wipe=wipe)
 
     if command != "build_all":
         os.chdir(cwd)
@@ -360,7 +357,7 @@ def test_build(env):
 
     """
     # run tests in temporary directory
-    d = tempfile.mkdtemp()
+    d = os.getcwd() #tempfile.mkdtemp()
     os.chdir(d)
 
     # add . and ./toolset to path
@@ -375,7 +372,7 @@ def test_build(env):
     if stat != 0: cout("fail")
     else: cout("pass")
     os.chdir(ROOT_D)
-    shutil.rmtree(d)
+    # shutil.rmtree(d)
     return stat
 
 

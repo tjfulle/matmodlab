@@ -21,13 +21,17 @@ Required Software
 
 #) `Python 2.7 <http://www.python.org/>`_ or newer
 
-#) `NumPy 1.6 <http://www.numpy.org/>`_ or newer
+#) `NumPy 1.8 <http://www.numpy.org/>`_ or newer
 
-#) `SciPy 0.10.1 <http://www.scipy.org/>`_ or newer
-
-#) A fortran compiler
+#) `SciPy 0.13 <http://www.scipy.org/>`_ or newer
 
 *matmodlab* is developed and tested using the `Enthought <http://http://www.enthought.com/>`_ *Python distribution*.
+
+Optional Software
+=================
+
+#) Fortran compiler
+
 
 .. _installation:
 
@@ -39,16 +43,15 @@ Installation
 #) Add ``toolset`` to your ``PATH`` environment variable
 
 #) [Optional] Set the ``MMLMTLS`` environment variable to point to directories
-   containing additional material models (user developed, not part of *matmodlab*.
+   containing additional material models (user developed, not part of *matmodlab*).
 
 #) run::
 
         % PYTHON setup.py build_all
 
    where ``PYTHON`` is the python interpreter that has *NumPy* and *SciPy*
-   installed. :file:`setup.py` will build the third party libraries,
-   materials, and other fortran utilities and write the following executable
-   scripts::
+   installed. :file:`setup.py` will build materials, and optional fortran utilities
+   and write the following executable scripts::
 
        GMD_ROOT
          toolset/
@@ -56,6 +59,7 @@ Installation
            mmd
            exdiff
            exdump
+           mml
            mmv
            runtests
 
