@@ -7,7 +7,7 @@ import os
 import sys
 import numpy as np
 
-from exoreader import ExodusIIReader
+from utils.exo.exofile import ExodusIIReader
 
 def main(*argv):
     vars_to_get = ("STRESS_XX", "STRESS_YY", "STRESS_ZZ")
