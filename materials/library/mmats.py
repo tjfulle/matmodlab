@@ -55,9 +55,17 @@ material = {"source_files": None, "include_dir": d,
             "class": "VonMises"}
 vonmises = _Material("vonmises", **material)
 
+# --- Pure python plastic model
+d = os.path.join(D, "transisoelas")
+material = {"source_files": None, "include_dir": d,
+            "interface_file": os.path.join(d, "transisoelas.py"),
+            "class": "TransIsoElas"}
+transisoelas = _Material("transisoelas", **material)
+
 # --- collection of materials
 NAMES = {"idealgas": idealgas, "mnrv": mnrv, "plastic": plastic,
-         "elastic": elastic, "pyelastic": pyelastic, "vonmises": vonmises}
+         "elastic": elastic, "pyelastic": pyelastic, "vonmises": vonmises,
+         'transisoelas': transisoelas}
 
 def conf(name=None):
     """Return the material configurations for building
