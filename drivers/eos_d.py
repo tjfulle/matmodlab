@@ -9,7 +9,6 @@ from __config__ import cfg, RESTART
 import utils.xmltools as xmltools
 from drivers.driver import Driver
 from core.io import fatal_inp_error, input_errors, log_message, log_error, Error1
-from materials.material import create_material
 
 
 np.set_printoptions(precision=4)
@@ -21,7 +20,8 @@ class EOSDriver(Driver):
     name = "eos"
     def __init__(self, surface, opts, material):
         super(EOSDriver, self).__init__()
-        self.material = create_material(*material[:-1])
+        mtl, params, options, istate = material
+        self.material = mtl.instantiate_material(params, options)
         self.surface = surface
         self.path = self.surface
         if opts[0] == RESTART:
