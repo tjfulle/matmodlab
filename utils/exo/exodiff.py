@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import argparse
 import numpy as np
 import xml.dom.minidom as xdom
 import linecache
@@ -38,7 +39,7 @@ def main(argv=None):
     parser.add_argument("source1")
     parser.add_argument("source2")
     args = parser.parse_args(argv)
-    return exodiff.exodiff(args)
+    return exodiff(args)
 
 
 def exodiff(args):

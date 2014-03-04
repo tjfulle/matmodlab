@@ -55,7 +55,7 @@ material = {"source_files": None, "include_dir": d,
             "class": "VonMises"}
 vonmises = _Material("vonmises", **material)
 
-# --- Pure python plastic model
+# --- Pure python transversely isotropic model
 d = os.path.join(D, "transisoelas")
 material = {"source_files": None, "include_dir": d,
             "interface_file": os.path.join(d, "transisoelas.py"),

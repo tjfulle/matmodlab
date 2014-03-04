@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import argparse
 import numpy as np
 
 from exofile import ExodusIIReader
@@ -33,9 +34,9 @@ def main(argv=None):
     parser.add_argument("--step", default=1, type=int,
         help="Step [default: %(default)s]")
     args = parser.parse_args(argv)
-    return exodump.exodump(args.source, outfile=args.o,
-                           variables=args.variables, listvars=args.list,
-                           ffmt=args.ffmt, ofmt=args.ofmt, step=args.step)
+    return exodump(args.source, outfile=args.o,
+                   variables=args.variables, listvars=args.list,
+                   ffmt=args.ffmt, ofmt=args.ofmt, step=args.step)
 
 
 def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
