@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+import os
+import sys
+import _setup
+from __config__ import remove, cout, ROOT_D, PKG_D
+
+if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
+    sys.exit("clean: Recursively clean the matmodlab project\nusage: clean")
+exts = (".pyc", ".o", ".a", ".con", ".so")
+cout("cleaning matmodlab", end="... ")
+remove(os.path.join(PKG_D, "build"))
+for (dirname, dirs, files) in os.walk(ROOT_D):
+    d = os.path.basename(dirname)
+    if d == ".git":
+        del dirs[:]
+        continue
+    if d.startswith("TestResults."):
+        remove(dirname)
+        del dirs[:]
+        continue
+    [remove(os.path.join(dirname, f)) for f in files if f.endswith(exts)]
+cout("yes")

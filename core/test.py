@@ -12,14 +12,12 @@ import xml.dom.minidom as xdom
 
 import utils.xmltools as xmltools
 from utils.namespace import Namespace
-from __config__ import SPLASH
+from __config__ import SPLASH, TLS_D
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
 TESTS = os.path.join(R, "tests")
-PATH = os.getenv("PATH", "").split(os.pathsep)
 PLATFORM = sys.platform.lower()
-PATH.append(os.path.join(R, "tpl/exowrap/Build_{0}/bin".format(PLATFORM)))
 D_TESTS =  os.path.join(os.getcwd(), "TestResults.{0}".format(PLATFORM))
 NOTRUN_STATUS = -1
 PASS_STATUS = 0
@@ -53,8 +51,31 @@ class Error(Exception):
         sys.stderr.write("{0}*** error: runtests: {1}\n".format(pre, message))
         raise SystemExit(2)
 
+
+class Path(object):
+    _path = [TLS_D] + [d for d in os.getenv("PATH", "").split(os.pathsep)
+                       if os.path.isdir(d)]
+    def extend(self, paths):
+        self._path.extend([d for d in paths
+                           if os.path.isdir(d) and d not in self._path])
+    @property
+    def path(self):
+        return os.pathsep.join(self._path)
+    def __iter__(self):
+        return iter(self._path)
+
+
+
+class Environ(object):
+    _env = dict(os.environ)
+    def put(self, key, val):
+        self._env[key] = val
+    @property
+    def env(self):
+        return dict(self._env)
+
+
 def main(argv=None):
-    global PATH
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
@@ -65,7 +86,8 @@ def main(argv=None):
     parser.add_argument("-j", default=1, type=int,
         help="Number of simultaneous tests [default: %(default)s]")
     parser.add_argument("-s", metavar="\"X:Y\"", action="append", default=[],
-        help="Run simulation with model-Y instead of model-X [default: %(default)s]")
+        help=("Run simulation with model-Y instead of "
+              "model-X [default: %(default)s]"))
     parser.add_argument("-i", action="store_true", default=False,
         help="Run in place [default: %(default)s]")
     parser.add_argument("-F", action="store_true", default=False,
@@ -120,10 +142,11 @@ def main(argv=None):
     if not dirs and not tests:
         raise Error("no test directories or files found")
 
+    xpath = Path()
     if not dirs and len(tests) == 1:
         # run inplace
         args.i = True
-    PATH.extend([d for d in dirs])
+    xpath.extend([d for d in dirs])
 
     # --- root directory to run tests
     testd = args.D
@@ -350,6 +373,9 @@ def find_and_run_init(search_dirs, testd):
     """Find and run initialization files
 
     """
+    xenv = Environ()
+    xpath = Path()
+    xenv.put("PATH", xpath.path)
     # find all init.rxml files
     init_files = []
     for d in search_dirs:
@@ -385,12 +411,14 @@ def find_and_run_init(search_dirs, testd):
         if not exe_stmnts:
             continue
         status = []
-        for exe_stmnt in exe_stmnts:
-            exe = os.path.basename(exe_stmnt[0])
+        for cmd in exe_stmnts:
+            exe = os.path.basename(cmd[0])
             outf = "_".join(exe.split()) + ".con"
             out = open(outf, "w")
-            status.append(subprocess.call(" ".join(exe_stmnt), shell=True,
-                                          stdout=out, stderr=subprocess.STDOUT))
+            job = subprocess.Popen(cmd, env=xenv.env,
+                                   stdout=out, stderr=subprocess.STDOUT)
+            job.wait()
+            status.append(job.returncode)
             out.close()
         status = max(status)
 
@@ -620,6 +648,9 @@ def run_rtest(args):
     """Run the rtest
 
     """
+    xenv = Environ()
+    xpath = Path()
+    xenv.put("PATH", xpath.path)
     try:
         (testd, rtest, details, inplace, mtlswaplist) = args[:5]
         bdir = details[S_BDIR]
@@ -652,8 +683,11 @@ def run_rtest(args):
             out = open(outf, "w")
             if exe == "mmd" and mtlswapstr is not '':
                 cmd.insert(1, mtlswapstr)
-            status.append(subprocess.call(" ".join(cmd), shell=True,
-                                          stdout=out, stderr=subprocess.STDOUT))
+            job = subprocess.Popen(cmd, env=xenv.env,
+                                   stdout=out, stderr=subprocess.STDOUT)
+            job.wait()
+            status.append(job.returncode)
+
             out.close()
             times.append(time.time())
             if status[-1] != 0:
@@ -705,7 +739,7 @@ def which(exe):
     opts = "" if len(tmpexe) == 1 else " " + tmpexe[1]
     if tmpexe[0].startswith("./"):
         return tmpexe[0] + opts
-    for d in PATH:
+    for d in Path():
         x = os.path.join(d, tmpexe[0])
         if os.path.isfile(x):
             return x + opts
@@ -858,6 +892,7 @@ def _rebaseline_tests(d=None, files=None):
             continue
         log_message("{0}: rebaselining".format(runid))
         shutil.copyfile(exo, base)
+
 
 
 if __name__ == "__main__":

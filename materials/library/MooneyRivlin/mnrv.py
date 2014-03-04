@@ -2,7 +2,7 @@ import sys
 import numpy as np
 
 from materials._material import Material
-from core.io import Error1, log_message, log_error
+from core.mmlio import Error1, log_message, log_error
 try:
     from lib.mmlabpack import mmlabpack
 except ImportError:

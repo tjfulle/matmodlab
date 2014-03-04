@@ -25,6 +25,22 @@ FLOOR = 1.E-12
 EXE= "exdiff"
 
 
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f",
+        help=("Use the given file to specify the variables to be considered "
+              "and to what tolerances [default: %(default)s]."))
+    parser.add_argument("--interp", default=False, action="store_true",
+        help=("Interpolate variabes through time to compute error "
+              "[default: %(default)s]."))
+    parser.add_argument("source1")
+    parser.add_argument("source2")
+    args = parser.parse_args(argv)
+    return exodiff.exodiff(args)
+
+
 def exodiff(args):
     if not os.path.isfile(args.source1):
         LOG.error("{0}: no such file".format(args.source1))
@@ -298,5 +314,4 @@ def afloor(a, floor):
 
 
 if __name__ == "__main__":
-    sys.exit("ERROR: {0} is not intended to be run from the command line".
-                                                         format(__file__))
+    sys.exit(main())

@@ -1,7 +1,6 @@
 import os
 import datetime
 import numpy as np
-#import scipy.io.netcdf as nc
 import netcdf as nc
 
 #from __config__ import __version__

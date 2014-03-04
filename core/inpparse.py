@@ -13,7 +13,7 @@ from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
 from utils.respfcn import check_response_function, MML_RESP_FCN_RE
-from core.io import fatal_inp_error, input_errors
+from core.mmlio import fatal_inp_error, input_errors
 from core.restart import read_exrestart_info
 from materials.material import MaterialDB
 
@@ -609,14 +609,15 @@ def pPhysics(physdict, functions, mtlswapdict=None):
     if mtlswapdict is None:
         mtlswapdict = {}
 
-    try:
-        mdl, params, mopts, istate = pMaterial(physdict["Elements"].pop("Material"),
-                                               mtlswapdict)
-    except (ValueError, TypeError):
-        raise UserInputError("failed to parse material")
-    if input_errors():
-        raise UserInputError("failed to parse material")
+    parsed = pMaterial(physdict["Elements"].pop("Material"), mtlswapdict)
+#    try:
+#        parsed = pMaterial(physdict["Elements"].pop("Material"), mtlswapdict)
+#    except (ValueError, TypeError):
+#        raise UserInputError("failed to parse material")
+#    if input_errors():
+#        raise UserInputError("failed to parse material")
 
+    mdl, params, mopts, istate = parsed
     dcls = getdrvcls(physdict["driver"])
     p = dcls.format_path_and_opts(
         physdict["Elements"]["Path"], functions,
@@ -652,17 +653,21 @@ def pMaterial(mtldict, mtlswapdict=None):
         inp_warning("Swapping out model '{0}' for '{1}'".format(model, newmodel))
         model = newmodel
 
-    material_db = MaterialDB.gen_from_xmldb()
+    material_db = MaterialDB.gen_db()
     mtlmdl = material_db.get(model)
     if mtlmdl is None:
         fatal_inp_error("{0}: material not in database".format(model))
         return
 
-    # param_parse_table -> dictionary of material property name:index
-    param_parse_table = mtlmdl.parse_table
+    # check if shared object exists for this material (if applicable)
+    if not mtlmdl.python_model and not mtlmdl.so_exists:
+        # material shared object does not exist, let's build it now
+        from utils.builder import Builder
+        Builder.build_material(mtlmdl)
 
+    # parse_table -> dictionary of material property name:index
     # put the parameters in an array
-    params = np.zeros(len(set(param_parse_table.values())))
+    params = np.zeros(len(set(mtlmdl.parse_table.values())))
 
     # get the user give parameters
     try:
@@ -694,7 +699,7 @@ def pMaterial(mtldict, mtlswapdict=None):
 
         # not a special name -> a parameter name find its location in the
         # material parameter array and put it in the right spot
-        idx = param_parse_table.get(name.lower())
+        idx = mtlmdl.parse_table.get(name.lower())
         if idx is None:
             fatal_inp_error("Material: {0}: invalid parameter for the {1} "
                             "material model".format(name, model))

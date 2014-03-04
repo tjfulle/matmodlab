@@ -8,7 +8,8 @@ from __config__ import cfg, RESTART
 import utils.xmltools as xmltools
 from drivers.driver import Driver
 from core.solvers import sig2d
-from core.io import fatal_inp_error, input_errors, log_message, log_warning, Error1
+from core.mmlio import (fatal_inp_error, input_errors,
+                        log_message, log_warning, Error1)
 try:
     from lib.mmlabpack import mmlabpack
 except ImportError:

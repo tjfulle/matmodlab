@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 from __config__ import cfg, RESTART
-import core.io as io
+import core.mmlio as io
 from drivers.driver import create_driver
 
 class PhysicsHandler(object):

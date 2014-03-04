@@ -1,36 +1,5 @@
-#!/usr/bin/python
-import os
+#!/usr/bin/env python
 import sys
-import argparse
-
-gmd_d = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(gmd_d, 'utils', 'exo'))
-
-import exodump
-
-
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv[1:]
-    parser = argparse.ArgumentParser()
-    parser.add_argument("source")
-    parser.add_argument("-o",
-        help="Output file name [default: basename(source).out]")
-    parser.add_argument("--variables", action="append",
-        help="Variables to dump [default: ALL]")
-    parser.add_argument("--list", default=False, action="store_true",
-        help="List variable names and exit")
-    parser.add_argument("--ffmt",
-        help="Output floating point format [default: .18f]")
-    parser.add_argument("--ofmt", default="ascii", choices=exodump.OFMTS.keys(),
-        help="Output format [default: %(default)s]")
-    parser.add_argument("--step", default=1, type=int,
-        help="Step [default: %(default)s]")
-    args = parser.parse_args(argv)
-    return exodump.exodump(args.source, outfile=args.o,
-                        variables=args.variables, listvars=args.list,
-                        ffmt=args.ffmt, ofmt=args.ofmt, step=args.step)
-
-
-if __name__ == '__main__':
-    sys.exit(main())
+import _setup
+from utils.exo.exodump import main
+sys.exit(main(argv=sys.argv[1:]))

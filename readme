@@ -1,10 +1,11 @@
 Building
 ########
 
-material model laboratory (matmodlab) is an object oriented model driver. The
-majority of the source code is written in Python and requires no additional
-building. Many of the material models, however, are written in Fortran and
-require a seperate compile step.
+The material model laboratory (matmodlab) is an object oriented model driver.
+The majority of the source code is written in Python and requires no
+additional building. Many of the material models, however, are written in
+Fortran and require a seperate compile step. The compiling step is handled
+dynamically at the time of material instantiation.
 
 
 System Requirements
@@ -45,23 +46,20 @@ Installation
 #) [Optional] Set the ``MMLMTLS`` environment variable to point to directories
    containing additional material models (user developed, not part of *matmodlab*).
 
-#) run::
 
-        % PYTHON setup.py build_all
+Executables
+===========
 
-   where ``PYTHON`` is the python interpreter that has *NumPy* and *SciPy*
-   installed. :file:`setup.py` will build materials, and optional fortran utilities
-   and write the following executable scripts::
+The following executable scripts provide the user interface::
 
-       GMD_ROOT
-         toolset/
-           buildmtls
-           mmd
-           exdiff
-           exdump
-           mml
-           mmv
-           runtests
+  toolset/
+    build
+    mmd
+    exdiff
+    exdump
+    mml
+    mmv
+    runtests
 
 Testing the Installation
 ========================

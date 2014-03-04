@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-from core.io import log_error
+from core.mmlio import log_error
 from materials._material import Material
 
 

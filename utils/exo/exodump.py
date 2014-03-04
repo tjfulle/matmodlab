@@ -15,6 +15,29 @@ class ExoDumpError(Exception):
         raise SystemExit(1)
 
 
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source")
+    parser.add_argument("-o",
+        help="Output file name [default: basename(source).out]")
+    parser.add_argument("--variables", action="append",
+        help="Variables to dump [default: ALL]")
+    parser.add_argument("--list", default=False, action="store_true",
+        help="List variable names and exit")
+    parser.add_argument("--ffmt",
+        help="Output floating point format [default: .18f]")
+    parser.add_argument("--ofmt", default="ascii", choices=exodump.OFMTS.keys(),
+        help="Output format [default: %(default)s]")
+    parser.add_argument("--step", default=1, type=int,
+        help="Step [default: %(default)s]")
+    args = parser.parse_args(argv)
+    return exodump.exodump(args.source, outfile=args.o,
+                           variables=args.variables, listvars=args.list,
+                           ffmt=args.ffmt, ofmt=args.ofmt, step=args.step)
+
+
 def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
             ffmt=None, ofmt="ascii"):
     """Read the exodus file in filepath and dump the contents to a columnar data
@@ -186,6 +209,5 @@ def expand_var_names(master, slave):
     return matches
 
 
-if __name__ == "__main__":
-    sys.exit("ERROR: {0} is not intended to be run from the command line".
-                                                         format(__file__))
+if __name__ == '__main__':
+    sys.exit(main())

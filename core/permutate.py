@@ -9,7 +9,7 @@ import numpy as np
 import multiprocessing as mp
 from itertools import izip, product
 
-import core.io as io
+import core.mmlio as io
 from __config__ import cfg
 from utils.mmltab import MMLTabularWriter
 from utils.pprepro import find_and_make_subs

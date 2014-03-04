@@ -7,7 +7,7 @@ import shutil
 import datetime
 
 from __config__ import cfg
-import core.io as io
+import core.mmlio as io
 from utils.respfcn import evaluate_response_function
 from utils.mmltab import MMLTabularWriter
 import utils.pprepro as pprepro

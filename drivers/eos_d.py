@@ -8,7 +8,7 @@ from itertools import product
 from __config__ import cfg, RESTART
 import utils.xmltools as xmltools
 from drivers.driver import Driver
-from core.io import fatal_inp_error, input_errors, log_message, log_error, Error1
+from core.mmlio import fatal_inp_error, input_errors, log_message, log_error, Error1
 
 
 np.set_printoptions(precision=4)

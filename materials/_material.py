@@ -1,6 +1,6 @@
 import numpy as np
 
-from core.io import Error1, log_warning
+from core.mmlio import Error1, log_warning
 try:
     from lib.mmlabpack import mmlabpack
 except ImportError:

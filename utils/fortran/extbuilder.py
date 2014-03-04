@@ -11,16 +11,13 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
-from __config__ import FFLAGS, PKG_D
+from __config__ import FFLAGS, PKG_D, PATH, cout
 
 D = os.path.dirname(os.path.realpath(__file__))
-PATH = os.getenv("PATH").split(os.pathsep)
 
 
-class FortranNotFoundError(Exception):
-    pass
-
-
+class ExtModuleNotBuilt(Exception): pass
+class FortranNotFoundError(Exception): pass
 class FortranExtBuilder(object):
     """Interface with numpy distutils to build fortran extension modules in
     place
@@ -28,10 +25,10 @@ class FortranExtBuilder(object):
     """
     def __init__(self, name, fc=None, verbosity=1):
         # find fortran compiler
+        if fc is None:
+            fc = which(os.getenv("FC", "gfortran"))
         if not fc:
-            fc = which("gfortran")
-            if not fc:
-                raise FortranNotFoundError("no fortran compiler found")
+            raise FortranNotFoundError("no fortran compiler found")
         fc = os.path.realpath(fc)
         if not os.path.isfile(fc):
             raise FortranNotFoundError("{0}: fortran compiler "
@@ -42,8 +39,10 @@ class FortranExtBuilder(object):
                                     package_path=PKG_D)
         self.quiet = verbosity < 2
         self.silent = verbosity < 1
-        self.exts_to_build = 0
-        self.ext_moduls_built = False
+        self.exts_built = []
+        self.exts_failed = []
+        self.exts_to_build = []
+        self.ext_modules_built = False
 
     def add_extension(self, name, sources, **kwargs):
         """Add an extension module to build"""
@@ -51,24 +50,28 @@ class FortranExtBuilder(object):
         if kwargs.get("requires_lapack"):
             lapack = self._find_lapack()
             if not lapack:
-                print("*** warning: {0}: required lapack package "
-                      "not found, skipping".format(name))
+                cout("*** warning: {0}: required lapack package "
+                     "not found, skipping".format(name))
                 return -1
             options.update(lapack)
         idirs = kwargs.get("include_dirs")
         if idirs:
             options["include_dirs"] = idirs
         self.config.add_extension(name, sources=sources, **options)
-        self.exts_to_build += 1
+        self.exts_to_build.append(name)
         return
 
     def build_extension_modules(self, verbosity=1):
         """Build all extension modules in config"""
+        if not self.exts_to_build:
+            return
         if self.quiet:
             # redirect stderr and stdout
             sys.stdout = open(os.devnull, "w")
             sys.stderr = open(os.devnull, "a")
 
+        cwd = os.getcwd()
+        os.chdir(PKG_D)
         # change sys.argv for distutils
         hold = [x for x in sys.argv]
         fexec = "--f77exec={0} --f90exec={0}".format(self.fc)
@@ -88,21 +91,24 @@ class FortranExtBuilder(object):
 
         # move files
         self.logmes("Staging extension module[s]", end="... ")
-        self.built_ext_modules = [] # list of built shared objects
         d = self.config.package_dir[self.config.name]
         for mod in glob.glob(d + "/*.so"):
-            built_module = os.path.splitext(os.path.basename(mod))[0]
-            self.built_ext_modules.append(built_module)
+            self.exts_built.append(module_name(mod))
+        self.exts_failed = [n for n in self.exts_to_build
+                            if n not in self.exts_built]
         self.ext_modules_built = True
+        self.exts_to_build = []
         self.logmes("done")
+        if self.exts_failed:
+            raise ExtModuleNotBuilt("{0}: failed to build".format(
+                    ", ".join(self.exts_failed)))
+        os.chdir(cwd)
         return
 
     def logmes(self, message, end="\n"):
         """Write message to stdout """
         if not self.silent:
-            sys.__stdout__.write(message + end)
-            sys.__stdout__.flush()
-
+            cout(message, end=end)
 
     @staticmethod
     def _find_lapack():
@@ -116,10 +122,16 @@ class FortranExtBuilder(object):
                 return lapack
 
 
+def module_name(filepath):
+    return os.path.splitext(os.path.basename(filepath))[0]
+
+
 def which(exe):
     """Python implementation of unix which command
 
     """
+    if os.path.isfile(exe):
+        return exe
     for d in PATH:
         x = os.path.join(d, exe)
         if os.path.isfile(x):

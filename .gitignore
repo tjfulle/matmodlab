@@ -28,16 +28,3 @@ lib/*.so
 
 TestResults.*
 .built
-
-toolset/gmd
-toolset/mmd
-toolset/mml
-toolset/wpython
-toolset/buildmtls
-toolset/runtests
-toolset/gmddump
-toolset/exdump
-toolset/gmdviz
-toolset/mmv
-toolset/gmddiff
-toolset/exdiff

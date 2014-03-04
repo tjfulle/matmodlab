@@ -8,7 +8,7 @@ try:
     from lib.mmlabpack import mmlabpack
 except ImportError:
     import utils.mmlabpack as mmlabpack
-import core.io as io
+import core.mmlio as io
 
 EPS = np.finfo(np.float).eps
 

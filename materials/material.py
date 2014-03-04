@@ -3,8 +3,8 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
-from __config__ import F_MTL_MODEL_DB, UMATS
-from core.io import Error1
+from __config__ import UMATS, PKG_D, SO_EXT
+from core.mmlio import Error1
 from utils.impmod import load_file
 
 D = os.path.dirname(os.path.realpath(__file__))
@@ -22,7 +22,13 @@ class _Material:
         for (k, v) in kwargs.items():
             if k == "class": k = "class_name"
             setattr(self, k, v)
+
         self.python_model = not self.source_files
+        if not self.python_model:
+            self.so_lib = os.path.join(PKG_D, self.name + SO_EXT)
+        else:
+            self.so_lib = None
+        pass
 
     def __getitem__(self, attr):
         return self.__dict__[attr]
@@ -33,6 +39,12 @@ class _Material:
     @property
     def dirname(self):
         return os.path.dirname(self.interface_file)
+
+    @property
+    def so_exists(self):
+        if self.python_model:
+            return True
+        return os.path.isfile(self.so_lib)
 
     def instantiate_material(self, params, options):
         """Instantiate the material model"""
@@ -47,23 +59,10 @@ class _Material:
 
         return mat
 
-    def create_material(matname, matparams, matopts):
-        """Create a material object from the material name
-
-        """
-        # Instantiate the material object
-        material = self.get_material_from_db(matname)
-        if material is None:
-            return
-        mtlmod = load_file(material.interface_file)
-        mclass = getattr(mtlmod, material.class_name)
-
-
 
 class MaterialDB(object):
     """Holder for material info"""
     _xmldb = None
-    db_file = F_MTL_MODEL_DB
     def __init__(self, *materials):
         """
 
@@ -136,45 +135,21 @@ class MaterialDB(object):
 
     def get_material_from_db(cls, matname):
         matname = matname.lower()
-        mtldb = cls.gen_from_xmldb()
+        mtldb = cls.gen_db()
         for m in mtldb.materials:
             if m.name == matname:
                 return m
 
-    def write_db(self, wipe=False):
-        """Write the F_MTL_MODEL_DB database file
-
-        """
-        if wipe and os.path.isfile(F_MTL_MODEL_DB):
-            os.remove(F_MTL_MODEL_DB)
-
-        # read in previously created db since it may differ from the current db
-        mats_from_db = _read_db()
-        if not mats_from_db:
-            mats_from_db = []
-
-        for mat in mats_from_db:
-            self.put(mat)
-
-        doc = xdom.Document()
-        root = doc.createElement("Materials")
-
-        for material in self._materials:
-            # create element
-            child = doc.createElement("Material")
-            for (key, val) in material.items():
-                child.setAttribute(key, "{0}".format(val))
-            root.appendChild(child)
-
-        doc.appendChild(root)
-        doc.writexml(open(F_MTL_MODEL_DB, "w"), addindent="  ", newl="\n")
-        doc.unlink()
-        return
-
     @classmethod
-    def gen_from_xmldb(cls):
-        materials = _read_db()
-        return cls(*materials)
+    def gen_db(cls):
+        db = cls.gen_from_search()
+        for mat in db:
+            # instantiate the material to get param names
+            mtlmod = load_file(mat.interface_file)
+            mtlmdl = getattr(mtlmod, mat.class_name)
+            mat.parse_table = mtlmdl.param_parse_table()
+            del mtlmdl
+        return db
 
     @classmethod
     def gen_from_search(cls, mats_to_build="all"):
@@ -229,33 +204,3 @@ class MaterialDB(object):
             materials.append(_Material(name, **conf))
 
         return cls(*materials)
-
-def _read_db():
-    """Read the material xml db
-
-    """
-    materials = []
-    try:
-        doc = xdom.parse(F_MTL_MODEL_DB)
-    except IOError:
-        return
-    mats = doc.getElementsByTagName("Materials")[0]
-    for mtl in mats.getElementsByTagName("Material"):
-        name = str(mtl.attributes.getNamedItem("name").value).lower()
-        ad = {}
-        for (key, val) in mtl.attributes.items():
-            if key == "name": continue
-            try:
-                ad[key] = eval(val)
-            except (NameError, SyntaxError):
-                ad[key] = "{0}".format(val)
-
-        # instantiate the material to get param names
-        mtlmod = load_file(ad["interface_file"])
-        mtlmdl = getattr(mtlmod, ad["class_name"])
-        ad["parse_table"] = mtlmdl.param_parse_table()
-        del mtlmdl
-        materials.append(_Material(name, **ad))
-    doc.unlink()
-    return materials
-

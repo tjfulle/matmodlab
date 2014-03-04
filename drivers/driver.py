@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import xml.dom.minidom as xdom
 
-from core.io import Error1
+from core.mmlio import Error1
 from utils.impmod import load_file
 from utils.namespace import Namespace
 

@@ -1,7 +1,7 @@
 import numpy as np
 
 from materials._material import Material
-from core.io import Error1, log_error, log_message
+from core.mmlio import Error1, log_error, log_message
 
 class VonMises(Material):
     name = "vonmises"
@@ -30,7 +30,7 @@ class VonMises(Material):
         # Register State Variables
         self.sv_names = ["EQPS", "Y", "BS_XX", "BS_YY", "BS_ZZ", "BS_XY", "BS_XZ", "BS_YZ"]
         self.sv_values = [0.0, self.Y0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        
+
         self.register_xtra_variables(self.sv_names)
         self.set_initial_state(self.sv_values)
 

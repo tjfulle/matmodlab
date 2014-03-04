@@ -8,12 +8,12 @@ import argparse
 import multiprocessing as mp
 from os.path import splitext
 
-from __config__ import cfg, SPLASH, ROOT_D, LIB_D
+from __config__ import cfg, SPLASH, ROOT_D, LIB_D, PKG_D
 import core.inpparse as inp
 from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
 from core.optimize import OptimizationHandler
-from core.io import Error1 as Error1, input_errors
+from core.mmlio import Error1 as Error1, input_errors
 
 FILE = os.path.realpath(__file__)
 ALPHA = (x for x in string.ascii_letters)
@@ -40,7 +40,7 @@ def main(argv=None):
     parser.add_argument("-V", default=False, action="store_true",
        help="Launch simulation visualizer on completion [default: %(default)s]")
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument("-B", metavar="material", action="append",
+    parser.add_argument("-B", metavar="material",
         help="Build material model[s] before running [default: %(default)s]")
     parser.add_argument("--clean", const=1, default=False, nargs="?",
         help=argparse.SUPPRESS)
@@ -61,14 +61,12 @@ def main(argv=None):
         sys.stdout.flush()
 
     if args.B:
-        from setup import build_material
-        for mtl in args.B:
-            if os.path.isfile(os.path.join(LIB_D, "{0}.so".format(mtl))):
-                os.remove(os.path.join(LIB_D, "{0}.so".format(mtl)))
+        mtl = args.B.strip()
+        from utils.builder import Builder
         verbosity = 3 if args.v > 1 else 0
-        b = build_material(args.B, verbosity=verbosity)
-        if b != 0:
-            raise SystemExit("failed to build")
+        if os.path.isfile(os.path.join(PKG_D, "{0}.so".format(mtl))):
+            os.remove(os.path.join(PKG_D, "{0}.so".format(mtl)))
+        b = Builder.build_material(mtl, verbosity=verbosity)
 
     if args.p:
         tup = lambda a: (a[0].strip(), a[1].strip())
