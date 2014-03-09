@@ -2,9 +2,10 @@ import sys
 import random
 import os
 import datetime
-
-from enthought.traits.api import (HasStrictTraits, List, Instance, String,
-                                  Interface, Int)
+try: from enthought import *
+except ImportError: pass
+from traits.api import (HasStrictTraits, List, Instance, String,
+                        Interface, Int)
 
 from core.inpparse import parse_input
 from core.main import run_all_inputs

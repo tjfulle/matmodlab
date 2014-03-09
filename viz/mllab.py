@@ -1,10 +1,13 @@
-from enthought.traits.api import (HasStrictTraits, List, Instance, String,
-                                  BaseInt, Int, Float, Bool, Property, Button,
-                                  Constant, Enum, Tuple, File, on_trait_change)
-from enthought.traits.ui.api import (View, Label, Group, HGroup, VGroup, Item,
-                                     UItem, TabularEditor, InstanceEditor,
-                                     ListEditor, Spring, Action, Handler)
-from enthought.traits.ui.tabular_adapter import TabularAdapter
+try: from enthought import *
+except ImportError: pass
+
+from traits.api import (HasStrictTraits, List, Instance, String,
+                        BaseInt, Int, Float, Bool, Property, Button,
+                        Constant, Enum, Tuple, File, on_trait_change)
+from traits.ui.api import (View, Label, Group, HGroup, VGroup, Item,
+                           UItem, TabularEditor, InstanceEditor,
+                           ListEditor, Spring, Action, Handler)
+from traits.ui.tabular_adapter import TabularAdapter
 
 from viz.mdldat import MMLModel
 from viz.plot2d import ModelPlot, create_model_plot

@@ -7,26 +7,19 @@ import linecache
 import numpy as np
 import matplotlib.pyplot as plt
 
-try:
-    from enthought.chaco.example_support import COLOR_PALETTE
-    from enthought.enable.example_support import DemoFrame, demo_main
-    import enthought.enable.api as eapi
-    import enthought.traits.api as tapi
-    import enthought.traits.ui.api as tuiapi
-    import enthought.traits.ui.tabular_adapter as tuit
-    import enthought.chaco.api as capi
-    import enthought.chaco.tools.api as ctapi
-    import enthought.pyface.api as papi
-except ImportError:
-    from chaco.example_support import COLOR_PALETTE
-    from enable.example_support import DemoFrame, demo_main
-    import enable.api as eapi
-    import traits.api as tapi
-    import traitsui.api as tuiapi
-    import traitsui.tabular_adapter as tuit
-    import chaco.api as capi
-    import chaco.tools.api as ctapi
-    import pyface.api as papi
+# chaco and traits imports are in the enthought directory in EPD/Canopy
+try: from enthought import *
+except ImportError: pass
+
+from chaco.example_support import COLOR_PALETTE
+from enable.example_support import DemoFrame, demo_main
+import enable.api as eapi
+import traits.api as tapi
+import traitsui.api as tuiapi
+import traitsui.tabular_adapter as tuit
+import chaco.api as capi
+import chaco.tools.api as ctapi
+import pyface.api as papi
 
 from viz.colors import random_color
 from utils.exo.exofile import ExodusIIReader

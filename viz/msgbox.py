@@ -1,6 +1,8 @@
-from enthought.traits.api import HasTraits, List, Button, String, Dict
-from enthought.traits.ui.api import View, VGroup, HGroup, Label, UItem, Spring, Handler
-from enthought.traits.ui.menu import NoButtons
+try: from enthought import *
+except ImportError: pass
+from traits.api import HasTraits, List, Button, String, Dict
+from traits.ui.api import View, VGroup, HGroup, Label, UItem, Spring, Handler
+from traits.ui.menu import NoButtons
 
 
 class MessageBox(HasTraits):

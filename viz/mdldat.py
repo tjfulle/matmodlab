@@ -1,6 +1,9 @@
-from enthought.traits.api import HasStrictTraits, List, Instance, String, BaseInt, Int, Float, Bool, Property, Button, Constant, Enum, Event, Tuple, File, Dict, cached_property
-from enthought.traits.ui.api import View, Label, Group, HGroup, VGroup, Item, UItem, TabularEditor, TableEditor, InstanceEditor, ListEditor, Spring, ObjectColumn, EnumEditor, CheckListEditor
-from enthought.traits.ui.tabular_adapter import TabularAdapter
+try: from enthought import *
+except ImportError: pass
+
+from traits.api import HasStrictTraits, List, Instance, String, BaseInt, Int, Float, Bool, Property, Button, Constant, Enum, Event, Tuple, File, Dict, cached_property
+from traits.ui.api import View, Label, Group, HGroup, VGroup, Item, UItem, TabularEditor, TableEditor, InstanceEditor, ListEditor, Spring, ObjectColumn, EnumEditor, CheckListEditor
+from traits.ui.tabular_adapter import TabularAdapter
 
 import viz.vizutl as vu
 

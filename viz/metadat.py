@@ -1,6 +1,8 @@
 import uuid
+try: from enthought import *
+except ImportError: pass
 
-from enthought.traits.api import HasStrictTraits, String, List, File, Date, Time, Bool, Enum, Instance, Directory, Tuple
+from traits.api import HasStrictTraits, String, List, File, Date, Time, Bool, Enum, Instance, Directory, Tuple
 
 from viz.mdldat import MMLModel
 from viz.plot2d import ModelPlot
