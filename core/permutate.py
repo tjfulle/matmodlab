@@ -10,7 +10,7 @@ import multiprocessing as mp
 from itertools import izip, product
 
 import core.mmlio as io
-from __config__ import cfg
+from __config__ import cfg, MML_ENV
 from utils.mmltab import MMLTabularWriter
 from utils.pprepro import find_and_make_subs
 from utils.respfcn import evaluate_response_function, MML_RESP_FCN_RE
@@ -153,7 +153,8 @@ def run_single_job(args):
     io.log_message("starting job {0}/{1} with {2}".format(
         job_num + 1, NJOBS,
         ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
-    job = subprocess.Popen(cmd.split(), stdout=out, stderr=subprocess.STDOUT)
+    job = subprocess.Popen(cmd.split(), env=MML_ENV,
+                           stdout=out, stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
         io.log_message("*** error: job {0} failed".format(job_num + 1))

@@ -32,21 +32,21 @@ material = {"source_files": source_files,
             "class_name": "Plastic"}
 plastic = _Material("plastic", **material)
 
-# --- Elastic
-d = os.path.join(D, "elastic")
-source_files = [os.path.join(d, f) for f in
-                ("elastic_interface.f90", "elastic.f90", "elastic.pyf")]
-material = {"source_files": source_files,
-            "interface_file": os.path.join(d, "elastic.py"),
-            "class_name": "Elastic"}
-elastic = _Material("elastic", **material)
-
 # --- Pure python elastic model
 d = os.path.join(D, "pyelastic")
 material = {"source_files": None,
             "interface_file": os.path.join(d, "pyelastic.py"),
             "class_name": "PyElastic"}
 pyelastic = _Material("pyelastic", **material)
+
+# --- Elastic
+d = os.path.join(D, "elastic")
+source_files = [os.path.join(d, f) for f in
+                ("elastic_interface.f90", "elastic.f90", "elastic.pyf")]
+material = {"source_files": source_files,
+            "interface_file": os.path.join(d, "elastic.py"),
+            "class_name": "Elastic", "python_alternative": pyelastic}
+elastic = _Material("elastic", **material)
 
 # --- Pure python plastic model
 d = os.path.join(D, "vonmises")

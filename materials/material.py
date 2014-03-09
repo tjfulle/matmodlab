@@ -3,9 +3,8 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
-from __config__ import UMATS, PKG_D, SO_EXT
-from core.mmlio import Error1
 from utils.impmod import load_file
+import __config__ as cfg
 
 D = os.path.dirname(os.path.realpath(__file__))
 def cout(string):
@@ -18,6 +17,7 @@ class _Material:
         self.source_files = None
         self.requires_lapack = False
         self.include_dir = None
+        self.python_alternative = None
         self.name = name
         for (k, v) in kwargs.items():
             if k == "class": k = "class_name"
@@ -25,7 +25,7 @@ class _Material:
 
         self.python_model = not self.source_files
         if not self.python_model:
-            self.so_lib = os.path.join(PKG_D, self.name + SO_EXT)
+            self.so_lib = os.path.join(cfg.PKG_D, self.name + cfg.SO_EXT)
         else:
             self.so_lib = None
         pass
@@ -45,6 +45,11 @@ class _Material:
         if self.python_model:
             return True
         return os.path.isfile(self.so_lib)
+
+    @property
+    def ext_module(self):
+        if not self.so_lib: return
+        return os.path.basename(self.so_lib)
 
     def instantiate_material(self, params, options):
         """Instantiate the material model"""
@@ -89,6 +94,8 @@ class MaterialDB(object):
         return m
 
     def get(self, name):
+        if name in self._materials:
+            return material
         for material in self._materials:
             if name == material.name:
                 return material
@@ -133,16 +140,9 @@ class MaterialDB(object):
         """Directory names of all materials, can be used to set sys.path"""
         return [m.dirname for m in self._materials]
 
-    def get_material_from_db(cls, matname):
-        matname = matname.lower()
-        mtldb = cls.gen_db()
-        for m in mtldb.materials:
-            if m.name == matname:
-                return m
-
     @classmethod
-    def gen_db(cls):
-        db = cls.gen_from_search()
+    def gen_db(cls, search_dirs):
+        db = cls.gen_from_search(search_dirs)
         for mat in db:
             # instantiate the material to get param names
             mtlmod = load_file(mat.interface_file)
@@ -152,7 +152,7 @@ class MaterialDB(object):
         return db
 
     @classmethod
-    def gen_from_search(cls, mats_to_build="all"):
+    def gen_from_search(cls, search_dirs, mats_to_build="all"):
         """Gather all of the matmodlab materials
 
         Parameters
@@ -173,7 +173,7 @@ class MaterialDB(object):
             materials.append(mmats.conf(name))
 
         # --- user materials
-        for dirname in UMATS:
+        for dirname in search_dirs:
             if not os.path.isdir(dirname):
                 cout("  *** warning: {0}: no such directory".format(dirname))
                 continue

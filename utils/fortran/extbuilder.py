@@ -11,7 +11,7 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
-from __config__ import FFLAGS, PKG_D, PATH, cout
+import __config__ as cfg
 
 D = os.path.dirname(os.path.realpath(__file__))
 
@@ -26,7 +26,7 @@ class FortranExtBuilder(object):
     def __init__(self, name, fc=None, verbosity=1):
         # find fortran compiler
         if fc is None:
-            fc = which(os.getenv("FC", "gfortran"))
+            fc = cfg.FC
         if not fc:
             raise FortranNotFoundError("no fortran compiler found")
         fc = os.path.realpath(fc)
@@ -36,7 +36,7 @@ class FortranExtBuilder(object):
 
         self.fc = fc
         self.config = Configuration(name, parent_package="", top_path="",
-                                    package_path=PKG_D)
+                                    package_path=cfg.PKG_D)
         self.quiet = verbosity < 2
         self.silent = verbosity < 1
         self.exts_built = []
@@ -50,8 +50,8 @@ class FortranExtBuilder(object):
         if kwargs.get("requires_lapack"):
             lapack = self._find_lapack()
             if not lapack:
-                cout("*** warning: {0}: required lapack package "
-                     "not found, skipping".format(name))
+                cfg.cout("*** warning: {0}: required lapack package "
+                         "not found, skipping".format(name))
                 return -1
             options.update(lapack)
         idirs = kwargs.get("include_dirs")
@@ -71,13 +71,13 @@ class FortranExtBuilder(object):
             sys.stderr = open(os.devnull, "a")
 
         cwd = os.getcwd()
-        os.chdir(PKG_D)
+        os.chdir(cfg.PKG_D)
         # change sys.argv for distutils
         hold = [x for x in sys.argv]
         fexec = "--f77exec={0} --f90exec={0}".format(self.fc)
         sys.argv = "./setup.py config_fc {0}".format(fexec).split()
-        if FFLAGS:
-            fflags = " ".join(FFLAGS)
+        if cfg.FFLAGS:
+            fflags = " ".join(cfg.FFLAGS)
             fflags = "--f77flags='{0}' --f90flags='{0}'".format(fflags).split()
             sys.argv.extend(fflags)
         sys.argv.extend("build_ext -i".split())
@@ -108,7 +108,7 @@ class FortranExtBuilder(object):
     def logmes(self, message, end="\n"):
         """Write message to stdout """
         if not self.silent:
-            cout(message, end=end)
+            cfg.cout(message, end=end)
 
     @staticmethod
     def _find_lapack():
@@ -126,13 +126,3 @@ def module_name(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 
-def which(exe):
-    """Python implementation of unix which command
-
-    """
-    if os.path.isfile(exe):
-        return exe
-    for d in PATH:
-        x = os.path.join(d, exe)
-        if os.path.isfile(x):
-            return x

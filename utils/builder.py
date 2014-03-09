@@ -7,9 +7,8 @@ import shutil
 
 from utils.impmod import load_file
 from utils.int2str import int2str
-from materials.material import MaterialDB, _Material
 from utils.fortran.extbuilder import FortranExtBuilder
-from __config__ import ROOT_D, PKG_D, SO_EXT, FIO, cout
+from __config__ import ROOT_D, PKG_D, SO_EXT, FIO, MTL_DB, cout
 
 
 class BuilderError(Exception):
@@ -19,7 +18,6 @@ class BuilderError(Exception):
 class Builder(object):
     def __init__(self, name, fc=None, verbosity=1):
         self.fb = FortranExtBuilder(name, fc=fc, verbosity=verbosity)
-        self.mtldb = None
         pass
 
     def build_materials(self, mats_to_build="all"):
@@ -37,9 +35,9 @@ class Builder(object):
 
     @property
     def path(self):
-        if not self.mtldb:
+        if not MTL_DB:
             return []
-        return self.mtldb.path
+        return MTL_DB.path
 
 
     @staticmethod
@@ -52,9 +50,6 @@ class Builder(object):
           The name of the material to build
 
         """
-        if not isinstance(material, _Material):
-            mtldb = MaterialDB.gen_from_search(mats_to_build=[material])
-            material = mtldb.get(material)
         fb = FortranExtBuilder(material.name, verbosity=verbosity)
         cout("building {0}".format(material.name))
         material.source_files.append(FIO)
@@ -78,15 +73,14 @@ class Builder(object):
 
         """
         cout("Gathering material[s] to be built")
-        self.mtldb = MaterialDB.gen_from_search(mats_to_build=mats_to_build)
         cout("{0} material[s] found: {1}".format(
-                int2str(len(self.mtldb), c=True),
-                ", ".join(x for x in self.mtldb.materials)))
+                int2str(len(MTL_DB), c=True),
+                ", ".join(x for x in MTL_DB.materials)))
 
         if mats_to_build == "all":
-            mats_to_build = [m.name for m in self.mtldb]
+            mats_to_build = [m.name for m in MTL_DB]
 
-        for material in self.mtldb:
+        for material in MTL_DB:
             if material.name not in mats_to_build:
                 continue
             if material.python_model:
@@ -104,7 +98,7 @@ class Builder(object):
                 requires_lapack=material.requires_lapack)
             if stat:
                 # failed to add extension
-                self.mtldb.remove(material)
+                MTL_DB.remove(material)
 
         return
 

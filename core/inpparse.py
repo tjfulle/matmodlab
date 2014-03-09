@@ -6,7 +6,7 @@ from xml.etree.ElementTree import iterparse
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError as ExpatError
 
-from __config__ import cfg, F_MTL_PARAM_DB, RESTART
+import __config__ as cfg
 import utils.pprepro as pp
 from utils.mtldb import read_material_params_from_db
 from utils.fcnbldr import build_lambda, build_interpolating_function
@@ -15,7 +15,6 @@ from drivers.driver import isdriver, getdrvcls
 from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.mmlio import fatal_inp_error, input_errors
 from core.restart import read_exrestart_info
-from materials.material import MaterialDB
 
 _D = os.path.dirname(os.path.realpath(__file__))
 NOT_SPECIFIED = -64023
@@ -28,7 +27,7 @@ RAND = np.random.RandomState()
 
 class UserInputError(Exception):
     def __init__(self, message):
-        if cfg.debug:
+        if cfg.cfg.debug:
             raise Exception(message)
         sys.stderr.write("*** user input error: {0}\n".format(message))
         raise SystemExit(2)
@@ -331,9 +330,9 @@ def isnonnegative(a): return float(a) >= 0.
 def reservedfid(a): return int(a) in (ZERO_FCN_ID, CONST_FCN_ID)
 def isfile(a):
     if not os.path.isfile(a):
-        if not os.path.isfile(os.path.join(cfg.I, a)):
+        if not os.path.isfile(os.path.join(cfg.cfg.I, a)):
             return "{0}: no such file".format(a)
-        a = os.path.join(cfg.I, a)
+        a = os.path.join(cfg.cfg.I, a)
     return True, a
 def isint(a): return a.isdigit()
 def isnumber(a):
@@ -423,14 +422,19 @@ def inp2dict(parent, dom):
 
 
 def inp_warning(message):
-    sys.stderr.write("*** warning: {0}\n".format(message))
+    for line in message.split("\n"):
+        sys.stderr.write("*** warning: {0}\n".format(line))
+
+
+def inp_message(message):
+    sys.stdout.write(message + "\n")
 
 
 def read_matlabel(dom, model):
     """Read in the material parameters from a Matlabel
 
     """
-    dbfile = F_MTL_PARAM_DB
+    dbfile = cfg.F_MTL_PARAM_DB
     material = None
     for (n, v) in dom.attributes.items():
         if n == "href":
@@ -445,8 +449,8 @@ def read_matlabel(dom, model):
         return
 
     if not os.path.isfile(dbfile):
-        if os.path.isfile(os.path.join(cfg.I, dbfile)):
-            dbfile = os.path.join(cfg.I, dbfile)
+        if os.path.isfile(os.path.join(cfg.cfg.I, dbfile)):
+            dbfile = os.path.join(cfg.cfg.I, dbfile)
         else:
             fatal_inp_error("{0}: no such file".format(dbfile))
             return
@@ -524,7 +528,7 @@ def parse_input(filepath, argp=None, mtlswapdict=None):
 def parse_exo_input(source, time=-1):
     (runid, mtlmdl, mtlparams, dname, dpath, dopts, leg_num, time, glob_data,
      elem_data, extract) = read_exrestart_info(source, time=time)
-    dopts[0] = RESTART
+    dopts[0] = cfg.RESTART
     dopts.append([leg_num, time, glob_data, elem_data])
     driver = (dname, dpath, dopts)
     material = (mtlmdl, mtlparams, {}, [])
@@ -653,8 +657,7 @@ def pMaterial(mtldict, mtlswapdict=None):
         inp_warning("Swapping out model '{0}' for '{1}'".format(model, newmodel))
         model = newmodel
 
-    material_db = MaterialDB.gen_db()
-    mtlmdl = material_db.get(model)
+    mtlmdl = cfg.MTL_DB.get(model)
     if mtlmdl is None:
         fatal_inp_error("{0}: material not in database".format(model))
         return
@@ -663,7 +666,30 @@ def pMaterial(mtldict, mtlswapdict=None):
     if not mtlmdl.python_model and not mtlmdl.so_exists:
         # material shared object does not exist, let's build it now
         from utils.builder import Builder
-        Builder.build_material(mtlmdl)
+        from utils.fortran.extbuilder import FortranNotFoundError
+        if cfg.FC:
+            inp_warning("building the required extension library {0} for "
+                        "model {1}".format(mtlmdl.ext_module, mtlmdl.name))
+            Builder.build_material(mtlmdl)
+
+        else:
+            inp_warning(
+                "A fortran compiler is required to build and run the {0}\n"
+                "material model, but none was found. If a fortran compiler is\n"
+                "built on this system, set your PATH or FC environment\n"
+                "variables so that it can be found.".format(mtlmdl.name))
+
+            if mtlmdl.python_alternative:
+                # No fortran compiler, see if we should use the python alternative
+                resp = raw_input("Continue with the {0} model? (y/n)[n]? ".format(
+                        mtlmdl.python_alternative.name)).lower().strip()
+                if resp and resp[0] == "y":
+                    mtlmdl = cfg.MTL_DB.get(mtlmdl.python_alternative.name)
+                else:
+                    raise SystemExit()
+
+            else:
+                raise SystemExit()
 
     # parse_table -> dictionary of material property name:index
     # put the parameters in an array
