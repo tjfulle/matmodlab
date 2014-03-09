@@ -15,6 +15,7 @@ from drivers.driver import isdriver, getdrvcls
 from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.mmlio import fatal_inp_error, input_errors
 from core.restart import read_exrestart_info
+from utils.misc import timed_raw_input
 
 _D = os.path.dirname(os.path.realpath(__file__))
 NOT_SPECIFIED = -64023
@@ -681,9 +682,12 @@ def pMaterial(mtldict, mtlswapdict=None):
 
             if mtlmdl.python_alternative:
                 # No fortran compiler, see if we should use the python alternative
-                resp = raw_input("Continue with the {0} model? (y/n)[n]? ".format(
-                        mtlmdl.python_alternative.name)).lower().strip()
-                if resp and resp[0] == "y":
+                q = "Continue with the {0} model? (y/n)[n]? ".format(
+                    mtlmdl.python_alternative.name)
+                resp = timed_raw_input(q, timeout=8)
+                if resp is None:
+                    raise SystemExit("timed out")
+                elif resp.lower().strip()[0] == "y":
                     mtlmdl = cfg.MTL_DB.get(mtlmdl.python_alternative.name)
                 else:
                     raise SystemExit()
