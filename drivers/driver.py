@@ -4,7 +4,7 @@ import numpy as np
 import xml.dom.minidom as xdom
 
 from core.mmlio import Error1
-from utils.impmod import load_file
+from utils.misc import load_file
 from utils.namespace import Namespace
 
 D = os.path.dirname(os.path.realpath(__file__))

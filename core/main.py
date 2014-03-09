@@ -62,7 +62,7 @@ def main(argv=None):
 
     if args.B:
         mtl = args.B.strip()
-        from utils.builder import Builder
+        from core.builder import Builder
         verbosity = 3 if args.v > 1 else 0
         if os.path.isfile(os.path.join(PKG_D, "{0}.so".format(mtl))):
             os.remove(os.path.join(PKG_D, "{0}.so".format(mtl)))

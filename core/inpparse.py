@@ -666,7 +666,7 @@ def pMaterial(mtldict, mtlswapdict=None):
     # check if shared object exists for this material (if applicable)
     if not mtlmdl.python_model and not mtlmdl.so_exists:
         # material shared object does not exist, let's build it now
-        from utils.builder import Builder
+        from core.builder import Builder
         from utils.fortran.extbuilder import FortranNotFoundError
         if cfg.FC:
             inp_warning("building the required extension library {0} for "

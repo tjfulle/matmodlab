@@ -2,7 +2,7 @@ from viz.mdldat import (MMLModel, MMLModelParameter,
                         MMLMaterial, MMLMaterialParameter)
 from __config__ import F_MTL_PARAM_DB
 from utils.mtldb import read_all_material_params_from_db
-from utils.impmod import load_file
+from utils.misc import load_file
 from materials.material import read_mtldb
 
 

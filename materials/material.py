@@ -3,7 +3,7 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
-from utils.impmod import load_file
+from utils.misc import load_file
 import __config__ as cfg
 
 D = os.path.dirname(os.path.realpath(__file__))

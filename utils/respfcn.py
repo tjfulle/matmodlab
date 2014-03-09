@@ -4,6 +4,7 @@ import sys
 import subprocess
 import numpy as np
 from core.mmlio import fatal_inp_error
+from __config__ import MML_ENV
 
 MML_RESP_FCNS = {"max": np.amax, "min": np.amin, "mean": np.mean,
                  "ave": np.average,
@@ -27,8 +28,8 @@ def evaluate_response_function(respfcn, outfile, auxfiles=[]):
         return eval(respfcn, {"__builtins__": None}, MML_RESP_FCNS)
 
     cmd = "{0} {1} {2}".format(respfcn, outfile, " ".join(auxfiles))
-    job = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT)
+    job = subprocess.Popen(cmd.split(), env=MML_ENV,
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     job.wait()
     if job.returncode != 0:
         return None
