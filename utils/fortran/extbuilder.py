@@ -5,8 +5,10 @@ import sys
 import glob
 import shutil
 import warnings
+import subprocess
 
 # distutils
+import numpy as np
 from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
@@ -14,6 +16,8 @@ from numpy.distutils.core import setup
 import __config__ as cfg
 
 D = os.path.dirname(os.path.realpath(__file__))
+LAPACK = os.path.join(D, "blas_lapack-lite.f")
+LAPACK_OBJ = os.path.join(cfg.PKG_D, "blas_lapack-lite.o")
 
 
 class ExtModuleNotBuilt(Exception): pass
@@ -43,17 +47,24 @@ class FortranExtBuilder(object):
         self.exts_failed = []
         self.exts_to_build = []
         self.ext_modules_built = False
+        self._build_blas_lapack = False
 
     def add_extension(self, name, sources, **kwargs):
         """Add an extension module to build"""
         options = {}
-        if kwargs.get("requires_lapack"):
-            lapack = self._find_lapack()
-            if not lapack:
-                cfg.cout("*** warning: {0}: required lapack package "
-                         "not found, skipping".format(name))
-                return -1
-            options.update(lapack)
+        lapack = kwargs.get("requires_lapack")
+        if lapack:
+            if lapack == "lite":
+                self._build_blas_lapack = True
+                options["extra_objects"] = [LAPACK_OBJ]
+                options["extra_compile_args"] = ["-fPIC", "-shared"]
+            else:
+                lapack = self._find_lapack()
+                if not lapack:
+                    cfg.cout("*** warning: {0}: required lapack package "
+                             "not found, skipping".format(name))
+                    return -1
+                options.update(lapack)
         idirs = kwargs.get("include_dirs")
         if idirs:
             options["include_dirs"] = idirs
@@ -65,10 +76,15 @@ class FortranExtBuilder(object):
         """Build all extension modules in config"""
         if not self.exts_to_build:
             return
+        self.quiet = False
         if self.quiet:
             # redirect stderr and stdout
             sys.stdout = open(os.devnull, "w")
             sys.stderr = open(os.devnull, "a")
+
+        if self._build_blas_lapack:
+            self.build_blas_lapack()
+            self._build_blas_lapack = False
 
         cwd = os.getcwd()
         os.chdir(cfg.PKG_D)
@@ -120,6 +136,21 @@ class FortranExtBuilder(object):
                 lapack.setdefault("extra_compile_args", []).extend(
                     ["-fPIC", "-shared"])
                 return lapack
+
+    def build_blas_lapack(self):
+        """Build the blas_lapack-lite object
+
+        """
+        cfg.cout("Building blas_lapack-lite", end="... ")
+        cmd = [self.fc, "-fPIC", "-shared", "-O3", LAPACK, "-o" + LAPACK_OBJ]
+        build = subprocess.Popen(cmd, stdout=open(os.devnull, "a"),
+                                 stderr=subprocess.STDOUT)
+        build.wait()
+        if build.returncode == 0:
+            cfg.cout("done")
+        else:
+            cfg.cout("no")
+        return build.returncode
 
 
 def module_name(filepath):

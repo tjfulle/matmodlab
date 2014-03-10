@@ -20,7 +20,7 @@ d = os.path.join(D, "MooneyRivlin")
 source_files = [os.path.join(d, f) for f in ("mnrv.f90", "mnrv.pyf")]
 material = {"source_files": source_files,
             "interface_file": os.path.join(d, "mnrv.py"),
-            "requires_lapack": True, "class_name": "MooneyRivlin"}
+            "requires_lapack": "lite", "class_name": "MooneyRivlin"}
 mnrv = _Material("mnrv", **material)
 
 # --- Plastic (non functional at the moment)

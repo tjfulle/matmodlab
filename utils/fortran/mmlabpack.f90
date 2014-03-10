@@ -115,11 +115,9 @@ contains
     ! ----------------------------------------------------------------------- !
     real(kind=8) :: powm(3,3)
     real(kind=8), intent(in) :: a(3,3), m
-    integer, parameter :: n=3, lwork=3*n-1
-    real(kind=8) :: w(n), work(lwork), v(3,3), l(3,3)
-    integer :: info
+    integer, parameter :: n=3
+    real(kind=8) :: w(n), v(3,3), l(3,3)
     ! eigenvalues/vectors of a
-    v = a
     powm = zero
     if (isdiag(a)) then
        powm(1,1) = a(1,1) ** m
@@ -127,7 +125,8 @@ contains
        powm(3,3) = a(3,3) ** m
        return
     end if
-    call dsyev("V", "L", 3, v, 3, w, work, lwork, info)
+    v = a
+    CALL DSYEVV3(a, v, w)
     l = zero
     l(1,1) = w(1) ** m
     l(2,2) = w(2) ** m
@@ -143,9 +142,8 @@ contains
     ! ----------------------------------------------------------------------- !
     real(kind=8) :: sqrtm(3,3)
     real(kind=8), intent(in) :: a(3,3)
-    integer, parameter :: n=3, lwork=3*n-1
-    real(kind=8) :: w(n), work(lwork), v(3,3), l(3,3)
-    integer :: info
+    integer, parameter :: n=3
+    real(kind=8) :: w(n), v(3,3), l(3,3)
     sqrtm = zero
     if (isdiag(a)) then
        sqrtm(1,1) = sqrt(a(1,1))
@@ -155,7 +153,7 @@ contains
     end if
     ! eigenvalues/vectors of a
     v = a
-    call dsyev("V", "L", 3, v, 3, w, work, lwork, info)
+    CALL DSYEVV3(a, v, w)
     l = zero
     l(1,1) = sqrt(w(1))
     l(2,2) = sqrt(w(2))
@@ -171,9 +169,9 @@ contains
     ! ----------------------------------------------------------------------- !
     real(kind=8) :: logm(3,3)
     real(kind=8), intent(in) :: a(3,3)
-    integer, parameter :: n=3, lwork=3*n-1
-    real(kind=8) :: w(n), work(lwork), v(3,3), l(3,3)
-    integer :: info
+    integer, parameter :: n=3
+    real(kind=8) :: w(n), v(3,3), l(3,3)
+    logm = zero
     if (isdiag(a)) then
        logm = zero
        logm(1,1) = log(a(1,1))
@@ -183,7 +181,7 @@ contains
     end if
     ! eigenvalues/vectors of a
     v = a
-    call dsyev("V", "L", 3, v, 3, w, work, lwork, info)
+    CALL DSYEVV3(a, v, w)
     l = zero
     l(1,1) = log(w(1))
     l(2,2) = log(w(2))

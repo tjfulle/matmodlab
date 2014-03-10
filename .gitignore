@@ -11,7 +11,7 @@
 *.o
 build/
 *module.c
-tpl_built=True
+*.bak
 
 docs/auto
 docs/*.aux
