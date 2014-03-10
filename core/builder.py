@@ -59,8 +59,7 @@ class Builder(object):
         """
         ext = "mmlabpack"
         sources = [os.path.join(ROOT_D, "utils/fortran/mmlabpack.f90"),
-                   os.path.join(ROOT_D, "utils/fortran/dsyevv3.f"),
-                   os.path.join(ROOT_D, "utils/fortran/dsyevc3.f"),
+                   os.path.join(ROOT_D, "utils/fortran/dsyev3.f"),
                    os.path.join(ROOT_D, "utils/fortran/dgpadm.f")]
         self.fb.add_extension(ext, sources, requires_lapack="lite")
         return
