@@ -13,9 +13,12 @@ def det9(a):
 
 def det6(a):
     """ Determinant of 3x3 array stored as 6x1"""
-    return numpy.linalg.det(numpy.array([[a[0], a[1], a[2]],
-                                         [a[1], a[3], a[4]],
-                                         [a[2], a[4], a[5]]]))
+    return numpy.linalg.det(asmat(a))
+
+
+def det(a):
+    """ Determinant of 3x3 array stored as 6x1"""
+    return numpy.linalg.det(a)
 
 
 def dot(a, b):
@@ -41,7 +44,7 @@ def symarray(a):
                         mat[0, 1], mat[1, 2], mat[0, 2]])
 
 
-def asarray(a, n):
+def asarray(a, n=6):
     """Convert a 3x3 matrix to array form"""
     if n == 6:
         return symarray(a)
@@ -56,6 +59,10 @@ def as3x3(a):
     return numpy.array([[a[0], a[3], a[5]],
                         [a[3], a[1], a[4]],
                         [a[5], a[4], a[2]]])
+
+
+def asmat(a):
+    return as3x3(a)
 
 
 def expm(a):
@@ -206,4 +213,37 @@ def update_deformation(dt, k, farg, darg):
     return f, e
 
 
+def mag(a):
+    return numpy.sqrt(dbd(a, a))
 
+
+def dyad(a, b):
+    return numpy.array([a[0] * b[0], a[1] * b[1], a[2] * b[2],
+                        a[0] * b[1], a[1] * b[2], a[0] * b[2]],
+                       dtype=numpy.float64)
+
+def dbd(a, b):
+    # double of symmetric tensors stored as 6x1 arrays
+    w = numpy.array([1, 1, 1, 0, 0, 0], dtype=numpy.float64)
+    return numpy.sum(a * b * w)
+
+
+def trace(a):
+    return numpy.sum(a[:3])
+
+
+def get_invariants(a, n):
+    tra = numpy.trace(a)
+    maga = numpy.sqrt(numpy.sum(a * a))
+    deta = numpy.linalg.det(a)
+
+    b = numpy.zeros(5)
+    b[0] = tra
+    b[1] = .5 * (tra ** 2 - maga)
+    b[2] = deta
+
+    asq = numpy.dot(a, a)
+    b[3] = numpy.dot(numpy.dot(n, a), n)
+    b[4] = numpy.dot(numpy.dot(n, asq), n)
+
+    return b

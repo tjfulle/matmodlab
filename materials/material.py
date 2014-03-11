@@ -18,6 +18,7 @@ class _Material:
         self.requires_lapack = False
         self.include_dir = None
         self.python_alternative = None
+        self.abaqus_umat = False
         self.name = name
         for (k, v) in kwargs.items():
             if k == "class": k = "class_name"

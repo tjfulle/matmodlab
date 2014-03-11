@@ -466,4 +466,74 @@ contains
     return
   end function inv
 
+  ! ------------------------------------------------------------------------- !
+  function mag(a)
+    ! ----------------------------------------------------------------------- !
+    ! trace of symmetric tensor stored as 6x1 array
+    ! ----------------------------------------------------------------------- !
+    implicit none
+    real(kind=8) :: mag
+    real(kind=8), intent(in) :: a(6)
+    mag = sqrt(ddot(a, a))
+    return
+  end function mag
+
+  ! ------------------------------------------------------------------------- !
+  function dyad(a, b)
+    real(kind=8) :: dyad(6)
+    real(kind=8), intent(in) :: a(3), b(3)
+    dyad = (/a(1) * b(1), a(2) * b(2), a(3) * b(3), &
+             a(1) * b(2), a(2) * b(3), a(1) * b(3)/)
+    return
+  end function dyad
+
+  ! ------------------------------------------------------------------------- !
+  function ddot(a, b)
+    ! ----------------------------------------------------------------------- !
+    ! double of symmetric tensors stored as 6x1 arrays
+    ! ----------------------------------------------------------------------- !
+    implicit none
+    real(kind=8) :: ddot
+    real(kind=8), parameter :: w(6)=(/one,one,one,two,two,two/)
+    real(kind=8), intent(in) :: a(6), b(6)
+    ddot = sum(a * b * w)
+    return
+  end function ddot
+
+  function asmat(a)
+    implicit none
+    real(kind=8) :: asmat(3,3)
+    real(kind=8), intent(in) :: a(6)
+    asmat = as3x3(a)
+    return
+  end function asmat
+
+  function trace(a)
+    implicit none
+    real(kind=8) :: trace
+    real(kind=8), intent(in) :: a(6)
+    trace = sum(a(1:3))
+    return
+  end function trace
+
+  subroutine get_invariants(a, b, n)
+    implicit none
+    real(kind=8), intent(in) :: a(3,3), n(3)
+    real(kind=8), intent(out) :: b(5)
+    real(kind=8) :: asq(3,3), tra, maga, deta
+
+    tra = a(1, 1) + a(2, 2) + a(3, 3)
+    maga = sqrt(sum(a * a))
+    deta = det(a)
+
+    b(1) = tra
+    b(2) = .5 * (tra ** 2 - maga)
+    b(3) = deta
+
+    asq = matmul(a, a)
+    b(4) = dot_product(matmul(n, a), n)
+    b(5) = dot_product(matmul(n, asq), n)
+    return
+  end subroutine get_invariants
+
 end module mmlabpack

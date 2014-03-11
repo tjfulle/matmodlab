@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 import os
+import sys
+import glob
+import shutil
+import argparse
 
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
-from __config__ import ROOT_D, PKG_D, SO_EXT, FIO, MTL_DB, cout
+from __config__ import ROOT_D, PKG_D, SO_EXT, FIO, ABQIO, MTL_DB, cout
 
 
 class BuilderError(Exception):
@@ -68,13 +72,10 @@ class Builder(object):
         """Add fortran material models
 
         """
-        cout("Gathering material[s] to be built")
-        cout("{0} material[s] found: {1}".format(
-                int2str(len(MTL_DB), c=True),
-                ", ".join(x for x in MTL_DB.materials)))
-
         if mats_to_build == "all":
             mats_to_build = [m.name for m in MTL_DB]
+
+        cout("Material[s] to be built: {0}".format(", ".join(mats_to_build)))
 
         for material in MTL_DB:
             if material.name not in mats_to_build:
@@ -83,7 +84,10 @@ class Builder(object):
                 continue
 
             # assume fortran model if source files are given
-            material.source_files.append(FIO)
+            if material.abaqus_umat:
+                material.source_files.append(ABQIO)
+            else:
+                material.source_files.append(FIO)
             include_dirs = [material.dirname]
             d = material.include_dir
             if d and d not in include_dirs:
@@ -105,3 +109,48 @@ class Builder(object):
         self.fb.build_extension_modules()
         for ext in self.fb.exts_failed:
             cout("*** warning: {0}: failed to build".format(ext))
+
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    parser = argparse.ArgumentParser(prog="mmd")
+    parser.add_argument("-v", default=1, type=int,
+       help="Verbosity [default: %(default)s]")
+    parser.add_argument("-w", action="store_true", default=False,
+       help="Wipe before building [default: %(default)s]")
+    parser.add_argument("-W", action="store_true", default=False,
+       help="Wipe and exit [default: %(default)s]")
+    parser.add_argument("-m", nargs="+",
+       help="Materials to build [default: all]")
+    parser.add_argument("-u", action="store_true", default=False,
+       help="Build auxiliary support files only [default: all]")
+    args = parser.parse_args(argv)
+
+    builder = Builder("matmodlab")
+    if args.w or args.W:
+        for f in glob.glob(os.path.join(PKG_D, "*.so")):
+            os.remove(f)
+        bld_d = os.path.join(PKG_D, "build")
+        if os.path.isdir(bld_d):
+            shutil.rmtree(bld_d)
+        if args.W:
+            return 0
+        args.u = True
+
+    if args.u and args.m:
+        builder.build_all(mats_to_build=args.m)
+
+    elif args.u:
+        builder.build_utils()
+
+    elif args.m:
+        builder.build_materials(args.m)
+
+    else:
+        builder.build_all()
+
+    return 0
+
+if __name__ == "__main__":
+    main()

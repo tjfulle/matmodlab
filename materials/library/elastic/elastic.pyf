@@ -11,7 +11,7 @@ python module mml__user__routines
             intent(callback) log_error
             character*(*) :: message
             real intent(callback) :: log_message
-        end subroutine report_and_raise_error
+        end subroutine log_error
     end interface mml_user_interface
 end python module mml__user__routines
 

@@ -12,6 +12,7 @@
 build/
 *module.c
 *.bak
+*mod
 
 docs/auto
 docs/*.aux

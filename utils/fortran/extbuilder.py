@@ -76,7 +76,6 @@ class FortranExtBuilder(object):
         """Build all extension modules in config"""
         if not self.exts_to_build:
             return
-        self.quiet = False
         if self.quiet:
             # redirect stderr and stdout
             sys.stdout = open(os.devnull, "w")

@@ -130,7 +130,7 @@ class Material(object):
 
         # local variables
         nv = len(v)
-        deps =  np.sqrt(np.finfo(np.float).eps)
+        deps =  np.sqrt(np.finfo(np.float64).eps)
         Jsub = np.zeros((nv, nv))
         dt = 1 if dt == 0. else dt
         f = args[0]
@@ -220,3 +220,4 @@ class Material(object):
 
     def constant_jacobian(self, v=np.arange(6)):
         return self._jacobian[[[x] for x in v], v]
+
