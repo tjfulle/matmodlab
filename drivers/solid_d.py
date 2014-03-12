@@ -444,6 +444,8 @@ def parse_path_table(lines, tfmt, cols, cfmt):
     for line in lines:
         if not line:
             continue
+        if line[0].strip().startswith("#"):
+            continue
         try:
             line = [float(x) for x in line]
         except ValueError:

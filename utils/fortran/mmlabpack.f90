@@ -89,7 +89,7 @@ contains
     ! ----------------------------------------------------------------------- !
     real(kind=8) :: expm(3,3)
     real(kind=8), intent(in) :: a(3,3)
-    integer, parameter :: m=3, ldh=3, ideg=7, lwsp=4*m*m+ideg+1
+    integer, parameter :: m=3, ldh=3, ideg=6, lwsp=4*m*m+ideg+1
     real(kind=8) :: t, wsp(lwsp)
     integer :: ipiv(m), iexph, ns, iflag
     expm = zero
@@ -115,9 +115,11 @@ contains
     ! ----------------------------------------------------------------------- !
     real(kind=8) :: powm(3,3)
     real(kind=8), intent(in) :: a(3,3), m
-    integer, parameter :: n=3
-    real(kind=8) :: w(n), v(3,3), l(3,3)
+    integer, parameter :: n=3, lwork=3*n-1
+    real(kind=8) :: w(n), work(lwork), v(3,3), l(3,3)
+    integer :: info
     ! eigenvalues/vectors of a
+    v = a
     powm = zero
     if (isdiag(a)) then
        powm(1,1) = a(1,1) ** m
@@ -125,8 +127,7 @@ contains
        powm(3,3) = a(3,3) ** m
        return
     end if
-    v = a
-    CALL DSYEVV3(a, v, w)
+    call DSYEV("V", "L", 3, v, 3, w, work, lwork, info)
     l = zero
     l(1,1) = w(1) ** m
     l(2,2) = w(2) ** m
@@ -142,8 +143,9 @@ contains
     ! ----------------------------------------------------------------------- !
     real(kind=8) :: sqrtm(3,3)
     real(kind=8), intent(in) :: a(3,3)
-    integer, parameter :: n=3
-    real(kind=8) :: w(n), v(3,3), l(3,3)
+    integer, parameter :: n=3, lwork=3*n-1
+    real(kind=8) :: w(n), work(lwork), v(3,3), l(3,3)
+    integer :: info
     sqrtm = zero
     if (isdiag(a)) then
        sqrtm(1,1) = sqrt(a(1,1))
@@ -153,7 +155,7 @@ contains
     end if
     ! eigenvalues/vectors of a
     v = a
-    CALL DSYEVV3(a, v, w)
+    call DSYEV("V", "L", 3, v, 3, w, work, lwork, info)
     l = zero
     l(1,1) = sqrt(w(1))
     l(2,2) = sqrt(w(2))
@@ -169,9 +171,9 @@ contains
     ! ----------------------------------------------------------------------- !
     real(kind=8) :: logm(3,3)
     real(kind=8), intent(in) :: a(3,3)
-    integer, parameter :: n=3
-    real(kind=8) :: w(n), v(3,3), l(3,3)
-    logm = zero
+    integer, parameter :: n=3, lwork=3*n-1
+    real(kind=8) :: w(n), work(lwork), v(3,3), l(3,3)
+    integer :: info
     if (isdiag(a)) then
        logm = zero
        logm(1,1) = log(a(1,1))
@@ -181,7 +183,7 @@ contains
     end if
     ! eigenvalues/vectors of a
     v = a
-    CALL DSYEVV3(a, v, w)
+    call DSYEV("V", "L", 3, v, 3, w, work, lwork, info)
     l = zero
     l(1,1) = log(w(1))
     l(2,2) = log(w(2))
@@ -520,17 +522,16 @@ contains
     implicit none
     real(kind=8), intent(in) :: a(3,3), n(3)
     real(kind=8), intent(out) :: b(5)
-    real(kind=8) :: asq(3,3), tra, maga, deta
-
+    real(kind=8) :: asq(3,3), tra, trasq, deta
+    asq = matmul(a, a)
     tra = a(1, 1) + a(2, 2) + a(3, 3)
-    maga = sqrt(sum(a * a))
+    trasq = asq(1, 1) + asq(2, 2) + asq(3, 3)
     deta = det(a)
 
     b(1) = tra
-    b(2) = .5 * (tra ** 2 - maga)
+    b(2) = .5 * (tra ** 2 - trasq)
     b(3) = deta
 
-    asq = matmul(a, a)
     b(4) = dot_product(matmul(n, a), n)
     b(5) = dot_product(matmul(n, asq), n)
     return

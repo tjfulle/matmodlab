@@ -37,7 +37,7 @@ SIZE = (700, 600)
 LS = ['solid', 'dot dash', 'dash', 'dot', 'long dash']
 F_EVALDB = "mml-evaldb.xml"
 L_EXO_EXT = [".exo", ".base_exo", ".e"]
-L_DAT_EXT = [".out",]
+L_DAT_EXT = [".out", ".dat"]
 L_REC_EXT = L_EXO_EXT + L_DAT_EXT
 XY_DATA = None
 

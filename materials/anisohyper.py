@@ -52,12 +52,12 @@ class AnisoHyper(Material):
         fieldv = np.zeros(numfieldv)
         fieldvinc = np.zeros(numfieldv)
 
-        hold = Ainv[2]
         Ainv[2] = J
+        Ainv[2] = 1.
+        # tjf: derivatives seem to be wrong wrt J
         resp = self.update_state_anisohyper(Ainv, zeta, nfibers, temp, noel,
                                             cmname, incmpflag, ihybflag,
                                             statev, fieldv, fieldvinc)
-        Ainv[2] = hold
         ua, ui1, ui2, ui3 = resp
 
         # convert C to 6x1
@@ -91,10 +91,11 @@ class AnisoHyper(Material):
         dWdI = np.zeros(5, dtype=np.float64)
         for i in range(5):
             # dWdI_i = dWdIb_i dIbdI_i
-            dWdI[i] = np.sum([dWdIb[j] * dIbdI[j, i] for j in range(5)])
+            dWdI[i] = np.sum([dWdIb[k] * dIbdI[k, i] for k in range(5)])
 
         dWdC = np.zeros(6, dtype=np.float64)
         for ij in range(6):
+            # dWdC_ij = dWdI_k dIC_k
             dWdC[ij] = np.sum([dWdI[k] * dIdC[k, ij] for k in range(5)])
 
         dWdC = mmlabpack.asmat(dWdC)
@@ -113,26 +114,17 @@ class AnisoHyper(Material):
         N = self.fiber_direction
         n = np.dot(C, N)
 
+        Identity = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
+        trC = np.trace(C)
+        invC = mmlabpack.inv(C)
+        detC = mmlabpack.det(C)
+
         dIdC = np.zeros((5, 6), dtype=np.float64)
-        dIdC[0] = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
-
-        dIdC[1] = np.array([C[1, 1] + C[2, 2],
-                            C[0, 0] + C[2, 2],
-                            C[0, 0] + C[1, 1],
-                            -C[0, 1], -C[0, 2], -C[1, 2]])
-
-        dIdC[2] = np.array([C[1, 1] * C[2, 2] - C[1, 2] * C[2, 1],
-                            C[0, 0] * C[2, 2] - C[0, 2] * C[2, 0],
-                            C[0, 0] * C[1, 1] - C[0, 1] * C[1, 0],
-                            C[1, 2] * C[2, 0] - C[2, 2] * C[1, 0],
-                            C[0, 1] * C[2, 0] - C[0, 0] * C[2, 1],
-                            C[2, 1] * C[1, 0] - C[1, 1] * C[2, 0]],
-                           dtype=np.float64)
-
+        dIdC[0] = Identity
+        dIdC[1] = trC * Identity - mmlabpack.asarray(C, 6)
+        dIdC[2] = detC * mmlabpack.asarray(invC, 6)
         dIdC[3] = mmlabpack.dyad(N, N)
-
         dIdC[4] = mmlabpack.dyad(N, n) + mmlabpack.dyad(n, N)
-
         return dIdC
 
     def _get_dIbdI(self, C):
@@ -142,30 +134,23 @@ class AnisoHyper(Material):
         N = self.fiber_direction
 
         # Invariants of C
-        Cinv = mmlabpack.get_invariants(C, N)
-        I3b = Cinv[2] ** (-1. / 3.)
+        I1, I2, I3, I4, I5 = mmlabpack.get_invariants(C, N)
+        I3b = I3 ** (-1. / 3.)
 
         # Derivative of Ibi wrt Ij
         dIbdI = np.zeros((5, 5), dtype=np.float64)
         dIbdI[0, 0] = I3b
-        dIbdI[0, 2] = -1. / 3. * Cinv[0] * I3b ** 2
+        dIbdI[0, 2] = -1. / 3. * I1 * I3b ** 4
 
         dIbdI[1, 1] = I3b ** 2
-        dIbdI[1, 2] = -2. / 3. * Cinv[1] * I3b ** 5
+        dIbdI[1, 2] = -2. / 3. * I2 * I3b ** 5
 
-        dIbdI[2, 2] = .5 * Cinv[2] ** (-1. / 2.)
+        dIbdI[2, 2] = .5 * I3 ** (-.5)
 
-        dIbdI[3, 2] = -1. / 3. * Cinv[3] * I3b ** 2
+        dIbdI[3, 2] = -1. / 3. * I4 * I3b ** 4
         dIbdI[3, 3] = I3b
 
-        dIbdI[4, 2] = -2. / 3. * Cinv[4] * I3b ** 5
+        dIbdI[4, 2] = -2. / 3. * I5 * I3b ** 5
         dIbdI[4, 4] = I3b ** 2
 
         return dIbdI
-
-
-def symdotv(a, b):
-    return np.array([a[0] * b[0] + a[3] * b[1] + a[5] * b[2],
-                     a[3] * b[0] + a[1] * b[1] + a[4] * b[2],
-                     a[5] * b[0] + a[4] * b[1] + a[2] * b[2]],
-                    dtype=np.float64)
