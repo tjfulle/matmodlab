@@ -5,22 +5,19 @@ try:
     from lib.mmlabpack import mmlabpack
 except ImportError:
     import utils.mmlabpack as mmlabpack
-from materials._material import Material
+from materials.material import Material
 
 
 class AnisoHyper(Material):
-
     def setup_new_material(self, params):
         self.fiber_direction = np.array([1,0,0], dtype=np.float64)
-        self.iparams = np.array(params)
-        self.params = np.array(params)
-        self.setup()
+        super(AnisoHyper, self).setup_new_material(params)
 
     def jacobian(self, dt, d, sig, xtra, v, *args):
         return self.constant_jacobian(v)
 
     def update_state(self, dt, d, stress, xtra, *args, **kwargs):
-        """Update the state of an anisotropic hyperelastic model.  Implementation
+        """Update the state of an abaqus umat model.  Implementation
         based on Abaqus conventions
 
         """

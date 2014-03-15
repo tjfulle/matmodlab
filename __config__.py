@@ -4,7 +4,7 @@ import shutil
 from numpy.distutils.misc_util import get_shared_lib_extension as np_so_ext
 from distutils.spawn import find_executable as which
 
-import materials.material as mtl
+import materials.materialdb as mdb
 import utils.namespace as ns
 
 
@@ -48,7 +48,7 @@ MML_ENV["PYTHONPATH"] = os.pathsep.join(p for p in pypath if p.split())
 MML_ENV["PATH"] = os.pathsep.join(PATH)
 
 # The material database - modify sys.path to find materials
-MTL_DB = mtl.MaterialDB.gen_db(UMATS)
+MTL_DB = mdb.MaterialDB.gen_db(UMATS)
 sys.path = MTL_DB.path + sys.path
 
 cfg = ns.Namespace()

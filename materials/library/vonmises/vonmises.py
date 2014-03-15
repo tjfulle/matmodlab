@@ -1,6 +1,6 @@
 import numpy as np
 
-from materials._material import Material
+from materials.material import Material
 from core.mmlio import Error1, log_error, log_message
 
 class VonMises(Material):
@@ -23,16 +23,16 @@ class VonMises(Material):
 
         self.bulk_modulus = K
         self.shear_modulus = G
-        self.Y0 = Y0
-        self.H = H
-        self.BETA = BETA
+        self.params["Y0"] = Y0
+        self.params["H"] = H
+        self.params["BETA"] = BETA
 
         # Register State Variables
         self.sv_names = ["EQPS", "Y", "BS_XX", "BS_YY", "BS_ZZ", "BS_XY", "BS_XZ", "BS_YZ"]
-        self.sv_values = [0.0, self.Y0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        sv_values = [0.0, Y0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
         self.register_xtra_variables(self.sv_names)
-        self.set_initial_state(self.sv_values)
+        self.set_initial_state(sv_values)
 
     def update_state(self, dt, d, stress, xtra, *args, **kwargs):
         """Compute updated stress given strain increment
@@ -80,14 +80,14 @@ class VonMises(Material):
         else:
             N = xi_trial - xi_trial[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
             N = np.sqrt(2.0 / 3.0) * N / xi_trial_eqv
-            deqps = (xi_trial_eqv - yn) / (3.0 * self.shear_modulus + self.H)
+            deqps = (xi_trial_eqv - yn) / (3.0 * self.shear_modulus + self.params["H"])
             dps = np.sqrt(3.0 / 2.0) * deqps * N
 
             stress_final = stress_trial - 2.0 * self.shear_modulus * np.sqrt(3.0 / 2.0) * deqps * N
-            bs = bs + 2.0 / 3.0 * self.H * self.BETA * dps
+            bs = bs + 2.0 / 3.0 * self.params["H"] * self.params["BETA"] * dps
 
             xtra[idx('EQPS')] += deqps
-            xtra[idx('Y')] += self.H * (1.0 - self.BETA) * deqps
+            xtra[idx('Y')] += self.params["H"] * (1.0 - self.params["BETA"]) * deqps
             xtra[idx('BS_XX')] = bs[0]
             xtra[idx('BS_YY')] = bs[1]
             xtra[idx('BS_ZZ')] = bs[2]

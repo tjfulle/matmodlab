@@ -1,6 +1,6 @@
 import numpy as np
 
-from materials._material import Material
+from materials.material import Material
 from core.mmlio import Error1, log_error, log_message
 try:
     import lib.elastic as elastic
@@ -18,9 +18,8 @@ class Elastic(Material):
         if elastic is None:
             raise Error1("elastic model not imported")
         elastic.elastic_check(self.params, log_error, log_message)
-        K, G, = self.params
-        self.bulk_modulus = K
-        self.shear_modulus = G
+        self.bulk_modulus = self.params["K"]
+        self.shear_modulus = self.params["G"]
 
     def update_state(self, dt, d, stress, xtra, *args, **kwargs):
         """Compute updated stress given strain increment

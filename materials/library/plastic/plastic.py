@@ -1,6 +1,6 @@
 import numpy as np
 
-from materials._material import Material
+from materials.material import Material
 from core.mmlio import Error1, log_error, log_message
 try:
     import lib.plastic as plastic

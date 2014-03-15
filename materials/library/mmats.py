@@ -4,7 +4,7 @@ This file is used only during the setup phase to build and install materials.
 
 """
 import os
-from materials.material import _Material
+from materials.materialdb import _Material
 
 D = os.path.dirname(os.path.realpath(__file__))
 
@@ -62,10 +62,19 @@ material = {"source_files": None, "include_dir": d,
             "class": "TransIsoElas"}
 transisoelas = _Material("transisoelas", **material)
 
+# --- Thermoelastic Abaqus umat interface
+name = "thermoelastic"
+d = os.path.join(D, name)
+source_files = [os.path.join(d, f) for f in (name + ".f90", name + ".pyf")]
+material = {"source_files": source_files, "include_dir": d,
+            "interface_file": os.path.join(d, name + ".py"),
+            "class": "ThermoElastic", "abaqus_umat": True}
+thermoelastic = _Material(name, **material)
+
 # --- collection of materials
 NAMES = {"idealgas": idealgas, "mnrv": mnrv, "plastic": plastic,
          "elastic": elastic, "pyelastic": pyelastic, "vonmises": vonmises,
-         'transisoelas': transisoelas}
+         "transisoelas": transisoelas, "thermoelas": thermoelastic}
 
 def conf(name=None):
     """Return the material configurations for building

@@ -4,13 +4,12 @@
 !         subroutine log_message(message)
 !             intent(callback) log_message
 !             character*(*) :: message
-!             real intent(callback) :: report_and_raise_error
 !         end subroutine log_message
 !         subroutine log_error(message)
 !             intent(callback) log_error
 !             character*(*) :: message
 !             real intent(callback) :: log_message
-!         end subroutine report_and_raise_error
+!         end subroutine log_error
 !     end interface gmd_user_interface
 ! end python module gmd__user__routines
 !

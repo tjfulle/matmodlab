@@ -89,7 +89,7 @@ class SolidDriver(Driver):
                 # initialize material
                 sig = np.zeros(NSYMM)
                 xtra = self.material.initial_state()
-                args = (I9, np.zeros(3), 0.)
+                args = (I9, np.zeros(3), 0., None, None, np.zeros(6))
                 xtra = self.material.adjust_initial_state(xtra)
                 sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
                 gmd_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
@@ -223,7 +223,7 @@ class SolidDriver(Driver):
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
 
                 # --- find current value of d: sym(velocity gradient)
-                margs = (f, ef, t, None, None)
+                margs = (f, ef, t, None, None, eps)
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components

@@ -1,0 +1,29 @@
+<MMLSpec>
+
+  <Physics>
+
+    <Path type="prdef" kappa="0" tstar="1" estar="-.5"
+	  amplitude="1" nfac="1000" ratfac="1" ndumps="20">
+      <!-- termination time, number of steps, control, Cij -->
+      0 0 222222 0 0 0 0 0 0
+      1 1 222222 1 0 0 0 0 0
+      2 1 222222 2 0 0 0 0 0
+      3 1 222222 1 0 0 0 0 0
+      4 1 222222 0 0 0 0 0 0
+    </Path>
+
+    <Material model="thermoelastic">
+      <E0> 29.E+06 </E0>
+      <NU0> .33 </NU0>
+      <T0> 295.E+00 </T0>
+
+      <E1> 28.E+06 </E1>
+      <NU1> .33 </NU1>
+      <T1> 300.E+00 </T1>
+
+      <TI> 298. </TI>
+    </Material>
+
+  </Physics>
+
+</MMLSpec>

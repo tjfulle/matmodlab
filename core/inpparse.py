@@ -614,13 +614,12 @@ def pPhysics(physdict, functions, mtlswapdict=None):
     if mtlswapdict is None:
         mtlswapdict = {}
 
-    parsed = pMaterial(physdict["Elements"].pop("Material"), mtlswapdict)
-#    try:
-#        parsed = pMaterial(physdict["Elements"].pop("Material"), mtlswapdict)
-#    except (ValueError, TypeError):
-#        raise UserInputError("failed to parse material")
-#    if input_errors():
-#        raise UserInputError("failed to parse material")
+    try:
+        parsed = pMaterial(physdict["Elements"].pop("Material"), mtlswapdict)
+    except (ValueError, TypeError):
+        raise UserInputError("failed to parse material")
+    if input_errors():
+        raise UserInputError("failed to parse material")
 
     mdl, params, mopts, istate = parsed
     dcls = getdrvcls(physdict["driver"])

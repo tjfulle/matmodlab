@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-from materials._material import Material
+from materials.material import Material
 from core.mmlio import Error1, log_message, log_error
 try:
     from lib.mmlabpack import mmlabpack
@@ -28,8 +28,8 @@ class MooneyRivlin(Material):
             raise Error1("mnrv model not imported")
 
         mnrv.mnrvcp(self.params, log_error, log_message)
-        smod = 2. * (self.params[self.C10] + self.params[self.C01])
-        nu = self.params[self.NU]
+        smod = 2. * (self.params["C10"] + self.params["C01"])
+        nu = self.params["NU"]
         bmod = 2. * smod * (1.+ nu) / 3. / (1 - 2. * nu)
 
         self.bulk_modulus = bmod
@@ -68,7 +68,7 @@ class MooneyRivlin(Material):
 
     def set_constant_jacobian(self):
         Vij = mmlabpack.asarray(np.eye(3), 6)
-        T0 = 298. if not self.params[self.T0] else self.params[self.T0]
+        T0 = 298. if not self.params["T0"] else self.params["T0"]
         v = np.arange(6, dtype=np.int)
         self._jacobian = self._jacobian_routine(Vij, T0, self.xinit, v)
 
@@ -76,7 +76,7 @@ class MooneyRivlin(Material):
         Fij = np.reshape(args[0], (3, 3))
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
         Vij = mmlabpack.asarray(Vij, 6)
-        T = 298. if not self.params[self.T0] else self.params[self.T0]
+        T = 298. if not self.params["T0"] else self.params["T0"]
         return self._jacobian_routine(Vij, T, xtra, v)
 
     def _jacobian_routine(self, Vij, T, xtra, v):

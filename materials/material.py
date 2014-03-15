@@ -1,207 +1,225 @@
-import os
-import sys
-import xml.dom.minidom as xdom
-from xml.parsers.expat import ExpatError
+import numpy as np
 
-from utils.misc import load_file
-import __config__ as cfg
+from core.mmlio import Error1, log_warning
+from materials.parameters import Parameters
+try:
+    from lib.mmlabpack import mmlabpack
+except ImportError:
+    import utils.mmlabpack as mmlabpack
 
-D = os.path.dirname(os.path.realpath(__file__))
-def cout(string):
-    sys.stdout.write(string + "\n")
+class Material(object):
+    def __init__(self):
+        self.mtldb = None
+        self.nparam = 0
+        self.ndata = 0
+        self.nxtra = 0
+        self._constant_jacobian = False
+        self.bulk_modulus = None
+        self.shear_modulus = None
+        self._jacobian = None
+        self.xinit = np.zeros(self.nxtra)
+        self.mtl_variables = []
+        self.initialized = True
+        if not hasattr(self, "param_names"):
+            raise Error1("{0}: param_names not defined".format(self.name))
+        self._verify_param_names()
 
+    @classmethod
+    def param_parse_table(cls):
+        n_no_parse = 0
+        parse_table = {}
+        for (i, param) in enumerate(cls.param_names):
+            for n in param.split(":"):
+                n = n.strip().lower()
+                if n.startswith("-"):
+                    # not to be parsed
+                    n = n[1:]
+                    i = -i
+                parse_table[n] = i
+        return parse_table
 
-class _Material:
-    """Class to hold some material meta data"""
-    def __init__(self, name, **kwargs):
-        self.source_files = None
-        self.requires_lapack = False
-        self.include_dir = None
-        self.python_alternative = None
-        self.abaqus_umat = False
-        self.name = name
+    @staticmethod
+    def _fmt_param_name_aliases(s, mode=0):
+        s = [n.upper() for n in s.split(":")]
+        if mode == 0:
+            return s[0], s[1:]
+        return ":".join(s)
+
+    def _verify_param_names(self):
+        registered_params = []
+        self.nparam = len(self.param_names)
+        for idx, name in enumerate(self.param_names):
+            name, aliases = self._fmt_param_name_aliases(name)
+            if name in registered_params:
+                raise Error1("{0}: param already registered".format(name))
+            registered_params.append(name)
+            for alias in aliases:
+                if alias in registered_params:
+                    raise Error1("{0}: non-unique param alias".format(alias))
+                registered_params.append(name)
+
+    def set_options(self, **kwargs):
         for (k, v) in kwargs.items():
-            if k == "class": k = "class_name"
-            setattr(self, k, v)
+            setattr(self, "_{0}".format(k), v)
 
-        self.python_model = not self.source_files
-        if not self.python_model:
-            self.so_lib = os.path.join(cfg.PKG_D, self.name + cfg.SO_EXT)
-        else:
-            self.so_lib = None
-        pass
+    def set_constant_jacobian(self):
+        if not self.bulk_modulus:
+            # raise Error1("{0}: bulk modulus not defined".format(self.name))
+            log_warning("{0}: bulk modulus not defined".format(self.name))
+            return
+        if not self.shear_modulus:
+            # raise Error1("{0}: shear modulus not defined".format(self.name))
+            log_warning("{0}: shear modulus not defined".format(self.name))
+            return
 
-    def __getitem__(self, attr):
-        return self.__dict__[attr]
+        self._jacobian = np.zeros((6, 6))
+        threek = 3. * self.bulk_modulus
+        twog = 2. * self.shear_modulus
+        nu = (threek - twog) / (2. * threek + twog)
+        c1 = (1. - nu) / (1. + nu)
+        c2 = nu / (1. + nu)
 
-    def items(self):
-        return self.__dict__.items()
+        # set diagonal
+        for i in range(3):
+            self._jacobian[i, i] = threek * c1
+        for i in range(3, 6):
+            self._jacobian[i, i] = twog
 
-    @property
-    def dirname(self):
-        return os.path.dirname(self.interface_file)
+        # off diagonal
+        (self._jacobian[0, 1], self._jacobian[0, 2],
+         self._jacobian[1, 0], self._jacobian[1, 2],
+         self._jacobian[2, 0], self._jacobian[2, 1]) = [threek * c2] * 6
+        return
 
-    @property
-    def so_exists(self):
-        if self.python_model:
-            return True
-        return os.path.isfile(self.so_lib)
+    def register_mtl_variable(self, var, vtype, units=None):
+        self.mtl_variables.append((var, vtype))
 
-    @property
-    def ext_module(self):
-        if not self.so_lib: return
-        return os.path.basename(self.so_lib)
+    def register_xtra_variables(self, keys, mig=False):
+        if self.nxtra:
+            raise Error1("Register extra variables at most once")
+        if mig:
+            keys = [" ".join(x.split())
+                    for x in "".join(keys).split("|") if x.split()]
+        self.nxtra = len(keys)
+        for (i, key) in enumerate(keys):
+            self.register_mtl_variable(key, "SCALAR")
+            setattr(self, "_x{0}".format(key), i)
 
-    def instantiate_material(self, params, options):
-        """Instantiate the material model"""
+    def xidx(self, key):
+        return getattr(self, "_x{0}".format(key), None)
 
-        mtlmod = load_file(self.interface_file)
-        mclass = getattr(mtlmod, self.class_name)
+    def jacobian(self, dt, d, sig, xtra, v, *args):
+        """Numerically compute material Jacobian by a centered difference scheme.
 
-        mat = mclass()
-        mat.setup_new_material(params)
-        mat.set_constant_jacobian()
-        mat.set_options(**options)
+        Returns
+        -------
+        Js : array_like
+          Jacobian of the deformation J = dsig / dE
 
-        return mat
+        Notes
+        -----
+        The submatrix returned is the one formed by the intersections of the
+        rows and columns specified in the vector subscript array, v. That is,
+        Js = J[v, v]. The physical array containing this submatrix is
+        assumed to be dimensioned Js[nv, nv], where nv is the number of
+        elements in v. Note that in the special case v = [1,2,3,4,5,6], with
+        nv = 6, the matrix that is returned is the full Jacobian matrix, J.
 
+        The components of Js are computed numerically using a centered
+        differencing scheme which requires two calls to the material model
+        subroutine for each element of v. The centering is about the point eps
+        = epsold + d * dt, where d is the rate-of-strain array.
 
-class MaterialDB(object):
-    """Holder for material info"""
-    _xmldb = None
-    def __init__(self, *materials):
-        """
+        History
+        -------
+        This subroutine is a python implementation of a routine by the same
+        name in Tom Pucick's MMD driver.
 
-        Parameters
-        ----------
-        materials : list of _Material instances
-
-        """
-        self._materials = []
-        for m in materials:
-            if not isinstance(m, _Material):
-                raise TypeError("Materials must be _Material type")
-            if m in self._materials:
-                raise AttributeError("{0}: duplicate material name".format(m.name))
-            self._materials.append(m)
-
-    def __repr__(self):
-        return "MaterialDB({0})".format(", ".join(m.name for m in self._materials))
-
-    def __getitem__(self, name):
-        m = self.get(name)
-        if m is None:
-            raise ValueError("{0}: not in DB".format(name))
-        return m
-
-    def get(self, name):
-        if name in self._materials:
-            return material
-        for material in self._materials:
-            if name == material.name:
-                return material
-
-    def remove(self, material):
-        try:
-            self._materials.remove(material)
-        except ValueError:
-            raise ValueError("MaterialDB.remove(material): material not in DB")
-
-    def __iter__(self):
-        return iter(self._materials)
-
-    def __getitem__(self, name):
-        for m in self._materials:
-            if name == m.name:
-                return m
-
-    def __len__(self):
-        return len(self._materials)
-
-    def put(self, material):
-        for (i, m) in enumerate(self._materials):
-            if m.name == material.name:
-                self._materials[i] = material
-                break
-        else:
-            self._materials.append(material)
-
-    @property
-    def interface_files(self):
-        """Path to interface files"""
-        return [m.interface_file for m in self._materials]
-
-    @property
-    def materials(self):
-        """Path to interface files"""
-        return [m.name for m in self._materials]
-
-    @property
-    def path(self):
-        """Directory names of all materials, can be used to set sys.path"""
-        return [m.dirname for m in self._materials]
-
-    @classmethod
-    def gen_db(cls, search_dirs):
-        db = cls.gen_from_search(search_dirs)
-        for mat in db:
-            # instantiate the material to get param names
-            mtlmod = load_file(mat.interface_file)
-            mtlmdl = getattr(mtlmod, mat.class_name)
-            mat.parse_table = mtlmdl.param_parse_table()
-            del mtlmdl
-        return db
-
-    @classmethod
-    def gen_from_search(cls, search_dirs, mats_to_build="all"):
-        """Gather all of the matmodlab materials
-
-        Parameters
-        ----------
-        mats_to_build : list or str
-          list of materials to build, or 'all' if all materials are to be built
+        Authors
+        -------
+        Tom Pucick, original fortran implementation in the MMD driver
+        Tim Fuller, Sandial National Laboratories, tjfulle@sandia.gov
 
         """
-        build_all = mats_to_build == "all"
+        if self._constant_jacobian:
+            return self.constant_jacobian(v)
 
-        materials = []
+        # local variables
+        nv = len(v)
+        deps =  np.sqrt(np.finfo(np.float64).eps)
+        Jsub = np.zeros((nv, nv))
+        dt = 1 if dt == 0. else dt
+        f = args[0]
+        _a = [x for x in args[1:]]
 
-        # --- builtin materials are all described in the mmats file
-        mmats = load_file(os.path.join(D, "library/mmats.py"))
-        for name in mmats.NAMES:
-            if not build_all and name not in mats_to_build:
-                continue
-            materials.append(mmats.conf(name))
+        for i in range(nv):
+            # perturb forward
+            dp = d.copy()
+            dp[v[i]] = d[v[i]] + (deps / dt) / 2.
+            fp, _ = mmlabpack.update_deformation(dt, 0., f, dp)
+            sigp = sig.copy()
+            xtrap = xtra.copy()
+            ap = [fp] + _a
+            sigp, xtrap = self.update_state(dt, dp, sigp, xtrap, *ap)
 
-        # --- user materials
-        for dirname in search_dirs:
-            if not os.path.isdir(dirname):
-                cout("  *** warning: {0}: no such directory".format(dirname))
-                continue
-            if "umat.py" not in os.listdir(dirname):
-                cout("  *** warning: umat.py not found in {0}".format(dirname))
-                continue
-            filename = os.path.join(dirname, "umat.py")
-            umat = load_file(filename)
-            try:
-                name = umat.NAME
-            except AttributeError:
-                cout("  ***error: {0}: NAME not defined".format(filename))
-                continue
+            # perturb backward
+            dm = d.copy()
+            dm[v[i]] = d[v[i]] - (deps / dt) / 2.
+            fm, _ = mmlabpack.update_deformation(dt, 0., f, dm)
+            sigm = sig.copy()
+            xtram = xtra.copy()
+            am = [fm] + _a
+            sigm, xtram = self.update_state(dt, dm, sigm, xtram, *am)
 
-            if not build_all and name not in mats_to_build:
-                continue
+            # compute component of jacobian
+            Jsub[i, :] = (sigp[v] - sigm[v]) / deps
 
-            try:
-                conf = umat.conf()
-            except ValueError:
-                cout("  ***error: {0}: failed to gather "
-                     "information".format(filename))
-                continue
-            except AttributeError:
-                cout("  ***error: {0}: conf function not defined".format(filename))
-                continue
+            continue
 
-            materials.append(_Material(name, **conf))
+        return Jsub
 
-        return cls(*materials)
+    def isparam(self, param_name):
+        return getattr(self.params, param_name.upper(), False)
+
+    def parameters(self, ival=False, names=False):
+        if names:
+            return [self._fmt_param_name_aliases(p, mode=1)
+                    for p in self.param_names]
+        if ival:
+            return self.iparams
+        return self.params
+
+    def setup_new_material(self, params):
+        self.iparams = np.array(params)
+        self.params = Parameters(self.param_names, params)
+        self.setup()
+
+    def setup(self, *args, **kwargs):
+        raise Error1("setup must be provided by model")
+
+    def update_state(self, *args, **kwargs):
+        raise Error1("update_state must be provided by model")
+
+    def initialize_material(self, *args, **kwargs):
+        return
+
+    def adjust_initial_state(self, *args, **kwargs):
+        return args[0]
+
+    def call_material_zero_state(self, stress, xtra, *args):
+        dt = 1.
+        d = np.zeros(6)
+        return self.update_state(dt, d, stress, xtra, *args)
+
+    def set_initial_state(self, xtra):
+        self.xinit = np.array(xtra)
+
+    def initial_state(self):
+        return self.xinit
+
+    def material_variables(self):
+        return self.mtl_variables
+
+    def constant_jacobian(self, v=np.arange(6)):
+        return self._jacobian[[[x] for x in v], v]
+

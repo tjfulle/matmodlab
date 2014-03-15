@@ -7,6 +7,7 @@ import argparse
 
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
+from materials.materialdb import _Material
 from __config__ import ROOT_D, PKG_D, SO_EXT, FIO, ABQIO, MTL_DB, cout
 
 
@@ -49,6 +50,9 @@ class Builder(object):
           The name of the material to build
 
         """
+        if not isinstance(material, _Material):
+            material = MTL_DB.material_from_name(material)
+
         fb = FortranExtBuilder(material.name, verbosity=verbosity)
         cout("building {0}".format(material.name))
         material.source_files.append(FIO)

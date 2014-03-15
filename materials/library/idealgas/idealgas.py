@@ -2,7 +2,7 @@ import sys
 import numpy as np
 
 from core.mmlio import log_error
-from materials._material import Material
+from materials.material import Material
 
 
 class IdealGas(Material):
@@ -35,8 +35,8 @@ class IdealGas(Material):
         rho, tmpr, enrgy = margs[-3:]
 
         # unit_system = kwargs["UNITS"]
-        M = self.params[0]
-        CV = self.params[1]
+        M = self.params["M"]
+        CV = self.params["CV"]
 
         R = 8.3144621
         #R = UnitManager.transform(
