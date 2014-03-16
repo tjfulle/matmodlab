@@ -37,6 +37,7 @@ def uni2str(unistr):
 
 
 def stringify(item, action=""):
+    item = str(item)
     string = str(" ".join(item.split()))
     if action == "upper":
         return string.upper()

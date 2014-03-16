@@ -118,6 +118,7 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
 
     """
     depsmag = lambda a: math.sqrt(sum(a[:3] ** 2) + 2. * sum(a[3:] ** 2)) * dt
+    margs = list(args)
 
     # Initialize
     tol1, tol2 = EPS, math.sqrt(EPS)
@@ -135,14 +136,14 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
         return None
 
     # update the material state to get the first guess at the new stress
-    sig, xtra = material.update_state(dt, d, sig, xtra, *args)
+    sig, xtra = material.update_state(dt, d, sig, xtra, *margs)
     sigerr = sig[v] - sigspec
 
     # --- Perform Newton iteration
     for i in range(maxit2):
         sig = sigsave.copy()
         xtra = xtrasave.copy()
-        Jsub = material.jacobian(dt, d, sig, xtra, v, *args)
+        Jsub = material.jacobian(dt, d, sig, xtra, v, *margs)
         if np.any(Jsub < 0.):
             io.log_warning("newton: "
                            "negative value encountered in material Jacobian")
@@ -158,7 +159,9 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
             # increment too large
             return None
 
-        sig, xtra = material.update_state(dt, d, sig, xtra, *args)
+        f, _ = mmlabpack.update_deformation(dt, 0., args[2], d)
+        margs[2] = f
+        sig, xtra = material.update_state(dt, d, sig, xtra, *margs)
         sigerr = sig[v] - sigspec
         dnom = max(np.amax(np.abs(sigspec)), 1.)
         relerr = np.amax(np.abs(sigerr) / dnom)
@@ -217,18 +220,18 @@ def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional, args)
     """Objective function to be optimized by simplex
 
     """
+    margs = list(args)
     d = darg.copy()
     sig = sigarg.copy()
     xtra = xtraarg.copy()
 
     # initialize
     d[v] = x
-    f, _ = mmlabpack.update_deformation(dt, 0., args[0], d)
-    args = list(args)
-    args[0] = f
+    f, _ = mmlabpack.update_deformation(dt, 0., margs[2], d)
+    margs[2] = f
 
     # store the best guesses
-    sig, xtra = material.update_state(dt, d, sig, xtra, *args)
+    sig, xtra = material.update_state(dt, d, sig, xtra, *margs)
 
     # check the error
     error = 0.

@@ -1,6 +1,4 @@
-import sys
 import numpy as np
-
 try:
     from lib.mmlabpack import mmlabpack
 except ImportError:
@@ -16,12 +14,17 @@ class AnisoHyper(Material):
     def jacobian(self, dt, d, sig, xtra, v, *args):
         return self.constant_jacobian(v)
 
-    def update_state(self, dt, d, stress, xtra, *args, **kwargs):
+    def update_state(self, dtime, dstran, stress, statev, *args, **kwargs):
         """Update the state of an abaqus umat model.  Implementation
         based on Abaqus conventions
 
         """
-        F = np.reshape(args[0], (3, 3))
+        time = args[0]
+        F0 = np.reshape(args[1], (3, 3), order="F")
+        F = np.reshape(args[2], (3, 3), order="F")
+        stran = args[3]
+        temp = args[5]
+        dtemp = args[6]
 
         # Find C and Cbar
         C = mmlabpack.dot(F.T, F)
@@ -33,24 +36,20 @@ class AnisoHyper(Material):
         Ainv = mmlabpack.get_invariants(Cb, self.fiber_direction)
 
         # Setup to call material model
-        name = "uanisohyper_inv"
+        cmname = "umat    "
         ninv = 5
         ninv2 = ninv * (ninv + 1) / 2
         nfibers = 1
         zeta = np.zeros(1)
-        temp = 297.
         noel = 1
-        cmname = name + " " * (80 - len(name))
         incmpflag = 1
         ihybflag = 1
-        numstatev = 0
-        statev = np.zeros(numstatev)
+        numstatev = self.nxtra
         numfieldv = 1 # just for dimensioning
         fieldv = np.zeros(numfieldv)
         fieldvinc = np.zeros(numfieldv)
 
         Ainv[2] = J
-        Ainv[2] = 1.
         # tjf: derivatives seem to be wrong wrt J
         resp = self.update_state_anisohyper(Ainv, zeta, nfibers, temp, noel,
                                             cmname, incmpflag, ihybflag,

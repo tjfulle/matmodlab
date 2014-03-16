@@ -2,25 +2,22 @@
 
   <Physics>
 
-    <Path type="prdef" kappa="0" tstar="1" estar="-.5"
-	  amplitude="1" nfac="1000" ratfac="1" ndumps="20">
+    <Path type="prdef" kappa="0" tstar="1" estar=".01" nfac="1000">
       <!-- termination time, number of steps, control, Cij -->
-      0 0 222222 0 0 0 0 0 0
-      1 1 222222 1 0 0 0 0 0
-      2 1 222222 2 0 0 0 0 0
-      3 1 222222 1 0 0 0 0 0
-      4 1 222222 0 0 0 0 0 0
+      0 0 EEET 0 0 0 298
+      1 1 ESST 1 0 0 300
+      2 1 ESST 2 0 0 310
+      3 1 ESST 1 0 0 340
+      4 1 ESST 0 0 0 375
     </Path>
 
     <Material model="thermoelastic">
       <E0> 29.E+06 </E0>
       <NU0> .33 </NU0>
       <T0> 295.E+00 </T0>
-
-      <E1> 28.E+06 </E1>
+      <E1> 23.E+06 </E1>
       <NU1> .33 </NU1>
-      <T1> 300.E+00 </T1>
-
+      <T1> 400.E+00 </T1>
       <TI> 298. </TI>
     </Material>
 

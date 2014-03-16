@@ -145,12 +145,12 @@ class Material(object):
             return self.constant_jacobian(v)
 
         # local variables
+        margs = list(args)
         nv = len(v)
         deps =  np.sqrt(np.finfo(np.float64).eps)
         Jsub = np.zeros((nv, nv))
         dt = 1 if dt == 0. else dt
-        f = args[0]
-        _a = [x for x in args[1:]]
+        f = margs[2]
 
         for i in range(nv):
             # perturb forward
@@ -159,8 +159,8 @@ class Material(object):
             fp, _ = mmlabpack.update_deformation(dt, 0., f, dp)
             sigp = sig.copy()
             xtrap = xtra.copy()
-            ap = [fp] + _a
-            sigp, xtrap = self.update_state(dt, dp, sigp, xtrap, *ap)
+            margs[2] = fp
+            sigp, xtrap = self.update_state(dt, dp, sigp, xtrap, *margs)
 
             # perturb backward
             dm = d.copy()
@@ -168,8 +168,8 @@ class Material(object):
             fm, _ = mmlabpack.update_deformation(dt, 0., f, dm)
             sigm = sig.copy()
             xtram = xtra.copy()
-            am = [fm] + _a
-            sigm, xtram = self.update_state(dt, dm, sigm, xtram, *am)
+            margs[2] = fm
+            sigm, xtram = self.update_state(dt, dm, sigm, xtram, *margs)
 
             # compute component of jacobian
             Jsub[i, :] = (sigp[v] - sigm[v]) / deps

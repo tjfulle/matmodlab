@@ -22,7 +22,19 @@ except ImportError:
 NSYMM = 6
 NTENS = 9
 I9 = np.eye(3).reshape(9)
+Z6 = np.zeros(6)
+Z3 = np.zeros(3)
 DI3 = [[0, 1, 2], [0, 1, 2]]
+DEFAULT_TMPR = 298.
+CONTROL_FLAGS = {"D": 1,  # strain rate
+                 "E": 2,  # strain
+                 "R": 3,  # stress rate
+                 "S": 4,  # stress
+                 "F": 5,  # deformation gradient
+                 "P": 6,  # electric field
+                 "T": 7,  # temperature
+                 "U": 8,  # displacement
+                 "X": 9}  # user defined field
 
 np.set_printoptions(precision=4)
 
@@ -53,6 +65,7 @@ class SolidDriver(Driver):
         self.register_variable("VSTRAIN", vtype="SCALAR")
         self.register_variable("PRESSURE", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
+        self.register_variable("TMPR", vtype="SCALAR")
 
         # register material variables
         self.xtra_start = self.ndata
@@ -66,6 +79,8 @@ class SolidDriver(Driver):
         # allocate storage
         self.allocd()
 
+        itmpr = path[0][18]
+        ifield = path[0][19:]
         if opts[0] == RESTART:
             # restart info given
             start_leg, time, glob_data, elem_data = opts[3]
@@ -89,13 +104,14 @@ class SolidDriver(Driver):
                 # initialize material
                 sig = np.zeros(NSYMM)
                 xtra = self.material.initial_state()
-                args = (I9, np.zeros(3), 0., None, None, np.zeros(6))
+                margs = (0., I9, I9, Z6, Z3, itmpr, 0., ifield)
                 xtra = self.material.adjust_initial_state(xtra)
-                sig, xtra = self.material.call_material_zero_state(sig, xtra, *args)
+                sig, xtra = self.material.call_material_zero_state(
+                    sig, xtra, *margs)
                 gmd_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
 
             pres = -np.sum(sig[:3]) / 3.
-            self.setvars(stress=sig, pressure=pres, xtra=xtra)
+            self.setvars(stress=sig, pressure=pres, xtra=xtra, tmpr=itmpr)
 
             self.start_leg = 0
             self.step_num = 0
@@ -120,10 +136,13 @@ class SolidDriver(Driver):
         glob_step_num = self.step_num
         xtra = self.elem_var_vals("XTRA")
         sig = self.elem_var_vals("STRESS")
+        tmpr = np.zeros(2)
+        tmpr[1] = self.elem_var_vals("TMPR")
         tleg = np.zeros(2)
         d = np.zeros(NSYMM)
         dt = 0.
         eps = np.zeros(NSYMM)
+        f0 = np.reshape(np.eye(3), (NTENS, 1))
         f = np.reshape(np.eye(3), (NTENS, 1))
         depsdt = np.zeros(NSYMM)
         sigdum = np.zeros((2, NSYMM))
@@ -142,6 +161,7 @@ class SolidDriver(Driver):
         for (ileg, leg) in enumerate(legs):
             leg_num = self.start_leg + ileg
             tleg[0] = tleg[1]
+            tmpr[0] = tmpr[1]
             sigdum[0] = sig[:]
             if nv:
                 sigdum[0, v] = sigspec[1]
@@ -151,7 +171,9 @@ class SolidDriver(Driver):
             control = leg[2:7]
             c = leg[8:13]
             ndumps = leg[14]
-            ef = leg[15:]
+            ef = leg[15:18]
+            tmpr[1] = leg[18]
+            ufield = leg[19:]
 
             delt = tleg[1] - tleg[0]
             if delt == 0.:
@@ -191,6 +213,7 @@ class SolidDriver(Driver):
 
             t = tleg[0]
             dt = delt / nsteps
+            dtmpr = (tmpr[1] - tmpr[0]) / nsteps
 
             if not nv:
                 # strain or strain rate prescribed and d is constant over
@@ -216,6 +239,7 @@ class SolidDriver(Driver):
                 # increment time
                 t += dt
                 self.time = t
+                tmpr[1] += dtmpr
 
                 # interpolate values to the target values for this step
                 a1 = float(nsteps - (n + 1)) / nsteps
@@ -223,16 +247,17 @@ class SolidDriver(Driver):
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
 
                 # --- find current value of d: sym(velocity gradient)
-                margs = (f, ef, t, None, None, eps)
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
+                    margs = (t, f0, f, eps, ef, tmpr[1], dtmpr, ufield)
                     d = sig2d(self.material, dt, depsdt, sig, xtra, v,
                               sigspec[2], self.proportional, *margs)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
-                f, eps = mmlabpack.update_deformation(dt, kappa, f, d)
+                f, eps = mmlabpack.update_deformation(dt, kappa, f0, d)
+                margs = (t, f0, f, eps, ef, tmpr[1], dtmpr, ufield)
 
                 # update material state
                 sigsave = np.array(sig)
@@ -247,6 +272,7 @@ class SolidDriver(Driver):
 
                 pres = -np.sum(sig[:3]) / 3.
                 dstress = (sig - sigsave) / dt
+                f0 = f
 
                 # advance all data after updating state
                 glob_step_num += 1
@@ -256,8 +282,7 @@ class SolidDriver(Driver):
                 self.setvars(stress=sig, strain=eps, defgrad=f,
                              symm_l=d, efield=ef, eqstrain=eqeps,
                              vstrain=epsv, pressure=pres,
-                             dstress=dstress, xtra=xtra)
-
+                             dstress=dstress, xtra=xtra, tmpr=tmpr[1])
                 gmd_user_sub_eval(t, d, sig, xtra)
 
                 # --- write state to file
@@ -269,9 +294,10 @@ class SolidDriver(Driver):
                     log_message(consfmt.format(leg_num, n + 1, t, dt))
 
                 if n > 1 and nv and not warned:
+                    absmax = lambda a: np.max(np.abs(a))
                     sigerr = np.sqrt(np.sum((sig[v] - sigspec[2]) ** 2))
                     warned = True
-                    dnom = 1 if not np.amax(sigspec[2]) else np.amax(sigspec[2])
+                    dnom = 1 if not absmax(sig) else absmax(sig)
                     if sigerr / dnom > 1.e-3:
                         log_warning("leg: {0}, prescribed stress error: "
                                     "{1: .3f}. consider increasing number of "
@@ -420,7 +446,6 @@ def parse_path_default(lines):
                             .format(leg_num))
             continue
 
-
         path.append([termination_time, num_steps, control, Cij])
         leg_num += 1
         continue
@@ -505,7 +530,6 @@ def parse_path_cijfcn(lines, functions, num_steps, cfmt):
     """
     start_time = 0.
     leg_num = 1
-
     if not lines:
         fatal_inp_error("Empty path encountered")
         return
@@ -560,36 +584,46 @@ def parse_path_cijfcn(lines, functions, num_steps, cfmt):
                         .format(leg_num))
 
     path = []
-    path.append([start_time, 1, np.array([2] * len(Cij)), np.zeros(len(Cij))])
+    vals = np.zeros(len(control))
+    if 7 in control:
+        # check for nonzero initial values of temperature
+        idx = np.where(control == 7)[0][0]
+        s, f = Cij[idx]
+        vals[idx] = s * f(start_time)
+    path.append([start_time, 1, control, vals])
     for time in np.linspace(start_time, final_time, num_steps-1):
         if time == start_time:
             continue
         leg = [time, 1, control]
         leg.append(np.array([s * f(time) for (s, f) in Cij]))
         path.append(leg)
-
     return path
 
 def format_path_control(cfmt, leg_num=None):
     leg = "" if leg_num is None else "(leg {0})".format(leg_num)
-    valid_control_flags = [1, 2, 3, 4, 5, 6, 8, 9]
+
+    _cfmt = [CONTROL_FLAGS.get(s.upper(), s) for s in cfmt]
+
     control = []
-    for (i, flag) in enumerate(cfmt):
+    for (i, flag) in enumerate(_cfmt):
         try:
             flag = int(flag)
         except ValueError:
-            fatal_inp_error("Path: expected control flag {0} to be an integer"
-                            ", got {1} {2}".format(i+1, flag, leg))
+            fatal_inp_error("Path: unexpected control flag {0}".format(flag))
             continue
 
-        if flag not in valid_control_flags:
+        if flag not in CONTROL_FLAGS.values():
             valid = ", ".join(xmltools.stringify(x)
-                              for x in valid_control_flags)
+                              for x in CONTROL_FLAGS.values())
             fatal_inp_error("Path: expected control flag to be one of {0}, "
                             "got {1} {2}".format(valid, flag, leg))
             continue
 
         control.append(flag)
+
+    if control.count(7) > 1:
+            fatal_inp_error("Path: multiple temperature fields in "
+                            "leg {0}".format(leg))
 
     if 5 in control:
         if any(flag != 5 and flag not in (6, 9) for flag in control):
@@ -597,7 +631,7 @@ def format_path_control(cfmt, leg_num=None):
                             "deformation gradient control {0}".format(leg))
 
         # must specify all components
-        elif len(control) != 9:
+        elif len(control) < 9:
             fatal_inp_error("all 9 components of deformation gradient must "
                             "be specified {0}".format(leg))
 
@@ -609,7 +643,7 @@ def format_path_control(cfmt, leg_num=None):
                             "displacement control {0}".format(leg))
 
         # must specify all components
-        elif len(control) != 3:
+        elif len(control) < 3:
             fatal_inp_error("all 3 components of displacement must "
                             "be specified {0}".format(leg))
 
@@ -682,6 +716,7 @@ def _format_path(path, pathdict, tterm):
     # format each leg
     if not tterm:
         tterm = 1.e80
+
     for ileg, (termination_time, num_steps, control, Cij) in enumerate(path):
 
         leg_num = ileg + 1
@@ -695,14 +730,21 @@ def _format_path(path, pathdict, tterm):
             continue
 
         # pull out electric field from other deformation specifications
+        tmpr = DEFAULT_TMPR
         efcomp = np.zeros(3)
+        user_field = []
         trtbl = np.array([True] * len(control))
         j = 0
         for i, c in enumerate(control):
-            if c == 6:
-                efcomp[j] = effac * Cij[i]
+            if c in (6, 7, 9):
                 trtbl[i] = False
-                j += 1
+                if c == 6:
+                    efcomp[j] = effac * Cij[i]
+                    j += 1
+                elif c == 7:
+                    tmpr = Cij[i]
+                else:
+                    user_field.append(Cij[i])
 
         Cij = Cij[trtbl]
         control = control[trtbl]
@@ -799,6 +841,8 @@ def _format_path(path, pathdict, tterm):
         leg.extend(Cij)
         leg.append(ndumps)
         leg.extend(efcomp)
+        leg.append(tmpr)
+        leg.extend(user_field)
         path[ileg] = leg
 
         if termination_time > tterm:
