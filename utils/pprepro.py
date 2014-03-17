@@ -14,7 +14,7 @@ WARNINGS = 0
 RAND = np.random.RandomState()
 SAFE = {"np": np,
         "sqrt": np.sqrt, "max": np.amax, "min": np.amin,
-        "stdev": np.std, "std": np.std,
+        "stdev": np.std, "std": np.std, "ln": np.log,
         "abs": np.abs, "ave": np.average, "average": np.average,
         "sin": np.sin, "cos": np.cos, "tan": np.tan,
         "asin": np.arcsin, "acos": np.arccos,

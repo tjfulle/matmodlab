@@ -233,16 +233,14 @@ def trace(a):
 
 
 def get_invariants(a, n):
-    tra = numpy.trace(a)
-    maga = numpy.sqrt(numpy.sum(a * a))
+    asq = np.dot(a, a)
     deta = numpy.linalg.det(a)
+    tra = numpy.trace(a)
 
     b = numpy.zeros(5)
     b[0] = tra
-    b[1] = .5 * (tra ** 2 - maga)
+    b[1] = .5 * (tra ** 2 - np.trace(asq))
     b[2] = deta
-
-    asq = numpy.dot(a, a)
     b[3] = numpy.dot(numpy.dot(n, a), n)
     b[4] = numpy.dot(numpy.dot(n, asq), n)
 

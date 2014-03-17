@@ -49,8 +49,8 @@ class AnisoHyper(Material):
         fieldv = np.zeros(numfieldv)
         fieldvinc = np.zeros(numfieldv)
 
+        hold = Ainv[2]
         Ainv[2] = J
-        # tjf: derivatives seem to be wrong wrt J
         resp = self.update_state_anisohyper(Ainv, zeta, nfibers, temp, noel,
                                             cmname, incmpflag, ihybflag,
                                             statev, fieldv, fieldvinc)
@@ -84,15 +84,11 @@ class AnisoHyper(Material):
         dIdC = self._get_dIdC(C)
         dIbdI = self._get_dIbdI(C)
 
-        dWdI = np.zeros(5, dtype=np.float64)
-        for i in range(5):
-            # dWdI_i = dWdIb_i dIbdI_i
-            dWdI[i] = np.sum([dWdIb[k] * dIbdI[k, i] for k in range(5)])
-
         dWdC = np.zeros(6, dtype=np.float64)
         for ij in range(6):
-            # dWdC_ij = dWdI_k dIC_k
-            dWdC[ij] = np.sum([dWdI[k] * dIdC[k, ij] for k in range(5)])
+            for k in range(5):
+                for m in range(5):
+                    dWdC[ij] += dWdIb[m] * dIbdI[m, k] * dIdC[k, ij]
 
         dWdC = mmlabpack.asmat(dWdC)
         stress = 2. / J * mmlabpack.dot(mmlabpack.dot(F, dWdC), F.T)
@@ -131,22 +127,22 @@ class AnisoHyper(Material):
 
         # Invariants of C
         I1, I2, I3, I4, I5 = mmlabpack.get_invariants(C, N)
-        I3b = I3 ** (-1. / 3.)
+        I3_ = I3 ** (-1. / 3.)
 
         # Derivative of Ibi wrt Ij
         dIbdI = np.zeros((5, 5), dtype=np.float64)
-        dIbdI[0, 0] = I3b
-        dIbdI[0, 2] = -1. / 3. * I1 * I3b ** 4
+        dIbdI[0, 0] = I3_  # dIb1 / dI1
+        dIbdI[0, 2] = -1. / 3. * I1 * I3_ ** 4  # dIb1 / dI3
 
-        dIbdI[1, 1] = I3b ** 2
-        dIbdI[1, 2] = -2. / 3. * I2 * I3b ** 5
+        dIbdI[1, 1] = I3_ ** 2  # dIb2 / dI2
+        dIbdI[1, 2] = -2. / 3. * I2 * I3_ ** 5  # dIb2 / dI3
 
-        dIbdI[2, 2] = .5 * I3 ** (-.5)
+        dIbdI[2, 2] = .5 * I3 ** (-.5)  # dJ / dI3
 
-        dIbdI[3, 2] = -1. / 3. * I4 * I3b ** 4
-        dIbdI[3, 3] = I3b
+        dIbdI[3, 2] = -1. / 3. * I4 * I3_ ** 4  # dIb4 / dI3
+        dIbdI[3, 3] = I3_  # dIb4 / dI4
 
-        dIbdI[4, 2] = -2. / 3. * I5 * I3b ** 5
-        dIbdI[4, 4] = I3b ** 2
+        dIbdI[4, 2] = -2. / 3. * I5 * I3_ ** 5  # dIb5 / dI3
+        dIbdI[4, 4] = I3_ ** 2  # dIb5 / dI5
 
         return dIbdI
