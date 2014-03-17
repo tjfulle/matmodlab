@@ -10,6 +10,23 @@ from materials.material import Material
 
 class AbaUmat(Material):
 
+    def get_initial_jacobian(self):
+        dtime = 0.
+        dstran = np.zeros(6, order="F")
+        stress = np.zeros(6, order="F")
+        statev = np.zeros(self.nxtra, order="F")
+        v = np.arange(6)
+
+        time = 0.
+        dfgrd0 = np.eye(3, order="F")
+        dfgrd1 = np.eye(3, order="F")
+        stran = np.zeros(6, order="F")
+        temp = self.initial_temperature
+        dtemp = 0.
+        args = (time, dfgrd0, dfgrd1, stran, temp, dtemp)
+
+        return self.jacobian(dtime, dstran, stress, statev, v, *args)
+
     def jacobian(self, dtime, dstran, stress, statev, v, *args):
         kwargs = {"return jacobian": True}
         ddsdde = self.update_state(dtime, dstran, stress, statev,
