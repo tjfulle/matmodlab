@@ -2,6 +2,8 @@ import os
 import sys
 import numpy as np
 
+from core.mmlio import Error1
+
 class _Parameter(object):
     def __init__(self, name, value, index):
         self.name = name
@@ -32,7 +34,11 @@ class Parameters(np.ndarray):
         obj.names = [s.upper() for s in names]
         obj.named_idx = dict((s, i) for (i, s) in enumerate(obj.names))
         for (name, i) in obj.named_idx.items():
-            setattr(obj, name, _Parameter(name, obj[i], i))
+            try:
+                setattr(obj, name, _Parameter(name, obj[i], i))
+            except:
+                raise Error1("{0}: parameter name reserved for "
+                             "internal use, rename".format(name))
         return obj
 
     def __str__(self):
