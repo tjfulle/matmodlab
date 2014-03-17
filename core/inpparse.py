@@ -15,6 +15,7 @@ from drivers.driver import isdriver, getdrvcls
 from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.mmlio import fatal_inp_error, input_errors
 from core.restart import read_exrestart_info
+from core.builder import Builder
 from utils.misc import timed_raw_input
 
 _D = os.path.dirname(os.path.realpath(__file__))
@@ -651,6 +652,65 @@ def pMaterial(mtldict, mtlswapdict=None):
         fatal_inp_error("expeced 'model' Material attribute")
         return
 
+    if model.lower() == "umat":
+        nprops = mtldict["constants"]
+        nstatv = mtldict["depvar"]
+        if nprops == NOT_SPECIFIED:
+            fatal_inp_error("umat: constants must be specified")
+            return
+        elif nprops <= 0:
+            fatal_inp_error("umat: constants must be greater than 0")
+            return
+        if nstatv == NOT_SPECIFIED:
+            nstatv = 0
+
+        # get the source file and compile it
+        cwd = os.getcwd()
+        for ext in (".for", ".f", ".f90"):
+            source_file = os.path.join(cwd, "umat" + ext)
+            if os.path.isfile(source_file):
+                break
+            source_file = os.path.join(cwd, "umat" + ext.upper())
+            if os.path.isfile(source_file):
+                break
+        else:
+            fatal_inp_error("umat.f source file not found")
+            return
+
+        # build the source
+        Builder.build_umat(source_file)
+        ui = mtldict.get("Content")
+        if not ui:
+            fatal_inp_error("no model parameters found")
+            return
+
+        params = np.zeros(nprops)
+        depvar = np.zeros(nstatv)
+        for p in ui:
+            p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
+            name = p[0]
+
+            # --- look for special values of input before parameters
+            if name == "Constants":
+                val = np.array(child2list(" ".join(p[1:]), dtype=float))
+                if val.shape[0] != nprops:
+                    fatal_inp_error("incorrect number of Constants")
+                    return
+                params[:] = val
+                continue
+
+            elif name == "Depvar":
+                val = np.array(child2list(" ".join(p[1:]), dtype=float))
+                if val.shape[0] != nstatv:
+                    fatal_inp_error("incorrect number of Depvar")
+                    return
+                depvar[:] = val
+                continue
+
+        print params
+        print depvar
+        sys.exit("umat not yet completed")
+
     # if the user requested it, replace one material model in favor of another.
     if mtlswapdict.has_key(model):
         newmodel = mtlswapdict[model]
@@ -665,7 +725,6 @@ def pMaterial(mtldict, mtlswapdict=None):
     # check if shared object exists for this material (if applicable)
     if not mtlmdl.python_model and not mtlmdl.so_exists:
         # material shared object does not exist, let's build it now
-        from core.builder import Builder
         from utils.fortran.extbuilder import FortranNotFoundError
         if cfg.FC:
             inp_warning("building the required extension library {0} for "

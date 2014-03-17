@@ -8,7 +8,7 @@ import argparse
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
 from materials.materialdb import _Material
-from __config__ import ROOT_D, PKG_D, SO_EXT, FIO, ABQIO, MTL_DB, cout
+from __config__ import ROOT_D, PKG_D, SO_EXT, FIO, ABQIO, ABAUMAT, MTL_DB, cout
 
 
 class BuilderError(Exception):
@@ -39,6 +39,15 @@ class Builder(object):
             return []
         return MTL_DB.path
 
+    @staticmethod
+    def build_umat(source_file, verbosity=0):
+        name = "umat"
+        fb = FortranExtBuilder(name, verbosity=verbosity)
+        cout("building {0}".format(name))
+        source_files = [source_file, ABQIO, ABAUMAT]
+        fb.add_extension(name, source_files)
+        fb.build_extension_modules()
+        pass
 
     @staticmethod
     def build_material(material, verbosity=0):
