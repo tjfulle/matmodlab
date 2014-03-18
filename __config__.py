@@ -41,6 +41,9 @@ UMATS = [d for d in os.getenv("MMLMTLS", "").split(os.pathsep) if d.split()]
 FFLAGS = [x for x in os.getenv("FFLAGS", "").split() if x.split()]
 FC = which(os.getenv("FC", "gfortran"))
 
+# Add cwd to sys.path
+sys.path.insert(0, os.getcwd())
+
 # Environment to use when running subprocess.Popen or subprocess.call
 MML_ENV = dict(os.environ)
 pypath = MML_ENV.get("PYTHONPATH", "").split(os.pathsep)
@@ -50,13 +53,7 @@ MML_ENV["PATH"] = os.pathsep.join(PATH)
 
 # The material database - modify sys.path to find materials
 MTL_DB = mdb.MaterialDB.gen_db(UMATS)
-sys.path = MTL_DB.path + sys.path
-
-cfg = ns.Namespace()
-cfg.debug = False
-cfg.sqa = False
-cfg.I = None
-cfg.verbosity = 1
+sys.path = MTL_DB.path + [os.getcwd()] + sys.path
 
 SPLASH = """\
                   M           M    M           M    L
@@ -70,6 +67,14 @@ SPLASH = """\
                      Material Model Laboratory v {0}
 
 """.format(".".join("{0}".format(i) for i in __version__))
+
+
+cfg = ns.Namespace()
+cfg.debug = False
+cfg.sqa = False
+cfg.I = None
+cfg.verbosity = 1
+cfg.runid = None
 
 
 def cout(message, end="\n"):

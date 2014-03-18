@@ -171,6 +171,7 @@ def func(fargs):
         (iinp, njobs, verb, nproc, uinp) = fargs
         stype = uinp[0]
         runid = uinp[1]
+        cfg.runid = runid
         uinp = uinp[2:]
         if stype in ("Optimization", "Permutation"):
             exe = "{0} {1}".format(sys.executable, FILE)

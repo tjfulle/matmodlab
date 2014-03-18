@@ -1,9 +1,21 @@
+import sys
 import numpy as np
+
+import __config__ as cfg
 try:
     from lib.mmlabpack import mmlabpack
 except ImportError:
     import utils.mmlabpack as mmlabpack
 from materials.material import Material
+try:
+    from mml_user_sub import get_invars_time
+except ImportError:
+    get_invars_time = None
+
+
+Z3 = np.zeros(3)
+NINV = 5
+Identity = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
 
 
 class AnisoHyper(Material):
@@ -19,6 +31,8 @@ class AnisoHyper(Material):
         based on Abaqus conventions
 
         """
+        invars_time = None
+        N = self.fiber_direction
         time = args[0]
         F0 = np.reshape(args[1], (3, 3), order="F")
         F = np.reshape(args[2], (3, 3), order="F")
@@ -29,11 +43,22 @@ class AnisoHyper(Material):
         # Find C and Cbar
         C = mmlabpack.dot(F.T, F)
         J = mmlabpack.det(F)
-        Cb = J ** (-2. / 3.) * C
-        Cbsq = mmlabpack.dot(Cb, Cb)
 
-        # Isochoric invariants
-        Ainv = mmlabpack.get_invariants(Cb, self.fiber_direction)
+        # Invariants and isochoric invariants
+        if get_invars_time:
+            invars_time = get_invars_time(cfg.cfg.runid, time)
+            if invars_time is not None:
+                I1b, I2b, J, I4b, I5b = get_invars_time(time)
+                I1 = J ** (2. / 3.) * I1b
+                I2 = J ** (4. / 3.) * I2b
+                I4 = J ** (2. / 3.) * I4b
+                I5 = J ** (4. / 3.) * I5b
+        if invars_time is None:
+            I1, I2, I3, I4, I5 = mmlabpack.get_invariants(C, N)
+            I1b = J ** (-2. / 3.) * I1
+            I2b = J ** (-4. / 3.) * I2
+            I4b = J ** (-2. / 3.) * I4
+            I5b = J ** (-4. / 3.) * I5
 
         # Setup to call material model
         cmname = "umat    "
@@ -49,100 +74,140 @@ class AnisoHyper(Material):
         fieldv = np.zeros(numfieldv)
         fieldvinc = np.zeros(numfieldv)
 
-        hold = Ainv[2]
-        Ainv[2] = J
+        Ainv = np.array([I1b, I2b, J, I4b, I5b], dtype=np.float64, order="F")
         resp = self.update_state_anisohyper(Ainv, zeta, nfibers, temp, noel,
                                             cmname, incmpflag, ihybflag,
                                             statev, fieldv, fieldvinc)
         ua, ui1, ui2, ui3 = resp
 
-        # convert C to 6x1
-        stress = self._get_stress_from_w(C, J, F, ui1)
+        dIbdC = get_dIbdC(C, N)
+
+        # derivative of energy wrt C
+        dWdC = np.zeros(6, dtype=np.float64)
+        dWdIb = ui1
+        for ij in range(6):
+            for k in range(NINV):
+                dWdC[ij] += dWdIb[k] * dIbdC[k, ij]
+        dWdC = mmlabpack.asmat(dWdC)
+
+        # Cauchy stress
+        stress = 2. / J * mmlabpack.dot(mmlabpack.dot(F, dWdC), F.T)
+        stress = mmlabpack.asarray(stress, 6)
 
         return stress, statev
 
-    def _get_stress_from_w(self, C, J, F, dWdIb):
-        """Compute stress from variations in energy
+        # old way
+        hold = dIbdC.copy()
+        hold1 = stress.copy()
+        # derivative of isochoric invariants wrt to invariants
+        dIbdI = get_dIbdI(I1, I2, J, I4, I5)
 
-        Notes
-        -----
-        The stress S is
+        # derivative of invariants wrt C
+        dIdC = get_dIdC(C, N)
 
-                    Sij = 2/J Fik dW/dCkl Fjl
+        dIbdC = np.zeros((NINV, 6))
+        for ij in range(6):
+            for k in range(NINV):
+                for m in range(NINV):
+                    dIbdC[k, ij] += dIbdI[k, m] * dIdC[m, ij]
 
-        and
-                 dW/dCkl = Sum[dW/dIi dIi/dCkl, i=1..N]
-
-                 I1 = Cii
-                 I2 = .5 (Cii^2 - CijCji)
-                 I3 = det(C)
-                 I4 = ni Cij nj
-                 I5 = ni CikCkj nj
-
-
-        """
-        dIdC = self._get_dIdC(C)
-        dIbdI = self._get_dIbdI(C)
-
+        # derivative of energy wrt C
         dWdC = np.zeros(6, dtype=np.float64)
         for ij in range(6):
-            for k in range(5):
-                for m in range(5):
-                    dWdC[ij] += dWdIb[m] * dIbdI[m, k] * dIdC[k, ij]
-
+            for k in range(NINV):
+                for m in range(NINV):
+                    dWdC[ij] += ui1[m] * dIbdI[m, k] * dIdC[k, ij]
         dWdC = mmlabpack.asmat(dWdC)
+
+        # Cauchy stress
         stress = 2. / J * mmlabpack.dot(mmlabpack.dot(F, dWdC), F.T)
+        stress = mmlabpack.asarray(stress, 6)
 
-        return mmlabpack.asarray(stress, 6)
+        for (i, row) in enumerate(hold):
+            print i+1
+            print " ".join("{0:.8f}".format(float(x)) for x in row)
+            print " ".join("{0:.8f}".format(float(x)) for x in dIbdC[i])
+            print
+        print " ".join("{0:.8f}".format(float(x)) for x in hold1)
+        print " ".join("{0:.8f}".format(float(x)) for x in stress)
+        print
+        print
 
-    def _get_dIdC(self, C):
-        """Derivative of C wrt to invariants
+        return stress, statev
 
-        Returned as a 5x6 array with rows, columns:
 
-                      dIdC = dIi / dCj
+def get_dIdC(C, N):
+    """Derivative of C wrt to invariants
 
-        """
-        N = self.fiber_direction
-        n = np.dot(C, N)
+    Returned as a 5x6 array with rows, columns:
 
-        Identity = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
-        trC = np.trace(C)
-        invC = mmlabpack.inv(C)
-        detC = mmlabpack.det(C)
+                  dIdC = dIi / dCj
 
-        dIdC = np.zeros((5, 6), dtype=np.float64)
-        dIdC[0] = Identity
-        dIdC[1] = trC * Identity - mmlabpack.asarray(C, 6)
-        dIdC[2] = detC * mmlabpack.asarray(invC, 6)
-        dIdC[3] = mmlabpack.dyad(N, N)
-        dIdC[4] = mmlabpack.dyad(N, n) + mmlabpack.dyad(n, N)
-        return dIdC
+    """
+    n = np.dot(C, N)
 
-    def _get_dIbdI(self, C):
-        """Derivative of Ibar wrt to I
+    trC = np.trace(C)
+    invC = mmlabpack.inv(C)
+    detC = mmlabpack.det(C)
 
-        """
-        N = self.fiber_direction
+    dIdC = np.zeros((5, 6), dtype=np.float64)
+    dIdC[0] = Identity  # dI1 / dC
+    dIdC[1] = trC * Identity - mmlabpack.asarray(C, 6)  # dI2 / dC
+    dIdC[2] = .5 * np.sqrt(detC) * mmlabpack.asarray(invC, 6)  # dJ / dC
+    dIdC[3] = mmlabpack.dyad(N, N)  # dI4 / dC
+    dIdC[4] = mmlabpack.dyad(N, n) + mmlabpack.dyad(n, N)  # dI5 / dC
+    return dIdC
 
-        # Invariants of C
-        I1, I2, I3, I4, I5 = mmlabpack.get_invariants(C, N)
-        I3_ = I3 ** (-1. / 3.)
 
-        # Derivative of Ibi wrt Ij
-        dIbdI = np.zeros((5, 5), dtype=np.float64)
-        dIbdI[0, 0] = I3_  # dIb1 / dI1
-        dIbdI[0, 2] = -1. / 3. * I1 * I3_ ** 4  # dIb1 / dI3
+def get_dIbdI(I1, I2, J, I4, I5):
+    """Derivative of Ibar wrt to I"""
 
-        dIbdI[1, 1] = I3_ ** 2  # dIb2 / dI2
-        dIbdI[1, 2] = -2. / 3. * I2 * I3_ ** 5  # dIb2 / dI3
+    # Derivative of Ibi wrt Ij
+    dIbdI = np.zeros((5, 5), dtype=np.float64)
+    dIbdI[0, 0] = J ** (-2. / 3.)  # dIb1 / dI1
+    dIbdI[0, 2] = -2. / 3. * I1 * J ** (-5. / 3.)  # dIb1 / dJ
 
-        dIbdI[2, 2] = .5 * I3 ** (-.5)  # dJ / dI3
+    dIbdI[1, 1] = J ** (-4. / 3.)  # dIb2 / dI2
+    dIbdI[1, 2] = -4. / 3. * I2 * J ** (-7. / 3.)  # dIb2 / dJ
 
-        dIbdI[3, 2] = -1. / 3. * I4 * I3_ ** 4  # dIb4 / dI3
-        dIbdI[3, 3] = I3_  # dIb4 / dI4
+    dIbdI[2, 2] = 1.  # dJ / dJ
 
-        dIbdI[4, 2] = -2. / 3. * I5 * I3_ ** 5  # dIb5 / dI3
-        dIbdI[4, 4] = I3_ ** 2  # dIb5 / dI5
+    dIbdI[3, 2] = -2. / 3. * I4 * J ** (-5. / 3.)  # dIb4 / dJ
+    dIbdI[3, 3] = J ** (-2. / 3.)  # dIb4 / dI4
 
-        return dIbdI
+    dIbdI[4, 2] = -4. / 3. * I5 * J ** (-7. / 3.)  # dIb5 / dJ
+    dIbdI[4, 4] = J ** (-4. / 3.)  # dIb5 / dI5
+
+    return dIbdI
+
+
+def get_dIbdC(C, N):
+
+    n = np.dot(C, N)
+    I1, I2, I3, I4, I5 = mmlabpack.get_invariants(C, N)
+    Cinv = mmlabpack.inv(C)
+    J = np.sqrt(I3)
+    NN = mmlabpack.dyad(N, N)
+    Nn = mmlabpack.dyad(N, n)
+    nN = mmlabpack.dyad(n, N)
+
+    dJdC = .5 * J * mmlabpack.asarray(Cinv, 6)
+    C = mmlabpack.asarray(C, 6)
+
+    dIbdC = np.zeros((NINV, 6), dtype=np.float64)
+
+    dIbdC[0] = J ** (-2. / 3.) * Identity
+    dIbdC[0] += -2. / 3. * I1 * J ** (-5. / 3.) * dJdC
+
+    dIbdC[1] = J ** (-4. / 3.) * (I1 * Identity - C)
+    dIbdC[1] += -4. / 3. * I2 * J ** (-7. / 3.) * dJdC
+
+    dIbdC[2] = dJdC
+
+    dIbdC[3] = J ** (-2. / 3.) * NN
+    dIbdC[3] += -2. / 3. * I4 * J ** (-5. / 3.) * dJdC
+
+    dIbdC[4] = J ** (-4. / 3.) * (Nn + nN)
+    dIbdC[4] += -4. / 3. * I5 * J ** (-7. / 3.) * dJdC
+
+    return dIbdC

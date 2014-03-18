@@ -15,9 +15,9 @@ try:
 except ImportError:
     import utils.mmlabpack as mmlabpack
 try:
-    import gmd_user_sub as usr
+    from mml_user_sub import eval_at_step
 except ImportError:
-    usr = None
+    eval_at_step = None
 
 NSYMM = 6
 NTENS = 9
@@ -108,7 +108,7 @@ class SolidDriver(Driver):
                 xtra = self.material.adjust_initial_state(xtra)
                 sig, xtra = self.material.call_material_zero_state(
                     sig, xtra, *margs)
-                gmd_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
+                mml_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
 
             pres = -np.sum(sig[:3]) / 3.
             self.setvars(stress=sig, pressure=pres, xtra=xtra, tmpr=itmpr)
@@ -283,7 +283,7 @@ class SolidDriver(Driver):
                              symm_l=d, efield=ef, eqstrain=eqeps,
                              vstrain=epsv, pressure=pres,
                              dstress=dstress, xtra=xtra, tmpr=tmpr[1])
-                gmd_user_sub_eval(t, d, sig, xtra)
+                mml_user_sub_eval(t, d, sig, xtra)
 
                 # --- write state to file
                 endstep = abs(t - tleg[1]) / tleg[1] < 1.E-12
@@ -853,9 +853,9 @@ def _format_path(path, pathdict, tterm):
 
     return np.array(path)
 
-def gmd_user_sub_eval(t, d, sig, xtra):
+def mml_user_sub_eval(t, d, sig, xtra):
     """Evaluate a user subroutine
 
     """
-    if usr:
-        usr.gmd_user_sub(cfg.runid, t, d, sig, xtra)
+    if eval_at_step:
+        eval_at_step(cfg.runid, t, d, sig, xtra)
