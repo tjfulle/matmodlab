@@ -29,7 +29,8 @@ EXO_D = os.path.join(UTL_D, "exo")
 
 FIO = os.path.join(ROOT_D, "utils/fortran/mmlfio.f90")
 ABQIO = os.path.join(ROOT_D, "utils/fortran/abqio.f90")
-ABAUMAT = os.path.join(ROOT_D, "utils/fortran/abaumat.pyf")
+ABQUMAT = os.path.join(ROOT_D, "utils/fortran/abaumat.pyf")
+ABQUAHI = os.path.join(ROOT_D, "utils/fortran/abauanisohypinv.pyf")
 
 SO_EXT = np_so_ext()
 

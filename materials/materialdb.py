@@ -18,17 +18,31 @@ class _Material:
         self.requires_lapack = False
         self.include_dir = None
         self.python_alternative = None
-        self.abaqus_umat = False
+        self.type = "default"
         self.name = name
         for (k, v) in kwargs.items():
             if k == "class": k = "class_name"
             setattr(self, k, v)
 
         self.python_model = not self.source_files
-        if not self.python_model:
-            self.so_lib = os.path.join(cfg.PKG_D, self.name + cfg.SO_EXT)
-        else:
+        if self.python_model:
             self.so_lib = None
+
+        else:
+            self.so_lib = os.path.join(cfg.PKG_D, self.name + cfg.SO_EXT)
+
+            # assume fortran model if source files are given
+            if "abaqus" in self.type:
+                self.source_files.append(cfg.ABQIO)
+                # determine if signature file is present
+                for f in self.source_files:
+                    if f.endswith(".pyf"): break
+                else:
+                    sigf = {"abaqus_umat": cfg.ABQUMAT,
+                            "abaqus_uanioshyper_inv": cfg.ABQUAHI}[self.type]
+                    self.source_files.append(sigf)
+            else:
+                self.source_files.append(cfg.FIO)
         pass
 
     def __getitem__(self, attr):

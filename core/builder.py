@@ -8,7 +8,7 @@ import argparse
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
 from materials.materialdb import _Material
-from __config__ import ROOT_D, PKG_D, SO_EXT, FIO, ABQIO, ABAUMAT, MTL_DB, cout
+import __config__ as cfg
 
 
 class BuilderError(Exception):
@@ -35,16 +35,16 @@ class Builder(object):
 
     @property
     def path(self):
-        if not MTL_DB:
+        if not cfg.MTL_DB:
             return []
-        return MTL_DB.path
+        return cfg.MTL_DB.path
 
     @staticmethod
     def build_umat(source_file, verbosity=0):
         name = "umat"
         fb = FortranExtBuilder(name, verbosity=verbosity)
-        cout("building {0}".format(name))
-        source_files = [source_file, ABQIO, ABAUMAT]
+        cfg.cout("building {0}".format(name))
+        source_files = [source_file, cfg.ABQIO, cfg.ABQUMAT]
         fb.add_extension(name, source_files)
         fb.build_extension_modules()
         pass
@@ -60,14 +60,12 @@ class Builder(object):
 
         """
         if not isinstance(material, _Material):
-            material = MTL_DB.material_from_name(material)
-
+            material = cfg.MTL_DB.material_from_name(material)
         fb = FortranExtBuilder(material.name, verbosity=verbosity)
-        cout("building {0}".format(material.name))
-        material.source_files.append(FIO)
+        cfg.cout("building {0}".format(material.name))
         fb.add_extension(material.name, material.source_files,
                          requires_lapack=material.requires_lapack)
-        fb.build_extension_modules()
+        fb.build_extension_modules(verbosity=verbosity)
         return
 
     def _add_utils(self):
@@ -75,8 +73,8 @@ class Builder(object):
 
         """
         ext = "mmlabpack"
-        sources = [os.path.join(ROOT_D, "utils/fortran/mmlabpack.f90"),
-                   os.path.join(ROOT_D, "utils/fortran/dgpadm.f")]
+        sources = [os.path.join(cfg.ROOT_D, "utils/fortran/mmlabpack.f90"),
+                   os.path.join(cfg.ROOT_D, "utils/fortran/dgpadm.f")]
         self.fb.add_extension(ext, sources, requires_lapack="lite")
         return
 
@@ -85,21 +83,18 @@ class Builder(object):
 
         """
         if mats_to_build == "all":
-            mats_to_build = [m.name for m in MTL_DB]
+            mats_to_build = [m.name for m in cfg.MTL_DB]
 
-        cout("Material[s] to be built: {0}".format(", ".join(mats_to_build)))
+        cfg.cout("Material[s] to be built: {0}".format(", ".join(mats_to_build)))
 
-        for material in MTL_DB:
+        for material in cfg.MTL_DB:
+
             if material.name not in mats_to_build:
                 continue
+
             if material.python_model:
                 continue
 
-            # assume fortran model if source files are given
-            if material.abaqus_umat:
-                material.source_files.append(ABQIO)
-            else:
-                material.source_files.append(FIO)
             include_dirs = [material.dirname]
             d = material.include_dir
             if d and d not in include_dirs:
@@ -110,7 +105,7 @@ class Builder(object):
                 requires_lapack=material.requires_lapack)
             if stat:
                 # failed to add extension
-                MTL_DB.remove(material)
+                cfg.MTL_DB.remove(material)
 
         return
 
@@ -120,7 +115,7 @@ class Builder(object):
         """
         self.fb.build_extension_modules()
         for ext in self.fb.exts_failed:
-            cout("*** warning: {0}: failed to build".format(ext))
+            cfg.cout("*** warning: {0}: failed to build".format(ext))
 
 
 def main(argv=None):
@@ -139,11 +134,11 @@ def main(argv=None):
        help="Build auxiliary support files only [default: all]")
     args = parser.parse_args(argv)
 
-    builder = Builder("matmodlab")
+    builder = Builder("matmodlab", verbosity=args.v)
     if args.w or args.W:
-        for f in glob.glob(os.path.join(PKG_D, "*.so")):
+        for f in glob.glob(os.path.join(cfg.PKG_D, "*.so")):
             os.remove(f)
-        bld_d = os.path.join(PKG_D, "build")
+        bld_d = os.path.join(cfg.PKG_D, "build")
         if os.path.isdir(bld_d):
             shutil.rmtree(bld_d)
         if args.W:

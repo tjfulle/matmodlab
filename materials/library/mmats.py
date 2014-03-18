@@ -68,7 +68,7 @@ d = os.path.join(D, name)
 source_files = [os.path.join(d, f) for f in (name + ".f90", name + ".pyf")]
 material = {"source_files": source_files, "include_dir": d,
             "interface_file": os.path.join(d, name + ".py"),
-            "class": "ThermoElastic", "abaqus_umat": True}
+            "class": "ThermoElastic", "type": "abaqus_umat"}
 thermoelastic = _Material(name, **material)
 
 # --- collection of materials
