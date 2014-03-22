@@ -24,11 +24,12 @@ class _Material:
             if k == "class": k = "class_name"
             setattr(self, k, v)
 
-        self.python_model = not self.source_files
+        if kwargs.get("python_model", None) is None:
+            self.python_model = not self.source_files
         if self.python_model:
             self.so_lib = None
 
-        else:
+        elif name != "umat":
             self.so_lib = os.path.join(cfg.PKG_D, self.name + cfg.SO_EXT)
 
             # assume fortran model if source files are given
@@ -73,6 +74,10 @@ class _Material:
         mclass = getattr(mtlmod, self.class_name)
 
         mat = mclass()
+        if options.get("umat") is not None:
+            statev = options["umat"]
+            mat.setup_umat(params, statev)
+            del options["umat"]
         mat.setup_new_material(params)
         mat.set_constant_jacobian()
         mat.set_options(**options)

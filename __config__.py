@@ -22,6 +22,7 @@ CORE = os.path.join(ROOT_D, "core")
 VIZ_D = os.path.join(ROOT_D, "viz")
 UTL_D = os.path.join(ROOT_D, "utils")
 TLS_D = os.path.join(ROOT_D, "toolset")
+TESTS_D = os.path.join(ROOT_D, "tests")
 PKG_D = os.path.join(ROOT_D, "lib")
 BLD_D = os.path.join(ROOT_D, "build")
 LIB_D = os.path.join(ROOT_D, "lib")
@@ -55,6 +56,7 @@ MML_ENV["PATH"] = os.pathsep.join(PATH)
 # The material database - modify sys.path to find materials
 MTL_DB = mdb.MaterialDB.gen_db(UMATS)
 sys.path = MTL_DB.path + [os.getcwd()] + sys.path
+
 
 SPLASH = """\
                   M           M    M           M    L

@@ -297,8 +297,8 @@ class SolidDriver(Driver):
                     absmax = lambda a: np.max(np.abs(a))
                     sigerr = np.sqrt(np.sum((sig[v] - sigspec[2]) ** 2))
                     warned = True
-                    dnom = 1 if not absmax(sig) else absmax(sig)
-                    if sigerr / dnom > 1.e-3:
+                    _tol = np.amax(np.abs(sig[v])) / self.material.bulk_modulus
+                    if sigerr > _tol:
                         log_warning("leg: {0}, prescribed stress error: "
                                     "{1: .3f}. consider increasing number of "
                                     "steps".format(ileg, sigerr))

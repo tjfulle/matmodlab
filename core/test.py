@@ -12,7 +12,7 @@ import xml.dom.minidom as xdom
 
 import utils.xmltools as xmltools
 from utils.namespace import Namespace
-from __config__ import SPLASH, TLS_D
+from __config__ import SPLASH, TLS_D, TESTS_D
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
@@ -123,8 +123,9 @@ def main(argv=None):
     if not args.path:
         if os.path.isfile(F_RTEST_STAT):
             sys.exit(run_rtest_in_cwd())
-        parser.print_help()
-        raise Error("too few arguments: path to tests not specified", pre="\n")
+        args.path = [TESTS_D]
+#        parser.print_help()
+#        raise Error("too few arguments: path to tests not specified", pre="\n")
 
     for p in args.path:
         p = os.path.realpath(p)

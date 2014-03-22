@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 
 try:
@@ -18,10 +17,10 @@ class AbaUmat(Material):
         v = np.arange(6)
 
         time = 0.
-        dfgrd0 = np.eye(3, order="F")
-        dfgrd1 = np.eye(3, order="F")
+        dfgrd0 = np.eye(3)
+        dfgrd1 = np.eye(3)
         stran = np.zeros(6, order="F")
-        temp = self.initial_temperature
+        temp = 298. #self.initial_temperature
         dtemp = 0.
         args = (time, dfgrd0, dfgrd1, stran, temp, dtemp)
 
@@ -64,8 +63,8 @@ class AbaUmat(Material):
         dfgrd0 = np.reshape(args[1], (3, 3), order="F")
         dfgrd1 = np.reshape(args[2], (3, 3), order="F")
         stran = args[3]
-        temp = args[5]
-        dtemp = args[6]
+        temp = args[4]
+        dtemp = args[5]
 
         ddsdde = np.zeros((6, 6), order="F")
         ddsddt = np.zeros(6, order="F")

@@ -42,5 +42,5 @@ subroutine stdb_abqerr(i, msg, intv, realv, charv)
 end subroutine stdb_abqerr
 subroutine xit
   implicit none
-  stop
+  stop 'stopping due to fortran procedure error'
 end subroutine xit

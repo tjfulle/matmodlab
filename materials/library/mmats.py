@@ -76,6 +76,15 @@ NAMES = {"idealgas": idealgas, "mnrv": mnrv, "plastic": plastic,
          "elastic": elastic, "pyelastic": pyelastic, "vonmises": vonmises,
          "transisoelas": transisoelas, "thermoelas": thermoelastic}
 
+# build the source
+name = "umat"
+d = os.path.join(D, name)
+material = {"source_files": [],
+            "interface_file": os.path.join(d, "umat.py"),
+            "class": "Umat", "type": "abaqus_umat"}
+UMAT = _Material(name, **material)
+
+
 def conf(name=None):
     """Return the material configurations for building
 

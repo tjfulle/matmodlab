@@ -652,6 +652,8 @@ def pMaterial(mtldict, mtlswapdict=None):
         fatal_inp_error("expeced 'model' Material attribute")
         return
 
+    options = {}
+    istate = []
     if model.lower() == "umat":
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
@@ -674,11 +676,10 @@ def pMaterial(mtldict, mtlswapdict=None):
             if os.path.isfile(source_file):
                 break
         else:
-            fatal_inp_error("umat.f source file not found")
+            fatal_inp_error("umat.[f,for,f90] source file not found")
             return
 
-        # build the source
-        Builder.build_umat(source_file)
+        # get parameters
         ui = mtldict.get("Content")
         if not ui:
             fatal_inp_error("no model parameters found")
@@ -707,105 +708,111 @@ def pMaterial(mtldict, mtlswapdict=None):
                 depvar[:] = val
                 continue
 
-        print params
-        print depvar
-        sys.exit("umat not yet completed")
+        if np.all(np.abs(params) < 1.E-012):
+            fatal_inp_error(" values for params given")
+            return
 
-    # if the user requested it, replace one material model in favor of another.
-    if mtlswapdict.has_key(model):
-        newmodel = mtlswapdict[model]
-        inp_warning("Swapping out model '{0}' for '{1}'".format(model, newmodel))
-        model = newmodel
+        Builder.build_umat(source_file)
+        import materials.library.mmats as mm
+        mtlmdl = mm.UMAT
+        options["umat"] = depvar
 
-    mtlmdl = cfg.MTL_DB.get(model)
-    if mtlmdl is None:
-        fatal_inp_error("{0}: material not in database".format(model))
-        return
+    else:
+        # if the user requested it, replace one material model in favor of another.
+        if mtlswapdict.has_key(model):
+            newmodel = mtlswapdict[model]
+            inp_warning("Swapping out model '{0}' "
+                        "for '{1}'".format(model, newmodel))
+            model = newmodel
 
-    # check if shared object exists for this material (if applicable)
-    if not mtlmdl.python_model and not mtlmdl.so_exists:
-        # material shared object does not exist, let's build it now
-        from utils.fortran.extbuilder import FortranNotFoundError
-        if cfg.FC:
-            inp_warning("building the required extension library {0} for "
-                        "model {1}".format(mtlmdl.ext_module, mtlmdl.name))
-            Builder.build_material(mtlmdl)
+        mtlmdl = cfg.MTL_DB.get(model)
+        if mtlmdl is None:
+            fatal_inp_error("{0}: material not in database".format(model))
+            return
 
-        else:
-            inp_warning(
-                "A fortran compiler is required to build and run the {0}\n"
-                "material model, but none was found. If a fortran compiler is\n"
-                "built on this system, set your PATH or FC environment\n"
-                "variables so that it can be found.".format(mtlmdl.name))
+        # check if shared object exists for this material (if applicable)
+        if not mtlmdl.python_model and not mtlmdl.so_exists:
+            # material shared object does not exist, let's build it now
+            from utils.fortran.extbuilder import FortranNotFoundError
+            if cfg.FC:
+                inp_warning("building the required extension library {0} for "
+                            "model {1}".format(mtlmdl.ext_module, mtlmdl.name))
+                Builder.build_material(mtlmdl)
 
-            if mtlmdl.python_alternative:
-                # No fortran compiler, see if we should use the python alternative
-                q = "Continue with the {0} model? (y/n)[n]? ".format(
-                    mtlmdl.python_alternative.name)
-                resp = timed_raw_input(q, timeout=8)
-                if resp is None:
-                    raise SystemExit("timed out")
-                elif resp.lower().strip()[0] == "y":
-                    mtlmdl = cfg.MTL_DB.get(mtlmdl.python_alternative.name)
+            else:
+                inp_warning(
+                    "A fortran compiler is required to build and run the {0}\n"
+                    "material model, but none was found. If a fortran compiler is\n"
+                    "built on this system, set your PATH or FC environment\n"
+                    "variables so that it can be found.".format(mtlmdl.name))
+
+                if mtlmdl.python_alternative:
+                    # No fortran compiler, see if we should use the python
+                    # alternative
+                    q = "Continue with the {0} model? (y/n)[n]? ".format(
+                        mtlmdl.python_alternative.name)
+                    resp = timed_raw_input(q, timeout=8)
+                    if resp is None:
+                        raise SystemExit("timed out")
+                    elif resp.lower().strip()[0] == "y":
+                        mtlmdl = cfg.MTL_DB.get(mtlmdl.python_alternative.name)
+                    else:
+                        raise SystemExit()
+
                 else:
                     raise SystemExit()
 
-            else:
-                raise SystemExit()
+        # parse_table -> dictionary of material property name:index
+        # put the parameters in an array
+        params = np.zeros(len(set(mtlmdl.parse_table.values())))
 
-    # parse_table -> dictionary of material property name:index
-    # put the parameters in an array
-    params = np.zeros(len(set(mtlmdl.parse_table.values())))
-
-    # get the user give parameters
-    try:
-        ui = mtldict.pop("Content")
-    except KeyError:
-        fatal_inp_error("no material parameters found")
-        ui = []
-
-    istate = []
-    for p in ui:
-        p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
-        name = p[0]
-
-        # --- look for special values of input before parameters
-        if name == "ParameterArray":
-            # entire parameter array given. assumes all components are give
-            # and that they are in right order
-            val = np.array(child2list(" ".join(p[1:]), dtype=float))
-            if val.shape[0] != params.shape[0]:
-                fatal_inp_error("incorrect length of ParameterArray")
-                continue
-            params[:] = val
-            continue
-
-        elif name == "InitialState":
-            # initial state given as [stress, xtra]
-            istate = np.array(child2list(" ".join(p[1:]), dtype=float))
-            continue
-
-        # not a special name -> a parameter name find its location in the
-        # material parameter array and put it in the right spot
-        idx = mtlmdl.parse_table.get(name.lower())
-        if idx is None:
-            fatal_inp_error("Material: {0}: invalid parameter for the {1} "
-                            "material model".format(name, model))
-            continue
-        if idx == -1:
-            inp_warning("Material: {0}: parameter derived at setup by model, "
-                        "ignoring".format(name))
-            continue
-
+        # get the user give parameters
         try:
-            val = float(p[1])
-        except ValueError:
-            fatal_inp_error("Material: {0}: invalid value "
-                            "{1}".format(name, p[1]))
-            continue
-        params[idx] = val
+            ui = mtldict.pop("Content")
+        except KeyError:
+            fatal_inp_error("no material parameters found")
+            ui = []
 
-    options = {}
+        for p in ui:
+            p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
+            name = p[0]
+
+            # --- look for special values of input before parameters
+            if name == "ParameterArray":
+                # entire parameter array given. assumes all components are give
+                # and that they are in right order
+                val = np.array(child2list(" ".join(p[1:]), dtype=float))
+                if val.shape[0] != params.shape[0]:
+                    fatal_inp_error("incorrect length of ParameterArray")
+                    continue
+                params[:] = val
+                continue
+
+            elif name == "InitialState":
+                # initial state given as [stress, xtra]
+                istate = np.array(child2list(" ".join(p[1:]), dtype=float))
+                continue
+
+            # not a special name -> a parameter name find its location in the
+            # material parameter array and put it in the right spot
+            idx = mtlmdl.parse_table.get(name.lower())
+            if idx is None:
+                fatal_inp_error("Material: {0}: invalid parameter for the {1} "
+                                "material model".format(name, model))
+                continue
+            if idx == -1:
+                inp_warning("Material: {0}: parameter derived at setup by model, "
+                            "ignoring".format(name))
+                continue
+
+            try:
+                val = float(p[1])
+            except ValueError:
+                fatal_inp_error("Material: {0}: invalid value "
+                                "{1}".format(name, p[1]))
+                continue
+            params[idx] = val
+
     options["constant_jacobian"] = mtldict["constant_jacobian"]
     return mtlmdl, params, options, istate
 
