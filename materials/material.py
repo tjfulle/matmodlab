@@ -43,6 +43,8 @@ class Material(object):
         s = [n.upper() for n in s.split(":")]
         if mode == 0:
             return s[0], s[1:]
+        if mode == -1:
+            return s[0]
         return ":".join(s)
 
     def _verify_param_names(self):
@@ -191,7 +193,9 @@ class Material(object):
 
     def setup_new_material(self, params):
         self.iparams = np.array(params)
-        self.params = Parameters(self.param_names, params)
+        names = [self._fmt_param_name_aliases(p, mode=-1)
+                 for p in self.param_names]
+        self.params = Parameters(names, params)
         self.setup()
 
     def setup(self, *args, **kwargs):
