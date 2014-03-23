@@ -129,10 +129,13 @@ class MaterialDB(object):
     def __iter__(self):
         return iter(self._materials)
 
-    def __getitem__(self, name):
+    def __getitem__(self, mat):
+        try: mat = mat.name
+        except AttributeError: pass
         for m in self._materials:
-            if name == m.name:
+            if mat == m.name:
                 return m
+        raise AttributeError("{0}: not in material database".format(name))
 
     def __len__(self):
         return len(self._materials)

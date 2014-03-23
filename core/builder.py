@@ -7,7 +7,6 @@ import argparse
 
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
-from materials.materialdb import _Material
 import __config__ as cfg
 
 
@@ -59,8 +58,7 @@ class Builder(object):
           The name of the material to build
 
         """
-        if not isinstance(material, _Material):
-            material = cfg.MTL_DB.material_from_name(material)
+        material = cfg.MTL_DB[material]  #.material_from_name(material)
         fb = FortranExtBuilder(material.name, verbosity=verbosity)
         cfg.cout("building {0}".format(material.name))
         fb.add_extension(material.name, material.source_files,
