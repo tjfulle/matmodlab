@@ -31,10 +31,9 @@ class TransIsoElas(Material):
         vec = vec / vmag if vmag > 0.0 else np.array([1, 0, 0])
         self.M = np.outer(vec, vec)
 
-        self.eps = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         self.register_xtra_variables(["EPS_XX", "EPS_YY", "EPS_ZZ",
                                       "EPS_XY", "EPS_YZ", "EPS_XZ"])
-        self.set_initial_state(list(self.eps))
+        self.set_initial_state(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
 
         self.bulk_modulus = self.params["B0"]
         self.shear_modulus = self.params["A0"]
@@ -67,11 +66,11 @@ class TransIsoElas(Material):
         """
 
         # Handle strain-related tasks
-        self.eps = np.array(xtra) + d * dt
-        D = np.array([[self.eps[0], self.eps[3], self.eps[5]],
-                      [self.eps[3], self.eps[1], self.eps[4]],
-                      [self.eps[5], self.eps[4], self.eps[2]]])
-        xtra = list(self.eps)
+        eps = np.array(xtra) + d * dt
+        D = np.array([[eps[0], eps[3], eps[5]],
+                      [eps[3], eps[1], eps[4]],
+                      [eps[5], eps[4], eps[2]]])
+        xtra = eps
 
         # Calculate some helper functions
         trD = np.trace(D)

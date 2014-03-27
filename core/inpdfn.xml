@@ -106,6 +106,7 @@
       <Attribute name="tfmt" default="time" type="string"
 		 choices="time dt"/>
       <Attribute name="cfmt" default="222222" type="string"/>
+      <Attribute name="lineskip" type="real" default="0"/>
     </Element>
 
     <Element name="Extract" n="?">

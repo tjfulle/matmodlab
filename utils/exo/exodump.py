@@ -29,7 +29,7 @@ def main(argv=None):
         help="List variable names and exit")
     parser.add_argument("--ffmt",
         help="Output floating point format [default: .18f]")
-    parser.add_argument("--ofmt", default="ascii", choices=exodump.OFMTS.keys(),
+    parser.add_argument("--ofmt", default="ascii", choices=OFMTS.keys(),
         help="Output format [default: %(default)s]")
     parser.add_argument("--step", default=1, type=int,
         help="Step [default: %(default)s]")

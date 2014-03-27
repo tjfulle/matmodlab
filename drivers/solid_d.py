@@ -379,7 +379,8 @@ def pPrdef(pathdict, functions, tterm):
     elif pformat == "table":
         path = parse_path_table(lines, pathdict["tfmt"],
                                 pathdict["cols"],
-                                pathdict["cfmt"])
+                                pathdict["cfmt"],
+                                pathdict["lineskip"])
 
     elif pformat == "fcnspec":
         path = parse_path_cijfcn(lines, functions,
@@ -453,7 +454,7 @@ def parse_path_default(lines):
     return path
 
 
-def parse_path_table(lines, tfmt, cols, cfmt):
+def parse_path_table(lines, tfmt, cols, cfmt, lineskip):
     """Parse the path table
 
     """
@@ -466,8 +467,8 @@ def parse_path_table(lines, tfmt, cols, cfmt):
     control = format_path_control(cfmt)
 
     tbl = []
-    for line in lines:
-        if not line:
+    for idx, line in enumerate(lines):
+        if idx < lineskip or not line:
             continue
         if line[0].strip().startswith("#"):
             continue
