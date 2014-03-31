@@ -657,6 +657,7 @@ def pMaterial(mtldict, mtlswapdict=None):
     if model.lower() == "umat":
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
+        options["umat_name"] = mtldict["name"]
         if nprops == NOT_SPECIFIED:
             fatal_inp_error("umat: constants must be specified")
             return
@@ -928,6 +929,7 @@ def pExtract(extdict, driver):
 
 
 def child2list(child_lines, dtype=str):
+    child_lines = re.sub(r",", " ", child_lines)
     child_list = [dtype(s) for line in child_lines.split("\n")
                   for s in line.split() if s.split()]
     return child_list

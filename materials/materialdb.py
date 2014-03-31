@@ -74,13 +74,13 @@ class _Material:
         mclass = getattr(mtlmod, self.class_name)
 
         mat = mclass()
+        mat.set_options(**options)
         if options.get("umat") is not None:
             statev = options["umat"]
             mat.setup_umat(params, statev)
             del options["umat"]
         mat.setup_new_material(params)
         mat.set_constant_jacobian()
-        mat.set_options(**options)
 
         return mat
 
@@ -135,7 +135,7 @@ class MaterialDB(object):
         for m in self._materials:
             if mat == m.name:
                 return m
-        raise AttributeError("{0}: not in material database".format(name))
+        raise AttributeError("{0}: not in material database".format(mat))
 
     def __len__(self):
         return len(self._materials)

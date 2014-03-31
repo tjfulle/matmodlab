@@ -20,9 +20,9 @@ class AbaUmat(Material):
         dfgrd0 = np.eye(3)
         dfgrd1 = np.eye(3)
         stran = np.zeros(6, order="F")
-        temp = 298. #self.initial_temperature
+        temp = self._initial_temperature
         dtemp = 0.
-        args = (time, dfgrd0, dfgrd1, stran, temp, dtemp)
+        args = (time, dfgrd0, dfgrd1, stran, np.zeros(3), temp, dtemp)
 
         return self.jacobian(dtime, dstran, stress, statev, v, *args)
 
@@ -57,14 +57,14 @@ class AbaUmat(Material):
             temperature increment
 
         """
-        cmname = "umat    "
+        cmname = "{0:8s}".format(self._umat_name)
 
         time = args[0]
         dfgrd0 = np.reshape(args[1], (3, 3), order="F")
         dfgrd1 = np.reshape(args[2], (3, 3), order="F")
         stran = args[3]
-        temp = args[4]
-        dtemp = args[5]
+        temp = args[5]
+        dtemp = args[6]
 
         ddsdde = np.zeros((6, 6), order="F")
         ddsddt = np.zeros(6, order="F")

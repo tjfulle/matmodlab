@@ -77,6 +77,7 @@
 
     <Element name="Material" n="1" content="children">
       <Attribute name="model" type="string"/>
+      <Attribute name="name" type="string" default="none"/>
       <Attribute name="constants" type="integer"/>
       <Attribute name="depvar" type="integer" default="1"/>
       <Attribute name="constant_jacobian" default="false" type="boolean"/>

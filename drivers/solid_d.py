@@ -48,7 +48,10 @@ class SolidDriver(Driver):
         self.path = path
 
         # Create material
+        itmpr = path[0][18]
+        ifield = path[0][19:]
         mtl, params, options, istate = material
+        options["initial_temperature"] = itmpr
         self._mtl_istate = istate
         self.material = mtl.instantiate_material(params, options)
 
@@ -79,8 +82,6 @@ class SolidDriver(Driver):
         # allocate storage
         self.allocd()
 
-        itmpr = path[0][18]
-        ifield = path[0][19:]
         if opts[0] == RESTART:
             # restart info given
             start_leg, time, glob_data, elem_data = opts[3]
@@ -136,7 +137,7 @@ class SolidDriver(Driver):
         glob_step_num = self.step_num
         xtra = self.elem_var_vals("XTRA")
         sig = self.elem_var_vals("STRESS")
-        tmpr = np.zeros(2)
+        tmpr = np.zeros(3)
         tmpr[1] = self.elem_var_vals("TMPR")
         tleg = np.zeros(2)
         d = np.zeros(NSYMM)
@@ -239,25 +240,25 @@ class SolidDriver(Driver):
                 # increment time
                 t += dt
                 self.time = t
-                tmpr[1] += dtmpr
 
                 # interpolate values to the target values for this step
                 a1 = float(nsteps - (n + 1)) / nsteps
                 a2 = float(n + 1) / nsteps
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
+                tmpr[2] = a1 * tmpr[0] + a2 * tmpr[1]
 
                 # --- find current value of d: sym(velocity gradient)
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    margs = (t, f0, f, eps, ef, tmpr[1], dtmpr, ufield)
+                    margs = (t, f0, f, eps, ef, tmpr[2]-dtmpr, dtmpr, ufield)
                     d = sig2d(self.material, dt, depsdt, sig, xtra, v,
                               sigspec[2], self.proportional, *margs)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
                 f, eps = mmlabpack.update_deformation(dt, kappa, f0, d)
-                margs = (t, f0, f, eps, ef, tmpr[1], dtmpr, ufield)
+                margs = (t, f0, f, eps, ef, tmpr[2]-dtmpr, dtmpr, ufield)
 
                 # update material state
                 sigsave = np.array(sig)
@@ -282,7 +283,7 @@ class SolidDriver(Driver):
                 self.setvars(stress=sig, strain=eps, defgrad=f,
                              symm_l=d, efield=ef, eqstrain=eqeps,
                              vstrain=epsv, pressure=pres,
-                             dstress=dstress, xtra=xtra, tmpr=tmpr[1])
+                             dstress=dstress, xtra=xtra, tmpr=tmpr[2])
                 mml_user_sub_eval(t, d, sig, xtra)
 
                 # --- write state to file
