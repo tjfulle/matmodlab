@@ -36,7 +36,16 @@ class Material(object):
                     n = n[1:]
                     i = -i
                 parse_table[n] = i
-        return parse_table
+
+        if hasattr(cls, 'param_defaults'):
+            param_defaults = np.array(cls.param_defaults)
+            if len(set(parse_table.values())) != len(param_defaults):
+                raise Error1("{0}: len(param_defaults) != len(param_names)".
+                                                          format(self.name))
+        else:
+            param_defaults = np.zeros(len(set(parse_table.values())))
+
+        return parse_table, param_defaults
 
     @staticmethod
     def _fmt_param_name_aliases(s, mode=0):

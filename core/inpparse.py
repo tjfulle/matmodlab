@@ -765,7 +765,7 @@ def pMaterial(mtldict, mtlswapdict=None):
 
         # parse_table -> dictionary of material property name:index
         # put the parameters in an array
-        params = np.zeros(len(set(mtlmdl.parse_table.values())))
+        params = mtlmdl.param_defaults
 
         # get the user give parameters
         try:
