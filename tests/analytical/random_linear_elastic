@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+import os
+import random
+import numpy
+
+testname = os.path.splitext(os.path.basename(__file__))[0]
+
+def get_stress(e11, e22, e33, e12, e23, e13, LAM, G):
+    #standard hooke's law
+    sig11 = (2.0 * G + LAM) * e11 + LAM * (e22 + e33)
+    sig22 = (2.0 * G + LAM) * e22 + LAM * (e11 + e33)
+    sig33 = (2.0 * G + LAM) * e33 + LAM * (e11 + e22)
+    sig12 = 2.0 * G * e12
+    sig23 = 2.0 * G * e23
+    sig13 = 2.0 * G * e13
+    return sig11, sig22, sig33, sig12, sig23, sig13
+
+
+if __name__ == '__main__':
+    print("Starting processing")
+
+    # poisson_ratio and young's modulus
+    nu = random.uniform(-1.0 + 1.0e-5, 0.5 - 1.0e-5)
+    E = max(1.0, 10 ** random.uniform(0.0, 12.0))
+
+    # K and G are used for parameterization
+    K = E / (3.0 * (1.0 - 2.0 * nu))
+    G = E / (2.0 * (1.0 + nu))
+
+    # LAM is used for computation
+    LAM = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
+
+    # Write the parameters file
+    with open(testname + "_parameters.txt", 'w') as f:
+        f.write("      <K> {0:.14e} </K>\n".format(K))
+        f.write("      <G> {0:.14e} </G>\n".format(G))
+
+    N = 100
+    strain_fac = 0.01
+    #               time   e11   e22   e33
+    strain_table = [[0.0, 0.0, 0.0, 0.0]]
+    for idx in range(1, 6):
+        strain_table.append([float(idx), random.uniform(-strain_fac, strain_fac),
+                                         random.uniform(-strain_fac, strain_fac),
+                                         random.uniform(-strain_fac, strain_fac)])
+
+    ##############################################
+
+    expanded = [[_] for _ in strain_table[0]]
+
+    for idx in range(0, len(strain_table) - 1):
+        for jdx in range(0, len(strain_table[0])):
+            start = strain_table[idx][jdx]
+            end = strain_table[idx + 1][jdx]
+
+            expanded[jdx] = expanded[jdx] + list(numpy.linspace(start, end, N))[1:]
+
+
+    flfmt = lambda x: "{0:20.10e}".format(x)
+    strfmt = lambda x: "{0:>20s}".format(x)
+    with open(testname + "_analytical.out", 'w') as f:
+        headers = ["TIME", "STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
+                           "STRESS_XX", "STRESS_YY", "STRESS_ZZ"]
+        f.write("".join([strfmt(_) for _ in headers]) + "\n")
+
+
+        for idx in range(0, len(expanded[0])):
+            t = expanded[0][idx]
+            e1 = expanded[1][idx]
+            e2 = expanded[2][idx]
+            e3 = expanded[3][idx]
+            sig = get_stress(e1, e2, e3, 0.0, 0.0, 0.0, LAM, G)
+            sig11, sig22, sig33, sig12, sig23, sig13 = sig
+
+            f.write("".join(flfmt(_) for _ in [t, e1, e2, e3, sig11, sig22, sig33]) + "\n")
+
+    with open("base.exdiff", 'w') as f:
+        f.write('<ExDiff ftol="1.0e-2" dtol="5.0e-3">\n')
+        f.write('<Variable name="TIME"/>\n')
+        f.write('<Variable name="STRESS_XX"/>\n')
+        f.write('<Variable name="STRESS_YY"/>\n')
+        f.write('<Variable name="STRESS_ZZ"/>\n')
+        f.write('<Variable name="STRESS_XY"/>\n')
+        f.write('<Variable name="STRESS_YZ"/>\n')
+        f.write('<Variable name="STRESS_XZ"/>\n')
+        f.write('<Variable name="STRAIN_XX"/>\n')
+        f.write('<Variable name="STRAIN_YY"/>\n')
+        f.write('<Variable name="STRAIN_ZZ"/>\n')
+        f.write('<Variable name="STRAIN_XY"/>\n')
+        f.write('<Variable name="STRAIN_YZ"/>\n')
+        f.write('<Variable name="STRAIN_XZ"/>\n')
+        f.write('</ExDiff>\n')
+

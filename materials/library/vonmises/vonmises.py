@@ -5,7 +5,17 @@ from core.mmlio import Error1, log_error, log_message
 
 class VonMises(Material):
     name = "vonmises"
-    param_names = ["K", "G", "Y0", "H", "BETA"]
+    param_names = ["K",    # Linear elastic bulk modulus
+                   "G",    # Linear elastic shear modulus
+                   "Y0",   # yield stress in uniaxial tension
+                           #    (yield in tension) = sqrt(3)*(yield in shear)
+                   "H",    # Hardening modulus
+                   "BETA", # isotropic/kinematic hardening parameter
+                           #    BETA = 0 for isotropic hardening
+                           #    0 < BETA < 1 for mixed hardening
+                           #    BETA = 1 for kinematic hardening
+                  ]
+    param_defaults = [0.0, 0.0, 1.0e30, 0.0, 0.0]
 
     def setup(self):
         """Set up the von Mises material
