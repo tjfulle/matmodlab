@@ -674,7 +674,10 @@ def run_rtest(args):
                 os.symlink(src, dst)
 
         # Generate the material swap commands
-        mtlswapstr = " ".join("-s \"{0}\"".format(_) for _ in mtlswaplist)
+        mtlswapcmd = []
+        for pair in mtlswaplist:
+            mtlswapcmd.append("-s")
+            mtlswapcmd.append('{0}'.format(pair))
 
         # run each command
         status = []
@@ -682,8 +685,9 @@ def run_rtest(args):
             exe = os.path.basename(cmd[0])
             outf = "_".join(exe.split()) + ".con"
             out = open(outf, "w")
-            if exe == "mmd" and mtlswapstr is not '':
-                cmd.insert(1, mtlswapstr)
+            if exe == "mmd" and len(mtlswapcmd) > 0:
+                cmd = cmd[:1] + mtlswapcmd + cmd[1:]
+#                cmd.insert(1, mtlswapstr)
             job = subprocess.Popen(cmd, env=xenv.env,
                                    stdout=out, stderr=subprocess.STDOUT)
             job.wait()
