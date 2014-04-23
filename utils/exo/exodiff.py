@@ -7,7 +7,7 @@ import numpy as np
 import xml.dom.minidom as xdom
 import linecache
 
-from exofile import ExodusIIReader
+from exoread import ExodusIIReader
 
 class Logger(object):
     def __init__(self):
@@ -80,9 +80,9 @@ def loadcontents(filepath):
 
 def loadexo(filepath):
     LOG.info("Reading {0}".format(filepath))
-    exof = ExodusIIReader.new_from_exofile(filepath)
-    glob_var_names = exof.glob_var_names()
-    elem_var_names = exof.elem_var_names()
+    exof = ExodusIIReader(filepath)
+    glob_var_names = exof.glob_var_names
+    elem_var_names = exof.elem_var_names
     data = [exof.get_all_times()]
     for glob_var_name in glob_var_names:
         data.append(exof.get_glob_var_time(glob_var_name))

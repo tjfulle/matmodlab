@@ -125,13 +125,13 @@ class ExoManager(object):
             The simulation ID
 
         """
-        from utils.exo.exofile import ExodusIIWriter
+        from utils.exo import ExodusIIFile
         self.runid = runid
         if filepath is not None:
-            self.exofile = ExodusIIWriter.from_existing(filepath)
+            self.exofile = ExodusIIFile(filepath, mode="a")
             self.filepath = filepath
         else:
-            self.exofile = ExodusIIWriter.new_from_runid(runid)
+            self.exofile = ExodusIIFile(runid, mode="w")
             self.filepath = self.exofile.filename
 
     def setup_new(self, title, glob_var_names, elem_var_names, info):
@@ -181,7 +181,9 @@ class ExoManager(object):
         self.exofile.put_qa(num_qa_rec, qa_record)
 
         # information records
-        self.exofile.put_info(format_exrestart_info(*info))
+        info = format_exrestart_info(*info)
+        num_info = len(info)
+        self.exofile.put_info(num_info, info)
 
         # write results variables parameters and names
         num_glob_vars = len(glob_var_names)

@@ -41,7 +41,7 @@ def format_exrestart_info(material, driver, extract):
         Formatted list of strings to put in exodus file
 
     """
-    from utils.exo.exoconst import MAX_LINE_LENGTH
+    from utils.exo.exoinc import MAX_LINE_LENGTH
     ex_info = []
     ex_info.append(S_MML_DECL)
     ex_info.append(S_REST_VERS)
