@@ -1,0 +1,19 @@
+<MMLSpec>
+
+  <Physics>
+
+    <Path type="prdef" format="table" cols="1 2 3 4" cfmt="222" tfmt="time" nfac="1" lineskip="1">
+      <Include href="random_j2_plasticity_analytical.out"/>
+    </Path>
+
+    <Material model="vonmises">
+      <Include href="random_j2_plasticity_parameters.txt"/>
+    </Material>
+
+    <Extract format="ascii" step="1" ffmt="12.6E">
+      stress strain
+    </Extract>
+
+  </Physics>
+
+</MMLSpec>

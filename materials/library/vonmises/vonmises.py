@@ -8,7 +8,8 @@ class VonMises(Material):
     param_names = ["K",    # Linear elastic bulk modulus
                    "G",    # Linear elastic shear modulus
                    "Y0",   # yield stress in uniaxial tension
-                           #    (yield in tension) = sqrt(3)*(yield in shear)
+                           #    (yield in tension) = sqrt(3) * (yield in shear)
+                           #                       = sqrt(3) * sqrt(J2)
                    "H",    # Hardening modulus
                    "BETA", # isotropic/kinematic hardening parameter
                            #    BETA = 0 for isotropic hardening

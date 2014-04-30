@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+import os
+import random
+import numpy
+
+testname = os.path.splitext(os.path.basename(__file__))[0]
+
+##################################################
+# THIS FILE IS ONLY ANALYTIC FOR ONE LOADING LEG #
+##################################################
+
+def comp_rootj2(sig11, sig22, sig33, sig12, sig23, sig13):
+    rootj2 = ((sig11 - sig22) ** 2 +
+              (sig22 - sig33) ** 2 +
+              (sig33 - sig11) ** 2 +
+              6.0 * (sig12 ** 2 + sig23 ** 2 + sig13 ** 2))
+    return numpy.sqrt(rootj2 / 6.0)
+
+def get_stress(e11, e22, e33, e12, e23, e13, LAM, G, rootj2lim):
+    YIELDING = False
+    #standard hooke's law
+    sig11 = (2.0 * G + LAM) * e11 + LAM * (e22 + e33)
+    sig22 = (2.0 * G + LAM) * e22 + LAM * (e11 + e33)
+    sig33 = (2.0 * G + LAM) * e33 + LAM * (e11 + e22)
+    sig12 = 2.0 * G * e12
+    sig23 = 2.0 * G * e23
+    sig13 = 2.0 * G * e13
+
+    rootj2 = comp_rootj2(sig11, sig22, sig33, sig12, sig23, sig13)
+    if rootj2 > rootj2lim:
+        YIELDING = True
+        sigmean = (sig11 + sig22 + sig33) / 3.0
+        s11 = sig11 - sigmean
+        s22 = sig22 - sigmean
+        s33 = sig33 - sigmean
+        dev_mag = numpy.sqrt(sum([_ ** 2 for _ in [s11, s22, s33, sig12, sig23, sig13]]))
+        fac = rootj2lim / dev_mag * numpy.sqrt(2.0)
+        sig11 = sigmean + s11 * fac
+        sig22 = sigmean + s22 * fac
+        sig33 = sigmean + s33 * fac
+        sig12 = sig12 * fac
+        sig23 = sig23 * fac
+        sig13 = sig13 * fac
+
+    rootj2 = comp_rootj2(sig11, sig22, sig33, sig12, sig23, sig13)
+
+    return (sig11, sig22, sig33, sig12, sig23, sig13), YIELDING
+
+
+if __name__ == '__main__':
+    print("Starting processing")
+
+    # poisson_ratio and young's modulus
+    nu = random.uniform(-1.0 + 1.0e-5, 0.5 - 1.0e-5)
+    E = max(10.0, 10 ** random.uniform(0.0, 12.0))
+    rootj2lim = 0.0
+
+    # K and G are used for parameterization
+    K = E / (3.0 * (1.0 - 2.0 * nu))
+    G = E / (2.0 * (1.0 + nu))
+
+    # LAM is used for computation
+    LAM = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
+
+    ##############################################
+
+    N = 500
+    epsrand = lambda: random.uniform(-0.1, 0.1)
+    eps1 = epsrand()
+    eps2 = epsrand()
+    eps3 = epsrand()
+    expanded = [list(numpy.linspace(0.0, 1.0, N)),         # time
+                list(numpy.linspace(0.0, eps1, N)),   # e11
+                list(numpy.linspace(0.0, eps2, N)),   # e22
+                list(numpy.linspace(0.0, eps3, N))]   # e33
+
+    counter = 0
+    while (not get_stress(eps1, eps2, eps3, 0.0, 0.0, 0.0, LAM, G, rootj2lim)[1] or
+           get_stress(eps1/4.0, eps2/4.0, eps3/4.0, 0.0, 0.0, 0.0, LAM, G, rootj2lim)[1]):
+        rootj2lim = max(1.0, 10 ** random.uniform(0.0, 12.0))
+        counter += 1
+        if counter > 100:
+            print("break")
+            break
+#    sig, YIELDING = get_stress(e1, e2, e3, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
+    ##############################################
+
+    # Write the parameters file
+    with open(testname + "_parameters.txt", 'w') as f:
+        f.write("      <K> {0:.14e} </K>\n".format(K))
+        f.write("      <G> {0:.14e} </G>\n".format(G))
+        f.write("      <Y0> {0:.14e} </Y0>\n".format(numpy.sqrt(3) * rootj2lim))
+
+    ##############################################
+
+    flfmt = lambda x: "{0:20.10e}".format(x)
+    strfmt = lambda x: "{0:>20s}".format(x)
+    with open(testname + "_analytical.out", 'w') as f:
+        headers = ["TIME", "STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
+                           "STRESS_XX", "STRESS_YY", "STRESS_ZZ"]
+        f.write("".join([strfmt(_) for _ in headers]) + "\n")
+
+
+        for idx in range(0, len(expanded[0])):
+            t = expanded[0][idx]
+            e1 = expanded[1][idx]
+            e2 = expanded[2][idx]
+            e3 = expanded[3][idx]
+            sig, YIELDING = get_stress(e1, e2, e3, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
+            sig11, sig22, sig33, sig12, sig23, sig13 = sig
+
+            f.write("".join(flfmt(_) for _ in [t, e1, e2, e3, sig11, sig22, sig33]) + "\n")
+
+    with open("base.exdiff", 'w') as f:
+        f.write('<ExDiff ftol="1.0e-2" dtol="5.0e-3">\n')
+        f.write('<Variable name="TIME"/>\n')
+        f.write('<Variable name="STRESS_XX"/>\n')
+        f.write('<Variable name="STRESS_YY"/>\n')
+        f.write('<Variable name="STRESS_ZZ"/>\n')
+        f.write('<Variable name="STRESS_XY"/>\n')
+        f.write('<Variable name="STRESS_YZ"/>\n')
+        f.write('<Variable name="STRESS_XZ"/>\n')
+        f.write('<Variable name="STRAIN_XX"/>\n')
+        f.write('<Variable name="STRAIN_YY"/>\n')
+        f.write('<Variable name="STRAIN_ZZ"/>\n')
+        f.write('<Variable name="STRAIN_XY"/>\n')
+        f.write('<Variable name="STRAIN_YZ"/>\n')
+        f.write('<Variable name="STRAIN_XZ"/>\n')
+        f.write('</ExDiff>\n')
+

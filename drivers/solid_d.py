@@ -169,8 +169,8 @@ class SolidDriver(Driver):
 
             tleg[1] = leg[0]
             nsteps = leg[1]
-            control = leg[2:7]
-            c = leg[8:13]
+            control = leg[2:8]
+            c = leg[8:14]
             ndumps = leg[14]
             ef = leg[15:18]
             tmpr[1] = leg[18]
