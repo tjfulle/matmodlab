@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-import xnetcdf as nc
+import netcdf as nc
 from exoinc import *
 
 
@@ -68,15 +68,15 @@ class ExodusIIReader(object):
 
     @property
     def glob_var_names(self):
-        return chara_to_text(self.db.variables[VAR_NAME_GLO_VAR].data)
+        return chara_to_text(self.db.variables[VAR_NAME_GLO_VAR].data, aslist=True)
 
     @property
     def elem_var_names(self):
-        return chara_to_text(self.db.variables[VAR_NAME_ELE_VAR].data)
+        return chara_to_text(self.db.variables[VAR_NAME_ELE_VAR].data, aslist=True)
 
     @property
     def node_var_names(self):
-        return chara_to_text(self.db.variables[VAR_NAME_NOD_VAR].data)
+        return chara_to_text(self.db.variables[VAR_NAME_NOD_VAR].data, aslist=True)
 
     @property
     def coord_names(self):

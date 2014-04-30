@@ -1,4 +1,5 @@
 import numpy
+import scipy.linalg
 
 def epsilon(a):
     """Find the machine precision for a float of type 'a'"""

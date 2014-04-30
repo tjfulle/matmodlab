@@ -23,10 +23,13 @@ def ex_catstr2(string1, num1, string2, num2):
     return "{0}{1}{2}{3}".format(string1, num1, string2, num2)
 
 
-def chara_to_text(chara):
+def chara_to_text(chara, aslist=False):
     if chara.ndim == 1:
         return "".join(chara).strip()
-    return np.array(["".join(row).strip() for row in chara])
+    chara_as_text = ["".join(row).strip() for row in chara]
+    if aslist:
+        return chara_as_text
+    return np.array(chara_as_text)
 
 
 # ------------------------------------------------------------ exodusII.h --- #

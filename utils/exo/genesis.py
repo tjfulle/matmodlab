@@ -3,7 +3,7 @@ import sys
 import imp
 import numpy as np
 
-import xnetcdf as nc
+import netcdf as nc
 from exoinc import *
 
 
