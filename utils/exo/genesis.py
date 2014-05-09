@@ -24,7 +24,7 @@ class Genesis(object):
         minus the prefix 'ex_'.
 
         """
-        d = os.getcwd() or d
+        d = d or os.getcwd()
         filepath = os.path.join(d, runid + ".exo")
         self.db = self.open_db(filepath, mode="w")
 
@@ -151,14 +151,6 @@ class Genesis(object):
         for i in range(num_dim):
             self.db.createVariable(PX_VAR_COORDS(i), DTYPE_FLT, (DIM_NUM_NODES,))
 
-        self.db.createDimension(DIM_NUM_EM, 1)
-        self.db.createVariable(VAR_ELEM_MAP(1), DTYPE_INT, (DIM_NUM_ELEM,))
-        elem_map = np.arange(num_elem) + 1
-        self.put_elem_num_map(elem_map)
-
-        self.db.createVariable(PX_VAR_EL_MAP, DTYPE_INT, (DIM_NUM_ELEM,))
-        self.put_map(elem_map)
-
     def put_coord_names(self, coord_names):
         """Writes the names of the coordinate arrays to the database.
 
@@ -206,12 +198,13 @@ class Genesis(object):
 
         elem_map = []
         for i in range(num_elem):
-            elem_map.append(i)
+            elem_map.append(i+1)
 
         """
         num_elem = self.db.dimensions[DIM_NUM_ELEM]
         if len(elem_map) > num_elem:
             raise ExodusIIFileError("len(elem_map) > num_elem")
+        self.db.createVariable(PX_VAR_EL_MAP, DTYPE_INT, (DIM_NUM_ELEM,))
         self.db.variables[PX_VAR_EL_MAP][:] = elem_map
         return
 
@@ -232,12 +225,13 @@ class Genesis(object):
 
         elem_map = []
         for i in range(num_elem):
-            elem_map.append(i)
+            elem_map.append(i+1)
 
         """
         num_elem = self.db.dimensions[DIM_NUM_ELEM]
         if len(elem_num_map) > num_elem:
             raise ExodusIIFileError("len(elem_map) > num_elem")
+        self.db.createVariable(VAR_ELEM_MAP(1), DTYPE_INT, (DIM_NUM_ELEM,))
         self.db.variables[VAR_ELEM_MAP(1)][:] = elem_num_map
         return
 
