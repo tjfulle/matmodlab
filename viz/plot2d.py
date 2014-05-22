@@ -833,7 +833,7 @@ def readtabular(source):
 
 def loadcontents(filepath):
     if filepath.endswith((".exo", ".e", ".base_exo")):
-        exof = ExodusIIFile(filepath)
+        exof = ExodusIIFile(filepath, "r")
         glob_var_names = exof.glob_var_names
         elem_var_names = exof.elem_var_names
         data = [exof.get_all_times()]
