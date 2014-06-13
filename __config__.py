@@ -34,6 +34,7 @@ ABQUMAT = os.path.join(ROOT_D, "utils/fortran/abaumat.pyf")
 ABQUAHI = os.path.join(ROOT_D, "utils/fortran/abauanisohypinv.pyf")
 
 SO_EXT = np_so_ext()
+SO_EXT = ".so"
 
 # environment variables
 PATH = os.getenv("PATH").split(os.pathsep)
@@ -120,5 +121,3 @@ def check_prereqs():
     try: import scipy
     except ImportError: errors.append("scipy not found")
     return errors
-
-
