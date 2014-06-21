@@ -67,6 +67,12 @@ MAX_VAR_NAME_LENGTH   =  20
 MAX_LINE_LENGTH       =  80
 MAX_ERR_LENGTH        =  256
 
+def format_list_of_strings(l):
+    return ["{0:{1}s}".format(_, MAX_STR_LENGTH)[:MAX_STR_LENGTH] for _ in l]
+
+def format_string(s):
+    return "{0:{1}s}".format(s, MAX_STR_LENGTH)
+
 EX_VERBOSE     = 1
 EX_DEBUG       = 2
 EX_ABORT       = 4

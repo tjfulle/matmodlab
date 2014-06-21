@@ -47,7 +47,7 @@ def format_exrestart_info(material, driver, extract):
     ex_info.append(S_REST_VERS)
     ex_info.append(RESTART_VERSION)
 
-    mtlname, mtlparams = material
+    mtlname, mtlparamnames, mtlparams = material
     ex_info.append(S_MTL)
     ex_info.append(mtlname)
 

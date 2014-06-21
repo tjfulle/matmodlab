@@ -73,8 +73,7 @@ class ExodusIIWriter(Genesis):
 
         """
         var_type = var_type.upper()
-        var_names = ["{0:{1}s}".format(x, MAX_STR_LENGTH)[:MAX_STR_LENGTH]
-                     for x in var_names]
+        var_names = format_list_of_strings(var_names)
 
         # store the names
         if var_type == PX_VAR_GLO:

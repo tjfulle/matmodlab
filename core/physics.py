@@ -44,9 +44,10 @@ class PhysicsHandler(object):
         glob_var_names = self.driver.glob_vars()
         ele_var_names = self.driver.elem_vars()
         title = "mmd {0} simulation".format(self.driver.name)
-        info = [(self.driver.material.name, self.driver.material.params),
-                (self.driver.name, self.driver.path, self.driver.opts),
-                self.extract]
+        mat = (self.driver.material.name, self.driver.material.param_names,
+               self.driver.material.params)
+        drv = (self.driver.name, self.driver.path, self.driver.opts)
+        info = [mat, drv, self.extract]
         self.exo = io.ExoManager.new_from_runid(
             self.runid, title, glob_var_names, ele_var_names, info)
 
