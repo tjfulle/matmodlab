@@ -355,14 +355,18 @@ class ExoManager(object):
         db.variables[NAME_DRIVER][:] = ei.format_string(name)
 
         # write the legs
-        dim = DIM_NUM_LEG_COMP(name)
         num_legs, num_comps = path.shape
-        db.createDimension(dim, num_comps)
-        db.createDimension(DIM_NUM_LEG(name), num_legs)
+
+        dim_a = DIM_NUM_LEG(name)
+        db.createDimension(dim_a, num_legs)
+
+        dim_b = DIM_NUM_LEG_COMP(name)
+        db.createDimension(dim_b, num_comps)
+
+        var = VALS_LEGS(name)
+        db.createVariable(var, ei.DTYPE_FLT, (dim_a, dim_b))
         for (i, leg) in enumerate(path):
-            var = VALS_LEG(name, i+1)
-            db.createVariable(var, ei.DTYPE_FLT, (dim,))
-            db.variables[var][:num_comps] = leg[:]
+            db.variables[var][i, :num_comps] = leg[:]
 
         # write the options
         dim = DIM_NUM_DRIVER_OPTS(name)

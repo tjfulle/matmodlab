@@ -6,7 +6,7 @@ VALS_MAT_PARAM = lambda s: "vals_{0}_param".format(s)
 
 DIM_NUM_LEG = lambda s: "num_{0}_legs".format(s)
 DIM_NUM_LEG_COMP = lambda s: "num_{0}_legs_comps".format(s)
-VALS_LEG = lambda s, i: "vals_{0}_leg_{1}".format(s, i)
+VALS_LEGS = lambda s: "vals_{0}_legs".format(s)
 
 DIM_NUM_DRIVER_OPTS = lambda s: "num_{0}_opts".format(s)
 VALS_DRIVER_OPTS = lambda s: "vals_{0}_opts".format(s)

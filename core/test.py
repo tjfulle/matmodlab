@@ -12,7 +12,7 @@ import xml.dom.minidom as xdom
 
 import utils.xmltools as xmltools
 from utils.namespace import Namespace
-from __config__ import SPLASH, TLS_D, TESTS_D
+from __config__ import SPLASH, TLS_D, TESTS_D, ROOT_D, MML_ENV, PYEXE
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))
@@ -50,20 +50,6 @@ class Error(Exception):
     def __init__(self, message, pre=""):
         sys.stderr.write("{0}*** error: runtests: {1}\n".format(pre, message))
         raise SystemExit(2)
-
-
-class Path(object):
-    _path = [TLS_D] + [d for d in os.getenv("PATH", "").split(os.pathsep)
-                       if os.path.isdir(d)]
-    def extend(self, paths):
-        self._path.extend([d for d in paths
-                           if os.path.isdir(d) and d not in self._path])
-    @property
-    def path(self):
-        return os.pathsep.join(self._path)
-    def __iter__(self):
-        return iter(self._path)
-
 
 
 class Environ(object):
@@ -124,8 +110,8 @@ def main(argv=None):
         if os.path.isfile(F_RTEST_STAT):
             sys.exit(run_rtest_in_cwd())
         args.path = [TESTS_D]
-#        parser.print_help()
-#        raise Error("too few arguments: path to tests not specified", pre="\n")
+        #parser.print_help()
+        #raise Error("too few arguments: path to tests not specified", pre="\n")
 
     for p in args.path:
         p = os.path.realpath(p)
@@ -143,11 +129,9 @@ def main(argv=None):
     if not dirs and not tests:
         raise Error("no test directories or files found")
 
-    xpath = Path()
     if not dirs and len(tests) == 1:
         # run inplace
         args.i = True
-    xpath.extend([d for d in dirs])
 
     # --- root directory to run tests
     testd = args.D
@@ -209,6 +193,7 @@ def main(argv=None):
             return
         dump_rtests_to_file(testd, completed_rtests)
         write_html_summary(testd, completed_rtests)
+        return
 
     else:
         log_message("Running {0} tests".format(len(rtests)))
@@ -258,17 +243,15 @@ def rtest_statuses(status=None):
 
 def read_exo_file(filepath):
     import numpy as np
-    from utils.exo.exofile import ExodusIIReader
-    exof = ExodusIIReader.new_from_exofile(filepath)
-    glob_var_names = exof.glob_var_names()
-    elem_var_names = exof.elem_var_names()
+    from utils.exo import ExodusIIFile
+    exof = ExodusIIFile(filepath, "r")
     data = [exof.get_all_times()]
-    for glob_var_name in glob_var_names:
+    for glob_var_name in exof.glob_var_names:
         data.append(exof.get_glob_var_time(glob_var_name))
-    for elem_var_name in elem_var_names:
+    for elem_var_name in exof.elem_var_names:
         data.append(exof.get_elem_var_time(elem_var_name, 0))
     data = np.transpose(np.array(data))
-    head = ["TIME"] + glob_var_names + elem_var_names
+    head = ["TIME"] + exof.glob_var_names + exof.elem_var_names
     exof.close()
     ndumps = data.shape[0]
     nsteps = min(300, ndumps)
@@ -375,8 +358,8 @@ def find_and_run_init(search_dirs, testd):
 
     """
     xenv = Environ()
-    xpath = Path()
-    xenv.put("PATH", xpath.path)
+    xenv.put("PATH", MML_ENV["PATH"])
+    xenv.put("PYTHONPATH", MML_ENV["PYTHONPATH"])
     # find all init.rxml files
     init_files = []
     for d in search_dirs:
@@ -385,7 +368,7 @@ def find_and_run_init(search_dirs, testd):
                                if f == "init.rxml"])
     # local variables
     known_vars = {"TESTDIR": testd,
-                  "PYTHON": os.path.realpath(sys.executable)}
+                  "PYTHON": PYEXE}
 
     # run the initialization
     for init_file in init_files:
@@ -414,6 +397,8 @@ def find_and_run_init(search_dirs, testd):
         status = []
         for cmd in exe_stmnts:
             exe = os.path.basename(cmd[0])
+            if cmd[0] == PYEXE:
+                exe += " " + cmd[1]
             outf = "_".join(exe.split()) + ".con"
             out = open(outf, "w")
             job = subprocess.Popen(cmd, env=xenv.env,
@@ -454,7 +439,7 @@ def find_and_format_exes(element):
         opts = [s for s in xmltools.child2list([exe_el])]
         if exe == "exodiff":
             opts = ["-status", "-allow_name_mismatch"] + opts
-        exe_stmnts.append([x] + opts)
+        exe_stmnts.append(x.split() + opts)
     return exe_stmnts
 
 
@@ -518,7 +503,7 @@ def parse_rxml(test_file):
     # local variables
     known_vars = {"NAME": name,
                   "DIRNAME": os.path.dirname(test_file),
-                  "PYTHON": os.path.realpath(sys.executable)}
+                  "PYTHON": PYEXE}
     lines = lines.format(**known_vars)
 
     # environment variables
@@ -643,15 +628,15 @@ def run_rtest_in_cwd():
     details = parse_rxml(rxml)
     for (rtest, details) in details.items():
         break
-    run_rtest((None, rtest, details, True))
+    run_rtest((None, rtest, details, True, None))
 
 def run_rtest(args):
     """Run the rtest
 
     """
     xenv = Environ()
-    xpath = Path()
-    xenv.put("PATH", xpath.path)
+    xenv.put("PATH", MML_ENV["PATH"])
+    xenv.put("PYTHONPATH", MML_ENV["PYTHONPATH"])
     try:
         (testd, rtest, details, inplace, mtlswaplist) = args[:5]
         bdir = details[S_BDIR]
@@ -675,14 +660,17 @@ def run_rtest(args):
 
         # Generate the material swap commands
         mtlswapcmd = []
-        for pair in mtlswaplist:
-            mtlswapcmd.append("-s")
-            mtlswapcmd.append('{0}'.format(pair))
+        if mtlswaplist:
+            for pair in mtlswaplist:
+                mtlswapcmd.append("-s")
+                mtlswapcmd.append('{0}'.format(pair))
 
         # run each command
         status = []
         for (i, cmd) in enumerate(details[S_EXEC]):
             exe = os.path.basename(cmd[0])
+            if cmd[0] == PYEXE:
+                exe += " " + cmd[1]
             outf = "_".join(exe.split()) + ".con"
             out = open(outf, "w")
             if exe == "mmd" and len(mtlswapcmd) > 0:
@@ -744,7 +732,7 @@ def which(exe):
     opts = "" if len(tmpexe) == 1 else " " + tmpexe[1]
     if tmpexe[0].startswith("./"):
         return tmpexe[0] + opts
-    for d in Path():
+    for d in MML_ENV["PATH"].split(os.pathsep):
         x = os.path.join(d, tmpexe[0])
         if os.path.isfile(x):
             return x + opts
