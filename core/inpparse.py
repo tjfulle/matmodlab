@@ -532,13 +532,21 @@ def parse_input(filepath, argp=None, mtlswapdict=None):
 
 
 def parse_exo_input(source, time=-1):
-    from core.mmlio import read_restart
-    (runid, mtlmdl, mtlparams, dname, dpath, dopts, leg_num, time, glob_data,
-     elem_data, extract) = read_restart(source, time=time)
-    dopts[0] = cfg.RESTART
-    dopts.append([leg_num, time, glob_data, elem_data])
-    driver = (dname, dpath, dopts)
-    material = (mtlmdl, mtlparams, {}, [])
+    from core.restart import read_restart_info
+    info = read_restart_info(source, time=time)
+    (runid, mat_name, mat_params, driver_name, driver_path, driver_opts,
+     leg_num, time, glob_data, elem_data, extract) = info
+
+    driver_opts[0] = cfg.RESTART
+    driver_opts.append([leg_num, time, glob_data, elem_data])
+    driver = (driver_name, driver_path, driver_opts)
+
+    mat_mdl = cfg.MTL_DB.get(mat_name)
+    if mat_mdl is None:
+        fatal_inp_error("{0}: material not in database".format(mat_name))
+        return
+    mat_params = np.array(mat_params, order="F", dtype=np.float64)
+    material = (mat_mdl, mat_params, {}, [])
 
     inp = ["Physics", runid, driver, material, extract]
     return [inp,]

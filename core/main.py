@@ -44,7 +44,7 @@ def main(argv=None):
         help="Build material model[s] before running [default: %(default)s]")
     parser.add_argument("--clean", const=1, default=False, nargs="?",
         help=argparse.SUPPRESS)
-    parser.add_argument("--restart", const=-1, default=0, type=int, nargs="?",
+    parser.add_argument("--restart", const=-1, default=0, type=float, nargs="?",
         help=argparse.SUPPRESS)
     parser.add_argument("sources", nargs="+", help="Source file paths")
     args = parser.parse_args(argv)
@@ -97,7 +97,7 @@ def main(argv=None):
 
         elif args.restart:
             source = filename + ".exo"
-            uinp_list = inp.parse_exo_input(source, time=float(args.restart))
+            uinp_list = inp.parse_exo_input(source, time=args.restart)
 
         else:
             if not os.path.isfile(source):

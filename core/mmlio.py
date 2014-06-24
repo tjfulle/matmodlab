@@ -3,9 +3,9 @@ import sys
 import numpy as np
 import datetime
 import logging
-from mmlinc import *
 
 import __config__ as cfg
+from core.restart import write_restart_info
 
 
 INP_ERRORS = 0
@@ -191,13 +191,6 @@ class ExoManager(object):
         qa_record = np.array([[qa_title, self.runid, day, hour]])
         self.exofile.put_qa(num_qa_rec, qa_record)
 
-        # information records
-        material, driver, extract = info
-        self.write_mat_params(*material)
-        self.write_driver_info(*driver)
-        if extract:
-            self.write_extract_info(*extract)
-
         # write results variables parameters and names
         num_glob_vars = len(glob_var_names)
         self.exofile.put_var_param("g", num_glob_vars)
@@ -218,6 +211,10 @@ class ExoManager(object):
             for j in range(num_elem_vars):
                 truth_tab[i, j] = 1
         self.exofile.put_elem_var_tab(num_elem_blk, num_elem_vars, truth_tab)
+
+        # write the restart information
+        material, driver, extract = info
+        write_restart_info(self.exofile, material, driver, extract)
 
         self.exofile.update()
         pass
@@ -295,260 +292,3 @@ class ExoManager(object):
         exof.setup_new(title, glob_var_names, elem_var_names, info)
         return exof
 
-    def write_mat_params(self, mat_name, param_names, param_vals):
-        """Write an array to the database
-
-        Parameters
-        ----------
-        mat_name : str
-            The material name
-
-        param_names : list of str
-            List of parameter names
-
-        param_vals : array_like
-            Array of material parameters
-
-        """
-        import utils.exo.exoinc as ei
-        db = self.exofile.db
-
-        name = NAME_MAT_NAME(1)
-        db.createVariable(name, ei.DTYPE_TXT, (ei.DIM_STR, ))
-        db.variables[name][:] = ei.format_string(mat_name)
-
-        # put the names
-        num_params = len(param_vals)
-        param_names = ei.format_list_of_strings(param_names)
-        dim = DIM_MAT_PARAM(mat_name)
-        name = NAME_MAT_PARAM(mat_name)
-        vals = VALS_MAT_PARAM(mat_name)
-        db.createDimension(dim, num_params)
-        db.createVariable(name, ei.DTYPE_TXT, (dim, ei.DIM_STR))
-        db.createVariable(vals, ei.DTYPE_FLT, (dim,))
-        for (i, param_name) in enumerate(param_names):
-            db.variables[name][i, :] = param_name
-
-        # put the values
-        db.variables[vals][:num_params] = param_vals
-        return
-
-    def write_driver_info(self, name, path, options):
-        """Write the driver information to the exodus file
-
-        Parameters
-        ----------
-        name : str
-            The driver name
-
-        path : array_like
-            Deformation path
-
-        options : array_like
-            List of driver options
-
-        """
-        import utils.exo.exoinc as ei
-        db = self.exofile.db
-
-        db.createVariable(NAME_DRIVER, ei.DTYPE_TXT, (ei.DIM_STR, ))
-        db.variables[NAME_DRIVER][:] = ei.format_string(name)
-
-        # write the legs
-        num_legs, num_comps = path.shape
-
-        dim_a = DIM_NUM_LEG(name)
-        db.createDimension(dim_a, num_legs)
-
-        dim_b = DIM_NUM_LEG_COMP(name)
-        db.createDimension(dim_b, num_comps)
-
-        var = VALS_LEGS(name)
-        db.createVariable(var, ei.DTYPE_FLT, (dim_a, dim_b))
-        for (i, leg) in enumerate(path):
-            db.variables[var][i, :num_comps] = leg[:]
-
-        # write the options
-        dim = DIM_NUM_DRIVER_OPTS(name)
-        vals = VALS_DRIVER_OPTS(name)
-        num_opts = len(options)
-        db.createDimension(dim, num_opts)
-        db.createVariable(vals, ei.DTYPE_FLT, (dim, ))
-        db.variables[vals][:] = options
-
-        return
-
-    def write_extract_info(self, ofmt, step, ffmt, variables, paths):
-        """Write the extraction information to the exodus file
-
-        Parameters
-        ----------
-        ofmt : str
-            The output format
-
-        step : int
-
-        ffmt : str
-            Float format
-
-        variables : list of str
-            List of variables to extract
-
-        paths : list
-            List of paths to extract
-
-        """
-        import utils.exo.exoinc as ei
-
-        # write the format
-        db = self.exofile.db
-        db.createVariable(VALS_EXTRACT_FMT, ei.DTYPE_TXT, (ei.DIM_STR, ))
-        db.variables[VALS_EXTRACT_FMT][:] = ei.format_string(ofmt)
-
-        db.createDimension(DIM_NUM_EXTRACT_STEP, 1)
-        db.createVariable(VALS_EXTRACT_STEP, ei.DTYPE_INT, (DIM_NUM_EXTRACT_STEP,))
-        db.variables[VALS_EXTRACT_STEP][:] = step
-
-        db.createVariable(VALS_EXTRACT_FFMT, ei.DTYPE_TXT, (ei.DIM_STR, ))
-        db.variables[VALS_EXTRACT_FFMT][:] = ei.format_string(ffmt)
-
-        num_vars = len(variables)
-        if num_vars:
-            variables = ei.format_list_of_strings(variables)
-            dim = DIM_NUM_EXTRACT_VARS
-            db.createDimension(dim, num_vars)
-            db.createVariable(NAME_EXTRACT_VARS, ei.DTYPE_TXT, (dim, ei.DIM_STR))
-            # put the names
-            for (i, variable) in enumerate(variables):
-                db.variables[NAME_EXTRACT_VARS][i, :] = variable
-
-        num_paths = len(paths)
-        if num_paths:
-            dim_a = DIM_NUM_EXTRACT_PATHS
-            dim_b = DIM_NUM_EXTRACT_PATHS_COMPS
-            vals = VALS_EXTRACT_PATHS
-            db.createDimension(dim_a, num_paths)
-            db.createDimension(dim_b, 4)
-            for path in paths:
-                db.variables[vals][0, :] = path[0]     # number of increments
-                db.variables[vals][1, :] = path[1][0]  # list of density bounds
-                db.variables[vals][2, :] = path[1][1]  # list of density bounds
-                db.variables[vals][3, :] = path[2]     # initial temperature
-
-        return
-
-def read_restart(filepath, time=-1):
-    """Read information records written to exodus database for setting up a
-    simulation
-
-    Parameters
-    ----------
-    filepath : str
-        Path to exodus file
-
-    time : float
-        Time from which to restart
-
-    Returns
-    -------
-    all_ex_info : list of strings
-        Formatted list of strings to put in exodus file
-
-    """
-    from drivers.driver import create_driver
-    from utils.exo import ExodusIIFile
-    raise Error1("reading restart not done")
-
-    runid = os.path.splitext(os.path.basename(filepath))[0]
-    if not os.path.isfile(filepath):
-        raise Error1("{0}: no such file".format(filepath))
-    exof = ExodusIIFile(filepath, "r")
-
-    all_ex_info = exof.get_info()
-    all_ex_info = all_ex_info.tolist()
-
-    try:
-        start = all_ex_info.index(S_MML_DECL)
-    except ValueError:
-        return
-    end = all_ex_info.index(S_MML_FINI)
-
-    ex_info = all_ex_info[start+1:end]
-
-    rvers = int(ex_info[ex_info.index(S_REST_VERS)+1])
-    if rvers != RESTART_VERSION:
-        raise Error1("restart file version mismatch "
-                     "({0}!={1})".format(rvers, RESTART_VERSION))
-
-    # read material information
-    mtlname = ex_info[ex_info.index(S_MTL)+1]
-    i = ex_info.index(S_MTL_PARAMS)
-    nparams = int(ex_info[i+1])
-    mtlparams = np.array([float(x) for x in ex_info[i+2:i+nparams+2]])
-
-    # driver
-    dname = ex_info[ex_info.index(S_DRIVER)+1]
-
-    i = ex_info.index(S_DOPTS)
-    ndopts = int(ex_info[i+1])
-    dopts = [float(x) for x in ex_info[i+2:i+2+ndopts]]
-
-    # paths
-    # i is the index to the S_PATH information keyword
-    # i + j is the index to the beginning of each path specification
-    i = ex_info.index(S_PATH)
-    rw = int(ex_info[i+1])
-    cl = int(ex_info[i+2])
-    dpath = np.reshape([float(x) for x in ex_info[i+3:i+3+rw*cl]], (rw, cl))
-
-    # extraction requests
-    i = ex_info.index(S_EXREQ)
-    extract = None
-    if int(ex_info[i+1]):
-
-        ofmt = ex_info[i+2]
-        step = int(ex_info[i+3])
-        ffmt = ex_info[i+4]
-
-        nvars = int(ex_info[i+5])
-        start = i + 6
-        end = start + nvars
-        variables = ex_info[start:end]
-
-        npaths = int(ex_info[end])
-        start = end + 1
-        paths = []
-        for i in range(npaths):
-            ninc = int(ex_info[start])
-            r0, rf = float(ex_info[start+1]), float(ex_info[start+2])
-            t0 = float(ex_info[start+3])
-            start = start + 4
-            paths.append([ninc, np.array([r0, rf]), t0])
-
-        extract = [ofmt, step, ffmt, variables, paths]
-
-    # driver is now set up, find step number corresponding to time and then
-    # get all data from that step
-    times = exof.get_all_times()
-    path_times = dpath[:, 0]
-    if time < 0:
-        time = times[-1]
-
-    try:
-        leg_num = np.where(time < path_times)[0][0]
-    except IndexError:
-        raise SystemExit("All legs completed, nothing to do")
-    path_time = path_times[leg_num]
-    step = np.where(path_time > times)[0][-1]
-
-    time = float(times[step])
-    glob_data = exof.get_glob_vars(step)
-    elem_data = []
-    for elem_var_name in exof.elem_var_names():
-        elem_data.extend(exof.get_elem_var(step, elem_var_name)[0])
-    elem_data = np.array(elem_data)
-
-    exof.close()
-
-    return (runid, mtlname, mtlparams, dname, dpath, dopts,
-            leg_num, time, glob_data, elem_data, extract)
