@@ -5,7 +5,6 @@ import datetime
 import logging
 
 import __config__ as cfg
-from core.restart import write_restart_info
 
 
 INP_ERRORS = 0
@@ -149,6 +148,7 @@ class ExoManager(object):
         """Set up the exodus file
 
         """
+        from core.restart import write_restart_info
         # "mesh" information
         conn = np.array([range(8)], dtype=np.int)
         num_elem_blk = 1
@@ -291,4 +291,3 @@ class ExoManager(object):
         exof = cls(runid)
         exof.setup_new(title, glob_var_names, elem_var_names, info)
         return exof
-
