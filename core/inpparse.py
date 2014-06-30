@@ -14,7 +14,6 @@ from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
 from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.mmlio import fatal_inp_error, input_errors
-from core.restart import read_exrestart_info
 from core.builder import Builder
 from utils.misc import timed_raw_input
 
@@ -152,8 +151,13 @@ class Element(object):
                 for node in dom.childNodes:
                     if node.nodeType == node.COMMENT_NODE:
                         continue
-                    content.extend([" ".join(s.split()) for s in
-                                    node.data.split("\n") if s.strip()])
+                    try:
+                        content.extend([" ".join(s.split()) for s in
+                                        node.data.split("\n") if s.strip()])
+                    except AttributeError as E:
+                        print node
+                        print dir(node)
+                        raise E
                 return content
 
         return
@@ -528,12 +532,21 @@ def parse_input(filepath, argp=None, mtlswapdict=None):
 
 
 def parse_exo_input(source, time=-1):
-    (runid, mtlmdl, mtlparams, dname, dpath, dopts, leg_num, time, glob_data,
-     elem_data, extract) = read_exrestart_info(source, time=time)
-    dopts[0] = cfg.RESTART
-    dopts.append([leg_num, time, glob_data, elem_data])
-    driver = (dname, dpath, dopts)
-    material = (mtlmdl, mtlparams, {}, [])
+    from core.restart import read_restart_info
+    info = read_restart_info(source, time=time)
+    (runid, mat_name, mat_params, driver_name, driver_path, driver_opts,
+     leg_num, time, glob_data, elem_data, extract) = info
+
+    driver_opts[0] = cfg.RESTART
+    driver_opts.append([leg_num, time, glob_data, elem_data])
+    driver = (driver_name, driver_path, driver_opts)
+
+    mat_mdl = cfg.MTL_DB.get(mat_name)
+    if mat_mdl is None:
+        fatal_inp_error("{0}: material not in database".format(mat_name))
+        return
+    mat_params = np.array(mat_params, order="F", dtype=np.float64)
+    material = (mat_mdl, mat_params, {}, [])
 
     inp = ["Physics", runid, driver, material, extract]
     return [inp,]
@@ -906,6 +919,9 @@ def pExtract(extdict, driver):
         return None
 
     elements = extdict.pop("Elements")
+    req_vars = []
+    if elements["Variables"]:
+        req_vars += elements["Variables"]["Content"]
 
     # --- get requested variables to extract
     # extdict["Elements"]["Variables"]["Content"] is a list of the form
@@ -913,14 +929,13 @@ def pExtract(extdict, driver):
     # where line1, line2, ..., linen are the lines in the Variabes element of the
     # input file
     variables = []
-    if elements["Variables"]:
-        for _vars in elements["Variables"]["Content"]:
-            if not _vars:
-                continue
-            _vars = _vars.split()
-            variables.extend([stringify(var, "upper") for var in _vars])
-        if "ALL" in variables:
-            variables = "ALL"
+    for _vars in req_vars:
+        if not _vars:
+            continue
+        _vars = _vars.split()
+        variables.extend([stringify(var, "upper") for var in _vars])
+    if "ALL" in variables:
+        variables = "ALL"
 
     paths = driver.format_path_extraction(elements.pop("Path"))
     # get Paths to extract -> further parsing is handled by drivers that

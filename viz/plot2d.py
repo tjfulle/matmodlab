@@ -22,7 +22,7 @@ import chaco.tools.api as ctapi
 import pyface.api as papi
 
 from viz.colors import random_color
-from utils.exo.exofile import ExodusIIReader
+from utils.exo import ExodusIIFile
 
 EXE = "plot2d"
 Change_X_Axis_Enabled = True
@@ -833,9 +833,9 @@ def readtabular(source):
 
 def loadcontents(filepath):
     if filepath.endswith((".exo", ".e", ".base_exo")):
-        exof = ExodusIIReader.new_from_exofile(filepath)
-        glob_var_names = exof.glob_var_names()
-        elem_var_names = exof.elem_var_names()
+        exof = ExodusIIFile(filepath, "r")
+        glob_var_names = exof.glob_var_names
+        elem_var_names = exof.elem_var_names
         data = [exof.get_all_times()]
         for glob_var_name in glob_var_names:
             data.append(exof.get_glob_var_time(glob_var_name))

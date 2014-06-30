@@ -5,7 +5,7 @@ import sys
 import argparse
 import numpy as np
 
-from exofile import ExodusIIReader
+from exoread import ExodusIIReader
 
 OFMTS = {"ascii": ".out", "mathematica": ".math", "ndarray": ".npy"}
 
@@ -33,14 +33,19 @@ def main(argv=None):
         help="Output format [default: %(default)s]")
     parser.add_argument("--step", default=1, type=int,
         help="Step [default: %(default)s]")
+    parser.add_argument("--block", default=1, type=int,
+        help="Block number [default: %(default)s]")
+    parser.add_argument("--element", default=1, type=int,
+        help="Element number [default: %(default)s]")
     args = parser.parse_args(argv)
     return exodump(args.source, outfile=args.o,
                    variables=args.variables, listvars=args.list,
-                   ffmt=args.ffmt, ofmt=args.ofmt, step=args.step)
+                   ffmt=args.ffmt, ofmt=args.ofmt, step=args.step,
+                   elem_blk=args.block, elem_num=args.element)
 
 
 def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
-            ffmt=None, ofmt="ascii"):
+            ffmt=None, ofmt="ascii", elem_blk=1, elem_num=1):
     """Read the exodus file in filepath and dump the contents to a columnar data
     file
 
@@ -77,7 +82,8 @@ def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
 
     # read the data
     header, data = read_vars_from_exofile(filepath, variables=variables,
-                                          step=step)
+                                          step=step, elem_blk=elem_blk,
+                                          elem_num=elem_num)
     if listvars:
         print("\n".join(header))
         return 0
@@ -101,7 +107,8 @@ def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
     return 0
 
 
-def read_vars_from_exofile(filepath, variables=None, step=1, h=1):
+def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
+                           elem_blk=1, elem_num=1):
     """Read the specified variables from the exodus file in filepath
 
     """
@@ -118,9 +125,9 @@ def read_vars_from_exofile(filepath, variables=None, step=1, h=1):
     if not os.path.isfile(filepath):
         raise ExoDumpError("{0}: no such file".format(filepath))
 
-    exof = ExodusIIReader.new_from_exofile(filepath)
-    glob_var_names = exof.glob_var_names()
-    elem_var_names = exof.elem_var_names()
+    exof = ExodusIIReader(filepath)
+    glob_var_names = exof.glob_var_names
+    elem_var_names = exof.elem_var_names
 
     if variables[0] != "ALL":
         glob_var_names = expand_var_names(glob_var_names, variables)
@@ -142,7 +149,7 @@ def read_vars_from_exofile(filepath, variables=None, step=1, h=1):
             try: row.append(glob_vars_vals[var])
             except KeyError: continue
         for var in elem_var_names:
-            row.append(exof.get_elem_var(i, var)[0])
+            row.append(exof.get_elem_var_time(var, elem_num, elem_blk)[i])
         data.append(row)
     exof.close()
     data = np.array(data)

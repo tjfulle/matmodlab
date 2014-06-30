@@ -1,25 +1,31 @@
+#!/usr/bin/env python
+import numpy as np
 import os
 import sys
-import numpy as np
 
-D  = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.dirname(D))
-from exofile import ExodusIIWriter
-from exoconst import *
+
+D, F = os.path.split(os.path.realpath(__file__))
+sys.path.insert(0, os.path.dirname(D))
+from __init__ import ExodusIIFile
+from exoinc import *
 
 
 def main():
+    runtest()
+
+
+def runtest():
     """Reproduction of the 'C Write Example Code' in the Exodus manual
 
     """
     # create new file
-    exofile = ExodusIIWriter.new_from_runid("myrun")
+    exofile = ExodusIIFile("myrun", d=D, mode="w")
 
     # initialize the file
     num_dim = 3
     num_nodes = 26
     num_elem = 5
-    num_elem_blk = 5
+    num_elem_blk = 4
     num_node_sets = 2
     num_side_sets = 5
 
@@ -74,8 +80,7 @@ def main():
 
     # Write element block parameters
     # elem_blk_id, elem_type, num_elem_this_blk, num_nodes_per_elem, num_attr
-    elem_blocks = [[10, "QUAD", 1, 4, 1],
-                   [11, "QUAD", 1, 4, 1],
+    elem_blocks = [[10, "QUAD", 2, 4, 1],
                    [12, "HEX", 1, 8, 1],
                    [13, "TETRA", 1, 4, 1],
                    [14, "WEDGE", 1, 6, 1]]
@@ -91,23 +96,26 @@ def main():
     exofile.put_prop_names(EX_ELEM_BLOCK, num_props, prop_names)
 
     exofile.put_prop(EX_ELEM_BLOCK, elem_blocks[0][0], "TOP", 1)
-    exofile.put_prop(EX_ELEM_BLOCK, elem_blocks[1][0], "TOP", 1)
+    exofile.put_prop(EX_ELEM_BLOCK, elem_blocks[1][0], "RIGHT", 1)
     exofile.put_prop(EX_ELEM_BLOCK, elem_blocks[2][0], "RIGHT", 1)
     exofile.put_prop(EX_ELEM_BLOCK, elem_blocks[3][0], "RIGHT", 1)
-    exofile.put_prop(EX_ELEM_BLOCK, elem_blocks[4][0], "RIGHT", 1)
 
     j = 0
     attrib = np.array([3.14159], dtype=np.float64)
     for i, (ebid, etype, neblk, nnte, na) in enumerate(elem_blocks):
 
-        # write element connectivity
-        connect = np.arange(j, j+nnte)
+        connect = []
+        for k in range(neblk):
+            # write element connectivity
+            connect.append(np.arange(j, j+nnte))
+            j += nnte
+            continue
+        connect = np.array(connect)
         exofile.put_elem_conn(ebid, connect)
 
         # write element block attributes
         exofile.put_elem_attr(ebid, float(i + 1.) * attrib)
 
-        j += nnte
         continue
 
     # write out individual node sets
@@ -158,6 +166,8 @@ def main():
                      "This Is the third Information record."])
     exofile.put_info(num_info, info)
 
+    # end genesis portion
+
     # write results variables parameters and names
     glob_var_names = np.array(["glob_vars"])
     num_glob_vars = glob_var_names.size
@@ -189,8 +199,6 @@ def main():
     whole_time_step = 1
     num_time_steps = 10
     glob_var_vals = np.zeros(num_glob_vars, dtype=np.float64)
-    nodal_var_vals = np.zeros(num_nod_vars, dtype=np.float64)
-    elem_var_vals = np.zeros(num_ele_vars, dtype=np.float64)
     for i in range(num_time_steps):
         time_value = float(i + 1) / 100.
         # write time value
@@ -205,6 +213,7 @@ def main():
 
         # write nodal variables
         for k in range(num_nod_vars):
+            nodal_var_vals = np.zeros(num_nodes, dtype=np.float64)
             for j in range(num_nodes):
                 nodal_var_vals[j] = float(k) + (float(j + 1) * time_value)
                 continue
@@ -214,6 +223,7 @@ def main():
         # write element variables
         for k in range(num_ele_vars):
             for j in range(num_elem_blk):
+                elem_var_vals = np.zeros(num_elem_in_blk[j], dtype=np.float64)
                 for m in range(num_elem_in_blk[j]):
                     elem_var_vals[m] = (float(k + 1) + float(j + 2) +
                                         (float(m + 1) * time_value))
@@ -231,6 +241,11 @@ def main():
     exofile.update()
     exofile.close()
 
+    # now read it
+    exofile = ExodusIIFile(exofile.filename, mode="r")
+    print exofile
+
+    print exofile.elems_in_blk(10)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -27,7 +27,9 @@
     </Material>
 
     <Extract format="ascii" step="1" ffmt="12.6E">
-      stress strain
+      <Variables>
+	stress strain
+      </Variables>
     </Extract>
 
   </Physics>

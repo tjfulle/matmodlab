@@ -5,7 +5,6 @@ import datetime
 import logging
 
 import __config__ as cfg
-from core.restart import format_exrestart_info
 
 
 INP_ERRORS = 0
@@ -81,6 +80,17 @@ def log_message(message):
     LOGGER.info(message)
 
 
+def log_redirect(_handler=[]):
+    if not _handler:
+        for handler in [x for x in LOGGER.handlers]:
+            if type(handler) == type(logging.StreamHandler()):
+                _handler.append(handler)
+                LOGGER.removeHandler(handler)
+    else:
+        LOGGER.addHandler(_handler[0])
+        _handler.pop()
+
+
 def log_warning(message, limit=False):
     increment_warning()
     max_warn = 10
@@ -125,19 +135,20 @@ class ExoManager(object):
             The simulation ID
 
         """
-        from utils.exo.exofile import ExodusIIWriter
+        from utils.exo import ExodusIIFile
         self.runid = runid
         if filepath is not None:
-            self.exofile = ExodusIIWriter.from_existing(filepath)
+            self.exofile = ExodusIIFile(filepath, mode="a")
             self.filepath = filepath
         else:
-            self.exofile = ExodusIIWriter.new_from_runid(runid)
+            self.exofile = ExodusIIFile(runid, mode="w")
             self.filepath = self.exofile.filename
 
     def setup_new(self, title, glob_var_names, elem_var_names, info):
         """Set up the exodus file
 
         """
+        from core.restart import write_restart_info
         # "mesh" information
         conn = np.array([range(8)], dtype=np.int)
         num_elem_blk = 1
@@ -180,9 +191,6 @@ class ExoManager(object):
         qa_record = np.array([[qa_title, self.runid, day, hour]])
         self.exofile.put_qa(num_qa_rec, qa_record)
 
-        # information records
-        self.exofile.put_info(format_exrestart_info(*info))
-
         # write results variables parameters and names
         num_glob_vars = len(glob_var_names)
         self.exofile.put_var_param("g", num_glob_vars)
@@ -203,6 +211,10 @@ class ExoManager(object):
             for j in range(num_elem_vars):
                 truth_tab[i, j] = 1
         self.exofile.put_elem_var_tab(num_elem_blk, num_elem_vars, truth_tab)
+
+        # write the restart information
+        material, driver, extract = info
+        write_restart_info(self.exofile, material, driver, extract)
 
         self.exofile.update()
         pass
