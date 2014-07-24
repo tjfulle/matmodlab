@@ -39,8 +39,12 @@ class VonMises(Material):
         self.params["BETA"] = BETA
 
         # Register State Variables
-        self.sv_names = ["EQPS", "Y", "BS_XX", "BS_YY", "BS_ZZ", "BS_XY", "BS_XZ", "BS_YZ"]
-        sv_values = [0.0, Y0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.sv_names = ["EQPS", "Y",
+                         "BS_XX", "BS_YY", "BS_ZZ", "BS_XY", "BS_XZ", "BS_YZ",
+                         "SIGE"]
+        sv_values = [0.0, Y0,
+                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                     0.0]
 
         self.register_xtra_variables(self.sv_names)
         self.set_initial_state(sv_values)
@@ -83,18 +87,28 @@ class VonMises(Material):
 
         stress_trial = stress + 3.0 * self.bulk_modulus * iso + 2.0 * self.shear_modulus * dev
 
+        #stress_iso = stress_trial[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+        #stress_dev = stress_trial - stress_iso
+        #sig_eqv = self.eqv(stress_trial)
+
+        #returned_stress = stress_iso + stress_dev * min(1.0, yn / sig_eqv)
+        #xtra[idx('SIGE')] = self.eqv(returned_stress)
+        #return returned_stress, xtra
+        
         xi_trial = stress_trial - bs
-        xi_trial_eqv = np.sqrt(3.0 / 2.0) * self.eqv(xi_trial)
+        xi_trial_eqv = self.eqv(xi_trial)
 
         if xi_trial_eqv <= yn:
+            xtra[idx('SIGE')] = xi_trial_eqv
             return stress_trial, xtra
         else:
             N = xi_trial - xi_trial[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-            N = np.sqrt(2.0 / 3.0) * N / xi_trial_eqv
+            N = N / (np.sqrt(2.0 / 3.0) * xi_trial_eqv)
             deqps = (xi_trial_eqv - yn) / (3.0 * self.shear_modulus + self.params["H"])
             dps = np.sqrt(3.0 / 2.0) * deqps * N
 
             stress_final = stress_trial - 2.0 * self.shear_modulus * np.sqrt(3.0 / 2.0) * deqps * N
+
             bs = bs + 2.0 / 3.0 * self.params["H"] * self.params["BETA"] * dps
 
             xtra[idx('EQPS')] += deqps
@@ -105,12 +119,14 @@ class VonMises(Material):
             xtra[idx('BS_XY')] = bs[3]
             xtra[idx('BS_YZ')] = bs[4]
             xtra[idx('BS_XZ')] = bs[5]
+            xtra[idx('SIGE')] = self.eqv(stress_final)
             return stress_final, xtra
 
 
     def eqv(self, sig):
+        # Returns sqrt(3 * rootj2) = sig_eqv = q
         s = sig - sig[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        return np.sqrt(np.dot(s[:3], s[:3]) + 2 * np.dot(s[3:], s[3:]))
+        return np.sqrt(3.0 / 2.0) * np.sqrt(np.dot(s[:3], s[:3]) + 2 * np.dot(s[3:], s[3:]))
 
     def jacobian(self, dt, d, stress, xtra, v, *args):
         """Return the constant stiffness
