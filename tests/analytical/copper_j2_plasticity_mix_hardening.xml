@@ -43,7 +43,7 @@
       <G> { G } </G>
       <Y0> { Y } </Y0>
       <H> { H } </H>
-      <BETA> 0.0 </BETA>
+      <BETA> 0.5 </BETA>
     </Material>
 
   </Physics>
