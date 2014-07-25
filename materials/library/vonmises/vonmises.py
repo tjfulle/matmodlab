@@ -87,14 +87,6 @@ class VonMises(Material):
 
         stress_trial = stress + 3.0 * self.bulk_modulus * iso + 2.0 * self.shear_modulus * dev
 
-        #stress_iso = stress_trial[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        #stress_dev = stress_trial - stress_iso
-        #sig_eqv = self.eqv(stress_trial)
-
-        #returned_stress = stress_iso + stress_dev * min(1.0, yn / sig_eqv)
-        #xtra[idx('SIGE')] = self.eqv(returned_stress)
-        #return returned_stress, xtra
-        
         xi_trial = stress_trial - bs
         xi_trial_eqv = self.eqv(xi_trial)
 
@@ -119,7 +111,7 @@ class VonMises(Material):
             xtra[idx('BS_XY')] = bs[3]
             xtra[idx('BS_YZ')] = bs[4]
             xtra[idx('BS_XZ')] = bs[5]
-            xtra[idx('SIGE')] = self.eqv(stress_final)
+            xtra[idx('SIGE')] = self.eqv(stress_final - bs)
             return stress_final, xtra
 
 

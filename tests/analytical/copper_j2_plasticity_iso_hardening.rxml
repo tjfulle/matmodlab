@@ -1,15 +1,15 @@
-<rtest name="copper_j2_plasticity_iso_hardening">
+<rtest name="mmd/copper_j2_plasticity_iso_hardening">
 
   <keywords> fast plastic random analytic hardening </keywords>
 
   <link_files>
-    analytical.exdiff copper_j2_plasticity_hardening_analytical.dat {NAME}.xml {NAME}.rxml
+    analytical.exdiff {NAME}_analytical.dat {NAME}.xml {NAME}.rxml
   </link_files>
 
   <execute name="mmd"> {NAME}.xml </execute>
 
   <execute name="exdiff">
-    --interp -f analytical.exdiff copper_j2_plasticity_hardening_analytical.dat {NAME}.exo
+    --interp -f analytical.exdiff {NAME}_analytical.dat {NAME}.exo
   </execute>
 
 </rtest>
