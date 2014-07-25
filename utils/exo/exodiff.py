@@ -153,7 +153,9 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
         # interpolation will not be used when comparing values, so the
         # timesteps must be equal
         if t1.shape[0] != t2.shape[0]:
-            LOG.error("Number of timesteps in File1 and File2 differ")
+            LOG.error("Number of timesteps in File1 and File2 differ\n" +
+                      "len(time1)={0}\n".format(t1.shape[0]) +
+                      "len(time2)={0}".format(t2.shape[0]))
             return 2
 
         if not np.allclose(t1, t2, atol=FAILTOL, rtol=FAILTOL):

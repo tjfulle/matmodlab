@@ -161,7 +161,7 @@ class Plot2D(tapi.HasTraits):
         return
 
     def create_data_label(self, xp, yp, d, di):
-        nform = "[%(x).2g, %(y).2g]"
+        nform = "[%(x).5g, %(y).5g]"
         if self.nfiles() - 1 or self.overlay_plot_data:
             lform = "({0}) {1}".format(self.get_file_name(d), nform)
         else:
