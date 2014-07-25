@@ -662,7 +662,7 @@ def pMaterial(mtldict, mtlswapdict=None):
 
     model = mtldict["model"]
     if model == NOT_SPECIFIED:
-        fatal_inp_error("expeced 'model' Material attribute")
+        fatal_inp_error("expected 'model' Material attribute")
         return
 
     options = {}
@@ -670,6 +670,7 @@ def pMaterial(mtldict, mtlswapdict=None):
     if model.lower() == "umat":
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
+        source_file = mtldict["source"]
         options["umat_name"] = mtldict["name"]
         if nprops == NOT_SPECIFIED:
             fatal_inp_error("umat: constants must be specified")
@@ -682,16 +683,21 @@ def pMaterial(mtldict, mtlswapdict=None):
 
         # get the source file and compile it
         cwd = os.getcwd()
-        for ext in (".for", ".f", ".f90"):
-            source_file = os.path.join(cwd, "umat" + ext)
-            if os.path.isfile(source_file):
-                break
-            source_file = os.path.join(cwd, "umat" + ext.upper())
-            if os.path.isfile(source_file):
-                break
+        if source_file:
+            if not os.path.isfile(source_file):
+                fatal_inp_error("{0}: source file not found".format(source_file))
+            source_file = os.path.realpath(source_file)
         else:
-            fatal_inp_error("umat.[f,for,f90] source file not found")
-            return
+            for ext in (".for", ".f", ".f90"):
+                source_file = os.path.join(cwd, "umat" + ext)
+                if os.path.isfile(source_file):
+                    break
+                source_file = os.path.join(cwd, "umat" + ext.upper())
+                if os.path.isfile(source_file):
+                    break
+            else:
+                fatal_inp_error("umat.[f,for,f90] source file not found")
+                return
 
         # get parameters
         ui = mtldict.get("Content")

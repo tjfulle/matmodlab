@@ -225,7 +225,7 @@ def dyad(a, b):
 
 def dbd(a, b):
     # double of symmetric tensors stored as 6x1 arrays
-    w = numpy.array([1, 1, 1, 0, 0, 0], dtype=numpy.float64)
+    w = numpy.array([1, 1, 1, 2, 2, 2], dtype=numpy.float64)
     return numpy.sum(a * b * w)
 
 
