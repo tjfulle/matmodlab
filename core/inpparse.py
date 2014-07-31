@@ -670,7 +670,8 @@ def pMaterial(mtldict, mtlswapdict=None):
     if model.lower() == "umat":
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
-        source_file = mtldict["source"]
+        source_files = mtldict["source"]
+        source_directory = mtldict["source_directory"]
         options["umat_name"] = mtldict["name"]
         if nprops == NOT_SPECIFIED:
             fatal_inp_error("umat: constants must be specified")
@@ -683,10 +684,15 @@ def pMaterial(mtldict, mtlswapdict=None):
 
         # get the source file and compile it
         cwd = os.getcwd()
-        if source_file:
-            if not os.path.isfile(source_file):
-                fatal_inp_error("{0}: source file not found".format(source_file))
-            source_file = os.path.realpath(source_file)
+        if source_files:
+            if source_directory:
+                source_files = [os.path.join(source_directory, f)
+                                for f in source_files]
+            for (i, source_file) in enumerate(source_files):
+                if not os.path.isfile(source_file):
+                    fatal_inp_error("{0}: source file not "
+                                    "found".format(source_file))
+                source_files[i] = os.path.realpath(source_file)
         else:
             for ext in (".for", ".f", ".f90"):
                 source_file = os.path.join(cwd, "umat" + ext)
@@ -698,6 +704,7 @@ def pMaterial(mtldict, mtlswapdict=None):
             else:
                 fatal_inp_error("umat.[f,for,f90] source file not found")
                 return
+            source_files = [source_file]
 
         # get parameters
         ui = mtldict.get("Content")
@@ -732,7 +739,7 @@ def pMaterial(mtldict, mtlswapdict=None):
             fatal_inp_error(" values for params given")
             return
 
-        Builder.build_umat(source_file)
+        Builder.build_umat(source_files)
         import materials.library.mmats as mm
         mtlmdl = mm.UMAT
         options["umat"] = depvar

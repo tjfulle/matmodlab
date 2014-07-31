@@ -39,11 +39,11 @@ class Builder(object):
         return cfg.MTL_DB.path
 
     @staticmethod
-    def build_umat(source_file, verbosity=0):
+    def build_umat(source_files, verbosity=0):
         name = "umat"
         fb = FortranExtBuilder(name, verbosity=verbosity)
         cfg.cout("building {0}".format(name))
-        source_files = [source_file, cfg.ABQIO, cfg.ABQUMAT]
+        source_files += [cfg.ABQIO, cfg.ABQUMAT]
         fb.add_extension(name, source_files)
         fb.build_extension_modules()
         pass
