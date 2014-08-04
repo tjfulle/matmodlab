@@ -9,14 +9,18 @@ MODULE NEOHOOKE
                                              SHAPE(IDENTITY))
 CONTAINS
 
-  SUBROUTINE GET_STRESS(NUI, UI, F, NSV, SV, SIG, DDSDDE)
+  SUBROUTINE GET_STRESS(NUI, UI, F, NSV, SV, SIG, C)
     ! --------------------------------------------------------------------- !
     ! COMPRESSIBLE NEO-HOOKEAN HYPERELASTIC MATERIAL
+    !
+    ! NOTES
+    ! -----
+    ! SYMMETRIC TENSOR ORDERING : XX, YY, ZZ, XY, YZ, ZX
     ! --------------------------------------------------------------------- !
-    USE LINALG, ONLY : DET
+    USE TENSALG, ONLY : DET
     INTEGER, INTENT(IN) :: NUI, NSV
     REAL(DP), INTENT(IN) :: UI(NUI), F(3,3)
-    REAL(DP), INTENT(INOUT) :: SV(NSV), SIG(NTENS), DDSDDE(NTENS,NTENS)
+    REAL(DP), INTENT(INOUT) :: SV(NSV), SIG(NTENS), C(NTENS,NTENS)
     INTEGER :: I, J
     REAL(DP) :: EE(6), EEP(3), BBP(3), BBN(3,3)
     REAL(DP) :: EMOD, ENU, C10, D1, EG, EK, EG23, PR
@@ -34,14 +38,14 @@ CONTAINS
     FB = SCALE * F
 
     ! DEVIATORIC LEFT CAUCHY-GREEN DEFORMATION TENSOR
-    BB(1) = FB(1,1) ** 2 + FB(1,2) ** 2 + FB(1,3) ** 2
-    BB(2) = FB(2,1) ** 2 + FB(2,2) ** 2 + FB(2,3) ** 2
-    BB(3) = FB(3,3) ** 2 + FB(3,1) ** 2 + FB(3,2) ** 2
-    BB(4) = FB(1,1) * FB(2,1) + FB(1,2) * FB(2,2) + FB(1,3) * FB(2,3)
-    BB(5)=FB(1,1) * FB(3,1) + FB(1,2) * FB(3,2) + FB(1,3) * FB(3,3)
-    BB(6)=FB(2,1) * FB(3,1) + FB(2,2) * FB(3,2) + FB(2,3) * FB(3,3)
+    BB(1) = FB(1,1) * FB(1,1) + FB(1,2) * FB(1,2) + FB(1,3) * FB(1,3)
+    BB(2) = FB(2,1) * FB(2,1) + FB(2,2) * FB(2,2) + FB(2,3) * FB(2,3)
+    BB(3) = FB(3,1) * FB(3,1) + FB(3,2) * FB(3,2) + FB(3,3) * FB(3,3)
+    BB(4) = FB(2,1) * FB(1,1) + FB(2,2) * FB(1,2) + FB(2,3) * FB(1,3)
+    BB(5) = FB(3,1) * FB(2,1) + FB(3,2) * FB(2,2) + FB(3,3) * FB(2,3)
+    BB(6) = FB(3,1) * FB(1,1) + FB(3,2) * FB(1,2) + FB(3,3) * FB(1,3)
     TRBBAR = SUM(BB(1:3)) / THREE
-    EG = TWO * C10/JAC
+    EG = TWO * C10 / JAC
     EK = TWO / D1 * (TWO * JAC - ONE)
     PR = TWO / D1 * (JAC - ONE)
 
@@ -50,28 +54,33 @@ CONTAINS
 
     ! SPATIAL STIFFNESS
     EG23 = EG * TWO / THREE
-    DDSDDE(1,1) =  EG23 * (BB(1) + TRBBAR) + EK
-    DDSDDE(1,2) = -EG23 * (BB(1) + BB(2)-TRBBAR) + EK
-    DDSDDE(1,3) = -EG23 * (BB(1) + BB(3)-TRBBAR) + EK
-    DDSDDE(1,4) =  EG23 * BB(4) / TWO
-    DDSDDE(1,5) =  EG23 * BB(5) / TWO
-    DDSDDE(1,6) = -EG23 * BB(6)
-    DDSDDE(2,2) =  EG23 * (BB(2) + TRBBAR) + EK
-    DDSDDE(2,3) = -EG23 * (BB(2) + BB(3)-TRBBAR) + EK
-    DDSDDE(2,4) =  EG23 * BB(4) / TWO
-    DDSDDE(2,5) = -EG23 * BB(5)
-    DDSDDE(2,6) =  EG23 * BB(6) / TWO
-    DDSDDE(3,3) =  EG23 * (BB(3) + TRBBAR) + EK
-    DDSDDE(3,4) = -EG23 * BB(4)
-    DDSDDE(3,5) =  EG23 * BB(5) / TWO
-    DDSDDE(3,6) =  EG23 * BB(6) / TWO
-    DDSDDE(4,4) =  EG * (BB(1) + BB(2)) / TWO
-    DDSDDE(4,5) =  EG * BB(6) / TWO
-    DDSDDE(4,6) =  EG * BB(5) / TWO
-    DDSDDE(5,5) =  EG * (BB(1) + BB(3)) / TWO
-    DDSDDE(5,6) =  EG * BB(4) / TWO
-    DDSDDE(6,6) =  EG * (BB(2) + BB(3)) / TWO
-    FORALL(I=1:NTENS,J=1:NTENS,J<I) DDSDDE(I,J) = DDSDDE(J,I)
+    C(1,1) =  EG23 * (BB(1) + TRBBAR) + EK
+    C(1,2) = -EG23 * (BB(1) + BB(2)-TRBBAR) + EK
+    C(1,3) = -EG23 * (BB(1) + BB(3)-TRBBAR) + EK
+    C(1,4) =  EG23 * BB(4) / TWO
+    C(1,5) = -EG23 * BB(5)
+    C(1,6) =  EG23 * BB(6) / TWO
+
+    C(2,2) =  EG23 * (BB(2) + TRBBAR) + EK
+    C(2,3) = -EG23 * (BB(2) + BB(3)-TRBBAR) + EK
+    C(2,4) =  EG23 * BB(4) / TWO
+    C(2,5) =  EG23 * BB(5) / TWO
+    C(2,6) = -EG23 * BB(6)
+
+    C(3,3) =  EG23 * (BB(3) + TRBBAR) + EK
+    C(3,4) = -EG23 * BB(4)
+    C(3,5) =  EG23 * BB(5) / TWO
+    C(3,6) =  EG23 * BB(6) / TWO
+
+    C(4,4) =  EG * (BB(1) + BB(2)) / TWO
+    C(4,5) =  EG * BB(6) / TWO
+    C(4,6) =  EG * BB(5) / TWO
+
+    C(5,5) =  EG * (BB(2) + BB(3)) / TWO
+    C(5,6) =  EG * BB(4) / TWO
+
+    C(6,6) =  EG * (BB(1) + BB(3)) / TWO
+    FORALL(I=1:NTENS,J=1:NTENS,J<I) C(I,J) = C(J,I)
 
     ! ! LOGARITHMIC STRAINS
     ! CALL SPRIND(BB, BBP, BBN, 1, 3, 3)
