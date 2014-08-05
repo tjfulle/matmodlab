@@ -82,6 +82,7 @@
       <Attribute name="source" type="strlist" default="none"/>
       <Attribute name="source_directory" type="string" default="none"/>
       <Attribute name="depvar" type="integer" default="1"/>
+      <Attribute name="lapack" type="boolean" default="false"/>
       <Attribute name="constant_jacobian" default="false" type="boolean"/>
     </Element>
 

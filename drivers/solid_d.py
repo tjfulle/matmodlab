@@ -69,6 +69,7 @@ class SolidDriver(Driver):
         self.register_variable("PRESSURE", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
         self.register_variable("TMPR", vtype="SCALAR")
+        self.register_variable("SMISES", vtype="SCALAR")
 
         # register material variables
         self.xtra_start = self.ndata
@@ -273,6 +274,8 @@ class SolidDriver(Driver):
 
                 pres = -np.sum(sig[:3]) / 3.
                 dstress = (sig - sigsave) / dt
+                smises = np.sqrt(2. / 3. * (np.sum(sig[:3] ** 2)
+                                           + 2. * np.sum(sig[3:] ** 2)))
                 f0 = f
 
                 # advance all data after updating state
@@ -283,7 +286,8 @@ class SolidDriver(Driver):
                 self.setvars(stress=sig, strain=eps, defgrad=f,
                              symm_l=d, efield=ef, eqstrain=eqeps,
                              vstrain=epsv, pressure=pres,
-                             dstress=dstress, xtra=xtra, tmpr=tmpr[2])
+                             dstress=dstress, xtra=xtra, tmpr=tmpr[2],
+                             smises=smises)
                 mml_user_sub_eval(t, d, sig, xtra)
 
                 # --- write state to file

@@ -32,7 +32,6 @@ class Umat(AbaUmat):
 
     def setup_umat(self, params, statev):
         """Set up the umat"""
-        tiny = 1.E-12
         if umat is None:
             raise Error1("umat model not imported")
 

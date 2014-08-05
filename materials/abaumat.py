@@ -13,7 +13,7 @@ class AbaUmat(Material):
         dtime = 0.
         dstran = np.zeros(6, order="F")
         stress = np.zeros(6, order="F")
-        statev = np.zeros(self.nxtra, order="F")
+        statev = np.array(self.xinit)
         v = np.arange(6)
 
         time = 0.
