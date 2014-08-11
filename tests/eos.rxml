@@ -1,6 +1,6 @@
 <rtest name="mmd/eos">
 
-  <keywords> builtin fast elastic eos </keywords>
+  <keywords> builtin fast eos </keywords>
 
   <link_files>
     {NAME}.rxml {NAME}.xml {NAME}.base_exo

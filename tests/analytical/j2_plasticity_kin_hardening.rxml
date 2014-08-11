@@ -1,4 +1,4 @@
-<rtest name="mmd/copper_j2_plasticity_iso_hardening">
+<rtest name="mmd/j2_plasticity_kin_hardening">
 
   <keywords> fast plastic random analytic hardening </keywords>
 

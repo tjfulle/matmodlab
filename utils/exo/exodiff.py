@@ -36,6 +36,9 @@ def main(argv=None):
     parser.add_argument("--interp", default=False, action="store_true",
         help=("Interpolate variabes through time to compute error "
               "[default: %(default)s]."))
+    parser.add_argument("--tolfac", default=1.0, action="store", type=float,
+        help=("Multiply the tolerances in the exdiff file by tolfac."
+              "[default: %(default)s]."))
     parser.add_argument("source1")
     parser.add_argument("source2")
     args = parser.parse_args(argv)
@@ -60,6 +63,9 @@ def exodiff(args):
         variables = zip(H1, [DIFFTOL] * len(H1), [FAILTOL] * len(H1),
                         [FLOOR] * len(H1))
 
+    # Apply the optional tolerance factor
+    variables = [(_[0], _[1] * args.tolfac, _[2] * args.tolfac, _[3])
+                                                  for _ in variables]
 
     status = diff_files(H1, D1, H2, D2, variables, interp=args.interp)
 
@@ -211,6 +217,7 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
             status.append(2)
             bad[0].append(var)
 
+        LOG.info("difftol: {0:.2e}  failtol: {1:.2e}".format(ftol, dtol))
         LOG.info("NRMS(File.{0}, File2.{0}) = {1: 12.6E}\n".format(var, nrms))
         continue
 

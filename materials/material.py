@@ -45,7 +45,7 @@ class Material(object):
         else:
             param_defaults = np.zeros(len(set(parse_table.values())))
 
-        return parse_table, param_defaults
+        return parse_table, param_defaults, cls.param_names
 
     @staticmethod
     def _fmt_param_name_aliases(s, mode=0):
@@ -201,10 +201,11 @@ class Material(object):
         return self.params
 
     def setup_new_material(self, params):
+        # For some reason we need to clean the param name aliases.
         self.iparams = np.array(params)
         names = [self._fmt_param_name_aliases(p, mode=-1)
-                 for p in self.param_names]
-        self.params = Parameters(names, params)
+                 for p in params.names]
+        self.params = Parameters(names, np.array(params), params.modelname)
         self.setup()
 
     def setup(self, *args, **kwargs):

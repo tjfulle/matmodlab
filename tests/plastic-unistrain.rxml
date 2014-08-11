@@ -1,6 +1,6 @@
 <rtest name="mmd/plastic-unistrain">
 
-  <keywords> builtin fast elastic </keywords>
+  <keywords> builtin fast j2 </keywords>
 
   <link_files>
     base.exdiff {NAME}.rxml {NAME}.xml {NAME}.base_exo

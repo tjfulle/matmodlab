@@ -3,7 +3,7 @@
   <keywords> fast plastic random analytic </keywords>
 
   <link_files>
-    {NAME} {NAME}.xml {NAME}.rxml
+    analytical.exdiff {NAME} {NAME}.xml {NAME}.rxml
   </link_files>
 
   <execute name="./{NAME}"> </execute>
@@ -11,7 +11,7 @@
   <execute name="mmd"> {NAME}.xml </execute>
 
   <execute name="exdiff">
-    --interp -f base.exdiff {NAME}_analytical.out {NAME}.exo
+    --interp -f analytical.exdiff {NAME}_analytical.out {NAME}.exo
   </execute>
 
 </rtest>

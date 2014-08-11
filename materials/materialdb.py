@@ -175,7 +175,7 @@ class MaterialDB(object):
             # instantiate the material to get param names
             mtlmod = load_file(mat.interface_file)
             mtlmdl = getattr(mtlmod, mat.class_name)
-            mat.parse_table, mat.param_defaults = mtlmdl.param_parse_table()
+            mat.parse_table, mat.param_defaults, mat.param_names = mtlmdl.param_parse_table()
             del mtlmdl
         return db
 

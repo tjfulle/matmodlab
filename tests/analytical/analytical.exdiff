@@ -1,4 +1,4 @@
-<ExDiff ftol="1.0e-7" dtol="2.5e-8">
+<ExDiff ftol="1.0e-7" dtol="3.0e-8">
   <Variable name="STRESS_XX"/>
   <Variable name="STRESS_YY"/>
   <Variable name="STRESS_ZZ"/>

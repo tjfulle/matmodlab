@@ -1,5 +1,6 @@
 import numpy as np
 
+from materials.parameters import Parameters
 from materials.material import Material
 from core.mmlio import Error1, log_error, log_message
 
@@ -22,21 +23,37 @@ class VonMises(Material):
         """Set up the von Mises material
 
         """
-        # Check inputs
-        K, G, Y0, H, BETA= self.params
-        if K <= 0.0: log_error = "Bulk modulus K must be positive"
-        if G <= 0.0: log_error = "Shear modulus G must be positive"
-        nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
-        if nu > 0.5: log_error = "Poisson's ratio > .5"
-        if nu < -1.0: log_error = "Poisson's ratio < -1."
-        if nu < 0.0: log_message = "#---- WARNING: negative Poisson's ratio"
-        if Y0 == 0.0: Y0 = 1.0e99
 
-        self.bulk_modulus = K
-        self.shear_modulus = G
-        self.params["Y0"] = Y0
-        self.params["H"] = H
-        self.params["BETA"] = BETA
+        # Check inputs
+        if self.params.modelname == self.name:
+            K = self.params["K"]
+            G = self.params["G"]
+            Y0 = self.params["Y0"]
+            H = self.params["H"]
+            BETA = self.params["BETA"]
+
+            if K <= 0.0: log_error = "Bulk modulus K must be positive"
+            if G <= 0.0: log_error = "Shear modulus G must be positive"
+            nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
+            if nu > 0.5: log_error = "Poisson's ratio > .5"
+            if nu < -1.0: log_error = "Poisson's ratio < -1."
+            if nu < 0.0: log_message = "#---- WARNING: negative Poisson's ratio"
+            if Y0 == 0.0: Y0 = 1.0e99
+
+        elif self.params.modelname == 'elastic':
+            print("model '{0}' mimicing '{1}'".format(self.name, self.params.modelname))
+            K = self.params["K"]
+            G = self.params["G"]
+            Y0 = 1.0e99
+            H = 0.0
+            BETA = 0.0
+
+        newparams = [K, G, Y0, H, BETA]
+        newnames = ["K", "G", "Y0", "H", "BETA"]
+        self.params = Parameters(newnames, newparams, self.name)
+
+        self.bulk_modulus = self.params["K"]
+        self.shear_modulus = self.params["G"]
 
         # Register State Variables
         self.sv_names = ["EQPS", "Y",

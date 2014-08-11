@@ -16,6 +16,7 @@ from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.mmlio import fatal_inp_error, input_errors
 from core.builder import Builder
 from utils.misc import timed_raw_input
+from materials.parameters import Parameters
 
 _D = os.path.dirname(os.path.realpath(__file__))
 NOT_SPECIFIED = -64023
@@ -661,6 +662,8 @@ def pMaterial(mtldict, mtlswapdict=None):
         mtlswapdict = {}
 
     model = mtldict["model"]
+    # if the user requested it, replace one material model in favor of another.
+    mimicmodel = model # when model 'X' mimics model 'X' nothing happens
     if model == NOT_SPECIFIED:
         fatal_inp_error("expected 'model' Material attribute")
         return
@@ -713,6 +716,7 @@ def pMaterial(mtldict, mtlswapdict=None):
             return
 
         params = np.zeros(nprops)
+        paramnames = ["PROP{0:02d}".format(_) for _ in range(0, nprops)]
         depvar = np.zeros(nstatv)
         for p in ui:
             p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
@@ -745,7 +749,6 @@ def pMaterial(mtldict, mtlswapdict=None):
         options["umat"] = depvar
 
     else:
-        # if the user requested it, replace one material model in favor of another.
         if mtlswapdict.has_key(model):
             newmodel = mtlswapdict[model]
             inp_warning("Swapping out model '{0}' "
@@ -756,6 +759,12 @@ def pMaterial(mtldict, mtlswapdict=None):
         if mtlmdl is None:
             fatal_inp_error("{0}: material not in database".format(model))
             return
+
+        mimicmdl = cfg.MTL_DB.get(mimicmodel)
+        if mimicmdl is None:
+            fatal_inp_error("{0}: material not in database".format(mimicmodel))
+            return
+
 
         # check if shared object exists for this material (if applicable)
         if not mtlmdl.python_model and not mtlmdl.so_exists:
@@ -790,8 +799,10 @@ def pMaterial(mtldict, mtlswapdict=None):
                     raise SystemExit()
 
         # parse_table -> dictionary of material property name:index
-        # put the parameters in an array
-        params = mtlmdl.param_defaults
+        # put the parameters in an array, but get the parameters from
+        # the 'mimic' model
+        params = mimicmdl.param_defaults
+        paramnames = mimicmdl.param_names
 
         # get the user give parameters
         try:
@@ -822,10 +833,10 @@ def pMaterial(mtldict, mtlswapdict=None):
 
             # not a special name -> a parameter name find its location in the
             # material parameter array and put it in the right spot
-            idx = mtlmdl.parse_table.get(name.lower())
+            idx = mimicmdl.parse_table.get(name.lower())
             if idx is None:
                 fatal_inp_error("Material: {0}: invalid parameter for the {1} "
-                                "material model".format(name, model))
+                                "material model".format(name, mimicmodel))
                 continue
             if idx == -1:
                 inp_warning("Material: {0}: parameter derived at setup by model, "
@@ -841,7 +852,8 @@ def pMaterial(mtldict, mtlswapdict=None):
             params[idx] = val
 
     options["constant_jacobian"] = mtldict["constant_jacobian"]
-    return mtlmdl, params, options, istate
+
+    return mtlmdl, Parameters(paramnames, params, mimicmodel), options, istate
 
 
 def pOptimization(optdict, basexml):

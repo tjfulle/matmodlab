@@ -1,0 +1,17 @@
+<rtest name="mmd/random_j2_plasticity2" repeat="20">
+
+  <keywords> fast plastic random analytic </keywords>
+
+  <link_files>
+    {NAME} {NAME}.xml {NAME}.rxml
+  </link_files>
+
+  <execute name="python3"> {NAME} </execute>
+
+  <execute name="mmd"> {NAME}.xml </execute>
+
+  <execute name="exdiff">
+    --interp -f base.exdiff {NAME}_analytical.dat {NAME}.exo
+  </execute>
+
+</rtest>

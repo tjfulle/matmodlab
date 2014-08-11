@@ -1,4 +1,4 @@
-<rtest name="mmd/copper_j2_plasticity">
+<rtest name="mmd/j2_plasticity">
 
   <keywords> fast plastic random analytic </keywords>
 

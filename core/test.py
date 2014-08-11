@@ -203,14 +203,37 @@ def main(argv=None):
         log_message("{0} tests ran in {1:.2f}s".format(
             ntests, timing.tests_finished - timing.start))
 
+
     npass = statuses.count(PASS_STATUS)
     nfail = statuses.count(FAIL_STATUS)
     ndiff = statuses.count(DIFF_STATUS)
     nnrun = statuses.count(NOTRUN_STATUS)
-    if npass: log_message("  {0}/{1} tests passed".format(npass, ntests))
-    if ndiff: log_message("  {0}/{1} tests diffed".format(ndiff, ntests))
-    if nfail: log_message("  {0}/{1} tests failed".format(nfail, ntests))
-    if nnrun: log_message("  {0}/{1} tests not run".format(nnrun, ntests))
+
+    if (nfail + ndiff + nnrun) > 0:
+        log_message("===== Summary of unsatisfactory tests")
+
+    if nnrun > 0:
+        log_message("not run summary:")
+        for (rtest, details) in rtests.items():
+            if details[S_STAT] == NOTRUN_STATUS:
+                log_message("  {0}".format(rtest))
+
+    if ndiff > 0:
+        log_message("diff summary:")
+        for (rtest, details) in rtests.items():
+            if details[S_STAT] == DIFF_STATUS:
+                log_message("  {0}".format(rtest))
+
+    if nfail > 0:
+        log_message("fail summary:")
+        for (rtest, details) in rtests.items():
+            if details[S_STAT] == FAIL_STATUS:
+                log_message("  {0}".format(rtest))
+
+    if npass: log_message("{0}/{1} tests passed".format(npass, ntests))
+    if ndiff: log_message("{0}/{1} tests diffed".format(ndiff, ntests))
+    if nfail: log_message("{0}/{1} tests failed".format(nfail, ntests))
+    if nnrun: log_message("{0}/{1} tests not run".format(nnrun, ntests))
 
     if args.plot_all or args.plot_failed:
         if args.plot_all:
