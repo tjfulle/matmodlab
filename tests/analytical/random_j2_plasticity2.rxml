@@ -1,4 +1,4 @@
-<rtest name="mmd/random_j2_plasticity2" repeat="20">
+<rtest name="mmd/random_j2_plasticity2" repeat="10">
 
   <keywords> fast plastic random analytic </keywords>
 

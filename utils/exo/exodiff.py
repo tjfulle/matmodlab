@@ -217,7 +217,7 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
             status.append(2)
             bad[0].append(var)
 
-        LOG.info("difftol: {0:.2e}  failtol: {1:.2e}".format(ftol, dtol))
+        LOG.info("difftol: {0:.2e}  failtol: {1:.2e}".format(dtol, ftol))
         LOG.info("NRMS(File.{0}, File2.{0}) = {1: 12.6E}\n".format(var, nrms))
         continue
 

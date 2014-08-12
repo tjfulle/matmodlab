@@ -2,7 +2,8 @@
 
   <Physics>
 
-    <Path type="prdef" format="table" cols="1 2 3 4" cfmt="222" tfmt="time" nfac="10000" lineskip="1" ndumps="100">
+    <Path type="prdef" kappa="0" tstar="1" estar="1.0"
+          amplitude="1" nfac="100" ratfac="1" ndumps="100">
       <Include href="random_j2_plasticity2_strain_table.dat"/>
     </Path>
 
