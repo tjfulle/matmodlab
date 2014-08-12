@@ -28,8 +28,9 @@ class AbaUmat(Material):
 
     def jacobian(self, dtime, dstran, stress, statev, v, *args):
         kwargs = {"return jacobian": True}
-        ddsdde = self.update_state(dtime, dstran, stress, statev,
-                                   *args, **kwargs)
+        sig = np.array(stress)
+        sv = np.array(statev)
+        ddsdde = self.update_state(dtime, dstran, sig, sv, *args, **kwargs)
         ddsdde[3:, 3:] *= 2.
         return ddsdde[[[x] for x in v], v]
 

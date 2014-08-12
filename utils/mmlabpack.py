@@ -214,6 +214,14 @@ def update_deformation(dt, k, farg, darg):
     return f, e
 
 
+def dev(a):
+    return a - iso(a)
+
+
+def iso(a):
+    return trace(a) / 3. * numpy.array([1, 1, 1, 0, 0, 0], dtype=numpy.float64)
+
+
 def mag(a):
     return numpy.sqrt(dbd(a, a))
 
@@ -234,13 +242,13 @@ def trace(a):
 
 
 def get_invariants(a, n):
-    asq = np.dot(a, a)
+    asq = numpy.dot(a, a)
     deta = numpy.linalg.det(a)
     tra = numpy.trace(a)
 
     b = numpy.zeros(5)
     b[0] = tra
-    b[1] = .5 * (tra ** 2 - np.trace(asq))
+    b[1] = .5 * (tra ** 2 - numpy.trace(asq))
     b[2] = deta
     b[3] = numpy.dot(numpy.dot(n, a), n)
     b[4] = numpy.dot(numpy.dot(n, asq), n)

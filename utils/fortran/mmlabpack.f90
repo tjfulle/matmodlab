@@ -2,7 +2,7 @@ module mmlabpack
   implicit none
   integer, parameter :: nsymm=6, ntens=9
   real(kind=8), parameter :: zero=0.e+00_8, half=5.e-01_8
-  real(kind=8), parameter :: one=1.e+00_8, two=2.e+00_8
+  real(kind=8), parameter :: one=1.e+00_8, two=2.e+00_8, three=3.e+00_8
 
 contains
 
@@ -517,6 +517,22 @@ contains
     trace = sum(a(1:3))
     return
   end function trace
+
+  function dev(a)
+    implicit none
+    real(kind=8) :: dev(6)
+    real(kind=8), intent(in) :: a(6)
+    dev = a - iso(a)
+    return
+  end function dev
+
+  function iso(a)
+    implicit none
+    real(kind=8) :: iso(6)
+    real(kind=8), intent(in) :: a(6)
+    iso = trace(a) / three * (/one, one, one, zero, zero, zero/)
+    return
+  end function iso
 
   subroutine get_invariants(a, b, n)
     implicit none

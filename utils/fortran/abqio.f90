@@ -29,12 +29,15 @@ subroutine stdb_abqerr(i, msg, intv, realv, charv)
   character*200 jnkstr
   external log_message
   external log_error
+  external log_warning
   rdum=realv(1)
   idum=intv(1)
   cdum=charv(1)
   if (i == -3) then
-     jnkstr = "abq: bombed: " // msg
-     call log_error(msg)
+     jnkstr = "aba: bombed: " // msg
+     call log_error(jnkstr)
+  else if (i == -1) then
+     call log_warning(msg)
   else
      call log_message(msg)
   end if
@@ -42,5 +45,8 @@ subroutine stdb_abqerr(i, msg, intv, realv, charv)
 end subroutine stdb_abqerr
 subroutine xit
   implicit none
-  stop 'stopping due to fortran procedure error'
+  character*120 :: msg
+  external log_error
+  msg = 'stopping due to fortran procedure error'
+  call log_error(msg)
 end subroutine xit

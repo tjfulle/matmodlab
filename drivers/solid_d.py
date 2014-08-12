@@ -24,6 +24,8 @@ NTENS = 9
 I9 = np.eye(3).reshape(9)
 Z6 = np.zeros(6)
 Z3 = np.zeros(3)
+I6 = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
+W = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
 DI3 = [[0, 1, 2], [0, 1, 2]]
 DEFAULT_TMPR = 298.
 CONTROL_FLAGS = {"D": 1,  # strain rate
@@ -35,6 +37,8 @@ CONTROL_FLAGS = {"D": 1,  # strain rate
                  "T": 7,  # temperature
                  "U": 8,  # displacement
                  "X": 9}  # user defined field
+dev = mmlabpack.dev
+mag = mmlabpack.mag
 
 np.set_printoptions(precision=4)
 
@@ -64,12 +68,12 @@ class SolidDriver(Driver):
         self.register_variable("DEFGRAD", vtype="TENS")
         self.register_variable("SYMM_L", vtype="SYMTENS")
         self.register_variable("EFIELD", vtype="VECTOR")
-        self.register_variable("EQSTRAIN", vtype="SCALAR")
         self.register_variable("VSTRAIN", vtype="SCALAR")
+        self.register_variable("EQSTRAIN", vtype="SCALAR")
         self.register_variable("PRESSURE", vtype="SCALAR")
+        self.register_variable("SMISES", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
         self.register_variable("TMPR", vtype="SCALAR")
-        self.register_variable("SMISES", vtype="SCALAR")
 
         # register material variables
         self.xtra_start = self.ndata
@@ -274,8 +278,7 @@ class SolidDriver(Driver):
 
                 pres = -np.sum(sig[:3]) / 3.
                 dstress = (sig - sigsave) / dt
-                smises = np.sqrt(2. / 3. * (np.sum(sig[:3] ** 2)
-                                           + 2. * np.sum(sig[3:] ** 2)))
+                smises = np.sqrt(3./2.) * mag(dev(sig))
                 f0 = f
 
                 # advance all data after updating state

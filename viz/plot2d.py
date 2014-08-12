@@ -40,6 +40,7 @@ L_EXO_EXT = [".exo", ".base_exo", ".e"]
 L_DAT_EXT = [".out", ".dat"]
 L_REC_EXT = L_EXO_EXT + L_DAT_EXT
 XY_DATA = None
+SCALE = True
 
 
 class Namespace(object):
@@ -665,7 +666,10 @@ class ModelPlot(tapi.HasStrictTraits):
         for xyd in sorted(XY_DATA, key=lambda x: x.lw, reverse=True):
             label = xyd.key + ":" + xyd.yname if len(XY_DATA) > 1 else xyd.yname
             ynames.append(xyd.yname)
-            plt.plot(xyd.x, xyd.y / ymax, label=label, lw=xyd.lw)
+            if SCALE:
+                plt.plot(xyd.x, xyd.y / ymax, label=label, lw=xyd.lw)
+            else:
+                plt.plot(xyd.x, xyd.y, label=label, lw=xyd.lw)
         yname = common_prefix(ynames)
         plt.xlabel(xyd.xname)
         plt.ylabel(yname)

@@ -11,6 +11,11 @@ python module gmd__user__routines
             character*(*) :: message
             real intent(callback) :: log_message
         end subroutine log_error
+        subroutine log_warning(message)
+            intent(callback) log_warning
+            character*(*) :: message
+            real intent(callback) :: log_warning
+        end subroutine log_warning
     end interface gmd_user_interface
 end python module gmd__user__routines
 
@@ -22,6 +27,8 @@ python module umat ! in
             external log_error
             intent(callback) log_message
             external log_message
+            intent(callback) log_warning
+            external log_warning
             real(kind=8) dimension(ntens),intent(inout),depend(ntens) :: stress
             real(kind=8) dimension(nstatv),intent(inout),depend(nstatv) :: statev
             real(kind=8) dimension(ntens,ntens),intent(inout),depend(ntens,ntens) :: ddsdde
