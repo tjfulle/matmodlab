@@ -670,7 +670,7 @@ def pMaterial(mtldict, mtlswapdict=None):
 
     options = {}
     istate = []
-    if model.lower() == "umat":
+    if model.lower() in ("umat", "uanisohyper", "uhyper"):
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
         lapack = mtldict["lapack"]

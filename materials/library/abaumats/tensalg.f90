@@ -209,7 +209,8 @@ contains
        ! ...Compute the Mandel form of X:A
        forall(ij=1:6) dd66x6(ij) = sum(T(:) * A(:, ij))
     case default
-       call bombed('unknown job sent to DD66X6')
+       print *, 'unknown job sent to DD66X6'
+       call xit
     end select
     ! ...Convert result to Voigt form
     dd66x6(4:6) = dd66x6(4:6) * toor2

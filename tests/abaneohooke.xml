@@ -17,8 +17,8 @@
     </Path>
 
     <Material model="umat" constants="2"
-	      source="tensalg.f90 neohooke.f90 umat.f90"
-	      source_directory="../materials/library/neohooke">
+	      source="neohooke.f90"
+	      source_directory="../materials/library/abaumats">
       <Constants> {E} {NU} </Constants>
     </Material>
 

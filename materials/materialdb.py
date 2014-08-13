@@ -26,24 +26,25 @@ class _Material:
 
         if kwargs.get("python_model", None) is None:
             self.python_model = not self.source_files
+
         if self.python_model:
             self.so_lib = None
 
-        elif name != "umat":
+        else:
+            # assume fortran model if source files are given
+            self.source_files.append(cfg.FIO)
             self.so_lib = os.path.join(cfg.PKG_D, self.name + cfg.SO_EXT)
 
-            # assume fortran model if source files are given
-            if "abaqus" in self.type:
-                self.source_files.append(cfg.ABQIO)
-                # determine if signature file is present
-                for f in self.source_files:
-                    if f.endswith(".pyf"): break
-                else:
-                    sigf = {"abaqus_umat": cfg.ABQUMAT,
-                            "abaqus_uanioshyper_inv": cfg.ABQUAHI}[self.type]
-                    self.source_files.append(sigf)
+        if "abaqus" in self.type:
+            self.source_files.append(cfg.ABQIO)
+            # determine if signature file is present
+            for f in self.source_files:
+                if f.endswith(".pyf"): break
             else:
-                self.source_files.append(cfg.FIO)
+                sigf = {"abaqus_umat": cfg.ABQUMAT,
+                        "abaqus_uanioshyper_inv": cfg.ABQUAHI}[self.type]
+                self.source_files.append(sigf)
+
         pass
 
     def __getitem__(self, attr):

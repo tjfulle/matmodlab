@@ -45,11 +45,16 @@ E_EXO = ".exo"
 
 WIDTH = 70
 
+RAISE_ON_ERROR = True
 
 class Error(Exception):
     def __init__(self, message, pre=""):
-        sys.stderr.write("{0}*** error: runtests: {1}\n".format(pre, message))
-        raise SystemExit(2)
+        self.message = message.rstrip()
+        if RAISE_ON_ERROR:
+            super(Error, self).__init__(message)
+        else:
+            sys.stderr.write("{0}*** error: runtests: {1}\n".format(pre, message))
+            raise SystemExit(2)
 
 
 class Environ(object):
@@ -103,6 +108,8 @@ def main(argv=None):
         sys.exit(_rebaseline_tests(d=os.getcwd(), files=args.path))
 
     log = sys.stdout
+
+    sys.stdout.write(SPLASH)
 
     # Directory to find tests
     dirs, tests = [], []
@@ -165,7 +172,6 @@ def main(argv=None):
         sys.exit(list_rtests(rtests))
 
     # how many did we find?
-    sys.stdout.write(SPLASH)
     log_message("Found {0} tests in {1:.2f}s".format(
         len(rtests), timing.tests_found - timing.start))
 
@@ -454,11 +460,11 @@ def find_and_format_exes(element):
     for exe_el in exe_els:
         exe = exe_el.attributes.get("name")
         if exe is None:
-            raise Error("{0}: execute: name attribute required".format(name))
+            raise Error("execute: name attribute required")
         exe = exe.value.strip()
         x = which(exe)
         if x is None:
-            raise Error("{0}: {1}: executable not found".format(name, exe))
+            raise Error("execute: {0}: executable not found".format(exe))
         opts = [s for s in xmltools.child2list([exe_el])]
         if exe == "exodiff":
             opts = ["-status", "-allow_name_mismatch"] + opts
@@ -489,7 +495,12 @@ def find_rtests(search_dirs, include, exclude, tests=None):
     # put all found tests in the rtests dictionary
     rtests = {}
     for test_file in test_files:
-        rtests.update(parse_rxml(test_file))
+        try:
+            parsed_file = parse_rxml(test_file)
+            rtests.update(parsed_file)
+        except Error as e:
+            log_warning("unable to parse {0} due to the following error:\n"
+                        "\t{1}".format(os.path.basename(test_file), e.message))
 
     return filter_rtests(rtests, include, exclude)
 

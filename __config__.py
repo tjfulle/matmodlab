@@ -8,7 +8,7 @@ import materials.materialdb as mdb
 import utils.namespace as ns
 
 
-__version__ = (1, 0, 0)
+__version__ = (1, 0, 1)
 ROOT_D = os.path.dirname(os.path.realpath(__file__))
 MTL_DB_D = os.path.join(ROOT_D, "materials/db")
 F_MTL_PARAM_DB = os.path.join(MTL_DB_D, "material_properties.db")
