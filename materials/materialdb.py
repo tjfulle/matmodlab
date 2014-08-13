@@ -78,7 +78,8 @@ class _Material:
         mat.set_options(**options)
         if options.get("umat_mtl") is not None:
             statev = options["umat_depvar"]
-            mat.setup_umat(params, statev)
+            mat.setup_umat(params, statev,
+                           fiber_direction=options.get("umat_fiber_direction"))
             del options["umat_depvar"]
         mat.setup_new_material(params)
         mat.set_constant_jacobian()
@@ -232,7 +233,6 @@ class MaterialDB(object):
             except AttributeError:
                 cout("  ***error: {0}: conf function not defined".format(filename))
                 continue
-
             materials.append(_Material(name, **conf))
 
         return cls(*materials)

@@ -39,11 +39,11 @@ class Builder(object):
         return cfg.MTL_DB.path
 
     @staticmethod
-    def build_umat(source_files, verbosity=0, lapack=False):
-        name = "umat"
+    def build_umat(source_files, name, verbosity=0, lapack=False):
         fb = FortranExtBuilder(name, verbosity=verbosity)
         cfg.cout("building {0}".format(name))
-        source_files += [cfg.ABQIO, cfg.ABQUMAT]
+        signature = {"umat": cfg.ABQUMAT, "uanisohyper": cfg.ABQUAHI}[name]
+        source_files += [cfg.ABQIO, signature]
         lapack = "lite" if lapack else lapack
         fb.add_extension(name, source_files, requires_lapack=lapack)
         fb.build_extension_modules()

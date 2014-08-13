@@ -2,6 +2,7 @@ import sys
 import numpy as np
 
 import __config__ as cfg
+from core.mmlio import Error1, log_message, log_error, log_warning
 try:
     from lib.mmlabpack import mmlabpack
 except ImportError:
@@ -11,6 +12,10 @@ try:
     from mml_user_sub import get_invars_time
 except ImportError:
     get_invars_time = None
+try:
+    import lib.uanisohyper as umat
+except ImportError:
+    umat = None
 
 
 Z3 = np.zeros(3)
@@ -211,3 +216,4 @@ def get_dIbdC(C, N):
     dIbdC[4] += -4. / 3. * I5 * J ** (-7. / 3.) * dJdC
 
     return dIbdC
+

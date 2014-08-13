@@ -119,7 +119,27 @@ class Material(object):
     def xidx(self, key):
         return getattr(self, "_x{0}".format(key), None)
 
+    def get_initial_jacobian(self):
+        """Get the initial Jacobian numerically
+
+        """
+        d = np.zeros(6)
+        sig = np.zeros(6)
+        t = 0.
+        f0 = np.eye(3).reshape(9,)
+        f = np.eye(3).reshape(9,)
+        eps = np.zeros(6)
+        ef = np.zeros(3)
+        tmpr = 0.
+        dtmpr = 0.
+        ufield = 0.
+        args = (t, f0, f, eps, ef, tmpr, dtmpr, ufield)
+        return self.numerical_jacobian(1., d, sig, self.xinit, range(6), *args)
+
     def jacobian(self, dt, d, sig, xtra, v, *args):
+        return self.numerical_jacobian(dt, d, sig, xtra, v, *args)
+
+    def numerical_jacobian(self, dt, d, sig, xtra, v, *args):
         """Numerically compute material Jacobian by a centered difference scheme.
 
         Returns

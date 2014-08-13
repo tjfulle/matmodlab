@@ -10,6 +10,11 @@ python module mml__user__routines
             intent(callback) log_error
             character*(*) :: message
         end subroutine log_error
+        subroutine log_warning(message)
+            intent(callback) log_warning
+            character*(*) :: message
+            real intent(callback) :: log_warning
+        end subroutine log_warning
     end interface mml_user_interface
 end python module mml__user__routines
 
@@ -21,6 +26,8 @@ python module uanisohyper ! in
             external log_error
             intent(callback) log_message
             external log_message
+            intent(callback) log_warning
+            external log_warning
             real(kind=8) dimension(ninva),intent(in) :: ainv_arg
             real(kind=8) dimension(2),intent(out) :: ua
             real(kind=8) dimension(nfibers*(nfibers-1)/2),intent(in),depend(nfibers) :: zeta

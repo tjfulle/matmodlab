@@ -76,11 +76,16 @@ NAMES = {"idealgas": idealgas, "mnrv": mnrv, "plastic": plastic,
          "transisoelas": transisoelas}
 
 # build the source
-d = os.path.join(D, "abaumat")
+d = os.path.join(D, "aba")
 material = {"source_files": [],
             "interface_file": os.path.join(d, "umat.py"),
             "class": "Umat", "type": "abaqus_umat"}
 UMAT = _Material("umat", **material)
+
+material = {"source_files": [],
+            "interface_file": os.path.join(d, "uanisohyper.py"),
+            "class": "UanisoHyper", "type": "abaqus_uanioshyper_inv"}
+UANISOHYPER = _Material("umat", **material)
 
 
 def conf(name=None):

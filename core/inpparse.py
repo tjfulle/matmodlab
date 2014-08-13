@@ -674,10 +674,12 @@ def pMaterial(mtldict, mtlswapdict=None):
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
         lapack = mtldict["lapack"]
+        fiber_direction = mtldict["fiber_direction"]
         source_files = mtldict["source"]
         source_directory = mtldict["source_directory"]
         options["umat_mtl"] = True
         options["umat_name"] = mtldict["name"]
+        options["umat_fiber_direction"] = fiber_direction
         if nprops == NOT_SPECIFIED:
             fatal_inp_error("umat: constants must be specified")
             return
@@ -745,10 +747,14 @@ def pMaterial(mtldict, mtlswapdict=None):
             fatal_inp_error(" values for params given")
             return
 
-        Builder.build_umat(source_files, lapack=lapack)
+        Builder.build_umat(source_files, model.lower(), lapack=lapack)
         import materials.library.mmats as mm
-        mtlmdl = mm.UMAT
-        #        options["umat"] = depvar
+        if model.lower() == "umat":
+            mtlmdl = mm.UMAT
+        elif model.lower() == "uanisohyper":
+            mtlmdl = mm.UANISOHYPER
+        else:
+            fatal_inp_error("uhyper not done")
         options["umat_depvar"] = depvar
 
     else:

@@ -30,7 +30,7 @@ class Umat(AbaUmat):
         self.bulk_modulus = lam + 2. / 3. * mu
         self.shear_modulus = mu
 
-    def setup_umat(self, params, statev):
+    def setup_umat(self, params, statev, **kwargs):
         """Set up the umat"""
         if umat is None:
             raise Error1("umat model not imported")
