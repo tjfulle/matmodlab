@@ -6,7 +6,8 @@ import numpy as np
 import shutil
 import datetime
 
-from __config__ import cfg, MML_ENV
+from mml import MML_ENV
+from runtime import opts
 import core.mmlio as io
 from utils.respfcn import evaluate_response_function
 from utils.mmltab import MMLTabularWriter
@@ -224,7 +225,7 @@ def func(xcall, *args):
         fobj.write(xmlinp)
 
     # Run the job
-    cmd = "{0} -I{1} {2}".format(exe, cfg.I, xmlf)
+    cmd = "{0} -I{1} {2}".format(exe, opts.I, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
     job = subprocess.Popen(cmd.split(), env=MML_ENV,
                            stdout=out, stderr=subprocess.STDOUT)

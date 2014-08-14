@@ -3,7 +3,8 @@ import sys
 import time
 import numpy as np
 
-from __config__ import cfg, RESTART
+from mml import RESTART
+from core.runtime import set_runtime_opt
 import core.mmlio as io
 from drivers.driver import create_driver
 
@@ -14,7 +15,7 @@ class PhysicsHandler(object):
 
         """
         self.runid = runid
-        cfg.runid = runid
+        set_runtime_opt("runid", runid)
 
         restart = driver[2][0] == RESTART
         mode = "a" if restart else "w"

@@ -3,8 +3,9 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
+from mml import PKG_D
 from utils.misc import load_file
-import __config__ as cfg
+from utils.fortran.info import FIO, SO_EXT
 
 D = os.path.dirname(os.path.realpath(__file__))
 def cout(string):
@@ -32,18 +33,8 @@ class _Material:
 
         else:
             # assume fortran model if source files are given
-            self.source_files.append(cfg.FIO)
-            self.so_lib = os.path.join(cfg.PKG_D, self.name + cfg.SO_EXT)
-
-        if "abaqus" in self.type:
-            self.source_files.append(cfg.ABQIO)
-            # determine if signature file is present
-            for f in self.source_files:
-                if f.endswith(".pyf"): break
-            else:
-                sigf = {"abaqus_umat": cfg.ABQUMAT,
-                        "abaqus_uanioshyper_inv": cfg.ABQUAHI}[self.type]
-                self.source_files.append(sigf)
+            self.source_files.append(FIO)
+            self.so_lib = os.path.join(PKG_D, self.name + SO_EXT)
 
         pass
 
@@ -67,6 +58,9 @@ class _Material:
     def ext_module(self):
         if not self.so_lib: return
         return os.path.basename(self.so_lib)
+
+    def add_to_sources(self, files):
+        self.source_files.extend(files)
 
     def instantiate_material(self, params, options):
         """Instantiate the material model"""
@@ -177,7 +171,8 @@ class MaterialDB(object):
             # instantiate the material to get param names
             mtlmod = load_file(mat.interface_file)
             mtlmdl = getattr(mtlmod, mat.class_name)
-            mat.parse_table, mat.param_defaults, mat.param_names = mtlmdl.param_parse_table()
+            (mat.parse_table, mat.param_defaults,
+             mat.param_names) = mtlmdl.param_parse_table()
             del mtlmdl
         return db
 

@@ -6,7 +6,7 @@ if __name__ == "__main__":
     from os.path import dirname, realpath
     sys.path.insert(0, dirname(dirname(realpath(__file__))))
 
-from __config__ import __version__
+from mml import __version__
 from utils.exo.exoinc import *
 
 

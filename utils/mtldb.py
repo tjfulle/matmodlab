@@ -2,8 +2,7 @@ import os
 import sys
 import xml.dom.minidom as xdom
 
-
-from __config__ import F_MTL_PARAM_DB
+from materials.info import F_MTL_PARAM_DB
 
 
 def log_error(m):

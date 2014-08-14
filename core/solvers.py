@@ -9,7 +9,7 @@ try:
 except ImportError:
     import utils.mmlabpack as mmlabpack
 import core.mmlio as io
-from __config__ import cfg
+from core.runtime import opts
 
 EPS = np.finfo(np.float).eps
 
@@ -145,7 +145,7 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
         sig = sigsave.copy()
         xtra = xtrasave.copy()
         Jsub = material.jacobian(dt, d, sig, xtra, v, *margs)
-        if cfg.sqa:
+        if opts.sqa:
             evals = np.linalg.eigvalsh(Jsub)
             if np.any(evals < 0.):
                 io.log_warning("newton: "

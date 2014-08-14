@@ -8,7 +8,8 @@ import argparse
 import multiprocessing as mp
 from os.path import splitext
 
-from __config__ import cfg, SPLASH, ROOT_D, LIB_D, PKG_D
+from mml import SPLASH, ROOT_D
+from runtime import set_runtime_opt
 import core.inpparse as inp
 from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
@@ -48,10 +49,12 @@ def main(argv=None):
         help=argparse.SUPPRESS)
     parser.add_argument("sources", nargs="+", help="Source file paths")
     args = parser.parse_args(argv)
-    cfg.debug = args.dbg
-    cfg.sqa = args.sqa
+
+    # set runtime options
+    set_runtime_opt("debug", args.dbg)
+    set_runtime_opt("sqa", args.sqa)
     # directory to look for hrefs and other files
-    cfg.I = args.I
+    set_runtime_opt("I", args.I)
 
     # add the working directory to the Python path
     sys.path.insert(0, os.getcwd())
@@ -171,7 +174,7 @@ def func(fargs):
         (iinp, njobs, verb, nproc, uinp) = fargs
         stype = uinp[0]
         runid = uinp[1]
-        cfg.runid = runid
+        set_runtime_opt("runid", runid)
         uinp = uinp[2:]
         if stype in ("Optimization", "Permutation"):
             exe = "{0} {1}".format(sys.executable, FILE)

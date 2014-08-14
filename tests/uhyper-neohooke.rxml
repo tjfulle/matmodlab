@@ -1,0 +1,15 @@
+<rtest name="mmd/uhyper-neohooke">
+
+  <keywords> builtin medium uhyper abaqus aba </keywords>
+
+  <link_files>
+    base.exdiff {NAME}.rxml {NAME}.xml {NAME}.base_exo
+  </link_files>
+
+  <execute name="mmd"> {NAME}.xml </execute>
+
+  <execute name="exdiff">
+    -f base.exdiff {NAME}.exo {NAME}.base_exo
+  </execute>
+
+</rtest>

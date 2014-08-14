@@ -2,6 +2,6 @@
 import os
 import sys
 import _setup
-from __config__ import PKG_D
+from mml import PKG_D
 from core.builder import main
 sys.exit(main(sys.argv[1:]))

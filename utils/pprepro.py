@@ -6,6 +6,9 @@ import math
 import numpy as np
 import xml.dom.minidom as xdom
 
+from mml import ROOT_D
+
+
 # safe values to be used in eval
 GDICT = {"__builtins__": None}
 DEBUG = False
@@ -22,7 +25,8 @@ SAFE = {"np": np,
         "log": np.log, "exp": np.exp,
         "floor": np.floor, "ceil": np.ceil,
         "pi": math.pi, "G": 9.80665, "inf": np.inf, "nan": np.nan,
-        "random": RAND.random_sample, "randreal": RAND.random_sample(),}
+        "random": RAND.random_sample, "randreal": RAND.random_sample()}
+GLOBSTR = {"ROOT_D": ROOT_D}
 
 
 def main(argv=None):
@@ -186,6 +190,8 @@ def make_var_subs(lines, vars_to_sub, disp=0):
     for pat in matches:
         repl = re.sub(r"[\{\}]", "", pat)
         try:
+            repl = GLOBSTR[repl].strip()
+        except KeyError:
             repl = repr(eval(repl, GDICT, SAFE))
         except NameError as e:
             errors.append(e.message)

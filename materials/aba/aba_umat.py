@@ -7,7 +7,7 @@ except ImportError:
 from materials.material import Material
 
 
-class AbaUmat(Material):
+class AbaUMat(Material):
 
     def get_initial_jacobian(self):
         dtime = 0.

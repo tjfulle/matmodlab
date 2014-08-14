@@ -4,7 +4,8 @@ import sys
 import numpy as np
 from numpy.linalg import solve, lstsq
 
-from __config__ import cfg, RESTART
+from mml import RESTART
+from core.runtime import opts
 import utils.xmltools as xmltools
 from drivers.driver import Driver
 from core.solvers import sig2d
@@ -226,7 +227,7 @@ class SolidDriver(Driver):
                 # entire leg
                 d = mmlabpack.deps2d(dt, kappa, eps, depsdt)
 
-                if cfg.sqa and kappa == 0.:
+                if opts.sqa and kappa == 0.:
                     if not np.allclose(d, depsdt):
                         log_message("sqa: d != depsdt (k=0, leg"
                                     "={0})".format(leg_num))
@@ -867,4 +868,4 @@ def mml_user_sub_eval(t, d, sig, xtra):
 
     """
     if eval_at_step:
-        eval_at_step(cfg.runid, t, d, sig, xtra)
+        eval_at_step(opts.runid, t, d, sig, xtra)

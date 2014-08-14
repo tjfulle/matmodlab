@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-import __config__ as cfg
+form core.runtime import opts
 from core.mmlio import Error1, log_message, log_error, log_warning
 try:
     from lib.mmlabpack import mmlabpack
@@ -23,7 +23,7 @@ NINV = 5
 Identity = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
 
 
-class AnisoHyper(Material):
+class AbaUAnisoHyper(Material):
     def setup_new_material(self, params):
         self.fiber_direction = np.array([1,0,0], dtype=np.float64)
         super(AnisoHyper, self).setup_new_material(params)
@@ -51,7 +51,7 @@ class AnisoHyper(Material):
 
         # Invariants and isochoric invariants
         if get_invars_time:
-            invars_time = get_invars_time(cfg.cfg.runid, time)
+            invars_time = get_invars_time(opts.runid, time)
             if invars_time is not None:
                 I1b, I2b, J, I4b, I5b = invars_time
                 I1 = J ** (2. / 3.) * I1b

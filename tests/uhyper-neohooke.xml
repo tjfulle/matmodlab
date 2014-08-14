@@ -1,6 +1,8 @@
 <MMLSpec>
   <!-- {E=500} -->
   <!-- {NU=.45} -->
+  <!-- {C10=E/(4.*(1.+NU))} -->
+  <!-- {D1=6*(1.-2.*NU)/E} -->
   <Physics driver="solid" termination_time="{1.8 * pi}">
     <Function id="2" type="analytic_expression" var="t">
       sin(t)
@@ -16,17 +18,11 @@
       {2 * pi} 2:1.e-1 0 0
     </Path>
 
-    <Material model="umat" constants="2"
-	      source="neohooke.f90"
-	      source_directory="../materials/library/abaumats">
-      <Constants> {E} {NU} </Constants>
+    <Material model="uhyper" constants="2"
+	      source="uhyper.f90"
+	      source_directory="{ROOT_D}/materials/library/abaumats">
+      <Constants> {C10} {D1} </Constants>
     </Material>
-
-    <Extract format="ascii" step="1" ffmt="12.6E">
-      <Variables>
-	stress strain
-      </Variables>
-    </Extract>
 
   </Physics>
 

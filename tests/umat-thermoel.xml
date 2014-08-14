@@ -23,7 +23,7 @@
 
     <Material model="umat" constants="8" depvar="12"
               source="thermoelastic.f90"
-              source_directory="../materials/library/abaumats">
+              source_directory="{ROOT_D}/materials/library/abaumats">
       <Constants> {E0} {NU0} {T0} {E1} {NU1} {T1} {ALPHA} {TI} </Constants>
     </Material>
 

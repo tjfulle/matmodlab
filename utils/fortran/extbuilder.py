@@ -13,11 +13,9 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
-import __config__ as cfg
-
-D = os.path.dirname(os.path.realpath(__file__))
-LAPACK = os.path.join(D, "blas_lapack-lite.f")
-LAPACK_OBJ = os.path.join(cfg.PKG_D, "blas_lapack-lite.o")
+from mml import FC, PKG_D, FFLAGS
+from core.mmlio import cout
+from utils.fortran.info import LAPACK, LAPACK_OBJ
 
 
 class ExtModuleNotBuilt(Exception): pass
@@ -30,7 +28,7 @@ class FortranExtBuilder(object):
     def __init__(self, name, fc=None, verbosity=1):
         # find fortran compiler
         if fc is None:
-            fc = cfg.FC
+            fc = FC
         if not fc:
             raise FortranNotFoundError("no fortran compiler found")
         fc = os.path.realpath(fc)
@@ -40,7 +38,7 @@ class FortranExtBuilder(object):
 
         self.fc = fc
         self.config = Configuration(name, parent_package="", top_path="",
-                                    package_path=cfg.PKG_D)
+                                    package_path=PKG_D)
         self.quiet = verbosity < 2
         self.silent = verbosity < 1
         self.exts_built = []
@@ -62,8 +60,8 @@ class FortranExtBuilder(object):
             else:
                 lapack = self._find_lapack()
                 if not lapack:
-                    cfg.cout("*** warning: {0}: required lapack package "
-                             "not found, skipping".format(name))
+                    cout("*** warning: {0}: required lapack package "
+                         "not found, skipping".format(name))
                     return -1
                 options.update(lapack)
         idirs = kwargs.get("include_dirs")
@@ -87,13 +85,13 @@ class FortranExtBuilder(object):
             self._build_blas_lapack = False
 
         cwd = os.getcwd()
-        os.chdir(cfg.PKG_D)
+        os.chdir(PKG_D)
         # change sys.argv for distutils
         hold = [x for x in sys.argv]
         fexec = "--f77exec={0} --f90exec={0}".format(self.fc)
         sys.argv = "./setup.py config_fc {0}".format(fexec).split()
-        if cfg.FFLAGS:
-            fflags = " ".join(cfg.FFLAGS)
+        if FFLAGS:
+            fflags = " ".join(FFLAGS)
             fflags = "--f77flags='{0}' --f90flags='{0}'".format(fflags).split()
             sys.argv.extend(fflags)
         sys.argv.extend("build_ext -i".split())
@@ -124,7 +122,7 @@ class FortranExtBuilder(object):
     def logmes(self, message, end="\n"):
         """Write message to stdout """
         if not self.silent:
-            cfg.cout(message, end=end)
+            cout(message, end=end)
 
     @staticmethod
     def _find_lapack():
@@ -141,15 +139,15 @@ class FortranExtBuilder(object):
         """Build the blas_lapack-lite object
 
         """
-        cfg.cout("Building blas_lapack-lite", end="... ")
+        cout("Building blas_lapack-lite", end="... ")
         cmd = [self.fc, "-fPIC", "-shared", "-O3", LAPACK, "-o" + LAPACK_OBJ]
         build = subprocess.Popen(cmd, stdout=open(os.devnull, "a"),
                                  stderr=subprocess.STDOUT)
         build.wait()
         if build.returncode == 0:
-            cfg.cout("done")
+            cout("done")
         else:
-            cfg.cout("no")
+            cout("no")
         return build.returncode
 
 

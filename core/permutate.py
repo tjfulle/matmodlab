@@ -9,8 +9,9 @@ import numpy as np
 import multiprocessing as mp
 from itertools import izip, product
 
+from mml import MML_ENV
 import core.mmlio as io
-from __config__ import cfg, MML_ENV
+from core.runtime import opts
 from utils.mmltab import MMLTabularWriter
 from utils.pprepro import find_and_make_subs
 from utils.respfcn import evaluate_response_function, MML_RESP_FCN_RE
@@ -148,7 +149,7 @@ def run_single_job(args):
     with open(xmlf, "w") as fobj:
         fobj.write(xmlinp)
 
-    cmd = "{0} -I{1} {2}".format(exe, cfg.I, xmlf)
+    cmd = "{0} -I{1} {2}".format(exe, opts.I, xmlf)
     out = open(os.path.join(evald, runid + ".con"), "w")
     io.log_message("starting job {0}/{1} with {2}".format(
         job_num + 1, NJOBS,

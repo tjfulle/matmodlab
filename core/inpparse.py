@@ -6,8 +6,8 @@ from xml.etree.ElementTree import iterparse
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError as ExpatError
 
-import __config__ as cfg
 import utils.pprepro as pp
+from materials.info import MATERIAL_DB, F_MTL_PARAM_DB
 from utils.mtldb import read_material_params_from_db
 from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.xmltools import stringify
@@ -15,6 +15,7 @@ from drivers.driver import isdriver, getdrvcls
 from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.mmlio import fatal_inp_error, input_errors
 from core.builder import Builder
+from core.runtime import opts
 from utils.misc import timed_raw_input
 from materials.parameters import Parameters
 
@@ -29,7 +30,7 @@ RAND = np.random.RandomState()
 
 class UserInputError(Exception):
     def __init__(self, message):
-        if cfg.cfg.debug:
+        if opts.debug:
             raise Exception(message)
         sys.stderr.write("*** user input error: {0}\n".format(message))
         raise SystemExit(2)
@@ -337,9 +338,9 @@ def isnonnegative(a): return float(a) >= 0.
 def reservedfid(a): return int(a) in (ZERO_FCN_ID, CONST_FCN_ID)
 def isfile(a):
     if not os.path.isfile(a):
-        if not os.path.isfile(os.path.join(cfg.cfg.I, a)):
+        if not os.path.isfile(os.path.join(opts.I, a)):
             return "{0}: no such file".format(a)
-        a = os.path.join(cfg.cfg.I, a)
+        a = os.path.join(opts.I, a)
     return True, a
 def isint(a): return a.isdigit()
 def isnumber(a):
@@ -441,7 +442,7 @@ def read_matlabel(dom, model):
     """Read in the material parameters from a Matlabel
 
     """
-    dbfile = cfg.F_MTL_PARAM_DB
+    dbfile = F_MTL_PARAM_DB
     material = None
     for (n, v) in dom.attributes.items():
         if n == "href":
@@ -456,8 +457,8 @@ def read_matlabel(dom, model):
         return
 
     if not os.path.isfile(dbfile):
-        if os.path.isfile(os.path.join(cfg.cfg.I, dbfile)):
-            dbfile = os.path.join(cfg.cfg.I, dbfile)
+        if os.path.isfile(os.path.join(opts.I, dbfile)):
+            dbfile = os.path.join(opts.I, dbfile)
         else:
             fatal_inp_error("{0}: no such file".format(dbfile))
             return
@@ -499,6 +500,9 @@ def parse_input(filepath, argp=None, mtlswapdict=None):
                     continue
                 fobj.write(line + "\n")
 
+    if err:
+        raise UserInputError("pprepro: " + "\n".join(err))
+
     Tree = defntree()
     try:
         dom = xdom.parseString(user_input)
@@ -523,9 +527,6 @@ def parse_input(filepath, argp=None, mtlswapdict=None):
         root[0].removeChild(root[0].getElementsByTagName("Optimization")[0])
         return [pOptimization(optdict, root[0].toxml())]
 
-    if err:
-        raise UserInputError("pprepro: " + "\n".join(err))
-
     allinp = []
     for phys in els.pop("Physics"):
         allinp.append(pPhysics(phys, functions, mtlswapdict))
@@ -538,11 +539,11 @@ def parse_exo_input(source, time=-1):
     (runid, mat_name, mat_params, driver_name, driver_path, driver_opts,
      leg_num, time, glob_data, elem_data, extract) = info
 
-    driver_opts[0] = cfg.RESTART
+    driver_opts[0] = RESTART
     driver_opts.append([leg_num, time, glob_data, elem_data])
     driver = (driver_name, driver_path, driver_opts)
 
-    mat_mdl = cfg.MTL_DB.get(mat_name)
+    mat_mdl = MATERIAL_DB.get(mat_name)
     if mat_mdl is None:
         fatal_inp_error("{0}: material not in database".format(mat_name))
         return
@@ -670,7 +671,7 @@ def pMaterial(mtldict, mtlswapdict=None):
 
     options = {}
     istate = []
-    if model.lower() in ("umat", "uanisohyper", "uhyper"):
+    if model.lower() in ("umat", "uanisohyper", "uanisohyper_inv", "uhyper"):
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
         lapack = mtldict["lapack"]
@@ -747,15 +748,17 @@ def pMaterial(mtldict, mtlswapdict=None):
             fatal_inp_error(" values for params given")
             return
 
-        Builder.build_umat(source_files, model.lower(), lapack=lapack)
-        import materials.library.mmats as mm
+        import materials.aba.info as aba
         if model.lower() == "umat":
-            mtlmdl = mm.UMAT
-        elif model.lower() == "uanisohyper":
-            mtlmdl = mm.UANISOHYPER
+            mtlmdl = aba.ABA_MATS["umat"]
+        elif model.lower() == "uhyper":
+            mtlmdl = aba.ABA_MATS["uhyper"]
+        # elif "uanisohyper" in model.lower():
         else:
-            fatal_inp_error("uhyper not done")
+            mtlmdl = aba.ABA_MATS["uanisohyper_inv"]
         options["umat_depvar"] = depvar
+        mtlmdl.add_to_sources(source_files)
+        Builder.build_umat(mtlmdl, lapack=lapack, verbosity=opts.verbosity)
 
     else:
         if mtlswapdict.has_key(model):
@@ -764,12 +767,12 @@ def pMaterial(mtldict, mtlswapdict=None):
                         "for '{1}'".format(model, newmodel))
             model = newmodel
 
-        mtlmdl = cfg.MTL_DB.get(model)
+        mtlmdl = MATERIAL_DB.get(model)
         if mtlmdl is None:
             fatal_inp_error("{0}: material not in database".format(model))
             return
 
-        mimicmdl = cfg.MTL_DB.get(mimicmodel)
+        mimicmdl = MATERIAL_DB.get(mimicmodel)
         if mimicmdl is None:
             fatal_inp_error("{0}: material not in database".format(mimicmodel))
             return
@@ -779,7 +782,7 @@ def pMaterial(mtldict, mtlswapdict=None):
         if not mtlmdl.python_model and not mtlmdl.so_exists:
             # material shared object does not exist, let's build it now
             from utils.fortran.extbuilder import FortranNotFoundError
-            if cfg.FC:
+            if FC:
                 inp_warning("building the required extension library {0} for "
                             "model {1}".format(mtlmdl.ext_module, mtlmdl.name))
                 Builder.build_material(mtlmdl)
@@ -800,7 +803,7 @@ def pMaterial(mtldict, mtlswapdict=None):
                     if resp is None:
                         raise SystemExit("timed out")
                     elif resp.lower().strip()[0] == "y":
-                        mtlmdl = cfg.MTL_DB.get(mtlmdl.python_alternative.name)
+                        mtlmdl = MATERIAL_DB.get(mtlmdl.python_alternative.name)
                     else:
                         raise SystemExit()
 

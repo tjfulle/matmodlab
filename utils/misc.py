@@ -2,6 +2,7 @@ import os
 import imp
 import sys
 from select import select
+import shutil
 
 def timed_raw_input(message, timeout=10, default=None):
     """A timed raw_input alternative
@@ -97,3 +98,14 @@ def int2str(I, c=False, sep="-"):
     if c:
         words = words.capitalize()
     return words
+
+
+def remove(path):
+    """Remove file or directory -- dangerous!
+
+    """
+    if not os.path.exists(path): return
+    try: os.remove(path)
+    except OSError: shutil.rmtree(path)
+    return
+

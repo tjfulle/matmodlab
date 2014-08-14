@@ -5,7 +5,7 @@ import math
 import numpy as np
 from itertools import product
 
-from __config__ import cfg, RESTART
+from mml import RESTART
 import utils.xmltools as xmltools
 from drivers.driver import Driver
 from core.mmlio import fatal_inp_error, input_errors, log_message, log_error, Error1

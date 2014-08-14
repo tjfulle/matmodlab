@@ -4,7 +4,8 @@ import numpy as np
 import datetime
 import logging
 
-import __config__ as cfg
+from mml import __version__
+from core.runtime import opts
 
 
 INP_ERRORS = 0
@@ -114,6 +115,19 @@ def increment_warning():
     WARNINGS_LOGGED += 1
 
 
+def cout(message, end="\n"):
+    """Write message to stdout """
+    if opts.verbosity:
+        sys.__stdout__.write(message + end)
+        sys.__stdout__.flush()
+
+
+def cerr(message):
+    """Write message to stderr """
+    sys.__stderr__.write(message + "\n")
+    sys.__stderr__.flush()
+
+
 class ExoManager(object):
     """The main IO manager
 
@@ -186,7 +200,7 @@ class ExoManager(object):
         day = now.strftime("%m/%d/%y")
         hour = now.strftime("%H:%M:%S")
         num_qa_rec = 1
-        vers = ".".join(str(x) for x in cfg.__version__)
+        vers = ".".join(str(x) for x in __version__)
         qa_title = "MML {0} simulation".format(vers)
         qa_record = np.array([[qa_title, self.runid, day, hour]])
         self.exofile.put_qa(num_qa_rec, qa_record)

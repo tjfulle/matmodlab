@@ -5,9 +5,11 @@ import glob
 import shutil
 import argparse
 
+from core.mmlio import cout
+from materials.info import MATERIAL_DB
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
-import __config__ as cfg
+from utils.fortran.info import MMLABPACK_F90, DGPADM_F
 
 
 class BuilderError(Exception):
@@ -34,18 +36,17 @@ class Builder(object):
 
     @property
     def path(self):
-        if not cfg.MTL_DB:
+        if not MATERIAL_DB:
             return []
-        return cfg.MTL_DB.path
+        return MATERIAL_DB.path
 
     @staticmethod
-    def build_umat(source_files, name, verbosity=0, lapack=False):
-        fb = FortranExtBuilder(name, verbosity=verbosity)
-        cfg.cout("building {0}".format(name))
-        signature = {"umat": cfg.ABQUMAT, "uanisohyper": cfg.ABQUAHI}[name]
-        source_files += [cfg.ABQIO, signature]
+    def build_umat(material, verbosity=0, lapack=False):
+        fb = FortranExtBuilder(material.name, verbosity=verbosity)
+        cout("building {0}".format(material.name))
         lapack = "lite" if lapack else lapack
-        fb.add_extension(name, source_files, requires_lapack=lapack)
+        fb.add_extension(material.name, material.source_files,
+                         requires_lapack=lapack)
         fb.build_extension_modules()
         pass
 
@@ -59,9 +60,9 @@ class Builder(object):
           The name of the material to build
 
         """
-        material = cfg.MTL_DB[material]  #.material_from_name(material)
+        material = MATERIAL_DB[material]  #.material_from_name(material)
         fb = FortranExtBuilder(material.name, verbosity=verbosity)
-        cfg.cout("building {0}".format(material.name))
+        cout("building {0}".format(material.name))
         fb.add_extension(material.name, material.source_files,
                          requires_lapack=material.requires_lapack)
         fb.build_extension_modules(verbosity=verbosity)
@@ -72,8 +73,7 @@ class Builder(object):
 
         """
         ext = "mmlabpack"
-        sources = [os.path.join(cfg.ROOT_D, "utils/fortran/mmlabpack.f90"),
-                   os.path.join(cfg.ROOT_D, "utils/fortran/dgpadm.f")]
+        sources = [MMLABPACK_F90, DGPADM_F]
         self.fb.add_extension(ext, sources, requires_lapack="lite")
         return
 
@@ -82,11 +82,11 @@ class Builder(object):
 
         """
         if mats_to_build == "all":
-            mats_to_build = [m.name for m in cfg.MTL_DB]
+            mats_to_build = [m.name for m in MATERIAL_DB]
 
-        cfg.cout("Material[s] to be built: {0}".format(", ".join(mats_to_build)))
+        cout("Material[s] to be built: {0}".format(", ".join(mats_to_build)))
 
-        for material in cfg.MTL_DB:
+        for material in MATERIAL_DB:
 
             if material.name not in mats_to_build:
                 continue
@@ -104,7 +104,7 @@ class Builder(object):
                 requires_lapack=material.requires_lapack)
             if stat:
                 # failed to add extension
-                cfg.MTL_DB.remove(material)
+                MATERIAL_DB.remove(material)
 
         return
 
@@ -114,7 +114,7 @@ class Builder(object):
         """
         self.fb.build_extension_modules()
         for ext in self.fb.exts_failed:
-            cfg.cout("*** warning: {0}: failed to build".format(ext))
+            cout("*** warning: {0}: failed to build".format(ext))
 
 
 def main(argv=None):
@@ -135,9 +135,9 @@ def main(argv=None):
 
     builder = Builder("matmodlab", verbosity=args.v)
     if args.w or args.W:
-        for f in glob.glob(os.path.join(cfg.PKG_D, "*.so")):
+        for f in glob.glob(os.path.join(PKG_D, "*.so")):
             os.remove(f)
-        bld_d = os.path.join(cfg.PKG_D, "build")
+        bld_d = os.path.join(PKG_D, "build")
         if os.path.isdir(bld_d):
             shutil.rmtree(bld_d)
         if args.W:

@@ -203,6 +203,11 @@ class Material(object):
             sigm, xtram = self.update_state(dt, dm, sigm, xtram, *margs)
 
             # compute component of jacobian
+            print dp
+            print sigp
+            print dm
+            print sigm
+            print
             Jsub[i, :] = (sigp[v] - sigm[v]) / deps
 
             continue
