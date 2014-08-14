@@ -1,11 +1,7 @@
 import os
 import sys
 import shutil
-from numpy.distutils.misc_util import get_shared_lib_extension as np_so_ext
 from distutils.spawn import find_executable as which
-
-import utils.namespace as ns
-
 
 __version__ = (1, 2, 0)
 ROOT_D = os.path.dirname(os.path.realpath(__file__))
@@ -25,11 +21,6 @@ BLD_D = os.path.join(ROOT_D, "build")
 LIB_D = os.path.join(ROOT_D, "lib")
 EXO_D = os.path.join(UTL_D, "exo")
 
-FIO = os.path.join(ROOT_D, "utils/fortran/mmlfio.f90")
-
-SO_EXT = np_so_ext()
-SO_EXT = ".so"
-
 # environment variables
 PATH = os.getenv("PATH").split(os.pathsep)
 if TLS_D not in PATH:
@@ -47,10 +38,6 @@ pypath = MML_ENV.get("PYTHONPATH", "").split(os.pathsep)
 pypath.extend([ROOT_D, EXO_D])
 MML_ENV["PYTHONPATH"] = os.pathsep.join(p for p in pypath if p.split())
 MML_ENV["PATH"] = os.pathsep.join(PATH)
-
-# The material database - modify sys.path to find materials
-sys.path.insert(0, os.getcwd())
-
 
 SPLASH = """\
                   M           M    M           M    L
