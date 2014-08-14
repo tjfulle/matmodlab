@@ -1,0 +1,22 @@
+<MMLSpec>
+
+  <Physics>
+
+    <Path type="prdef" format="table" cols="1 2 3 4 5 6 7" cfmt="222222"
+          tfmt="time" nfac="10" lineskip="1">
+      <Include href="random_linear_dp_straintable.dat"/>
+    </Path>
+
+    <Material model="pyplastic">
+      <Include href="random_linear_dp_parameters.txt"/>
+    </Material>
+
+    <Extract format="ascii" step="1" ffmt="12.6E">
+      <Variables>
+	stress strain
+      </Variables>
+    </Extract>
+
+  </Physics>
+
+</MMLSpec>

@@ -55,6 +55,14 @@ material = {"source_files": None, "include_dir": d,
             "class": "VonMises"}
 vonmises = _Material("vonmises", **material)
 
+# --- Pure python plastic model
+d = os.path.join(D, "pyplastic")
+material = {"source_files": None, "include_dir": d,
+            "interface_file": os.path.join(d, "pyplastic.py"),
+            "class": "Pyplastic"}
+pyplastic = _Material("pyplastic", **material)
+
+
 # --- Pure python transversely isotropic model
 d = os.path.join(D, "transisoelas")
 material = {"source_files": None, "include_dir": d,
@@ -74,7 +82,7 @@ thermoelastic = _Material(name, **material)
 # --- collection of materials
 NAMES = {"idealgas": idealgas, "mnrv": mnrv, "plastic": plastic,
          "elastic": elastic, "pyelastic": pyelastic, "vonmises": vonmises,
-         "transisoelas": transisoelas, "thermoelas": thermoelastic}
+         "transisoelas": transisoelas, "thermoelas": thermoelastic, "pyplastic":pyplastic}
 
 # build the source
 name = "umat"

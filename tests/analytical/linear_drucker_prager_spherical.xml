@@ -1,0 +1,47 @@
+<MMLSpec>
+
+  <!--
+
+  ##### Set the elastic modulii
+  lam = { LAM = 1.0e9 }
+  mu = { MU = 1.0e8 }
+  k = { K = LAM + 2.0 / 3.0 * MU }
+
+
+  ##### Set the intersects
+     fac = { FAC = 1.0e6 }
+       R = { RINT = 1.0 * FAC }
+       Z = { ZINT = sqrt(2.0) * FAC }
+
+  ##### Shear strain
+  es = { ES = RINT / (2.0 * sqrt(2.0) * MU) }
+
+  ##### Spherical (volumetric) strain
+  num = { NUM = 3.0 * K ** 2 * (RINT / ZINT) ** 2 }
+  den = { DEN = 3.0 * K * (RINT / ZINT) ** 2 + 2.0 * MU }
+  treps = { TREPS = ZINT / (sqrt(3.0) * K - sqrt(3.0) * NUM / DEN) }
+  ev = { EV = TREPS / 3.0 }
+
+  ##### Stress State
+  max shear stress = { 2.0 * MU * ES }
+  max hydrotatic stress (all components of trace equal this) = { ZINT / sqrt(3.0) }
+
+  -->
+
+  <Physics>
+    <Path type="prdef" kappa="0" tstar="1" estar="1"
+          amplitude="1" nfac="100" ratfac="1" >
+      <!-- termination time, number of steps, control, Cij -->
+      0 0 222222     0    0    0    0    0    0
+      1 1 111111     0    0    0 {ES}    0    0
+      2 1 111111  {EV} {EV} {EV}    0    0    0
+    </Path>
+
+    <Material model="pyplastic">
+      <K> { K } </K>
+      <G> { MU } </G>
+      <A1> { RINT / sqrt(2.0) } </A1>
+      <A4> { RINT / (sqrt(6.0) * ZINT) } </A4>
+    </Material>
+  </Physics>
+</MMLSpec>

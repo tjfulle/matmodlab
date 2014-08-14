@@ -1,0 +1,15 @@
+<rtest name="mmd/linear_drucker_prager_spherical">
+
+  <keywords> fast druckerprager analytic </keywords>
+
+  <link_files>
+    analytical.exdiff {NAME}_analytical.dat {NAME}.xml {NAME}.rxml
+  </link_files>
+
+  <execute name="mmd"> {NAME}.xml </execute>
+
+  <execute name="exdiff">
+    --interp -f analytical.exdiff {NAME}_analytical.dat {NAME}.exo
+  </execute>
+
+</rtest>

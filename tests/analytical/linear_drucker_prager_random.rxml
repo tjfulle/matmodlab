@@ -1,0 +1,33 @@
+<rtest name="mmd/linear_drucker_prager_random" repeat="10">
+
+  <!--
+    This test verifies that the yield surface normal
+    and the flow direction are correct for the linear
+    Drucker Prager model. The test randomly generates
+    elastic modulii over the entire permissible range
+    and then randomly generates yield surface parameters.
+    Using the yield surface parameters it figures out
+    what the strain direction must be in order to have
+    the trial stress returned to a stationary point on
+    the yield surface.
+
+    The stress state should just barely arrive at the
+    yield surface at t=1 and then stay at that same
+    position for the rest of the test.
+  -->
+
+  <keywords> fast druckerprager random analytic </keywords>
+
+  <link_files>
+    analytical.exdiff {NAME} {NAME}.xml {NAME}.rxml
+  </link_files>
+
+  <execute name="python"> {NAME} </execute>
+
+  <execute name="mmd"> {NAME}.xml </execute>
+
+  <execute name="exdiff">
+    --interp -f analytical.exdiff {NAME}_analytical.dat {NAME}.exo
+  </execute>
+
+</rtest>
