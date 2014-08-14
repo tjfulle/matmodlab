@@ -55,7 +55,8 @@ class FortranExtBuilder(object):
         lapack = kwargs.get("requires_lapack")
         if lapack:
             if lapack == "lite":
-                self._build_blas_lapack = True
+                if not os.path.isfile(LAPACK_OBJ):
+                    self._build_blas_lapack = True
                 options["extra_objects"] = [LAPACK_OBJ]
                 options["extra_compile_args"] = ["-fPIC", "-shared"]
             else:

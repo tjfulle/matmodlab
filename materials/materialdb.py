@@ -75,10 +75,10 @@ class _Material:
 
         mat = mclass()
         mat.set_options(**options)
-        if options.get("umat") is not None:
-            statev = options["umat"]
+        if options.get("umat_mtl") is not None:
+            statev = options["umat_depvar"]
             mat.setup_umat(params, statev)
-            del options["umat"]
+            del options["umat_depvar"]
         mat.setup_new_material(params)
         mat.set_constant_jacobian()
 

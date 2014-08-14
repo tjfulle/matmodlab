@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from materials.abaumat import AbaUmat
-from core.mmlio import Error1, log_message, log_error
+from core.mmlio import Error1, log_message, log_error, log_warning
 try:
     from lib.mmlabpack import mmlabpack
 except ImportError:
@@ -32,7 +32,6 @@ class Umat(AbaUmat):
 
     def setup_umat(self, params, statev):
         """Set up the umat"""
-        tiny = 1.E-12
         if umat is None:
             raise Error1("umat model not imported")
 
@@ -53,5 +52,6 @@ class Umat(AbaUmat):
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
-            dfgrd1, noel, npt, layer, kspt, kstep, kinc, log_error, log_message)
+            dfgrd1, noel, npt, layer, kspt, kstep, kinc, log_error,
+            log_message, log_warning)
         return stress, statev, ddsdde

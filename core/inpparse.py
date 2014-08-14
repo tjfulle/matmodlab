@@ -673,8 +673,10 @@ def pMaterial(mtldict, mtlswapdict=None):
     if model.lower() == "umat":
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
+        lapack = mtldict["lapack"]
         source_files = mtldict["source"]
         source_directory = mtldict["source_directory"]
+        options["umat_mtl"] = True
         options["umat_name"] = mtldict["name"]
         if nprops == NOT_SPECIFIED:
             fatal_inp_error("umat: constants must be specified")
@@ -743,10 +745,11 @@ def pMaterial(mtldict, mtlswapdict=None):
             fatal_inp_error(" values for params given")
             return
 
-        Builder.build_umat(source_files)
+        Builder.build_umat(source_files, lapack=lapack)
         import materials.library.mmats as mm
         mtlmdl = mm.UMAT
-        options["umat"] = depvar
+        #        options["umat"] = depvar
+        options["umat_depvar"] = depvar
 
     else:
         if mtlswapdict.has_key(model):
