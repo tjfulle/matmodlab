@@ -141,8 +141,8 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
         return None
 
     # update the material state to get the first guess at the new stress
-    sig, xtra = material.update_mat(t, dt, temp, dtemp, f0, f, stran, d,
-                                    sig, xtra, efield, ufield)
+    sig, xtra = material.compute_update_state(t, dt, temp, dtemp, f0, f,
+        stran, d, sig, xtra, efield, ufield)
     sigerr = sig[v] - sigspec
 
     # --- Perform Newton iteration
@@ -169,8 +169,8 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
             return None
 
         fp, _ = mmlabpack.update_deformation(dt, 0., f, d)
-        sig, xtra = material.update_mat(t, dt, temp, dtemp, f0, fp, stran, d,
-                                        sig, xtra, efield, ufield)
+        sig, xtra = material.compute_update_state(t, dt, temp, dtemp,
+            f0, fp, stran, d, sig, xtra, efield, ufield)
         sigerr = sig[v] - sigspec
         dnom = max(np.amax(np.abs(sigspec)), 1.)
         relerr = np.amax(np.abs(sigerr) / dnom)
@@ -242,8 +242,8 @@ def func(x, material, t, dt, temp, dtemp, f0, farg, stran, darg,
     fp, _ = mmlabpack.update_deformation(dt, 0., f, d)
 
     # store the best guesses
-    sig, xtra = material.update_mat(t, dt, temp, dtemp, f0, fp, stran, d,
-                                    sig, xtra, efield, ufield)
+    sig, xtra = material.compute_update_state(t, dt, temp, dtemp,
+        f0, fp, stran, d, sig, xtra, efield, ufield)
 
     # check the error
     error = 0.

@@ -194,8 +194,8 @@ class Material(object):
             fp, ep = mmlabpack.update_deformation(dtime, 0., f, dp)
             sigp = sig.copy()
             xtrap = xtra.copy()
-            sigp, xtrap = self.update_mat(time, dtime, temp, dtemp, f0, fp,
-                ep, dp, sigp, xtrap, elec_field, user_field)
+            sigp, xtrap = self.compute_update_state(time, dtime, temp, dtemp,
+                f0, fp, ep, dp, sigp, xtrap, elec_field, user_field)
 
             # perturb backward
             dm = d.copy()
@@ -203,8 +203,8 @@ class Material(object):
             fm, em = mmlabpack.update_deformation(dtime, 0., f, dm)
             sigm = sig.copy()
             xtram = xtra.copy()
-            sigp, xtrap = self.update_mat(time, dtime, temp, dtemp, f0, fm,
-                em, dm, sigm, xtram, elec_field, user_field)
+            sigp, xtrap = self.compute_update_state(time, dtime, temp, dtemp,
+                f0, fm, em, dm, sigm, xtram, elec_field, user_field)
 
             # compute component of jacobian
             Jsub[i, :] = (sigp[v] - sigm[v]) / deps
@@ -238,8 +238,8 @@ class Material(object):
     def update_state(self, *args, **kwargs):
         raise Error1("update_state must be provided by model")
 
-    def update_mat(self, time, dtime, temp, dtemp, F0, F, stran, d,
-                   stress, statev, elec_field, user_field, last=False):
+    def compute_update_state(self, time, dtime, temp, dtemp, F0, F, stran, d,
+                             stress, statev, elec_field, user_field, last=False):
         """Update the material state
 
         """
@@ -263,8 +263,8 @@ class Material(object):
         stress = np.zeros(6)
         statev = self.initial_state
         elec_field = np.zeros(3)
-        return self.update_mat(time, dtime, temp, dtemp, F0, F, stran, d,
-                               stress, statev, elec_field, user_field)
+        return self.compute_update_state(time, dtime, temp, dtemp, F0, F,
+            stran, d, stress, statev, elec_field, user_field)
 
     def set_initial_state(self, xtra):
         self.xinit = np.array(xtra)
