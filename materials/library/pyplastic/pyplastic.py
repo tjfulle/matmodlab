@@ -27,7 +27,7 @@ class Pyplastic(Material):
         """Set up the plastic material
 
         """
-
+        self.use_constant_jacobian = True
         # Check inputs
         if self.params.modelname == self.name:
             K = self.params["K"]
@@ -178,17 +178,3 @@ class Pyplastic(Material):
 
     def i1(self, sig):
         return np.sum(sig[:3])
-
-    def jacobian(self, dt, d, stress, xtra, v, *args):
-        """Return the constant stiffness
-        dt : float
-            time step
-
-        d : array_like
-            Deformation rate
-
-        stress : array_like
-            Stress at beginning of step
-
-        """
-        return self.constant_jacobian(v)

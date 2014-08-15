@@ -78,7 +78,7 @@ class SolidDriver(Driver):
 
         # register material variables
         self.xtra_start = self.ndata
-        for (var, vtype) in self.material.material_variables():
+        for (var, vtype) in self.material.material_variables:
             self.register_variable(var, vtype=vtype)
 
         nxtra = self.ndata - self.xtra_start
@@ -109,12 +109,7 @@ class SolidDriver(Driver):
                     raise Error1("incorrect len(InitialState)")
             else:
                 # initialize material
-                sig = np.zeros(NSYMM)
-                xtra = self.material.initial_state()
-                margs = (0., I9, I9, Z6, Z3, itmpr, 0., ifield)
-                xtra = self.material.adjust_initial_state(xtra)
-                sig, xtra = self.material.call_material_zero_state(
-                    sig, xtra, *margs)
+                sig, xtra = self.material.initialize(itmpr, ifield)
                 mml_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
 
             pres = -np.sum(sig[:3]) / 3.
@@ -252,25 +247,25 @@ class SolidDriver(Driver):
                 a2 = float(n + 1) / nsteps
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
                 tmpr[2] = a1 * tmpr[0] + a2 * tmpr[1]
+                temp = tmpr[2] - dtmpr
 
                 # --- find current value of d: sym(velocity gradient)
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    margs = (t, f0, f, eps, ef, tmpr[2]-dtmpr, dtmpr, ufield)
-                    d = sig2d(self.material, dt, depsdt, sig, xtra, v,
-                              sigspec[2], self.proportional, *margs)
+                    d = sig2d(self.material, t, dt, temp, dtmpr,
+                              f0, f, eps, depsdt, sig, xtra, ef, ufield,
+                              v, sigspec[2], self.proportional)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
                 f, eps = mmlabpack.update_deformation(dt, kappa, f0, d)
-                margs = (t, f0, f, eps, ef, tmpr[2]-dtmpr, dtmpr, ufield)
 
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.material.update_state(
-                    dt, d, sig, xtra, *margs, last=True)
+                sig, xtra = self.material.update_mat(t, dt, temp, dtmpr,
+                    f0, f, eps, d, sig, xtra, ef, ufield, last=True)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)

@@ -14,7 +14,8 @@ from core.runtime import opts
 EPS = np.finfo(np.float).eps
 
 
-def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional, *args):
+def sig2d(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
+          efield, ufield, v, sigspec, proportional):
     """Determine the symmetric part of the velocity gradient given stress
 
     Parameters
@@ -45,7 +46,8 @@ def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional, *args):
     dsave = d.copy()
 
     if not proportional:
-        d = _newton(material, dt, d, sig, xtra, v, sigspec, *args)
+        d = _newton(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
+                    efield, ufield, v, sigspec, proportional)
         if d is not None:
             return d
 
@@ -53,18 +55,20 @@ def sig2d(material, dt, d, sig, xtra, v, sigspec, proportional, *args):
         # --- d[v]=0.
         d = dsave.copy()
         d[v] = np.zeros(len(v))
-        d = _newton(material, dt, d, sig, xtra, v, sigspec, *args)
+        d = _newton(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
+                    efield, ufield, v, sigspec, proportional)
         if d is not None:
             return d
 
     # --- Still didn't converge. Try downhill simplex method and accept
     #     whatever answer it returns:
     d = dsave.copy()
-    return _simplex(material, dt, d, sig, xtra, v, sigspec, proportional,
-                    *args)
+    return _simplex(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
+                    efield, ufield, v, sigspec, proportional)
 
 
-def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
+def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg,
+            efield, ufield, v, sigspec, proportional):
     """Seek to determine the unknown components of the symmetric part of velocity
     gradient d[v] satisfying
 
@@ -119,7 +123,6 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
 
     """
     depsmag = lambda a: math.sqrt(sum(a[:3] ** 2) + 2. * sum(a[3:] ** 2)) * dt
-    margs = list(args)
 
     # Initialize
     tol1, tol2 = EPS, math.sqrt(EPS)
@@ -127,6 +130,7 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
 
     sig = sigarg.copy()
     d = darg.copy()
+    f = farg.copy()
     xtra = xtraarg.copy()
 
     sigsave = sig.copy()
@@ -137,14 +141,16 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
         return None
 
     # update the material state to get the first guess at the new stress
-    sig, xtra = material.update_state(dt, d, sig, xtra, *margs)
+    sig, xtra = material.update_mat(t, dt, temp, dtemp, f0, f, stran, d,
+                                    sig, xtra, efield, ufield)
     sigerr = sig[v] - sigspec
 
     # --- Perform Newton iteration
     for i in range(maxit2):
         sig = sigsave.copy()
         xtra = xtrasave.copy()
-        Jsub = material.jacobian(dt, d, sig, xtra, v, *margs)
+        Jsub = material.jacobian(t, dt, temp, dtemp, f0, f, stran, d,
+                                 sig, xtra, efield, ufield, v)
         if opts.sqa:
             evals = np.linalg.eigvalsh(Jsub)
             if np.any(evals < 0.):
@@ -162,9 +168,9 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
             # increment too large
             return None
 
-        f, _ = mmlabpack.update_deformation(dt, 0., args[2], d)
-        margs[2] = f
-        sig, xtra = material.update_state(dt, d, sig, xtra, *margs)
+        fp, _ = mmlabpack.update_deformation(dt, 0., f, d)
+        sig, xtra = material.update_mat(t, dt, temp, dtemp, f0, fp, stran, d,
+                                        sig, xtra, efield, ufield)
         sigerr = sig[v] - sigspec
         dnom = max(np.amax(np.abs(sigspec)), 1.)
         relerr = np.amax(np.abs(sigerr) / dnom)
@@ -181,8 +187,8 @@ def _newton(material, dt, darg, sigarg, xtraarg, v, sigspec, *args):
     return None
 
 
-def _simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
-             *args):
+def _simplex(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg,
+             xtraarg, efield, ufield, v, sigspec, proportional):
     """Perform a downhill simplex search to find sym_velgrad[v] such that
 
                         sig(sym_velgrad[v]) = sigspec[v]
@@ -212,29 +218,32 @@ def _simplex(material, dt, darg, sigarg, xtraarg, v, sigspec, proportional,
     # --- Perform the simplex search
     import scipy.optimize
     d = darg.copy()
+    f = farg.copy()
     sig = sigarg.copy()
     xtra = xtraarg.copy()
-    args = (material, dt, d, sig, xtra, v, sigspec, proportional, args)
+    args = (material, t, dt, temp, dtemp, f0, f, stran, d,
+            sig, xtra, efield, ufield, v, sigspec, proportional)
     d[v] = scipy.optimize.fmin(func, d[v], args=args, maxiter=20, disp=False)
     return d
 
 
-def func(x, material, dt, darg, sigarg, xtraarg, v, sigspec, proportional, args):
+def func(x, material, t, dt, temp, dtemp, f0, farg, stran, darg,
+         sigarg, xtraarg, efield, ufield, v, sigspec, proportional):
     """Objective function to be optimized by simplex
 
     """
-    margs = list(args)
     d = darg.copy()
+    f = farg.copy()
     sig = sigarg.copy()
     xtra = xtraarg.copy()
 
     # initialize
     d[v] = x
-    f, _ = mmlabpack.update_deformation(dt, 0., margs[2], d)
-    margs[2] = f
+    fp, _ = mmlabpack.update_deformation(dt, 0., f, d)
 
     # store the best guesses
-    sig, xtra = material.update_state(dt, d, sig, xtra, *margs)
+    sig, xtra = material.update_mat(t, dt, temp, dtemp, f0, fp, stran, d,
+                                    sig, xtra, efield, ufield)
 
     # check the error
     error = 0.

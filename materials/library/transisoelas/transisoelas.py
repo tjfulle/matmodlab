@@ -16,6 +16,7 @@ class TransIsoElas(Material):
         """
         # Check inputs
         #self.ui = dict(zip(self.param_names, self.params))
+        self.use_constant_jacobian = True
 
         # If the user wants a linear elastic primitive:
         if self.params["K"] > 0.0 and self.params["G"] > 0.0:
@@ -89,18 +90,3 @@ class TransIsoElas(Material):
                               stress[0, 1], stress[1, 2], stress[0, 2]])
 
         return retstress, xtra
-
-
-    def jacobian(self, dt, d, stress, xtra, v, *args):
-        """Return the constant stiffness
-        dt : float
-            time step
-
-        d : array_like
-            Deformation rate
-
-        stress : array_like
-            Stress at beginning of step
-
-        """
-        return self.constant_jacobian(v)

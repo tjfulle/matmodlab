@@ -72,12 +72,13 @@ class MooneyRivlin(Material):
         v = np.arange(6, dtype=np.int)
         self._jacobian = self._jacobian_routine(Vij, T0, self.xinit, v)
 
-    def jacobian(self, dt, d, sig, xtra, v, *args):
-        Fij = np.reshape(args[2], (3, 3))
+    def jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
+                 stress, statev, elec_field, user_field, v):
+        Fij = np.reshape(F, (3, 3))
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
         Vij = mmlabpack.asarray(Vij, 6)
         T = 298. if not self.params["T0"] else self.params["T0"]
-        return self._jacobian_routine(Vij, T, xtra, v)
+        return self._jacobian_routine(Vij, T, statev, v)
 
     def _jacobian_routine(self, Vij, T, xtra, v):
         w = v + 1 # +1 for fortran

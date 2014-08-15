@@ -14,6 +14,7 @@ class Plastic(Material):
         """Set up the Plastic material
 
         """
+        self.use_constant_jacobian = True
         if plastic is None:
             raise Error1("plastic model not imported")
         plastic.plastic_check(self.params, log_error, log_message)
@@ -50,17 +51,3 @@ class Plastic(Material):
         plastic.plastic_update_state(dt, self.params, d, stress,
                                      log_error, log_message)
         return stress, xtra
-
-    def jacobian(self, dt, d, stress, xtra, v, *args):
-        """Return the constant stiffness
-        dt : float
-            time step
-
-        d : array_like
-            Deformation rate
-
-        stress : array_like
-            Stress at beginning of step
-
-        """
-        return self.constant_jacobian(v)

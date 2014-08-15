@@ -20,6 +20,7 @@ class Material(object):
         self.xinit = np.zeros(self.nxtra)
         self.mtl_variables = []
         self.initialized = True
+        self.use_constant_jacobian = False
         if not hasattr(self, "param_names"):
             raise Error1("{0}: param_names not defined".format(self.name))
         self._verify_param_names()
@@ -136,10 +137,15 @@ class Material(object):
         args = (t, f0, f, eps, ef, tmpr, dtmpr, ufield)
         return self.numerical_jacobian(1., d, sig, self.xinit, range(6), *args)
 
-    def jacobian(self, dt, d, sig, xtra, v, *args):
-        return self.numerical_jacobian(dt, d, sig, xtra, v, *args)
+    def jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
+                 stress, statev, elec_field, user_field, v):
+        if self.use_constant_jacobian:
+            return self.constant_jacobian(v)
+        return self.numerical_jacobian(time, dtime, temp, dtemp, F0, F, stran, d,
+                                       stress, statev, elec_field, user_field, v)
 
-    def numerical_jacobian(self, dt, d, sig, xtra, v, *args):
+    def numerical_jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
+                           stress, statev, elec_field, user_field, v):
         """Numerically compute material Jacobian by a centered difference scheme.
 
         Returns
@@ -176,38 +182,31 @@ class Material(object):
             return self.constant_jacobian(v)
 
         # local variables
-        margs = list(args)
         nv = len(v)
         deps =  np.sqrt(np.finfo(np.float64).eps)
         Jsub = np.zeros((nv, nv))
-        dt = 1 if dt == 0. else dt
-        f = margs[2]
+        dtime = 1 if dtime < 1.e-12 else dtime
 
         for i in range(nv):
             # perturb forward
             dp = d.copy()
-            dp[v[i]] = d[v[i]] + (deps / dt) / 2.
-            fp, _ = mmlabpack.update_deformation(dt, 0., f, dp)
+            dp[v[i]] = d[v[i]] + (deps / dtime) / 2.
+            fp, ep = mmlabpack.update_deformation(dtime, 0., f, dp)
             sigp = sig.copy()
             xtrap = xtra.copy()
-            margs[2] = fp
-            sigp, xtrap = self.update_state(dt, dp, sigp, xtrap, *margs)
+            sigp, xtrap = self.update_mat(time, dtime, temp, dtemp, f0, fp,
+                ep, dp, sigp, xtrap, elec_field, user_field)
 
             # perturb backward
             dm = d.copy()
-            dm[v[i]] = d[v[i]] - (deps / dt) / 2.
-            fm, _ = mmlabpack.update_deformation(dt, 0., f, dm)
+            dm[v[i]] = d[v[i]] - (deps / dtime) / 2.
+            fm, em = mmlabpack.update_deformation(dtime, 0., f, dm)
             sigm = sig.copy()
             xtram = xtra.copy()
-            margs[2] = fm
-            sigm, xtram = self.update_state(dt, dm, sigm, xtram, *margs)
+            sigp, xtrap = self.update_mat(time, dtime, temp, dtemp, f0, fm,
+                em, dm, sigm, xtram, elec_field, user_field)
 
             # compute component of jacobian
-            print dp
-            print sigp
-            print dm
-            print sigm
-            print
             Jsub[i, :] = (sigp[v] - sigm[v]) / deps
 
             continue
@@ -239,26 +238,44 @@ class Material(object):
     def update_state(self, *args, **kwargs):
         raise Error1("update_state must be provided by model")
 
-    def initialize_material(self, *args, **kwargs):
-        return
+    def update_mat(self, time, dtime, temp, dtemp, F0, F, stran, d,
+                   stress, statev, elec_field, user_field, last=False):
+        """Update the material state
+
+        """
+        args = (time, F0, F, stran, elec_field, temp, dtemp, user_field)
+        return self.update_state(dtime, d, stress, statev, *args, last=last)
 
     def adjust_initial_state(self, *args, **kwargs):
-        return args[0]
+        self.set_initial_state(args[0])
 
-    def call_material_zero_state(self, stress, xtra, *args):
-        dt = 1.
+    def initialize(self, temp, user_field):
+        """Call the material with initial state
+
+        """
+        time = 0.
+        dtime = 1.
+        dtemp = 0.
+        F0 = np.eye(3).reshape(9,)
+        F = np.eye(3).reshape(9,)
+        stran = np.zeros(6)
         d = np.zeros(6)
-        return self.update_state(dt, d, stress, xtra, *args)
+        stress = np.zeros(6)
+        statev = self.initial_state
+        elec_field = np.zeros(3)
+        return self.update_mat(time, dtime, temp, dtemp, F0, F, stran, d,
+                               stress, statev, elec_field, user_field)
 
     def set_initial_state(self, xtra):
         self.xinit = np.array(xtra)
 
+    @property
     def initial_state(self):
         return self.xinit
 
+    @property
     def material_variables(self):
         return self.mtl_variables
 
     def constant_jacobian(self, v=np.arange(6)):
         return self._jacobian[[[x] for x in v], v]
-

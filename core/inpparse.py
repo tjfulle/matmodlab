@@ -6,6 +6,7 @@ from xml.etree.ElementTree import iterparse
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError as ExpatError
 
+from mml import FC
 import utils.pprepro as pp
 from materials.info import MATERIAL_DB, F_MTL_PARAM_DB
 from utils.mtldb import read_material_params_from_db

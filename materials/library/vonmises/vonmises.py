@@ -23,7 +23,7 @@ class VonMises(Material):
         """Set up the von Mises material
 
         """
-
+        self.use_constant_jacobian = True
         # Check inputs
         if self.params.modelname == self.name:
             K = self.params["K"]
@@ -136,17 +136,3 @@ class VonMises(Material):
         # Returns sqrt(3 * rootj2) = sig_eqv = q
         s = sig - sig[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         return np.sqrt(3.0 / 2.0) * np.sqrt(np.dot(s[:3], s[:3]) + 2 * np.dot(s[3:], s[3:]))
-
-    def jacobian(self, dt, d, stress, xtra, v, *args):
-        """Return the constant stiffness
-        dt : float
-            time step
-
-        d : array_like
-            Deformation rate
-
-        stress : array_like
-            Stress at beginning of step
-
-        """
-        return self.constant_jacobian(v)

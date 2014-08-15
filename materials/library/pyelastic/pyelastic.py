@@ -12,6 +12,7 @@ class PyElastic(Material):
 
         """
         # Check inputs
+        self.use_constant_jacobian = True
         K, G, = self.params
         if K <= 0.0: log_error = "Bulk modulus K must be positive"
         if G <= 0.0: log_error = "Shear modulus G must be positive"
@@ -56,17 +57,3 @@ class PyElastic(Material):
 
         stress = stress + 3.0 * self.bulk_modulus * iso + 2.0 * self.shear_modulus * dev
         return stress, xtra
-
-    def jacobian(self, dt, d, stress, xtra, v, *args):
-        """Return the constant stiffness
-        dt : float
-            time step
-
-        d : array_like
-            Deformation rate
-
-        stress : array_like
-            Stress at beginning of step
-
-        """
-        return self.constant_jacobian(v)
