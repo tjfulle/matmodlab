@@ -153,5 +153,3 @@ class FortranExtBuilder(object):
 
 def module_name(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
-
-

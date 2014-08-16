@@ -1,0 +1,40 @@
+<MMLSpec>
+  <!-- {E=500} -->
+  <!-- {NU=.45} -->
+  <Physics driver="solid" initial_temperature="75" runid="visco-neohooke">
+    <Path type="prdef" kappa="0" tstar="1" amplitude="1" format="table"
+	  cfmt="2227" nfac="200">
+      0 0 0 0 75
+      10 .1 -.01 -.01 95
+    </Path>
+    <Material model="umat" constants="2"
+	      source="neohooke.f90"
+	      source_directory="{ROOT_D}/materials/library/abaumats">
+      <Constants> {E} {NU} </Constants>
+    </Material>
+    <ThermalExpansion type="isotropic">
+      1e-6
+    </ThermalExpansion>
+    <Viscoelastic time="prony">
+      .25 5.
+      .25 10.
+    </Viscoelastic>
+    <TimeTemperatureShift definition="wlf">
+      75 35 50
+    </TimeTemperatureShift>
+  </Physics>
+
+  <Physics driver="solid" initial_temperature="75" runid="novisco-neohooke">
+    <Path type="prdef" kappa="0" tstar="1" amplitude="1" format="table"
+	  cfmt="2227" nfac="200">
+      0 0 0 0 75
+      10 .1 -.01 -.01 95
+    </Path>
+    <Material model="umat" constants="2"
+	      source="neohooke.f90"
+	      source_directory="{ROOT_D}/materials/library/abaumats">
+      <Constants> {E} {NU} </Constants>
+    </Material>
+  </Physics>
+
+</MMLSpec>

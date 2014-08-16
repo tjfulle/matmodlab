@@ -74,6 +74,12 @@
     <Attribute name="runid" default="none" type="string"/>
     <Attribute name="termination_time" default="inf" type="real"
 	       test="ispositive"/>
+    <Attribute name="initial_temperature" default="298" type="real"/>
+
+    <Element name="ThermalExpansion" n="?" content="text">
+      <Attribute name="type" type="string" default="isotropic"
+		 choices="isotropic"/>
+    </Element>
 
     <Element name="Material" n="1" content="children">
       <Attribute name="model" type="string"/>
@@ -85,6 +91,15 @@
       <Attribute name="fiber_direction" type="array" default="1 0 0" len="3"/>
       <Attribute name="lapack" type="boolean" default="false"/>
       <Attribute name="constant_jacobian" default="false" type="boolean"/>
+    </Element>
+
+    <Element name="Viscoelastic" n="?" content="text">
+      <Attribute name="time" type="string" default="prony" choices="prony"/>
+    </Element>
+
+    <Element name="TimeTemperatureShift" n="?" content="text">
+      <Attribute name="definition" type="string" default="wlf"
+		 choices="wlf"/>
     </Element>
 
     <Element name="Path" n="1" content="href then text">

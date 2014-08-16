@@ -100,7 +100,7 @@ def log_warning(message, limit=False):
             LOGGER.warning("maximum number of warnings reached, "
                            "remainder suppressed")
         return
-    LOGGER.warning(message)
+    LOGGER.warning(message.rstrip())
 
 
 def log_error(message, r=1):

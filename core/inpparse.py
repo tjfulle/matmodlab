@@ -130,7 +130,8 @@ class Element(object):
             if item == "children":
                 content = []
                 for node in dom.childNodes:
-                    if node.nodeName.lower() == "matlabel":
+                    name = node.nodeName.strip()
+                    if name.lower() == "matlabel":
                         p = read_matlabel(node, self.getattrib("model"))
                         if p:
                             content.extend(p)
@@ -650,10 +651,16 @@ def pPhysics(physdict, functions, mtlswapdict=None):
     driver = [physdict["driver"], dpath, dopts]
     extract = pExtract(physdict["Elements"].pop("Extract"), dcls)
 
+    mopts["viscoelastic"] = pVisco(physdict["Elements"].pop("Viscoelastic"))
+    mopts["trs"] = pTRS(physdict["Elements"].pop("TimeTemperatureShift"))
+    aa = pThermalExpansion(physdict["Elements"].pop("ThermalExpansion"))
+    mopts["expansion"] = aa
+
     runid = physdict.get("runid")
 
     # Return the physics dictionary
-    return ["Physics", runid, driver, (mdl, params, mopts, istate), extract]
+    material_def = (mdl, params, mopts, istate)
+    return ["Physics", runid, driver, material_def, extract]
 
 
 def pMaterial(mtldict, mtlswapdict=None):
@@ -777,7 +784,6 @@ def pMaterial(mtldict, mtlswapdict=None):
         if mimicmdl is None:
             fatal_inp_error("{0}: material not in database".format(mimicmodel))
             return
-
 
         # check if shared object exists for this material (if applicable)
         if not mtlmdl.python_model and not mtlmdl.so_exists:
@@ -981,8 +987,57 @@ def pExtract(extdict, driver):
     return extdict["format"], extdict["step"], extdict["ffmt"], variables, paths
 
 
+def pVisco(viscodict):
+    """Set up the viscoelastic request
+
+    """
+    from materials.visco.visco import Viscoelastic
+    if not viscodict:
+        return None
+    time_type = viscodict.pop("time")
+    content = viscodict.pop("Content")
+    if time_type == "prony":
+        data = np.array(child2multilist("\n".join(content)), dtype=float)
+    return Viscoelastic(time_type, data)
+
+
+def pTRS(trsdict):
+    """Set up the time temperature shift request
+
+    """
+    from materials.visco.trs import TRS
+    if not trsdict:
+        return None
+    defn = trsdict.pop("definition")
+    content = trsdict.pop("Content")
+    if defn == "wlf":
+        data = np.array(child2list(" ".join(content)), dtype=float)
+    return TRS(defn, data)
+
+
+def pThermalExpansion(d):
+    """Get thermal expansion
+
+    """
+    from materials.visco.expansion import Expansion
+    if d is None:
+        return None
+    typ = d.pop("type")
+    content = d.pop("Content")
+    data = np.array(child2list(" ".join(content)), dtype=float)
+    return Expansion(typ, data)
+
+
 def child2list(child_lines, dtype=str):
     child_lines = re.sub(r",", " ", child_lines)
     child_list = [dtype(s) for line in child_lines.split("\n")
                   for s in line.split() if s.split()]
+    return child_list
+
+
+def child2multilist(child_lines, dtype=str):
+    child_lines = re.sub(r",", " ", child_lines)
+    child_list = []
+    for line in child_lines.split("\n"):
+        child_list.append([dtype(s) for s in line.split()])
     return child_list

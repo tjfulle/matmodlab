@@ -5,6 +5,7 @@ import glob
 import shutil
 import argparse
 
+from mml import ROOT_D
 from core.mmlio import cout
 from materials.info import MATERIAL_DB
 from utils.misc import load_file, int2str
@@ -72,9 +73,20 @@ class Builder(object):
         """Add the fortran utilities to items to be built
 
         """
-        ext = "mmlabpack"
-        sources = [MMLABPACK_F90, DGPADM_F]
-        self.fb.add_extension(ext, sources, requires_lapack="lite")
+        f = "info.py"
+        for (dirname, dirs, files) in os.walk(ROOT_D):
+            if f not in files:
+                continue
+            info = load_file(os.path.join(dirname, f))
+            try:
+                fort_libs = info.fortran_libraries()
+            except AttributeError:
+                continue
+            for ext in fort_libs:
+                s = fort_libs[ext]["source_files"]
+                l = fort_libs[ext].get("lapack", False)
+                self.fb.add_extension(ext, s, requires_lapack=l)
+
         return
 
     def _add_mtls(self, mats_to_build):

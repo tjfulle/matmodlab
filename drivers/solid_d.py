@@ -264,7 +264,7 @@ class SolidDriver(Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.material.compute_update_state(t, dt, temp, dtmpr,
+                sig, xtra = self.material.compute_updated_state(t, dt, temp, dtmpr,
                     f0, f, eps, d, sig, xtra, ef, ufield, last=True)
 
                 # -------------------------- quantities derived from final state

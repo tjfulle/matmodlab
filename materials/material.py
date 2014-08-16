@@ -1,11 +1,19 @@
 import numpy as np
 
-from core.mmlio import Error1, log_warning
+from core.mmlio import Error1, log_warning, log_error, log_message
 from materials.parameters import Parameters
 try:
     from lib.mmlabpack import mmlabpack
 except ImportError:
     import utils.mmlabpack as mmlabpack
+try:
+    from lib.visco import visco as ve
+except ImportError:
+    ve = None
+try:
+    from lib.thermomech import thermomech as tm
+except ImportError:
+    tm = None
 
 class Material(object):
     def __init__(self):
@@ -13,6 +21,7 @@ class Material(object):
         self.nparam = 0
         self.ndata = 0
         self.nxtra = 0
+        self.nvisco = 0
         self._constant_jacobian = False
         self.bulk_modulus = None
         self.shear_modulus = None
@@ -21,6 +30,8 @@ class Material(object):
         self.mtl_variables = []
         self.initialized = True
         self.use_constant_jacobian = False
+        self.visco_params = None
+        self.exp_params = None
         if not hasattr(self, "param_names"):
             raise Error1("{0}: param_names not defined".format(self.name))
         self._verify_param_names()
@@ -103,7 +114,7 @@ class Material(object):
          self._jacobian[2, 0], self._jacobian[2, 1]) = [threek * c2] * 6
         return
 
-    def register_mtl_variable(self, var, vtype, units=None):
+    def register_mtl_variable(self, var, vtype="SCALAR", units=None):
         self.mtl_variables.append((var, vtype))
 
     def register_xtra_variables(self, keys, mig=False):
@@ -194,7 +205,7 @@ class Material(object):
             fp, ep = mmlabpack.update_deformation(dtime, 0., f, dp)
             sigp = sig.copy()
             xtrap = xtra.copy()
-            sigp, xtrap = self.compute_update_state(time, dtime, temp, dtemp,
+            sigp, xtrap = self.compute_updated_state(time, dtime, temp, dtemp,
                 f0, fp, ep, dp, sigp, xtrap, elec_field, user_field)
 
             # perturb backward
@@ -203,7 +214,7 @@ class Material(object):
             fm, em = mmlabpack.update_deformation(dtime, 0., f, dm)
             sigm = sig.copy()
             xtram = xtra.copy()
-            sigp, xtrap = self.compute_update_state(time, dtime, temp, dtemp,
+            sigp, xtrap = self.compute_updated_state(time, dtime, temp, dtemp,
                 f0, fm, em, dm, sigm, xtram, elec_field, user_field)
 
             # compute component of jacobian
@@ -232,19 +243,90 @@ class Material(object):
         self.params = Parameters(names, np.array(params), params.modelname)
         self.setup()
 
+        if self._viscoelastic is not None:
+            if ve is None:
+                log_error("attempting visco analysis but visco.so not imported")
+
+            # setup viscoelastic params
+            self.visco_params = np.zeros(24)
+            # starting location of G and T Prony terms
+            self.viscopoint = (4, 14)
+            n = self._viscoelastic.nprony
+            I, J = self.viscopoint
+            self.visco_params[I:I+n] = self._viscoelastic.data[:, 0]
+            self.visco_params[J:J+n] = self._viscoelastic.data[:, 1]
+            # Ginf
+            self.visco_params[3] = 1. - np.sum(self.visco_params[4:4+n])
+
+            # allocate storage for shift factors
+            for i in range(2):
+                self.register_mtl_variable("SHIFT_{0}".format(i+1))
+
+            m = {0: "XX", 1: "YY", 2: "ZZ", 3: "XY", 4: "YZ", 5: "XZ"}
+            # register material variables
+            for i in range(6):
+                self.register_mtl_variable("TE_{0}".format(m[i]))
+
+            # visco elastic model supports up to 10 Prony series terms,
+            # allocate storage for stress corresponding to each
+            for l in range(10):
+                for i in range(6):
+                    self.register_mtl_variable("H{0}_{1}".format(l+1, m[i]))
+
+            # Now, allocate storage
+            self.nvisco = len(self.material_variables) - self.nxtra
+            xinit = np.append(self.initial_state, np.zeros(self.nvisco))
+            self.adjust_initial_state(xinit)
+
+        if self._trs is not None:
+            self.visco_params[0] = self._trs.data[1] # C1
+            self.visco_params[1] = self._trs.data[2] # C2
+            self.visco_params[2] = self._trs.temp_ref # REF TEMP
+
+        if self._expansion is not None:
+            if tm is None:
+                log_error("attempting thermal analysis but "
+                          "thermomech.so not imported")
+
+            self.exp_params = self._expansion.data
+
+        if self.visco_params is not None:
+            ve.propcheck(self.visco_params, log_error, log_message, log_warning)
+
     def setup(self, *args, **kwargs):
         raise Error1("setup must be provided by model")
 
     def update_state(self, *args, **kwargs):
         raise Error1("update_state must be provided by model")
 
-    def compute_update_state(self, time, dtime, temp, dtemp, F0, F, stran, d,
+    def compute_updated_state(self, time, dtime, temp, dtemp, F0, F, stran, d,
                              stress, statev, elec_field, user_field, last=False):
         """Update the material state
 
         """
-        args = (time, F0, F, stran, elec_field, temp, dtemp, user_field)
-        return self.update_state(dtime, d, stress, statev, *args, last=last)
+        N = self.nxtra
+        # Mechanical deformation gradient
+        Fm = F
+        comm = (log_error, log_message, log_warning)
+        if self.exp_params is not None:
+            # get mechanical deformation
+            Fm = tm.mechdef(self.exp_params, temp, dtemp, F.reshape(3,3), *comm)
+            Fm = Fm.reshape(9,)
+
+        # update material state
+        args = (time, F0, Fm, stran, elec_field, temp, dtemp, user_field)
+        sig, statev[:N] = self.update_state(dtime, d, stress, statev[:N],
+                                            *args, last=last)
+
+        if self.visco_params is not None:
+            # get visco correction
+            X = statev[N:]
+            I, J = self.viscopoint
+            sig = ve.viscorelax(dtime, time, temp, dtemp, self.visco_params,
+                                F.reshape(3,3), X, sig, *comm)
+            statev[N:] = X[:]
+
+        return sig, statev
 
     def adjust_initial_state(self, *args, **kwargs):
         self.set_initial_state(args[0])
@@ -253,6 +335,14 @@ class Material(object):
         """Call the material with initial state
 
         """
+        N = self.nxtra
+        statev = self.initial_state
+        if self.visco_params is not None:
+            # initialize the visco variables
+            x = statev[N:]
+            ve.viscoini(self.visco_params, x,
+                        log_error, log_message, log_warning)
+            statev[N:] = x
         time = 0.
         dtime = 1.
         dtemp = 0.
@@ -261,10 +351,10 @@ class Material(object):
         stran = np.zeros(6)
         d = np.zeros(6)
         stress = np.zeros(6)
-        statev = self.initial_state
         elec_field = np.zeros(3)
-        return self.compute_update_state(time, dtime, temp, dtemp, F0, F,
-            stran, d, stress, statev, elec_field, user_field)
+        stress, statev = self.compute_updated_state(time, dtime, temp,
+                dtemp, F0, F, stran, d, stress, statev, elec_field, user_field)
+        return stress, statev
 
     def set_initial_state(self, xtra):
         self.xinit = np.array(xtra)
