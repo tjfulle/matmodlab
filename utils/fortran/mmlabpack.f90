@@ -424,6 +424,32 @@ contains
   end subroutine update_deformation
 
   ! ------------------------------------------------------------------------- !
+  subroutine update_strain(k, farg, e)
+    ! ----------------------------------------------------------------------- !
+    ! Update strain by
+    !
+    !              E = 1/k * (U**k - I)
+    !
+    ! where k is the Seth-Hill strain parameter.
+    real(kind=8), intent(in) :: k, farg(9)
+    real(kind=8), intent(out) :: e(6)
+    real(kind=8) :: f(3,3), eps(3,3), u(3,3), i(3,3)
+    f = transpose(reshape(farg, (/3,3/)))
+    u = sqrtm(matmul(transpose(f), f))
+    i = eye(3)
+    if (k == 0) then
+       eps = logm(u)
+    else
+       eps = one / k * (powm(u, k) - i)
+    end if
+    if (det(f) <= zero) then
+       stop "negative Jacobian encountered"
+    end if
+    e = symarray(eps)
+    return
+  end subroutine update_strain
+
+  ! ------------------------------------------------------------------------- !
   function det(a)
     ! ----------------------------------------------------------------------- !
     ! determinant of 3x3

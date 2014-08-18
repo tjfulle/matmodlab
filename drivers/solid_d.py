@@ -57,6 +57,7 @@ class SolidDriver(Driver):
         ifield = path[0][19:]
         mtl, params, options, istate = material
         options["initial_temperature"] = itmpr
+        options["kappa"] = self.kappa
         self._mtl_istate = istate
         self.material = mtl.instantiate_material(params, options)
 

@@ -305,16 +305,19 @@ class Material(object):
 
         """
         N = self.nxtra
-        # Mechanical deformation gradient
-        Fm = F
         comm = (log_error, log_message, log_warning)
+
+        # Mechanical deformation
+        Fm, Em = F, stran
+
         if self.exp_params is not None:
-            # get mechanical deformation
+            # thermal expansion: get mechanical deformation
             Fm = tm.mechdef(self.exp_params, temp, dtemp, F.reshape(3,3), *comm)
             Fm = Fm.reshape(9,)
+            Em = mmlabpack.update_strain(self._kappa, Fm)
 
-        # update material state
-        args = (time, F0, Fm, stran, elec_field, temp, dtemp, user_field)
+        # update material state (with mechanical deformation)
+        args = (time, F0, Fm, Em, elec_field, temp, dtemp, user_field)
         sig, statev[:N] = self.update_state(dtime, d, stress, statev[:N],
                                             *args, last=last)
 

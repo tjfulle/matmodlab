@@ -213,6 +213,29 @@ def update_deformation(dt, k, farg, darg):
 
     return f, e
 
+def update_strain(k, farg):
+    """
+    ! ----------------------------------------------------------------------- !
+    ! Update strain by
+    !
+    !              E = 1/k * (U**k - I)
+    !
+    ! where k is the Seth-Hill strain parameter.
+    """
+    f = farg.reshape((3, 3))
+    u = sqrtm(numpy.dot(f.transpose(), f))
+    if k == 0:
+        eps = logm(u)
+    else:
+        eps = 1.0 / k * (powm(u, k) - numpy.eye(3, 3))
+
+    if numpy.linalg.det(f) <= 0.0:
+        raise Exception("negative jacobian encountered")
+
+    e = symarray(eps)
+
+    return e
+
 
 def dev(a):
     return a - iso(a)
