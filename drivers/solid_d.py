@@ -145,8 +145,8 @@ class SolidDriver(Driver):
         d = np.zeros(NSYMM)
         dt = 0.
         eps = np.zeros(NSYMM)
-        f0 = np.reshape(np.eye(3), (NTENS, 1))
-        f = np.reshape(np.eye(3), (NTENS, 1))
+        f0 = np.reshape(np.eye(3), (NTENS,))
+        f = np.reshape(np.eye(3), (NTENS,))
         depsdt = np.zeros(NSYMM)
         sigdum = np.zeros((2, NSYMM))
 

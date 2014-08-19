@@ -5,34 +5,53 @@ try:
 except ImportError:
     import utils.mmlabpack as mmlabpack
 from materials.material import Material
+from utils.misc import who_is_calling
 
 
 class AbaUMat(Material):
 
     def get_initial_jacobian(self):
         dtime = 0.
+        time = 0.
+
         dstran = np.zeros(6, order="F")
+        stran = np.zeros(6, order="F")
+
         stress = np.zeros(6, order="F")
         statev = np.array(self.xinit)
+
+        F0 = np.eye(3)
+        F = np.eye(3)
+
+        dtemp = 0.
+        temp = self._initial_temperature
+
         v = np.arange(6)
 
-        time = 0.
-        dfgrd0 = np.eye(3)
-        dfgrd1 = np.eye(3)
-        stran = np.zeros(6, order="F")
-        temp = self._initial_temperature
-        dtemp = 0.
-        args = (time, dfgrd0, dfgrd1, stran, np.zeros(3), temp, dtemp)
+        elec_field = np.zeros(3)
+        user_field = np.zeros(1)
 
-        return self.jacobian(dtime, dstran, stress, statev, v, *args)
+        return self.jacobian(time, dtime, temp, dtemp, F0, F, stran, dstran,
+                             stress, statev, elec_field, user_field, v)
 
-    def jacobian(self, dtime, dstran, stress, statev, v, *args):
-        kwargs = {"return jacobian": True}
-        sig = np.array(stress)
-        sv = np.array(statev)
-        ddsdde = self.update_state(dtime, dstran, sig, sv, *args, **kwargs)
-        ddsdde[3:, 3:] *= 2.
-        return ddsdde[[[x] for x in v], v]
+    def jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
+                 stress, statev, elec_field, user_field, v):
+        if self.visco_params is not None:
+            ddsdde = self.numerical_jacobian(time, dtime, temp, dtemp, F0, F,
+                                             stran, d, stress, statev,
+                                             elec_field, user_field, v)
+        else:
+            args = (time, F0, F, stran, elec_field, temp, dtemp, user_field)
+            ddsdde = np.zeros((6, 6))
+            sig = np.array(stress)
+            sv = np.array(statev)
+            kwargs = {"jacobian": ddsdde}
+            self.compute_updated_state(time, dtime, temp, dtemp, F0, F, stran, d,
+                                       sig, sv, elec_field, user_field, **kwargs)
+            ddsdde = kwargs["jacobian"]
+            ddsdde[3:, 3:] *= 2.
+            ddsdde = ddsdde[[[x] for x in v], v]
+        return ddsdde
 
     def update_state(self, dtime, dstran, stress, statev, *args, **kwargs):
         """Update the state of an anisotropic hyperelastic model.  Implementation
@@ -93,6 +112,6 @@ class AbaUMat(Material):
             stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
             ndi, nshr, self.nxtra, self.params, coords, drot, pnewdt, celent,
             dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc)
-        if kwargs.get("return jacobian"):
-            return ddsdde
+        if kwargs.get("jacobian") is not None:
+            kwargs["jacobian"][:,:] = ddsdde
         return stress, statev

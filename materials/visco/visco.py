@@ -12,6 +12,11 @@ class Viscoelastic(object):
         else:
             raise Error1("{0}: unkown time type".format(time))
 
+        self.Goo = 1. - np.sum(self._data[:, 0])
+        if self.Goo < 0.:
+            raise Error1("expected sum of shear Prony coefficients, including "
+                         "infinity term to be one")
+
     @property
     def data(self):
         return self._data
@@ -19,3 +24,7 @@ class Viscoelastic(object):
     @property
     def nprony(self):
         return self._data.shape[0]
+
+    @property
+    def Ginf(self):
+        return self.Goo

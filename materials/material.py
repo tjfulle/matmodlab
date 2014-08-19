@@ -200,22 +200,22 @@ class Material(object):
 
         for i in range(nv):
             # perturb forward
-            dp = d.copy()
-            dp[v[i]] = d[v[i]] + (deps / dtime) / 2.
-            fp, ep = mmlabpack.update_deformation(dtime, 0., f, dp)
-            sigp = sig.copy()
-            xtrap = xtra.copy()
+            Dp = d.copy()
+            Dp[v[i]] = d[v[i]] + (deps / dtime) / 2.
+            Fp, Ep = mmlabpack.update_deformation(dtime, 0., F, Dp)
+            sigp = stress.copy()
+            xtrap = statev.copy()
             sigp, xtrap = self.compute_updated_state(time, dtime, temp, dtemp,
-                f0, fp, ep, dp, sigp, xtrap, elec_field, user_field)
+                F0, Fp, Ep, Dp, sigp, xtrap, elec_field, user_field)
 
             # perturb backward
-            dm = d.copy()
-            dm[v[i]] = d[v[i]] - (deps / dtime) / 2.
-            fm, em = mmlabpack.update_deformation(dtime, 0., f, dm)
-            sigm = sig.copy()
-            xtram = xtra.copy()
+            Dm = d.copy()
+            Dm[v[i]] = d[v[i]] - (deps / dtime) / 2.
+            Fm, Em = mmlabpack.update_deformation(dtime, 0., F, Dm)
+            sigm = stress.copy()
+            xtram = statev.copy()
             sigp, xtrap = self.compute_updated_state(time, dtime, temp, dtemp,
-                f0, fm, em, dm, sigm, xtram, elec_field, user_field)
+                F0, Fm, Em, Dm, sigm, xtram, elec_field, user_field)
 
             # compute component of jacobian
             Jsub[i, :] = (sigp[v] - sigm[v]) / deps
@@ -256,7 +256,7 @@ class Material(object):
             self.visco_params[I:I+n] = self._viscoelastic.data[:, 0]
             self.visco_params[J:J+n] = self._viscoelastic.data[:, 1]
             # Ginf
-            self.visco_params[3] = 1. - np.sum(self.visco_params[4:4+n])
+            self.visco_params[3] = self._viscoelastic.Ginf
 
             # allocate storage for shift factors
             for i in range(2):
@@ -300,7 +300,7 @@ class Material(object):
         raise Error1("update_state must be provided by model")
 
     def compute_updated_state(self, time, dtime, temp, dtemp, F0, F, stran, d,
-                             stress, statev, elec_field, user_field, last=False):
+        stress, statev, elec_field, user_field, last=False, **kwargs):
         """Update the material state
 
         """
@@ -318,8 +318,9 @@ class Material(object):
 
         # update material state (with mechanical deformation)
         args = (time, F0, Fm, Em, elec_field, temp, dtemp, user_field)
+        kwargs["last"] = last
         sig, statev[:N] = self.update_state(dtime, d, stress, statev[:N],
-                                            *args, last=last)
+                                            *args, **kwargs)
 
         if self.visco_params is not None:
             # get visco correction

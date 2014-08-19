@@ -3,6 +3,21 @@ import imp
 import sys
 from select import select
 import shutil
+import inspect
+
+
+def whoami():
+    """ return name of calling function """
+    return inspect.stack()[1][3]
+
+
+def who_is_calling():
+    """return the name of the calling function"""
+    stack = inspect.stack()[2]
+    return "{0}.{1}".format(
+        os.path.splitext(os.path.basename(stack[1]))[0], stack[3])
+
+
 
 def timed_raw_input(message, timeout=10, default=None):
     """A timed raw_input alternative
@@ -108,4 +123,3 @@ def remove(path):
     try: os.remove(path)
     except OSError: shutil.rmtree(path)
     return
-
