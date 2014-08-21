@@ -303,9 +303,10 @@ class SolidDriver(Driver):
                     sigerr = np.sqrt(np.sum((sig[v] - sigspec[2]) ** 2))
                     warned = True
                     _tol = np.amax(np.abs(sig[v])) / self.material.bulk_modulus
+                    _tol = max(_tol, 1e-4)
                     if sigerr > _tol:
                         log_warning("leg: {0}, prescribed stress error: "
-                                    "{1: .3f}. consider increasing number of "
+                                    "{1: .5f}. consider increasing number of "
                                     "steps".format(ileg, sigerr))
 
                 continue  # continue to next step

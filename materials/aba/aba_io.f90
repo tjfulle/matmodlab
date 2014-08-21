@@ -19,34 +19,37 @@
 ! external log_error
 ! intent(callback) log_message
 ! external log_message
-subroutine stdb_abqerr(i, msg, intv, realv, charv)
-  implicit none
-  integer :: i
-  character*120 :: msg
-  integer :: intv(1), idum
-  real(8) :: realv(1), rdum
-  character*8 :: charv(1), cdum(1)
-  character*200 jnkstr
-  external log_message
-  external log_error
-  external log_warning
-  rdum=realv(1)
-  idum=intv(1)
-  cdum=charv(1)
-  if (i == -3) then
-     jnkstr = "aba: bombed: " // msg
-     call log_error(jnkstr)
-  else if (i == -1) then
-     call log_warning(msg)
-  else
-     call log_message(msg)
-  end if
-  return
-end subroutine stdb_abqerr
-subroutine xit
-  implicit none
-  character*120 :: msg
-  external log_error
-  msg = 'stopping due to fortran procedure error'
-  call log_error(msg)
-end subroutine xit
+SUBROUTINE STDB_ABQERR(I, MSG, INTV, REALV, CHARV)
+  IMPLICIT NONE
+  INTEGER :: I
+  CHARACTER*120 :: MSG
+  INTEGER :: INTV(1), IDUM
+  REAL(8) :: REALV(1), RDUM
+  CHARACTER*8 :: CHARV(1), CDUM(1)
+  CHARACTER*200 JNKSTR
+  EXTERNAL LOG_MESSAGE
+  EXTERNAL LOG_ERROR
+  EXTERNAL LOG_WARNING
+  RDUM=REALV(1)
+  IDUM=INTV(1)
+  CDUM=CHARV(1)
+  IF (I == -3) THEN
+     JNKSTR = "ABA: BOMBED: " // MSG
+     CALL LOG_ERROR(JNKSTR)
+  ELSE IF (I == -1) THEN
+     CALL LOG_WARNING(MSG)
+  ELSE IF (I == -2) THEN
+     JNKSTR = "ABA: ERROR: " // MSG
+     CALL LOG_WARNING(MSG)
+  ELSE
+     CALL LOG_MESSAGE(MSG)
+  END IF
+  RETURN
+END SUBROUTINE STDB_ABQERR
+SUBROUTINE XIT
+  IMPLICIT NONE
+  CHARACTER*120 :: MSG
+  EXTERNAL LOG_ERROR
+  MSG = 'STOPPING DUE TO FORTRAN PROCEDURE ERROR'
+  CALL LOG_ERROR(MSG)
+END SUBROUTINE XIT

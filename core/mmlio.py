@@ -48,13 +48,13 @@ def setup_logger(runid, verbosity, d=None, mode="w"):
     logfile = os.path.join(d, runid + ".log")
 
     logging.basicConfig(level=logging.DEBUG,
-        format="mml: %(asctime)s %(levelname)s: %(message)s",
+        format="%(asctime)s %(levelname)s: %(message)s",
         datefmt="%b %d %Y, %H:%M:%S", filename=logfile, filemode=mode)
 
     # console logging
     ch = logging.StreamHandler()
     ch.setLevel(LEVELS.get(verbosity, logging.INFO))
-    cf = logging.Formatter("mml: %(levelname)s: %(message)s")
+    cf = logging.Formatter("%(levelname)s: %(message)s")
     ch.setFormatter(cf)
     logging.getLogger("").addHandler(ch)
 
@@ -78,7 +78,7 @@ def log_debug(message):
 
 
 def log_message(message):
-    LOGGER.info(message)
+    LOGGER.info(message.rstrip())
 
 
 def log_redirect(_handler=[]):
@@ -105,7 +105,7 @@ def log_warning(message, limit=False):
 
 def log_error(message, r=1):
     if r:
-        raise Error1(message)
+        raise Error1(message.rstrip())
     else:
         LOGGER.error(message)
 

@@ -739,7 +739,8 @@ def pMaterial(mtldict, mtlswapdict=None):
             if name == "Constants":
                 val = np.array(child2list(" ".join(p[1:]), dtype=float))
                 if val.shape[0] != nprops:
-                    fatal_inp_error("incorrect number of Constants")
+                    fatal_inp_error("expected {0} Constants, got "
+                                    "{1}".format(nprops, val.shape[0]))
                     return
                 params[:] = val
                 continue
