@@ -6,6 +6,7 @@ except ImportError:
     import utils.mmlabpack as mmlabpack
 from materials.material import Material
 from utils.misc import who_is_calling
+from core.mmlio import log_error
 
 
 class AbaUMat(Material):
@@ -114,4 +115,6 @@ class AbaUMat(Material):
             dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc)
         if kwargs.get("jacobian") is not None:
             kwargs["jacobian"][:,:] = ddsdde
+        if np.any(np.isnan(stress)):
+            log_error("umat stress contains nan's")
         return stress, statev

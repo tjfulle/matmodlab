@@ -53,7 +53,7 @@ python module umat ! in
             integer, optional,intent(in),check(len(ddsddt)>=ntens),depend(ddsddt) :: ntens=len(ddsddt)
             integer intent(in) :: nstatv
             real(kind=8) dimension(nprops),intent(in) :: props
-            integer, optional,intent(in),check(len(props)>=nprops),depend(props) :: nprops=len(props)
+            integer, optional,intent(inplace),check(len(props)>=nprops),depend(props) :: nprops=len(props)
             real(kind=8) dimension(3),intent(in) :: coords
             real(kind=8) dimension(3,3),intent(in) :: drot
             real(kind=8) intent(in) :: pnewdt

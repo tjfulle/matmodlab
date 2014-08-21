@@ -4,6 +4,10 @@ module mmlabpack
   real(kind=8), parameter :: zero=0.e+00_8, half=5.e-01_8
   real(kind=8), parameter :: one=1.e+00_8, two=2.e+00_8, three=3.e+00_8
 
+  interface expm
+     module procedure expm_3x3, expm_6x1
+  end interface expm
+
 contains
 
   ! ------------------------------------------------------------------------- !
@@ -59,12 +63,9 @@ contains
     real(kind=8), intent(in) :: a(3,3)
     real(kind=8) :: x(3,3)
     x = half * (a + transpose(a))
-    symarray(1) = x(1,1)
-    symarray(2) = x(2,2)
-    symarray(3) = x(3,3)
-    symarray(4) = x(1,2)
-    symarray(5) = x(2,3)
-    symarray(6) = x(1,3)
+    symarray(1) = x(1,1); symarray(4) = x(1,2); symarray(6) = x(1,3)
+                          symarray(2) = x(2,2); symarray(5) = x(2,3)
+                                                symarray(3) = x(3,3)
     return
   end function symarray
 
@@ -83,30 +84,67 @@ contains
   end subroutine asarray
 
   ! ------------------------------------------------------------------------- !
-  function expm(a)
+  ! Computes the matrix exponential
+  ! ------------------------------------------------------------------------- !
+  function expm_6x1(a)
     ! ----------------------------------------------------------------------- !
-    ! Computes the matrix exponential
+    real(kind=8) :: expm_6x1(6)
+    real(kind=8), intent(in) :: a(6)
+    real(kind=8) :: b(3,3),expb(3,3)
     ! ----------------------------------------------------------------------- !
-    real(kind=8) :: expm(3,3)
+    b = asmat(a)
+    expb = expm_3x3(b)
+    call asarray(expb, 6, expm_6x1)
+  end function expm_6x1
+  function expm_3x3(a)
+    ! ----------------------------------------------------------------------- !
+    real(kind=8) :: expm_3x3(3,3)
     real(kind=8), intent(in) :: a(3,3)
     integer, parameter :: m=3, ldh=3, ideg=6, lwsp=4*m*m+ideg+1
-    real(kind=8) :: t, wsp(lwsp)
-    integer :: ipiv(m), iexph, ns, iflag
-    expm = zero
+    integer, parameter :: n=3, lwork=3*n-1
+    real(kind=8) :: t, wsp(lwsp), v(3,3)
+    real(kind=8) :: w(n), work(lwork), l(3,3)
+    integer :: ipiv(m), iexph, ns, iflag, info
+    character*120 :: msg
+    ! ----------------------------------------------------------------------- !
+    expm_3x3 = zero
     if (all(abs(a) <= epsilon(a))) then
-       expm = eye(3)
+       expm_3x3 = eye(3)
        return
     else if (isdiag(a)) then
-       expm(1,1) = exp(a(1,1))
-       expm(2,2) = exp(a(2,2))
-       expm(3,3) = exp(a(3,3))
+       expm_3x3(1,1) = exp(a(1,1))
+       expm_3x3(2,2) = exp(a(2,2))
+       expm_3x3(3,3) = exp(a(3,3))
        return
     end if
+
+    ! try dgpadm (usually good)
     t = one
+    iflag = 0
     call DGPADM(ideg, m, t, a, ldh, wsp, lwsp, ipiv, iexph, ns, iflag)
-    expm = reshape(wsp(iexph:iexph+m*m-1), shape(expm))
+    if (iflag >= 0) then
+       expm_3x3 = reshape(wsp(iexph:iexph+m*m-1), shape(expm_3x3))
+       return
+    end if
+
+    ! problem with dgpadm, use other method
+    if (iflag == -8) then
+       msg = 'bad sizes (in input of DGPADM)'
+    else if (iflag == -9) then
+       msg = 'Error - null H in input of DGPADM.'
+    else if (iflag == -7) then
+       msg = 'Problem in DGESV (within DGPADM)'
+    end if
+    call bombed(msg)
+    v = a
+    call DSYEV("V", "L", 3, v, 3, w, work, lwork, info)
+    l = zero
+    l(1,1) = exp(w(1))
+    l(2,2) = exp(w(2))
+    l(3,3) = exp(w(3))
+    expm_3x3 = matmul(matmul(v, l ), transpose(v))
     return
-  end function expm
+  end function expm_3x3
 
   ! ------------------------------------------------------------------------- !
   function powm(a, m)
