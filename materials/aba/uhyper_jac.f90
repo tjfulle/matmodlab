@@ -6,7 +6,7 @@ MODULE HYPERELASTIC
   REAL(KIND=DP), PARAMETER :: ZERO=0._DP, ONE=1._DP, TWO=2._DP, THREE=3._DP
   REAL(KIND=DP), PARAMETER :: FOUR=4._DP
   REAL(KIND=DP), PARAMETER :: THIRD=ONE/THREE, P2THIRD=TWO/THREE, P3HALF=THREE/TWO
-  REAL(KIND=DP), PARAMETER :: FOURTH=ONE/FOUR
+  REAL(KIND=DP), PARAMETER :: FOURTH=ONE/FOUR, SIX=6._DP
   REAL(KIND=DP), PARAMETER :: IDENTITY(6)=[ONE, ONE, ONE, ZERO, ZERO, ZERO]
   REAL(KIND=DP), PARAMETER :: IIMI4(6,6) = RESHAPE(&
                          [ZERO,  ONE,  ONE, ZERO, ZERO, ZERO, &
@@ -18,27 +18,42 @@ MODULE HYPERELASTIC
 
 CONTAINS
 
-  SUBROUTINE HYPEREL(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
-       NSTATEV, STATEV, NFIELDV, FIELDV, FIELDVINC, JAC, C, PK2, DDTDDC)
+  SUBROUTINE HYPEREL(NPROPS, PROPS, TEMP, F1, NOEL, CMNAME, INCMPFLAG, &
+       NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, STRESS, DDSDDE)
     ! ----------------------------------------------------------------------- !
     ! HYPERELASTIC MATERIAL MODEL
     ! CALLS A UYHPER MODEL AND FORMULATES THE STRESS AND STIFFNESS ARRAYS
     ! ----------------------------------------------------------------------- !
     ! --- PASSED ARGUMENTS
     CHARACTER*8, INTENT(IN) :: CMNAME
-    INTEGER, INTENT(IN) :: NPROPS, NOEL, NSTATEV, INCMPFLAG, NFIELDV
-    REAL(KIND=DP), INTENT(IN) :: PROPS(NPROPS), TEMP, STATEV(NSTATEV)
-    REAL(KIND=DP), INTENT(INOUT) :: FIELDV(NFIELDV), FIELDVINC(NFIELDV)
-    REAL(KIND=DP), INTENT(IN) :: JAC, C(6)
-    REAL(KIND=DP), INTENT(OUT) :: PK2(6)
-    REAL(KIND=DP), INTENT(OUT), OPTIONAL :: DDTDDC(6,6)
+    INTEGER, INTENT(IN) :: NPROPS, NOEL, NSTATV, INCMPFLAG, NFLDV
+    REAL(KIND=DP), INTENT(IN) :: PROPS(NPROPS), TEMP, F1(3,3)
+    REAL(KIND=DP), INTENT(INOUT) :: STATEV(NSTATV), FIELDV(NFLDV), DFIELDV(NFLDV)
+    REAL(KIND=DP), INTENT(OUT) :: STRESS(6)
+    REAL(KIND=DP), INTENT(OUT), OPTIONAL :: DDSDDE(6,6)
     ! --- LOCAL VARIABLES
     INTEGER :: IJ, I
+    REAL(KIND=DP) :: JAC, C(6), PK2(6), DDTDDC(6,6), Q(6,6)
     REAL(KIND=DP) :: U(2), DU(3), D2U(6), D3U(6)
     REAL(KIND=DP) :: I1, I2, I3, I1B, I2B
     REAL(KIND=DP) :: SCALE, CINV(6), A(3), DA(3,6), B(3,6), DB(3,6,6)
     REAL(KIND=DP), DIMENSION(6,6) :: TERM1, TERM2, CII, ICI, CICI, LCICI, CCI, CIC
     ! ----------------------------------------------------------- HYPEREL --- !
+
+    ! DEFORMATION TENSOR
+    ! C = FT.F
+    C(1) = F1(1,1)**2 + F1(2,1)**2 + F1(3,1)**2
+    C(2) = F1(1,2)**2 + F1(2,2)**2 + F1(3,2)**2
+    C(3) = F1(1,3)**2 + F1(2,3)**2 + F1(3,3)**2
+    C(4) = F1(1,1)*F1(1,2) + F1(2,1)*F1(2,2) + F1(3,1)*F1(3,2)
+    C(5) = F1(1,1)*F1(1,3) + F1(2,1)*F1(2,3) + F1(3,1)*F1(3,3)
+    C(6) = F1(1,2)*F1(1,3) + F1(2,2)*F1(2,3) + F1(3,2)*F1(3,3)
+
+    ! JACOBIAN
+    ! JAC = DET(F)
+    JAC = F1(1,1) * F1(2,2) * F1(3,3) - F1(1,2) * F1(2,1) * F1(3,3) &
+        + F1(1,2) * F1(2,3) * F1(3,1) + F1(1,3) * F1(3,2) * F1(2,1) &
+        - F1(1,3) * F1(3,1) * F1(2,2) - F1(2,3) * F1(3,2) * F1(1,1)
 
     ! INVARIANTS OF C
     CALL INVARS(C, I1, I2, I3)
@@ -49,7 +64,7 @@ CONTAINS
     I2B = I2 * (SCALE ** 4)
 
     CALL UHYPER(I1B, I2B, JAC, U, DU, D2U, D3U, TEMP, NOEL, CMNAME, &
-         INCMPFLAG, NSTATEV, STATEV, NFIELDV, FIELDV, FIELDVINC, &
+         INCMPFLAG, NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, &
          NPROPS, PROPS)
 
     ! UPDATE THE STRESS AND MATERIAL STIFFNESS
@@ -91,12 +106,16 @@ CONTAINS
     ! SECOND PIOLA-KIRCHHOFF STRESS: DERIVATIVE OF ENERGY WRT C
     FORALL(IJ=1:6) PK2(IJ) = TWO * SUM(A(1:3) * B(1:3, IJ))
 
-    IF (.NOT. PRESENT(DDTDDC)) RETURN
+    ! CAUCHY STRESS
+    Q = TRANSQ(F1)
+    STRESS = MATMUL(Q, PK2) / JAC
+
+    IF (.NOT. PRESENT(DDSDDE)) RETURN
 
     CICI = DYAD(CINV, CINV)
     CIC = DYAD(CINV, C)
     CCI = DYAD(C, CINV)
-    LCICI = SYMLEAF(CINV, CINV)
+    LCICI = OPROD(CINV, CINV)
     ICI = DYAD(IDENTITY, CINV)
     CII = DYAD(CINV, IDENTITY)
     DA=ZERO
@@ -116,13 +135,14 @@ CONTAINS
        DDTDDC = DDTDDC + FOUR * (DYAD(DA(I,1:6), B(I,1:6)) + A(I) * DB(I,1:6,1:6))
     END DO
     DDTDDC = HALF * (DDTDDC + TRANSPOSE(DDTDDC))
+    DDSDDE = MATMUL(MATMUL(Q, DDTDDC), TRANSPOSE(Q)) / JAC
 
   END SUBROUTINE HYPEREL
 
   ! ************************************************************************* !
 
   SUBROUTINE JACOBIAN(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
-       NSTATEV, STATEV, NFIELDV, FIELDV, FIELDVINC, C, PK2, DDTDDC)
+       NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, F, PK2, DDSDDE)
     ! THIS PROCEDURE NUMERICALLY COMPUTES AND RETURNS THE JACOBIAN MATRIX
     !
     !                      J = (JIJ) = (DSIGI/DEPSJ).
@@ -132,46 +152,35 @@ CONTAINS
     ! SUBROUTINE FOR EACH ELEMENT OF PK2. THE CENTERING IS ABOUT THE POINT
     !                       EPS = EPSOLD + D * DT,
     ! WHERE D IS THE RATE-OF-STRAIN ARRAY.
+    REAL(KIND=DP), PARAMETER :: TOL=1.E-6_DP
     CHARACTER*8, INTENT(IN) :: CMNAME
-    INTEGER, INTENT(IN) :: NPROPS, NOEL, NSTATEV, INCMPFLAG, NFIELDV
-    REAL(KIND=DP), INTENT(IN) :: PROPS(NPROPS), C(6), TEMP, STATEV(NSTATEV)
-    REAL(KIND=DP), INTENT(INOUT) :: FIELDV(NFIELDV), FIELDVINC(NFIELDV)
-    REAL(KIND=DP), INTENT(IN) :: PK2(6)
-    REAL(KIND=DP), INTENT(OUT) :: DDTDDC(6,6)
+    INTEGER, INTENT(IN) :: NPROPS, NOEL, NSTATV, INCMPFLAG, NFLDV
+    REAL(KIND=DP), INTENT(IN) :: PROPS(NPROPS), TEMP, STATEV(NSTATV)
+    REAL(KIND=DP), INTENT(INOUT) :: FIELDV(NFLDV), DFIELDV(NFLDV)
+    REAL(KIND=DP), INTENT(IN) :: PK2(6), F(3,3)
+    REAL(KIND=DP), INTENT(OUT) :: DDSDDE(6,6)
     INTEGER :: N
-    REAL(KIND=DP) :: E(6), DE
-    REAL(KIND=DP) :: EP(6), CP(6), JP, SVP(NSTATEV), TP(6)
-    REAL(KIND=DP) :: EM(6), CM(6), JM, SVM(NSTATEV), TM(6)
-    INTEGER, PARAMETER :: V(6)=(/1,2,3,4,5,6/)
+    REAL(KIND=DP) :: EPS, DF(3,3)
+    REAL(KIND=DP) :: SVP(NSTATV), FP(3,3), SP(6)
+    REAL(KIND=DP) :: SVM(NSTATV), FM(3,3), SM(6)
     ! ---------------------------------------------------------- JACOBIAN --- !
-    E = HALF * (C - IDENTITY)
-    DE = SQRT(EPSILON(ONE))
-    DDTDDC = ZERO
+    EPS = SQRT(EPSILON(ONE))
     DO N = 1, 6
-       EP = E
-       EP(V(N)) = EP(V(N)) + DE / TWO
-       CP = TWO * EP + IDENTITY
-       JP = SQRT(SYMDET(CP))
+       DF = DGEDDG(EPS/TWO, N, F)
+       FP = F + DF
        SVP = STATEV
-       CALL HYPEREL(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
-            NSTATEV, SVP, NFIELDV, FIELDV, FIELDVINC, JP, CP, TP)
-       EM = E
-       EM(V(N)) = EM(V(N)) - DE / TWO
-       CM = TWO * EM + IDENTITY
-       JM = SQRT(SYMDET(CM))
+       CALL HYPEREL(NPROPS, PROPS, TEMP, FP, NOEL, CMNAME, INCMPFLAG, &
+            NSTATV, SVP, NFLDV, FIELDV, DFIELDV, SP)
+       FM = F - DF
        SVM = STATEV
-       CALL HYPEREL(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
-            NSTATEV, SVM, NFIELDV, FIELDV, FIELDVINC, JM, CM, TM)
-       DDTDDC(:, N) = (TP(V) - TM(V) ) / DE
+       CALL HYPEREL(NPROPS, PROPS, TEMP, FM, NOEL, CMNAME, INCMPFLAG, &
+            NSTATV, SVM, NFLDV, FIELDV, DFIELDV, SM)
+       DDSDDE(:, N) = (SP - SM) / EPS
     END DO
-
-    WHERE (ABS(DDTDDC) / MAXVAL(DDTDDC) < 1.E-06_DP)
-       DDTDDC = ZERO
+    WHERE (ABS(DDSDDE) / MAXVAL(DDSDDE) < TOL)
+       DDSDDE = ZERO
     END WHERE
-    ! MATMODLAB USES TENSOR VALUES - NOT ENGINEERING.  UNCOMMENT FOR ABAQUS
-!    DDTDDC(1:3,4:6) = TWO*DDTDDC(1:3,4:6)
-!    DDTDDC(4:6,1:3) = TWO*DDTDDC(4:6,1:3)
-!    DDTDDC(4:6,4:6) = HALF*DDTDDC(4:6,4:6)
+    DDSDDE = HALF * (DDSDDE + TRANSPOSE(DDSDDE))
   END SUBROUTINE JACOBIAN
 
   ! ************************************************************************* !
@@ -241,33 +250,6 @@ CONTAINS
     RETURN
   END FUNCTION DBD
   ! ************************************************************************* !
-  FUNCTION DOT(A, B)
-    ! ----------------------------------------------------------------------- !
-    ! DOT PRODUCT OF SECOND ORDER TENSOR A WITH B
-    ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP), INTENT(IN) :: A(6), B(:)
-    REAL(KIND=DP) :: DOT(SIZE(B))
-    INTEGER :: M
-    M = SIZE(B)
-    IF (M == 6) THEN
-       ! DOT PRODUCT OF 2 SYMMETRIC MATRICES STORED AS ARRAYS
-       DOT(1) = A(1)*B(1) + A(4)*B(4) + A(5)*B(5)
-       DOT(2) = A(2)*B(2) + A(4)*B(4) + A(6)*B(6)
-       DOT(3) = A(3)*B(3) + A(5)*B(5) + A(6)*B(6)
-       DOT(4) = A(1)*B(4) + A(4)*B(2) + A(5)*B(6)
-       DOT(5) = A(1)*B(5) + A(4)*B(6) + A(5)*B(3)
-       DOT(6) = A(2)*B(6) + A(4)*B(5) + A(6)*B(3)
-    ELSE IF (M == 3) THEN
-       DOT(1) = A(1) * B(1) + A(4) * B(2) + A(5) * B(3)
-       DOT(2) = A(4) * B(1) + A(2) * B(2) + A(6) * B(3)
-       DOT(3) = A(5) * B(1) + A(6) * B(2) + A(3) * B(3)
-    ELSE
-       PRINT *, "ERROR: EXPECTED DOT PRODUCT OF SYMMETRIC MATRICES AND ARRAYS"
-       CALL XIT
-    END IF
-    RETURN
-  END FUNCTION DOT
-  ! ************************************************************************* !
   FUNCTION DYAD(A, B)
     ! ----------------------------------------------------------------------- !
     ! DYADIC PRODUCT OF A AND B
@@ -280,52 +262,52 @@ CONTAINS
     RETURN
   END FUNCTION DYAD
   ! ************************************************************************* !
-  FUNCTION SYMLEAF(A, B)
+  FUNCTION OPROD(A, B)
     ! ----------------------------------------------------------------------- !
-    ! SYMMETRIC LEAF OF A AND B
+    ! "O" PRODUCT OF A AND B
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(6), B(6)
-    REAL(KIND=DP) :: SYMLEAF(6,6)
+    REAL(KIND=DP) :: OPROD(6,6)
     REAL(KIND=DP) :: FAC
     FAC = HALF
-    SYMLEAF(1,1) = A(1) * B(1)
-    SYMLEAF(1,2) = A(4) * B(4)
-    SYMLEAF(1,3) = A(5) * B(5)
-    SYMLEAF(1,4) = FAC * A(1) * B(4)  +  FAC * A(4) * B(1)
-    SYMLEAF(1,5) = FAC * A(1) * B(5)  +  FAC * A(5) * B(1)
-    SYMLEAF(1,6) = FAC * A(4) * B(5)  +  FAC * A(5) * B(4)
-    SYMLEAF(2,1) = A(4) * B(4)
-    SYMLEAF(2,2) = A(2) * B(2)
-    SYMLEAF(2,3) = A(6) * B(6)
-    SYMLEAF(2,4) = FAC * A(2) * B(4)  +  FAC * A(4) * B(2)
-    SYMLEAF(2,5) = FAC * A(4) * B(6)  +  FAC * A(6) * B(4)
-    SYMLEAF(2,6) = FAC * A(2) * B(6)  +  FAC * A(6) * B(2)
-    SYMLEAF(3,1) = A(5) * B(5)
-    SYMLEAF(3,2) = A(6) * B(6)
-    SYMLEAF(3,3) = A(3) * B(3)
-    SYMLEAF(3,4) = FAC * A(5) * B(6)  +  FAC * A(6) * B(5)
-    SYMLEAF(3,5) = FAC * A(3) * B(5)  +  FAC * A(5) * B(3)
-    SYMLEAF(3,6) = FAC * A(3) * B(6)  +  FAC * A(6) * B(3)
-    SYMLEAF(4,1) = A(4) * B(1)
-    SYMLEAF(4,2) = A(2) * B(4)
-    SYMLEAF(4,3) = A(6) * B(5)
-    SYMLEAF(4,4) = FAC * A(2) * B(1)  +  FAC * A(4) * B(4)
-    SYMLEAF(4,5) = FAC * A(4) * B(5)  +  FAC * A(6) * B(1)
-    SYMLEAF(4,6) = FAC * A(2) * B(5)  +  FAC * A(6) * B(4)
-    SYMLEAF(5,1) = A(5) * B(1)
-    SYMLEAF(5,2) = A(6) * B(4)
-    SYMLEAF(5,3) = A(3) * B(5)
-    SYMLEAF(5,4) = FAC * A(5) * B(4)  +  FAC * A(6) * B(1)
-    SYMLEAF(5,5) = FAC * A(3) * B(1)  +  FAC * A(5) * B(5)
-    SYMLEAF(5,6) = FAC * A(3) * B(4)  +  FAC * A(6) * B(5)
-    SYMLEAF(6,1) = A(5) * B(4)
-    SYMLEAF(6,2) = A(6) * B(2)
-    SYMLEAF(6,3) = A(3) * B(6)
-    SYMLEAF(6,4) = FAC * A(5) * B(2)  +  FAC * A(6) * B(4)
-    SYMLEAF(6,5) = FAC * A(3) * B(4)  +  FAC * A(5) * B(6)
-    SYMLEAF(6,6) = FAC * A(3) * B(2)  +  FAC * A(6) * B(6)
+    OPROD(1,1) = A(1) * B(1)
+    OPROD(1,2) = A(4) * B(4)
+    OPROD(1,3) = A(5) * B(5)
+    OPROD(1,4) = FAC * A(1) * B(4)  +  FAC * A(4) * B(1)
+    OPROD(1,5) = FAC * A(1) * B(5)  +  FAC * A(5) * B(1)
+    OPROD(1,6) = FAC * A(4) * B(5)  +  FAC * A(5) * B(4)
+    OPROD(2,1) = A(4) * B(4)
+    OPROD(2,2) = A(2) * B(2)
+    OPROD(2,3) = A(6) * B(6)
+    OPROD(2,4) = FAC * A(2) * B(4)  +  FAC * A(4) * B(2)
+    OPROD(2,5) = FAC * A(4) * B(6)  +  FAC * A(6) * B(4)
+    OPROD(2,6) = FAC * A(2) * B(6)  +  FAC * A(6) * B(2)
+    OPROD(3,1) = A(5) * B(5)
+    OPROD(3,2) = A(6) * B(6)
+    OPROD(3,3) = A(3) * B(3)
+    OPROD(3,4) = FAC * A(5) * B(6)  +  FAC * A(6) * B(5)
+    OPROD(3,5) = FAC * A(3) * B(5)  +  FAC * A(5) * B(3)
+    OPROD(3,6) = FAC * A(3) * B(6)  +  FAC * A(6) * B(3)
+    OPROD(4,1) = A(4) * B(1)
+    OPROD(4,2) = A(2) * B(4)
+    OPROD(4,3) = A(6) * B(5)
+    OPROD(4,4) = FAC * A(2) * B(1)  +  FAC * A(4) * B(4)
+    OPROD(4,5) = FAC * A(4) * B(5)  +  FAC * A(6) * B(1)
+    OPROD(4,6) = FAC * A(2) * B(5)  +  FAC * A(6) * B(4)
+    OPROD(5,1) = A(5) * B(1)
+    OPROD(5,2) = A(6) * B(4)
+    OPROD(5,3) = A(3) * B(5)
+    OPROD(5,4) = FAC * A(5) * B(4)  +  FAC * A(6) * B(1)
+    OPROD(5,5) = FAC * A(3) * B(1)  +  FAC * A(5) * B(5)
+    OPROD(5,6) = FAC * A(3) * B(4)  +  FAC * A(6) * B(5)
+    OPROD(6,1) = A(5) * B(4)
+    OPROD(6,2) = A(6) * B(2)
+    OPROD(6,3) = A(3) * B(6)
+    OPROD(6,4) = FAC * A(5) * B(2)  +  FAC * A(6) * B(4)
+    OPROD(6,5) = FAC * A(3) * B(4)  +  FAC * A(5) * B(6)
+    OPROD(6,6) = FAC * A(3) * B(2)  +  FAC * A(6) * B(6)
     RETURN
-  END FUNCTION SYMLEAF
+  END FUNCTION OPROD
   ! ************************************************************************* !
   FUNCTION TRANSQ(T)
     ! ----------------------------------------------------------------------- !
@@ -471,6 +453,93 @@ CONTAINS
     INV = INV / DETA
     RETURN
   END FUNCTION INV
+  FUNCTION DGEDDG(EPS, N, F)
+    ! ----------------------------------------------------------------------- !
+    ! PERTURB THE DEFORMATION GRADIENT
+    ! ----------------------------------------------------------------------- !
+    INTEGER, INTENT(IN) :: N
+    REAL(KIND=DP), INTENT(IN) :: EPS, F(3,3)
+    REAL(KIND=DP) :: DGEDDG(3,3)
+    REAL(KIND=DP), PARAMETER :: O=1._DP,Z=0._DP
+    REAL(KIND=DP), PARAMETER :: E(3,3)=RESHAPE((/O,Z,Z,Z,O,Z,Z,Z,O/),(/3,3/))
+    INTEGER, PARAMETER :: IJ(2,6)=RESHAPE((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
+    REAL(KIND=DP) :: EI(3), EJ(3), EIJ(3,3), EJI(3,3)
+    ! ----------------------------------------------------------------------- !
+    EI = E(IJ(1,N),:3)
+    EJ = E(IJ(2,N),:3)
+    EIJ = DYAD(EI, EJ)
+    EJI = DYAD(EJ, EI)
+    DGEDDG = EPS / TWO * (MATMUL(EIJ, F) + MATMUL(EJI, F))
+  END FUNCTION DGEDDG
+
+  SUBROUTINE NEOHOOKE(NPROPS, PROPS, F, SIG, C)
+    ! --------------------------------------------------------------------- !
+    ! COMPRESSIBLE NEO-HOOKEAN HYPERELASTIC MATERIAL
+    !
+    ! NOTES
+    ! -----
+    ! SYMMETRIC TENSOR ORDERING : XX, YY, ZZ, XY, YZ, ZX
+    ! --------------------------------------------------------------------- !
+    INTEGER, INTENT(IN) :: NPROPS
+    REAL(DP), INTENT(IN) :: PROPS(NPROPS), F(3,3)
+    REAL(DP), INTENT(INOUT) :: SIG(6), C(6,6)
+    INTEGER :: I, J
+    REAL(DP) :: EE(6), EEP(3), BBP(3), BBN(3,3)
+    REAL(DP) :: C10, D1, EG, EK, EG23, PR
+    REAL(DP) :: JAC, SCALE, FB(3,3), BB(6), TRBBAR
+
+    ! ELASTIC PROPERTIES
+    C10 = PROPS(1)
+    D1 = PROPS(2)
+
+    ! JACOBIAN AND DISTORTION TENSOR
+    JAC = F(1,1) * F(2,2) * F(3,3) - F(1,2) * F(2,1) * F(3,3) &
+        + F(1,2) * F(2,3) * F(3,1) + F(1,3) * F(3,2) * F(2,1) &
+        - F(1,3) * F(3,1) * F(2,2) - F(2,3) * F(3,2) * F(1,1)
+    SCALE = JAC **(-ONE / THREE)
+    FB = SCALE * F
+
+    ! DEVIATORIC LEFT CAUCHY-GREEN DEFORMATION TENSOR
+    BB(1) = FB(1,1) * FB(1,1) + FB(1,2) * FB(1,2) + FB(1,3) * FB(1,3)
+    BB(2) = FB(2,1) * FB(2,1) + FB(2,2) * FB(2,2) + FB(2,3) * FB(2,3)
+    BB(3) = FB(3,1) * FB(3,1) + FB(3,2) * FB(3,2) + FB(3,3) * FB(3,3)
+    BB(4) = FB(2,1) * FB(1,1) + FB(2,2) * FB(1,2) + FB(2,3) * FB(1,3)
+    BB(5) = FB(3,1) * FB(2,1) + FB(3,2) * FB(2,2) + FB(3,3) * FB(2,3)
+    BB(6) = FB(3,1) * FB(1,1) + FB(3,2) * FB(1,2) + FB(3,3) * FB(1,3)
+    TRBBAR = SUM(BB(1:3)) / THREE
+    EG = TWO * C10 / JAC
+    EK = TWO / D1 * (TWO * JAC - ONE)
+    PR = TWO / D1 * (JAC - ONE)
+
+    ! CAUCHY STRESS
+    SIG = EG * (BB - TRBBAR * IDENTITY) + PR * IDENTITY
+
+    ! SPATIAL STIFFNESS
+    EG23 = EG * TWO / THREE
+    C(1,1) =  EG23 * (BB(1) + TRBBAR) + EK
+    C(1,2) = -EG23 * (BB(1) + BB(2)-TRBBAR) + EK
+    C(1,3) = -EG23 * (BB(1) + BB(3)-TRBBAR) + EK
+    C(1,4) =  EG23 * BB(4) / TWO
+    C(1,5) = -EG23 * BB(5)
+    C(1,6) =  EG23 * BB(6) / TWO
+    C(2,2) =  EG23 * (BB(2) + TRBBAR) + EK
+    C(2,3) = -EG23 * (BB(2) + BB(3)-TRBBAR) + EK
+    C(2,4) =  EG23 * BB(4) / TWO
+    C(2,5) =  EG23 * BB(5) / TWO
+    C(2,6) = -EG23 * BB(6)
+    C(3,3) =  EG23 * (BB(3) + TRBBAR) + EK
+    C(3,4) = -EG23 * BB(4)
+    C(3,5) =  EG23 * BB(5) / TWO
+    C(3,6) =  EG23 * BB(6) / TWO
+    C(4,4) =  EG * (BB(1) + BB(2)) / TWO
+    C(4,5) =  EG * BB(6) / TWO
+    C(4,6) =  EG * BB(5) / TWO
+    C(5,5) =  EG * (BB(2) + BB(3)) / TWO
+    C(5,6) =  EG * BB(4) / TWO
+    C(6,6) =  EG * (BB(1) + BB(3)) / TWO
+    FORALL(I=1:6,J=1:6,J<I) C(I,J) = C(J,I)
+    RETURN
+  END SUBROUTINE NEOHOOKE
 END MODULE HYPERELASTIC
 
 ! *************************************************************************** !
@@ -478,7 +547,7 @@ END MODULE HYPERELASTIC
 SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
      RPL,DDSDDT,DRPLDE,DRPLDT, &
      STRAN,DSTRAN,TIME,DTIME,TEMP,DTEMP,PREDEF,DPRED,CMNAME, &
-     NDI,NSHR,NTENS,NSTATEV,PROPS,NPROPS,COORDS,DROT,PNEWDT, &
+     NDI,NSHR,NTENS,NSTATV,PROPS,NPROPS,COORDS,DROT,PNEWDT, &
      CELENT,F0,F1,NOEL,NPT,LAYER,KSPT,KSTEP,KINC)
   ! ------------------------------------------------------------------------- !
   !     UMAT INTERFACE FOR FINITE STRAIN PROPELLANT MODEL
@@ -487,53 +556,62 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
   !     PROPS(1)  - C10
   !     PROPS(2)  - K1
   ! ------------------------------------------------------------------------- !
-  USE HYPERELASTIC, ONLY: DP, ONE, TWO, THREE, HYPEREL, JACOBIAN, TRANSQ
+  USE HYPERELASTIC, ONLY: DP, ONE, TWO, THREE, HYPEREL, JACOBIAN, TRANSQ, &
+       NEOHOOKE
   IMPLICIT NONE
 
   ! --- PASSED ARGUMENTS
   ! ------------------------------------------------------------------------- !
   CHARACTER*8, INTENT(IN) :: CMNAME
-  INTEGER, INTENT(IN) :: NDI, NSHR, NTENS, NSTATEV, NPROPS
+  INTEGER, INTENT(IN) :: NDI, NSHR, NTENS, NSTATV, NPROPS
   INTEGER, INTENT(IN) :: NOEL, NPT, LAYER, KSPT, KSTEP, KINC
   REAL(KIND=DP), INTENT(IN) :: SSE, SPD, SCD, RPL, DRPLDT, TIME, DTIME
   REAL(KIND=DP), INTENT(IN) :: TEMP, DTEMP, PNEWDT, CELENT
-  REAL(KIND=DP), INTENT(INOUT) :: STRESS(NTENS), STATEV(NSTATEV)
+  REAL(KIND=DP), INTENT(INOUT) :: STRESS(NTENS), STATEV(NSTATV)
   REAL(KIND=DP), INTENT(INOUT) :: DDSDDE(NTENS, NTENS)
   REAL(KIND=DP), INTENT(INOUT) :: DDSDDT(NTENS), DRPLDE(NTENS)
   REAL(KIND=DP), INTENT(IN) :: STRAN(NTENS), DSTRAN(NTENS)
   REAL(KIND=DP), INTENT(IN) :: PREDEF(1), DPRED(1), PROPS(NPROPS), COORDS(3)
   REAL(KIND=DP), INTENT(IN) :: DROT(3, 3), F0(3, 3), F1(3, 3)
   ! --- LOCAL VARIABLES
-  INTEGER, PARAMETER :: NFIELDV=1, INCMPFLAG=1
-  REAL(KIND=DP) :: JAC, C(6), T(6), Q(6,6), DDTDDC(6,6)
-  REAL(KIND=DP) :: FIELDV(NFIELDV), FIELDVINC(NFIELDV)
+  INTEGER, PARAMETER :: NFLDV=1, INCMPFLAG=1
+  REAL(KIND=DP) :: FIELDV(NFLDV), DFIELDV(NFLDV)
+  real(kind=dp) :: foos(6), fooc1(6,6),fooc2(6,6)
   ! ---------------------------------------------------------------- UMAT --- !
 
-  ! DEFORMATION TENSOR
-  ! C = FT.F
-  C(1) = F1(1,1)**2 + F1(2,1)**2 + F1(3,1)**2
-  C(2) = F1(1,2)**2 + F1(2,2)**2 + F1(3,2)**2
-  C(3) = F1(1,3)**2 + F1(2,3)**2 + F1(3,3)**2
-  C(4) = F1(1,1)*F1(1,2) + F1(2,1)*F1(2,2) + F1(3,1)*F1(3,2)
-  C(5) = F1(1,1)*F1(1,3) + F1(2,1)*F1(2,3) + F1(3,1)*F1(3,3)
-  C(6) = F1(1,2)*F1(1,3) + F1(2,2)*F1(2,3) + F1(3,2)*F1(3,3)
 
-  ! JACOBIAN
-  ! JAC = DET(F)
-  JAC = F1(1,1) * F1(2,2) * F1(3,3) - F1(1,2) * F1(2,1) * F1(3,3) &
-      + F1(1,2) * F1(2,3) * F1(3,1) + F1(1,3) * F1(3,2) * F1(2,1) &
-      - F1(1,3) * F1(3,1) * F1(2,2) - F1(2,3) * F1(3,2) * F1(1,1)
+  CALL HYPEREL(NPROPS, PROPS, TEMP, F1, NOEL, CMNAME, INCMPFLAG, &
+       NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, STRESS, DDSDDE)
+  CALL JACOBIAN(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
+       NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, F1, STRESS, fooc1)
 
-  CALL HYPEREL(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
-       NSTATEV, STATEV, NFIELDV, FIELDV, FIELDVINC, JAC, C, T, DDTDDC)
-  !CALL JACOBIAN(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
-  !     NSTATEV, STATEV, NFIELDV, FIELDV, FIELDVINC, C, T, DDTDDC)
-
-  Q = TRANSQ(F1)
-  DDSDDE = MATMUL(Q, MATMUL(DDTDDC, TRANSPOSE(Q))) / JAC
+  CALL NEOHOOKE(2, (/PROPS(1),PROPS(2)/), F1, foos, fooc2)
 
   IF (DTIME < EPSILON(ONE)) RETURN
 
-  STRESS = MATMUL(Q, T) / JAC
+  print*
+  print*, 'hyper stiff'
+  print*, ddsdde(1,1:3)
+  print*, ddsdde(2,1:3)
+  print*, ddsdde(3,1:3)
+  print*, '        ', ddsdde(4,4:6)
+  print*, '        ', ddsdde(5,4:6)
+  print*, '        ', ddsdde(6,4:6)
+  print*, 'numerical stiff'
+  print*, fooc1(1,1:3)
+  print*, fooc1(2,1:3)
+  print*, fooc1(3,1:3)
+  print*, '        ', fooc1(4,4:6)
+  print*, '        ', fooc1(5,4:6)
+  print*, '        ', fooc1(6,4:6)
+  print*, 'neohooke stiff'
+  print*, fooc2(1,1:3)
+  print*, fooc2(2,1:3)
+  print*, fooc2(3,1:3)
+  print*, '        ', fooc2(4,4:6)
+  print*, '        ', fooc2(5,4:6)
+  print*, '        ', fooc2(6,4:6)
+  print*
+  print*
 
 END SUBROUTINE UMAT

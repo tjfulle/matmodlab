@@ -24,7 +24,6 @@ class UHyper(AbaUMat):
         del self._istate
 
         ddsdde = self.get_initial_jacobian()
-        print ddsdde
         mu = ddsdde[3, 3]
         lam = ddsdde[0, 0] - 2. * mu
 
