@@ -77,10 +77,10 @@ CONTAINS
     C(4,5) =  EG * BB(6) / TWO
     C(4,6) =  EG * BB(5) / TWO
 
-    C(5,5) =  EG * (BB(2) + BB(3)) / TWO
+    C(5,5) =  EG * (BB(1) + BB(3)) / TWO
     C(5,6) =  EG * BB(4) / TWO
 
-    C(6,6) =  EG * (BB(1) + BB(3)) / TWO
+    C(6,6) =  EG * (BB(2) + BB(3)) / TWO
     FORALL(I=1:NTENS,J=1:NTENS,J<I) C(I,J) = C(J,I)
 
     ! ! LOGARITHMIC STRAINS

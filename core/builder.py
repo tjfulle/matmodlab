@@ -42,12 +42,11 @@ class Builder(object):
         return MATERIAL_DB.path
 
     @staticmethod
-    def build_umat(material, verbosity=0, lapack=False):
+    def build_umat(material, verbosity=0):
         fb = FortranExtBuilder(material.name, verbosity=verbosity)
         cout("building {0}".format(material.name))
-        lapack = "lite" if lapack else lapack
         fb.add_extension(material.name, material.source_files,
-                         requires_lapack=lapack)
+                         requires_lapack="lite")
         fb.build_extension_modules()
         pass
 

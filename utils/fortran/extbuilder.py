@@ -90,10 +90,15 @@ class FortranExtBuilder(object):
         hold = [x for x in sys.argv]
         fexec = "--f77exec={0} --f90exec={0}".format(self.fc)
         sys.argv = "./setup.py config_fc {0}".format(fexec).split()
+        no_unused = ["-Wno-unused-dummy-argument"]
         if FFLAGS:
-            fflags = " ".join(FFLAGS)
-            fflags = "--f77flags='{0}' --f90flags='{0}'".format(fflags).split()
-            sys.argv.extend(fflags)
+            fflags = FFLAGS
+            fflags.extend(no_unused)
+        else:
+            fflags = no_unused
+        fflags = " ".join(fflags)
+        fflags = "--f77flags='{0}' --f90flags='{0}'".format(fflags).split()
+        sys.argv.extend(fflags)
         sys.argv.extend("build_ext -i".split())
 
         # build the extension modules with distutils setup

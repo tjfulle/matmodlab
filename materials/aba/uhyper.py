@@ -48,9 +48,10 @@ class UHyper(AbaUMat):
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc):
         """update the material state"""
+        utime = np.array([time,time])
         umat.umat(stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
-            time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
+            utime, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc, log_error,
             log_message, log_warning)

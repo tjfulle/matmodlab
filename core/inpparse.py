@@ -17,7 +17,7 @@ from utils.respfcn import check_response_function, MML_RESP_FCN_RE
 from core.mmlio import fatal_inp_error, input_errors
 from core.builder import Builder
 from core.runtime import opts
-from utils.misc import timed_raw_input
+from utils.misc import timed_raw_input, load_file
 from materials.parameters import Parameters
 
 _D = os.path.dirname(os.path.realpath(__file__))
@@ -682,7 +682,6 @@ def pMaterial(mtldict, mtlswapdict=None):
     if model.lower() in ("umat", "uanisohyper", "uanisohyper_inv", "uhyper"):
         nprops = mtldict["constants"]
         nstatv = mtldict["depvar"]
-        lapack = mtldict["lapack"]
         fiber_direction = mtldict["fiber_direction"]
         source_files = mtldict["source"]
         source_directory = mtldict["source_directory"]
@@ -709,6 +708,11 @@ def pMaterial(mtldict, mtlswapdict=None):
                     fatal_inp_error("{0}: source file not "
                                     "found".format(source_file))
                 source_files[i] = os.path.realpath(source_file)
+        elif source_directory:
+            # get source files
+            m = load_file(os.path.join(source_directory, "info.py"))
+            source_files = m.SOURCE_FILES
+
         else:
             for ext in (".for", ".f", ".f90"):
                 source_file = os.path.join(cwd, "umat" + ext)
@@ -767,7 +771,7 @@ def pMaterial(mtldict, mtlswapdict=None):
             mtlmdl = aba.ABA_MATS["uanisohyper_inv"]
         options["umat_depvar"] = depvar
         mtlmdl.add_to_sources(source_files)
-        Builder.build_umat(mtlmdl, lapack=lapack, verbosity=opts.verbosity)
+        Builder.build_umat(mtlmdl, verbosity=opts.verbosity)
 
     else:
         if mtlswapdict.has_key(model):

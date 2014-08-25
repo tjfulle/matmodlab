@@ -25,6 +25,7 @@ CONTAINS
     ! CALLS A UYHPER MODEL AND FORMULATES THE STRESS AND STIFFNESS ARRAYS
     ! ----------------------------------------------------------------------- !
     ! --- PASSED ARGUMENTS
+    USE TENSALG, ONLY : ASARRAY, DOT, DET, INVARS, PUSH, INV, DYAD
     CHARACTER*8, INTENT(IN) :: CMNAME
     INTEGER, INTENT(IN) :: NPROPS, NOEL, NSTATV, INCMPFLAG, NFLDV
     REAL(KIND=DP), INTENT(IN) :: PROPS(NPROPS), TEMP, F(3,3)
@@ -48,12 +49,14 @@ CONTAINS
     C(4) = F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,1)*F(3,2)
     C(5) = F(1,1)*F(1,3) + F(2,1)*F(2,3) + F(3,1)*F(3,3)
     C(6) = F(1,2)*F(1,3) + F(2,2)*F(2,3) + F(3,2)*F(3,3)
+    C = ASARRAY(DOT(TRANSPOSE(F), F))
 
     ! JACOBIAN
     ! JAC = DET(F)
     JAC = F(1,1) * F(2,2) * F(3,3) - F(1,2) * F(2,1) * F(3,3) &
         + F(1,2) * F(2,3) * F(3,1) + F(1,3) * F(3,2) * F(2,1) &
         - F(1,3) * F(3,1) * F(2,2) - F(2,3) * F(3,2) * F(1,1)
+    JAC = DET(F)
 
     ! INVARIANTS OF C
     CALL INVARS(C, I1, I2, I3)
@@ -96,7 +99,7 @@ CONTAINS
     ! TENSORS). DB IS AN ARRAY OF FOURTH ORDER TENSORS.
 
     ! HELPER QUANTITIES
-    CINV = SYMINV(C)
+    CINV = INV(C)
 
     A = DU
     B(1,1:6) = SCALE ** 2 * (IDENTITY - THIRD * I1 * CINV)
@@ -107,8 +110,7 @@ CONTAINS
     FORALL(IJ=1:6) PK2(IJ) = TWO * SUM(A(1:3) * B(1:3, IJ))
 
     ! CAUCHY STRESS
-    Q = TRANSQ(F)
-    STRESS = MATMUL(Q, PK2) / JAC
+    STRESS = PUSH(F, PK2)
 
     IF (.NOT. PRESENT(DDSDDE)) RETURN
 
@@ -135,7 +137,7 @@ CONTAINS
        DDTDDC = DDTDDC + FOUR * (DYAD(DA(I,1:6), B(I,1:6)) + A(I) * DB(I,1:6,1:6))
     END DO
     DDTDDC = HALF * (DDTDDC + TRANSPOSE(DDTDDC))
-    DDSDDE = MATMUL(MATMUL(Q, DDTDDC), TRANSPOSE(Q)) / JAC
+    DDSDDE = PUSH(F, DDTDDC)
 
   END SUBROUTINE HYPEREL
 
@@ -185,83 +187,6 @@ CONTAINS
 
   ! ************************************************************************* !
 
-  ! ************************************************************************* !
-  ! ************************************************** UTILITY PROCEDURES *** !
-  ! ************************************************************************* !
-  FUNCTION TRACE(A)
-    REAL(KIND=DP) :: TRACE
-    REAL(KIND=DP), INTENT(IN) :: A(:)
-    TRACE = SUM(A(1:3))
-    RETURN
-  END FUNCTION TRACE
-  ! ************************************************************************* !
-  FUNCTION MAG(A)
-    REAL(KIND=DP) :: MAG
-    REAL(KIND=DP), INTENT(IN) :: A(:)
-    MAG = SQRT(DBD(A, A))
-    RETURN
-  END FUNCTION MAG
-  ! ************************************************************************* !
-  FUNCTION ISO(A, METRIC)
-    REAL(KIND=DP), INTENT(IN) :: A(:)
-    REAL(KIND=DP), INTENT(IN), OPTIONAL :: METRIC(:)
-    REAL(KIND=DP) :: ISO(SIZE(A))
-    REAL(KIND=DP), ALLOCATABLE :: I(:)
-    INTEGER :: N
-    N = SIZE(A)
-    ALLOCATE(I(N))
-    IF (PRESENT(METRIC)) THEN
-       I = METRIC(:N)
-    ELSE
-       I(1:3) = IDENTITY(:N)
-    END IF
-    ISO = SUM(I * A) / THREE * I
-    DEALLOCATE(I)
-    RETURN
-  END FUNCTION ISO
-  ! ************************************************************************* !
-  FUNCTION DEV(A)
-    REAL(KIND=DP), INTENT(IN) :: A(:)
-    REAL(KIND=DP) :: DEV(SIZE(A))
-    DEV = A - ISO(A)
-    RETURN
-  END FUNCTION DEV
-  ! ************************************************************************* !
-  FUNCTION UNITDEV(A)
-    REAL(KIND=DP), INTENT(IN) :: A(:)
-    REAL(KIND=DP) :: UNITDEV(SIZE(A))
-    REAL(KIND=DP) :: DEV(SIZE(A))
-    DEV = A - ISO(A)
-    UNITDEV = DEV / MAG(DEV)
-    RETURN
-  END FUNCTION UNITDEV
-  ! ************************************************************************* !
-  FUNCTION DBD(A, B)
-    REAL(KIND=DP) :: DBD
-    REAL(KIND=DP), INTENT(IN) :: A(:), B(:)
-    REAL(KIND=DP), ALLOCATABLE :: W(:)
-    INTEGER :: N
-    N = SIZE(A)
-    ALLOCATE(W(N))
-    W(1:3) = ONE
-    W(4:) = TWO
-    DBD = SUM(A * B * W)
-    DEALLOCATE(W)
-    RETURN
-  END FUNCTION DBD
-  ! ************************************************************************* !
-  FUNCTION DYAD(A, B)
-    ! ----------------------------------------------------------------------- !
-    ! DYADIC PRODUCT OF A AND B
-    ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP), INTENT(IN) :: A(:), B(:)
-    REAL(KIND=DP) :: DYAD(SIZE(A),SIZE(B))
-    INTEGER :: I, J, M, N
-    N = SIZE(A); M = SIZE(B)
-    FORALL(I=1:N, J=1:N) DYAD(I,J) = A(I) * B(J)
-    RETURN
-  END FUNCTION DYAD
-  ! ************************************************************************* !
   FUNCTION OPROD(A, B)
     ! ----------------------------------------------------------------------- !
     ! "O" PRODUCT OF A AND B
@@ -308,155 +233,14 @@ CONTAINS
     OPROD(6,6) = FAC * A(3) * B(2)  +  FAC * A(6) * B(6)
     RETURN
   END FUNCTION OPROD
+
   ! ************************************************************************* !
-  FUNCTION TRANSQ(T)
-    ! ----------------------------------------------------------------------- !
-    ! CONSTRUCT TRANFORMATION MATRIX Q FROM T
-    ! ----------------------------------------------------------------------- !
-    ! NOTES
-    ! -----
-    ! FOR AN ARBITRARY CHANGE OF BASIS, 2ND AND 4TH ORDER TENSORS TRANSFORM
-    ! ACCORDING TO
-    !                             S' = T.S.TT
-    !                           C' = T.T.C.TT.TT
-    ! IN VOIGHT NOTATION
-    !                               S' = Q.S
-    !                             C' = Q.C.QT
-    ! COMPARING EQUATIONS, WE GET THE FOLLOWING FOR Q
-    ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: TRANSQ(6,6)
-    REAL(KIND=DP), INTENT(IN) :: T(3,3)
-    TRANSQ = ZERO
-    TRANSQ(1,1) = T(1,1) ** 2
-    TRANSQ(1,2) = T(1,2) ** 2
-    TRANSQ(1,3) = T(1,3) ** 2
-    TRANSQ(1,4) = TWO * T(1,1) * T(1,2)
-    TRANSQ(1,5) = TWO * T(1,1) * T(1,3)
-    TRANSQ(1,6) = TWO * T(1,2) * T(1,3)
-    TRANSQ(2,1) = T(2,1) ** 2
-    TRANSQ(2,2) = T(2,2) ** 2
-    TRANSQ(2,3) = T(2,3) ** 2
-    TRANSQ(2,4) = TWO * T(2,1) * T(2,2)
-    TRANSQ(2,5) = TWO * T(2,1) * T(2,3)
-    TRANSQ(2,6) = TWO * T(2,2) * T(2,3)
-    TRANSQ(3,1) = T(3,1) ** 2
-    TRANSQ(3,2) = T(3,2) ** 2
-    TRANSQ(3,3) = T(3,3) ** 2
-    TRANSQ(3,4) = TWO * T(3,1) * T(3,2)
-    TRANSQ(3,5) = TWO * T(3,1) * T(3,3)
-    TRANSQ(3,6) = TWO * T(3,2) * T(3,3)
-    TRANSQ(4,1) = T(1,1) * T(2,1)
-    TRANSQ(4,2) = T(1,2) * T(2,2)
-    TRANSQ(4,3) = T(1,3) * T(2,3)
-    TRANSQ(4,4) = T(1,1) * T(2,2) + T(1,2) * T(2,1)
-    TRANSQ(4,5) = T(1,1) * T(2,3) + T(1,3) * T(2,1)
-    TRANSQ(4,6) = T(1,2) * T(2,3) + T(1,3) * T(2,2)
-    TRANSQ(5,1) = T(1,1) * T(3,1)
-    TRANSQ(5,2) = T(1,2) * T(3,2)
-    TRANSQ(5,3) = T(1,3) * T(3,3)
-    TRANSQ(5,4) = T(1,1) * T(3,2) + T(1,2) * T(3,1)
-    TRANSQ(5,5) = T(1,1) * T(3,3) + T(1,3) * T(3,1)
-    TRANSQ(5,6) = T(1,2) * T(3,3) + T(1,3) * T(3,2)
-    TRANSQ(6,1) = T(2,1) * T(3,1)
-    TRANSQ(6,2) = T(2,2) * T(3,2)
-    TRANSQ(6,3) = T(2,3) * T(3,3)
-    TRANSQ(6,4) = T(2,1) * T(3,2) + T(2,2) * T(3,1)
-    TRANSQ(6,5) = T(2,1) * T(3,3) + T(2,3) * T(3,1)
-    TRANSQ(6,6) = T(2,2) * T(3,3) + T(2,3) * T(3,2)
-  END FUNCTION TRANSQ
-  ! ************************************************************************* !
-  SUBROUTINE INVARS(A, I1, I2, I3)
-    ! ----------------------------------------------------------------------- !
-    ! INVARIANTS OF SYMMETRIC SECOND ORDER TENSOR A
-    ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP), INTENT(IN) :: A(:)
-    REAL(KIND=DP), INTENT(OUT) :: I1, I2, I3
-    REAL(KIND=DP) :: TRASQ
-    I1 = TRACE(A)
-    TRASQ = DBD(A, A)
-    I2 = HALF * (I1 ** 2 - TRASQ)
-    I3 = SYMDET(A)
-  END SUBROUTINE INVARS
-  ! ************************************************************************* !
-  FUNCTION SYMDET(A)
-    REAL(KIND=DP) :: SYMDET
-    REAL(KIND=DP), INTENT(IN) :: A(6)
-    SYMDET = A(1) * A(2) * A(3) - A(1) * A(5) ** 2 &
-           - A(2) * A(6) ** 2 - A(3) * A(4) ** 2 &
-           + TWO * A(4) * A(5) * A(6)
-  END FUNCTION SYMDET
-  ! ************************************************************************* !
-  FUNCTION ASMAT(A)
-    REAL(KIND=DP) :: ASMAT(3,3)
-    REAL(KIND=DP), INTENT(IN) :: A(:)
-    ASMAT = ZERO
-    ASMAT(1,1) = A(1)
-    ASMAT(2,2) = A(2)
-    ASMAT(3,3) = A(3)
-    ASMAT(1,2) = A(4)
-    IF (SIZE(A) > 4) THEN
-       ASMAT(1,3) = A(5)
-       ASMAT(2,3) = A(6)
-    END IF
-    ASMAT(2,1) = ASMAT(1,2)
-    ASMAT(3,1) = ASMAT(1,3)
-    ASMAT(3,2) = ASMAT(2,3)
-  END FUNCTION ASMAT
-  ! ************************************************************************* !
-  FUNCTION ASARRAY(A, N)
-    INTEGER :: N
-    REAL(KIND=DP) :: ASARRAY(N)
-    REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    ASARRAY = ZERO
-    ASARRAY(1) = A(1,1)
-    ASARRAY(2) = A(2,2)
-    ASARRAY(3) = A(3,3)
-    ASARRAY(4) = A(1,2)
-    IF (N > 4) THEN
-       ASARRAY(5) = A(1,3)
-       ASARRAY(6) = A(2,3)
-    END IF
-  END FUNCTION ASARRAY
-  ! ************************************************************************* !
-  FUNCTION SYMINV(AARG)
-    REAL(KIND=DP), INTENT(IN) :: AARG(:)
-    REAL(KIND=DP) :: SYMINV(SIZE(AARG))
-    INTEGER :: N
-    REAL(KIND=DP) :: A(3,3)
-    A = ASMAT(AARG)
-    N = SIZE(AARG)
-    SYMINV = ASARRAY(INV(A), N)
-  END FUNCTION SYMINV
-  ! ************************************************************************* !
-  FUNCTION DET(A)
-    REAL(KIND=DP) :: DET
-    REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    DET = A(1,1) * A(2,2) * A(3,3) - A(1,2) * A(2,1) * A(3,3) &
-        + A(1,2) * A(2,3) * A(3,1) + A(1,3) * A(3,2) * A(2,1) &
-        - A(1,3) * A(3,1) * A(2,2) - A(2,3) * A(3,2) * A(1,1)
-  END FUNCTION DET
-  ! ************************************************************************* !
-  FUNCTION INV(A)
-    REAL(KIND=DP) :: INV(3,3)
-    REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    REAL(KIND=DP) :: DETA
-    DETA = DET(A)
-    INV(1,1) =  A(2,2) * A(3,3) - A(2,3) * A(3,2)
-    INV(1,2) = -A(1,2) * A(3,3) + A(1,3) * A(3,2)
-    INV(1,3) =  A(1,2) * A(2,3) - A(1,3) * A(2,2)
-    INV(2,1) = -A(2,1) * A(3,3) + A(2,3) * A(3,1)
-    INV(2,2) =  A(1,1) * A(3,3) - A(1,3) * A(3,1)
-    INV(2,3) = -A(1,1) * A(2,3) + A(1,3) * A(2,1)
-    INV(3,1) =  A(2,1) * A(3,2) - A(2,2) * A(3,1)
-    INV(3,2) = -A(1,1) * A(3,2) + A(1,2) * A(3,1)
-    INV(3,3) =  A(1,1) * A(2,2) - A(1,2) * A(2,1)
-    INV = INV / DETA
-    RETURN
-  END FUNCTION INV
+
   FUNCTION DGEDDG(EPS, N, F)
     ! ----------------------------------------------------------------------- !
     ! PERTURB THE DEFORMATION GRADIENT
     ! ----------------------------------------------------------------------- !
+    USE TENSALG, ONLY: DYAD
     INTEGER, INTENT(IN) :: N
     REAL(KIND=DP), INTENT(IN) :: EPS, F(3,3)
     REAL(KIND=DP) :: DGEDDG(3,3)
@@ -534,9 +318,9 @@ CONTAINS
     C(4,4) =  EG * (BB(1) + BB(2)) / TWO
     C(4,5) =  EG * BB(6) / TWO
     C(4,6) =  EG * BB(5) / TWO
-    C(5,5) =  EG * (BB(2) + BB(3)) / TWO
+    C(5,5) =  EG * (BB(1) + BB(3)) / TWO
     C(5,6) =  EG * BB(4) / TWO
-    C(6,6) =  EG * (BB(1) + BB(3)) / TWO
+    C(6,6) =  EG * (BB(2) + BB(3)) / TWO
     FORALL(I=1:6,J=1:6,J<I) C(I,J) = C(J,I)
     RETURN
   END SUBROUTINE NEOHOOKE
@@ -556,8 +340,7 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
   !     PROPS(1)  - C10
   !     PROPS(2)  - K1
   ! ------------------------------------------------------------------------- !
-  USE HYPERELASTIC, ONLY: DP, ONE, TWO, THREE, HYPEREL, JACOBIAN, TRANSQ, &
-       NEOHOOKE
+  USE HYPERELASTIC, ONLY: DP, ONE, TWO, THREE, HYPEREL, JACOBIAN, NEOHOOKE
   IMPLICIT NONE
 
   ! --- PASSED ARGUMENTS
@@ -565,7 +348,7 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
   CHARACTER*8, INTENT(IN) :: CMNAME
   INTEGER, INTENT(IN) :: NDI, NSHR, NTENS, NSTATV, NPROPS
   INTEGER, INTENT(IN) :: NOEL, NPT, LAYER, KSPT, KSTEP, KINC
-  REAL(KIND=DP), INTENT(IN) :: SSE, SPD, SCD, RPL, DRPLDT, TIME, DTIME
+  REAL(KIND=DP), INTENT(IN) :: SSE, SPD, SCD, RPL, DRPLDT, TIME(2), DTIME
   REAL(KIND=DP), INTENT(IN) :: TEMP, DTEMP, PNEWDT, CELENT
   REAL(KIND=DP), INTENT(INOUT) :: STRESS(NTENS), STATEV(NSTATV)
   REAL(KIND=DP), INTENT(INOUT) :: DDSDDE(NTENS, NTENS)
@@ -585,34 +368,8 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
   CALL JACOBIAN(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
        NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, F1, STRESS, fooc3)
 
-  CALL NEOHOOKE(2, (/PROPS(1),PROPS(2)/), F1, foos, fooc2)
+  !CALL NEOHOOKE(2, (/PROPS(1),PROPS(2)/), F1, foos, fooc2)
 
   ddsdde = fooc3
-  IF (DTIME < EPSILON(ONE)) RETURN
-
-  print*
-  print*, 'numerical stiff'
-  print*, fooc3(1,1:3)
-  print*, fooc3(2,1:3)
-  print*, fooc3(3,1:3)
-  print*, '        ', fooc3(4,4:6)
-  print*, '        ', fooc3(5,4:6)
-  print*, '        ', fooc3(6,4:6)
-  print*, 'hyper stiff'
-  print*, fooc1(1,1:3)
-  print*, fooc1(2,1:3)
-  print*, fooc1(3,1:3)
-  print*, '        ', fooc1(4,4:6)
-  print*, '        ', fooc1(5,4:6)
-  print*, '        ', fooc1(6,4:6)
-  print*, 'neohooke stiff'
-  print*, fooc2(1,1:3)
-  print*, fooc2(2,1:3)
-  print*, fooc2(3,1:3)
-  print*, '        ', fooc2(4,4:6)
-  print*, '        ', fooc2(5,4:6)
-  print*, '        ', fooc2(6,4:6)
-  print*
-  print*
 
 END SUBROUTINE UMAT

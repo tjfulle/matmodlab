@@ -41,7 +41,7 @@ python module uhyper ! in
             real(kind=8) intent(in) :: drpldt
             real(kind=8) dimension(ntens),intent(in),depend(ntens) :: stran
             real(kind=8) dimension(ntens),intent(in),depend(ntens) :: dstran
-            real(kind=8) intent(in) :: time
+            real(kind=8) dimension(2),intent(in) :: time
             real(kind=8) intent(in) :: dtime
             real(kind=8) intent(in) :: temp
             real(kind=8) intent(in) :: dtemp
