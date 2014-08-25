@@ -18,7 +18,7 @@ MODULE HYPERELASTIC
 
 CONTAINS
 
-  SUBROUTINE HYPEREL(NPROPS, PROPS, TEMP, F1, NOEL, CMNAME, INCMPFLAG, &
+  SUBROUTINE HYPEREL(NPROPS, PROPS, TEMP, F, NOEL, CMNAME, INCMPFLAG, &
        NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, STRESS, DDSDDE)
     ! ----------------------------------------------------------------------- !
     ! HYPERELASTIC MATERIAL MODEL
@@ -27,7 +27,7 @@ CONTAINS
     ! --- PASSED ARGUMENTS
     CHARACTER*8, INTENT(IN) :: CMNAME
     INTEGER, INTENT(IN) :: NPROPS, NOEL, NSTATV, INCMPFLAG, NFLDV
-    REAL(KIND=DP), INTENT(IN) :: PROPS(NPROPS), TEMP, F1(3,3)
+    REAL(KIND=DP), INTENT(IN) :: PROPS(NPROPS), TEMP, F(3,3)
     REAL(KIND=DP), INTENT(INOUT) :: STATEV(NSTATV), FIELDV(NFLDV), DFIELDV(NFLDV)
     REAL(KIND=DP), INTENT(OUT) :: STRESS(6)
     REAL(KIND=DP), INTENT(OUT), OPTIONAL :: DDSDDE(6,6)
@@ -42,18 +42,18 @@ CONTAINS
 
     ! DEFORMATION TENSOR
     ! C = FT.F
-    C(1) = F1(1,1)**2 + F1(2,1)**2 + F1(3,1)**2
-    C(2) = F1(1,2)**2 + F1(2,2)**2 + F1(3,2)**2
-    C(3) = F1(1,3)**2 + F1(2,3)**2 + F1(3,3)**2
-    C(4) = F1(1,1)*F1(1,2) + F1(2,1)*F1(2,2) + F1(3,1)*F1(3,2)
-    C(5) = F1(1,1)*F1(1,3) + F1(2,1)*F1(2,3) + F1(3,1)*F1(3,3)
-    C(6) = F1(1,2)*F1(1,3) + F1(2,2)*F1(2,3) + F1(3,2)*F1(3,3)
+    C(1) = F(1,1)**2 + F(2,1)**2 + F(3,1)**2
+    C(2) = F(1,2)**2 + F(2,2)**2 + F(3,2)**2
+    C(3) = F(1,3)**2 + F(2,3)**2 + F(3,3)**2
+    C(4) = F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,1)*F(3,2)
+    C(5) = F(1,1)*F(1,3) + F(2,1)*F(2,3) + F(3,1)*F(3,3)
+    C(6) = F(1,2)*F(1,3) + F(2,2)*F(2,3) + F(3,2)*F(3,3)
 
     ! JACOBIAN
     ! JAC = DET(F)
-    JAC = F1(1,1) * F1(2,2) * F1(3,3) - F1(1,2) * F1(2,1) * F1(3,3) &
-        + F1(1,2) * F1(2,3) * F1(3,1) + F1(1,3) * F1(3,2) * F1(2,1) &
-        - F1(1,3) * F1(3,1) * F1(2,2) - F1(2,3) * F1(3,2) * F1(1,1)
+    JAC = F(1,1) * F(2,2) * F(3,3) - F(1,2) * F(2,1) * F(3,3) &
+        + F(1,2) * F(2,3) * F(3,1) + F(1,3) * F(3,2) * F(2,1) &
+        - F(1,3) * F(3,1) * F(2,2) - F(2,3) * F(3,2) * F(1,1)
 
     ! INVARIANTS OF C
     CALL INVARS(C, I1, I2, I3)
@@ -107,7 +107,7 @@ CONTAINS
     FORALL(IJ=1:6) PK2(IJ) = TWO * SUM(A(1:3) * B(1:3, IJ))
 
     ! CAUCHY STRESS
-    Q = TRANSQ(F1)
+    Q = TRANSQ(F)
     STRESS = MATMUL(Q, PK2) / JAC
 
     IF (.NOT. PRESENT(DDSDDE)) RETURN
@@ -576,28 +576,29 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
   ! --- LOCAL VARIABLES
   INTEGER, PARAMETER :: NFLDV=1, INCMPFLAG=1
   REAL(KIND=DP) :: FIELDV(NFLDV), DFIELDV(NFLDV)
-  real(kind=dp) :: foos(6), fooc1(6,6),fooc2(6,6)
+  real(kind=dp) :: foos(6), fooc1(6,6),fooc2(6,6),fooc3(6,6)
   ! ---------------------------------------------------------------- UMAT --- !
 
 
   CALL HYPEREL(NPROPS, PROPS, TEMP, F1, NOEL, CMNAME, INCMPFLAG, &
-       NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, STRESS, DDSDDE)
+       NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, STRESS, fooc1)
   CALL JACOBIAN(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
-       NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, F1, STRESS, fooc1)
+       NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, F1, STRESS, fooc3)
 
   CALL NEOHOOKE(2, (/PROPS(1),PROPS(2)/), F1, foos, fooc2)
 
+  ddsdde = fooc3
   IF (DTIME < EPSILON(ONE)) RETURN
 
   print*
-  print*, 'hyper stiff'
-  print*, ddsdde(1,1:3)
-  print*, ddsdde(2,1:3)
-  print*, ddsdde(3,1:3)
-  print*, '        ', ddsdde(4,4:6)
-  print*, '        ', ddsdde(5,4:6)
-  print*, '        ', ddsdde(6,4:6)
   print*, 'numerical stiff'
+  print*, fooc3(1,1:3)
+  print*, fooc3(2,1:3)
+  print*, fooc3(3,1:3)
+  print*, '        ', fooc3(4,4:6)
+  print*, '        ', fooc3(5,4:6)
+  print*, '        ', fooc3(6,4:6)
+  print*, 'hyper stiff'
   print*, fooc1(1,1:3)
   print*, fooc1(2,1:3)
   print*, fooc1(3,1:3)
