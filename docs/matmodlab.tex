@@ -2183,6 +2183,49 @@ is used to determine if the output differs from a known base result
 </rtest>
 \end{example}
 
+% ---------------------------------------------------------------------- %
+\section{Hyperelasticity}
+\begin{equation}
+  \label{eq:hyp-1}
+  \PKTwo = 2\PDer{W}{\CauchyDef}
+\end{equation}
+
+For isotropic hyperelasticity $W=W\left(\IBOne, \IBTwo, \Jacobian\right)$ and
+
+\begin{align}
+  \PKTwo &= 2\left(\PDer{W}{\IBOne}\PDer{\IBOne}{\CauchyDef} +
+                   \PDer{W}{\IBTwo}\PDer{\IBTwo}{\CauchyDef} +
+                   \PDer{W}{\Jacobian}\PDer{\Jacobian}{\CauchyDef}\right) \\
+         &= 2\left[
+           \PDer{W}{\IBOne}\Jacobian^{-2/3}\left(
+             \Identity - \OneThird\IOne\CauchyDef
+           \right) +
+           \PDer{W}{\IBTwo}\Jacobian^{-4/3}\left(
+             \IOne\Identity - \CauchyDef - \TwoThird\ITwo\CauchyDef^{-1}
+           \right) +
+           \PDer{W}{\Jacobian}\OneHalf\Jacobian\CauchyDef^{-1}
+         \right] \\
+         &= 2\PDer{W}{\bar{I}_i} \PDer{\bar{I}_i}{\CauchyDef} \\
+         &= \Tensor{A}{}{} \DotProd \Tensor{B}{}{}
+\end{align}
+%
+where
+%
+\begin{equation}
+  \Tensor{A}{}{} = \left[\PDer{W}{\IBOne} \quad
+                         \PDer{W}{\IBTwo} \quad
+                         \PDer{W}{\Jacobian}\right]
+\end{equation}
+%
+and
+%
+\begin{equation}
+  \Tensor{B}{}{} = \left[
+    \Jacobian^{-2/3}\left(\Identity - \OneThird\IOne\CauchyDef\right) \quad
+    \Jacobian^{-4/3}\left(
+      \IOne\Identity - \CauchyDef - \TwoThird\ITwo\CauchyDef^{-1}\right)\quad
+    \OneHalf\Jacobian\CauchyDef^{-1} \right]
+\end{equation}
 
 % ---------------------------------------------------------------------- %
 % References
