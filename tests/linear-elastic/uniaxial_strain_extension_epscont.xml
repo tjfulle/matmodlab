@@ -13,7 +13,7 @@
   <Physics>
 
     <Path type="prdef" kappa="0" tstar="1" estar=".5"
-	  amplitude="1" nfac="1000" ratfac="1" ndumps="20">
+	  amplitude="1" nfac="50" ratfac="1">
       <!-- termination time, number of steps, control, Cij -->
       0 0 222222 0 0 0 0 0 0
       1 1 222222 1 0 0 0 0 0
