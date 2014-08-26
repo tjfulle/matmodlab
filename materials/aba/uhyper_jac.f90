@@ -7,7 +7,6 @@ MODULE HYPERELASTIC
   REAL(KIND=DP), PARAMETER :: FOUR=4._DP
   REAL(KIND=DP), PARAMETER :: THIRD=ONE/THREE, P2THIRD=TWO/THREE, P3HALF=THREE/TWO
   REAL(KIND=DP), PARAMETER :: FOURTH=ONE/FOUR, SIX=6._DP
-  REAL(KIND=DP), PARAMETER :: IDENTITY(6)=[ONE, ONE, ONE, ZERO, ZERO, ZERO]
   REAL(KIND=DP), PARAMETER :: IIMI4(6,6) = RESHAPE(&
                          [ZERO,  ONE,  ONE, ZERO, ZERO, ZERO, &
                            ONE, ZERO,  ONE, ZERO, ZERO, ZERO, &
@@ -25,7 +24,8 @@ CONTAINS
     ! CALLS A UYHPER MODEL AND FORMULATES THE STRESS AND STIFFNESS ARRAYS
     ! ----------------------------------------------------------------------- !
     ! --- PASSED ARGUMENTS
-    USE TENSALG, ONLY : ASARRAY, DOT, DET, INVARS, PUSH, INV, DYAD
+    USE TENSALG, ONLY : ASARRAY, DOT, DET, INVARS, PUSH, INV, DYAD, SYMSHUFF, &
+         SYMSQ, I6
     CHARACTER*8, INTENT(IN) :: CMNAME
     INTEGER, INTENT(IN) :: NPROPS, NOEL, NSTATV, INCMPFLAG, NFLDV
     REAL(KIND=DP), INTENT(IN) :: PROPS(NPROPS), TEMP, F(3,3)
@@ -43,19 +43,9 @@ CONTAINS
 
     ! DEFORMATION TENSOR
     ! C = FT.F
-    C(1) = F(1,1)**2 + F(2,1)**2 + F(3,1)**2
-    C(2) = F(1,2)**2 + F(2,2)**2 + F(3,2)**2
-    C(3) = F(1,3)**2 + F(2,3)**2 + F(3,3)**2
-    C(4) = F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,1)*F(3,2)
-    C(5) = F(1,1)*F(1,3) + F(2,1)*F(2,3) + F(3,1)*F(3,3)
-    C(6) = F(1,2)*F(1,3) + F(2,2)*F(2,3) + F(3,2)*F(3,3)
-    C = ASARRAY(DOT(TRANSPOSE(F), F))
+    C = SYMSQ(F)
 
     ! JACOBIAN
-    ! JAC = DET(F)
-    JAC = F(1,1) * F(2,2) * F(3,3) - F(1,2) * F(2,1) * F(3,3) &
-        + F(1,2) * F(2,3) * F(3,1) + F(1,3) * F(3,2) * F(2,1) &
-        - F(1,3) * F(3,1) * F(2,2) - F(2,3) * F(3,2) * F(1,1)
     JAC = DET(F)
 
     ! INVARIANTS OF C
@@ -102,8 +92,8 @@ CONTAINS
     CINV = INV(C)
 
     A = DU
-    B(1,1:6) = SCALE ** 2 * (IDENTITY - THIRD * I1 * CINV)
-    B(2,1:6) = SCALE ** 4 * (I1 * IDENTITY - C - P2THIRD * I2 * CINV)
+    B(1,1:6) = SCALE ** 2 * (I6 - THIRD * I1 * CINV)
+    B(2,1:6) = SCALE ** 4 * (I1 * I6 - C - P2THIRD * I2 * CINV)
     B(3,1:6) = HALF * JAC * CINV
 
     ! SECOND PIOLA-KIRCHHOFF STRESS: DERIVATIVE OF ENERGY WRT C
@@ -117,9 +107,9 @@ CONTAINS
     CICI = DYAD(CINV, CINV)
     CIC = DYAD(CINV, C)
     CCI = DYAD(C, CINV)
-    LCICI = OPROD(CINV, CINV)
-    ICI = DYAD(IDENTITY, CINV)
-    CII = DYAD(CINV, IDENTITY)
+    LCICI = SYMSHUFF(CINV)
+    ICI = DYAD(I6, CINV)
+    CII = DYAD(CINV, I6)
     DA=ZERO
     DA(1,1:6) = D2U(1) * B(1,1:6) + D2U(4) * B(2,1:6) + D2U(5) * B(3,1:6)
     DA(2,1:6) = D2U(4) * B(1,1:6) + D2U(2) * B(2,1:6) + D2U(6) * B(3,1:6)
@@ -179,60 +169,8 @@ CONTAINS
             NSTATV, SVM, NFLDV, FIELDV, DFIELDV, SM)
        DDSDDE(:, N) = (SP - SM) / EPS
     END DO
-    WHERE (ABS(DDSDDE) / MAXVAL(DDSDDE) < TOL)
-       DDSDDE = ZERO
-    END WHERE
     DDSDDE = HALF * (DDSDDE + TRANSPOSE(DDSDDE))
   END SUBROUTINE JACOBIAN
-
-  ! ************************************************************************* !
-
-  FUNCTION OPROD(A, B)
-    ! ----------------------------------------------------------------------- !
-    ! "O" PRODUCT OF A AND B
-    ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP), INTENT(IN) :: A(6), B(6)
-    REAL(KIND=DP) :: OPROD(6,6)
-    REAL(KIND=DP) :: FAC
-    FAC = HALF
-    OPROD(1,1) = A(1) * B(1)
-    OPROD(1,2) = A(4) * B(4)
-    OPROD(1,3) = A(5) * B(5)
-    OPROD(1,4) = FAC * A(1) * B(4)  +  FAC * A(4) * B(1)
-    OPROD(1,5) = FAC * A(1) * B(5)  +  FAC * A(5) * B(1)
-    OPROD(1,6) = FAC * A(4) * B(5)  +  FAC * A(5) * B(4)
-    OPROD(2,1) = A(4) * B(4)
-    OPROD(2,2) = A(2) * B(2)
-    OPROD(2,3) = A(6) * B(6)
-    OPROD(2,4) = FAC * A(2) * B(4)  +  FAC * A(4) * B(2)
-    OPROD(2,5) = FAC * A(4) * B(6)  +  FAC * A(6) * B(4)
-    OPROD(2,6) = FAC * A(2) * B(6)  +  FAC * A(6) * B(2)
-    OPROD(3,1) = A(5) * B(5)
-    OPROD(3,2) = A(6) * B(6)
-    OPROD(3,3) = A(3) * B(3)
-    OPROD(3,4) = FAC * A(5) * B(6)  +  FAC * A(6) * B(5)
-    OPROD(3,5) = FAC * A(3) * B(5)  +  FAC * A(5) * B(3)
-    OPROD(3,6) = FAC * A(3) * B(6)  +  FAC * A(6) * B(3)
-    OPROD(4,1) = A(4) * B(1)
-    OPROD(4,2) = A(2) * B(4)
-    OPROD(4,3) = A(6) * B(5)
-    OPROD(4,4) = FAC * A(2) * B(1)  +  FAC * A(4) * B(4)
-    OPROD(4,5) = FAC * A(4) * B(5)  +  FAC * A(6) * B(1)
-    OPROD(4,6) = FAC * A(2) * B(5)  +  FAC * A(6) * B(4)
-    OPROD(5,1) = A(5) * B(1)
-    OPROD(5,2) = A(6) * B(4)
-    OPROD(5,3) = A(3) * B(5)
-    OPROD(5,4) = FAC * A(5) * B(4)  +  FAC * A(6) * B(1)
-    OPROD(5,5) = FAC * A(3) * B(1)  +  FAC * A(5) * B(5)
-    OPROD(5,6) = FAC * A(3) * B(4)  +  FAC * A(6) * B(5)
-    OPROD(6,1) = A(5) * B(4)
-    OPROD(6,2) = A(6) * B(2)
-    OPROD(6,3) = A(3) * B(6)
-    OPROD(6,4) = FAC * A(5) * B(2)  +  FAC * A(6) * B(4)
-    OPROD(6,5) = FAC * A(3) * B(4)  +  FAC * A(5) * B(6)
-    OPROD(6,6) = FAC * A(3) * B(2)  +  FAC * A(6) * B(6)
-    RETURN
-  END FUNCTION OPROD
 
   ! ************************************************************************* !
 
@@ -256,6 +194,8 @@ CONTAINS
     DGEDDG = EPS / TWO * (MATMUL(EIJ, F) + MATMUL(EJI, F))
   END FUNCTION DGEDDG
 
+  ! ************************************************************************* !
+
   SUBROUTINE NEOHOOKE(NPROPS, PROPS, F, SIG, C)
     ! --------------------------------------------------------------------- !
     ! COMPRESSIBLE NEO-HOOKEAN HYPERELASTIC MATERIAL
@@ -264,6 +204,7 @@ CONTAINS
     ! -----
     ! SYMMETRIC TENSOR ORDERING : XX, YY, ZZ, XY, YZ, ZX
     ! --------------------------------------------------------------------- !
+    USE TENSALG, ONLY: I6
     INTEGER, INTENT(IN) :: NPROPS
     REAL(DP), INTENT(IN) :: PROPS(NPROPS), F(3,3)
     REAL(DP), INTENT(INOUT) :: SIG(6), C(6,6)
@@ -296,7 +237,7 @@ CONTAINS
     PR = TWO / D1 * (JAC - ONE)
 
     ! CAUCHY STRESS
-    SIG = EG * (BB - TRBBAR * IDENTITY) + PR * IDENTITY
+    SIG = EG * (BB - TRBBAR * I6) + PR * I6
 
     ! SPATIAL STIFFNESS
     EG23 = EG * TWO / THREE
@@ -341,6 +282,7 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
   !     PROPS(2)  - K1
   ! ------------------------------------------------------------------------- !
   USE HYPERELASTIC, ONLY: DP, ONE, TWO, THREE, HYPEREL, JACOBIAN, NEOHOOKE
+  USE TENSALG, ONLY: FLOORIT
   IMPLICIT NONE
 
   ! --- PASSED ARGUMENTS
@@ -359,6 +301,7 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
   ! --- LOCAL VARIABLES
   INTEGER, PARAMETER :: NFLDV=1, INCMPFLAG=1
   REAL(KIND=DP) :: FIELDV(NFLDV), DFIELDV(NFLDV)
+  integer :: i
   real(kind=dp) :: foos(6), fooc1(6,6),fooc2(6,6),fooc3(6,6)
   ! ---------------------------------------------------------------- UMAT --- !
 
@@ -367,9 +310,40 @@ SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD, &
        NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, STRESS, fooc1)
   CALL JACOBIAN(NPROPS, PROPS, TEMP, NOEL, CMNAME, INCMPFLAG, &
        NSTATV, STATEV, NFLDV, FIELDV, DFIELDV, F1, STRESS, fooc3)
-
-  !CALL NEOHOOKE(2, (/PROPS(1),PROPS(2)/), F1, foos, fooc2)
+  CALL NEOHOOKE(2, (/PROPS(1),PROPS(2)/), F1, foos, fooc2)
+  CALL FLOORIT(fooc1)
+  CALL FLOORIT(fooc2)
+  CALL FLOORIT(fooc3)
 
   ddsdde = fooc3
+  print*,'*****************************************************************&
+       &**********************************'
+  print*, 'neohooke sig'
+  print 10, foos
+  print*, '   hyper sig'
+  print 10, stress
+  print*
+  print*, 'neohooke stiff'
+  do i=1,6
+     print 10, fooc2(i,:)
+  end do
+  print*
+  print*, '   fdiff stiff'
+  do i=1,6
+     print 10, fooc3(i,:)
+  end do
+  print*
+  print*, '   hyper stiff'
+  do i=1,6
+     print 10, fooc1(i,:)
+  end do
+  print*,'*****************************************************************&
+       &**********************************'
+  print*
+  print*
+  print*
+
+
+10 FORMAT(6(ES15.6,2X))
 
 END SUBROUTINE UMAT
