@@ -36,7 +36,7 @@ class UMat(AbaUMat):
             raise Error1("umat model not imported")
 
         self.param_names = ["PARAM{0}".format(i+1)
-                            for i in range(len(params))]
+                            for i in range(len(params[1:]))]
 
         self._xkeys = ["SDV{0}".format(i+1) for i in range(len(statev))]
         self._istate = np.array(statev)
@@ -52,7 +52,7 @@ class UMat(AbaUMat):
         umat.umat(stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             utime, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
-            nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
+            nxtra, params[1:], coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc, log_error,
             log_message, log_warning)
         return stress, statev, ddsdde

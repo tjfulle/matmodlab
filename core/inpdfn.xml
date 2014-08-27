@@ -91,6 +91,7 @@
       <Attribute name="fiber_direction" type="array" default="1 0 0" len="3"/>
       <Attribute name="lapack" type="boolean" default="false"/>
       <Attribute name="constant_jacobian" default="false" type="boolean"/>
+      <Attribute name="numerical_jacobian" default="false" type="boolean"/>
     </Element>
 
     <Element name="Viscoelastic" n="?" content="text">

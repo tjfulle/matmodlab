@@ -732,8 +732,8 @@ def pMaterial(mtldict, mtlswapdict=None):
             fatal_inp_error("no model parameters found")
             return
 
-        params = np.zeros(nprops)
-        paramnames = ["PROP{0:02d}".format(_) for _ in range(0, nprops)]
+        params = np.zeros(nprops+1)
+        paramnames = ["PROP{0:02d}".format(_) for _ in range(0, nprops+1)]
         depvar = np.zeros(nstatv)
         for p in ui:
             p = [x.strip() for x in re.split(r"[= ]", p) if x.strip()]
@@ -746,7 +746,7 @@ def pMaterial(mtldict, mtlswapdict=None):
                     fatal_inp_error("expected {0} Constants, got "
                                     "{1}".format(nprops, val.shape[0]))
                     return
-                params[:] = val
+                params[1:] = val
                 continue
 
             elif name == "Depvar":
@@ -876,6 +876,7 @@ def pMaterial(mtldict, mtlswapdict=None):
             params[idx] = val
 
     options["constant_jacobian"] = mtldict["constant_jacobian"]
+    options["numerical_jacobian"] = mtldict["constant_jacobian"]
 
     return mtlmdl, Parameters(paramnames, params, mimicmodel), options, istate
 

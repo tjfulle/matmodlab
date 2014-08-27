@@ -83,7 +83,7 @@
 \newcommand{\TPDerTens}[4]{% third order partial with tensor
   \frac{\mathpp\mathsup{3} #1}{%
     {\mathpp #2}{\dyadprod}{\mathpp #3}{\dyadprod}{\mathpp #4}}}
-\newcommand{\LPDer}[2]{{\frac{\mathpp}{\mathpp #2}#1}}
+\newcommand{\LPDer}[2]{{\frac{\mathpp}{\mathpp #2}\left(#1\right)}}
 \newcommand{\LPDerN}[3]{\frac{\mathpp\mathsup{#1}}{\mathpp{#3}\mathsup{#1}}{#2}}
 \newcommand{\LPXDer}[3]{\frac{\mathpp\mathsup{2}}{\mathpp{#2}\mathpp{#3}}{#1}}
 \newcommand{\PDerN}[3]{\frac{\mathpp\mathsup{#1}{#2}}{\mathpp{#3}\mathsup{#1}}}
@@ -240,6 +240,7 @@
 \newcommand{\DotProd}{{\boldsymbol{\cdot}}}
 \newcommand{\DDotProd}{{\ensuremath{\boldsymbol{:}}}}
 \newcommand{\DyadicProd}{{\dyadprod}}
+\newcommand{\OProd}{{\odot}}
 \newcommand{\Inv}[1]{#1\mathsup{-1}}
 \newcommand{\Inverse}[1]{#1\mathsup{-1}}
 \newcommand{\InvTrans}[1]{#1\textsup{-T}}
@@ -349,6 +350,7 @@
 \newcommand{\SpontPolarizationSym}{\Pi}
 \newcommand{\SpontStrainSym}{\GreenStrainSym}
 \newcommand{\StiffnessSym}{C}
+\newcommand{\MatStiffSym}{L}
 \newcommand{\StrainSym}{\varepsilon}
 \newcommand{\StressSym}{\sigma}
 \newcommand{\SusceptibilitySym}{\chi}
@@ -614,6 +616,10 @@
   \ifthenelse{\equal{#1}{}}{%
     \Tensor[\secsym]{\mathbb{\ComplianceSym}}{}{}}{%
     \secsym{\ComplianceSym}\mathsub{#1}}}
+\newcommand{\MatStiff}[1][]{%
+  \ifthenelse{\equal{#1}{}}{%
+    \Tensor{\mathbb{\MatStiffSym}}{}{}}{%
+    \MatStiffSym\mathsub{#1}}}
 
 % -- porosity
 \newcommand{\Porosity}[1][]{%
@@ -1097,6 +1103,20 @@
 \newcommand{\ZTensor}[1][]{\ifthenelse{\equal{#1}{}}{%
     \Tensor{\ZTensorSym}{}{}}{\ZTensorSym\mathsub{#1}}}
 %
+% --- Misc tensors
+\renewcommand{\aa}{\Tensor{a}{}{}}
+\newcommand{\bb}{\Tensor{b}{}{}}
+\renewcommand{\AA}{\Tensor{A}{}{}}
+\newcommand{\BB}{\Tensor{B}{}{}}
+\renewcommand{\CC}{\Tensor{C}{}{}}
+\newcommand{\GG}{\Tensor{G}{}{}}
+\newcommand{\HH}{\Tensor{H}{}{}}
+\newcommand{\AAAA}{\Tensor{\mathbb{A}}{}{}}
+\newcommand{\BBBB}{\Tensor{\mathbb{B}}{}{}}
+\newcommand{\CCCC}{\Tensor{\mathbb{C}}{}{}}
+\newcommand{\DDDD}{\Tensor{\mathbb{D}}{}{}}
+\newcommand{\HHHH}{\Tensor{\mathbb{H}}{}{}}
+\newcommand{\IIII}{\Tensor{\mathbb{I}}{}{}}
 
 
 

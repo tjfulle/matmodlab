@@ -30,6 +30,9 @@ class UHyper(AbaUMat):
         self.bulk_modulus = lam + 2. / 3. * mu
         self.shear_modulus = mu
 
+        if self.numerical_jacobian:
+            self.params[0] = 1.
+
     def setup_umat(self, params, statev, **kwargs):
         """Set up the umat"""
         if umat is None:

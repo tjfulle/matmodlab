@@ -6,7 +6,6 @@ D = os.path.dirname(os.path.realpath(__file__))
 # Auxiliary files
 ABA_IO_F90 = os.path.join(D, "aba_io.f90")
 ABA_UHYPER_JAC_F90 = os.path.join(D, "uhyper_jac.f90")
-ABA_NUMBERS_F90 = os.path.join(D, "numbers.f90")
 ABA_TENSALG_F90 = os.path.join(D, "tensalg.f90")
 
 # Signature files
@@ -32,7 +31,7 @@ kwargs = {"source_files": [ABA_IO_F90, ABA_UANISOHYPER_INV_PYF],
           "class": "UAnisoHyper", "type": "abaqus_uanioshyper_inv"}
 ABA_MATS["uanisohyper_inv"] = _Material("umat", **kwargs)
 
-kwargs = {"source_files": [ABA_IO_F90, ABA_NUMBERS_F90, DGPADM_F, ABA_TENSALG_F90,
+kwargs = {"source_files": [ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
                            ABA_UHYPER_PYF, ABA_UHYPER_JAC_F90],
           "interface_file": ABA_UHYPER_PYF,
           "class": "UHyper", "type": "abaqus_uhyper"}

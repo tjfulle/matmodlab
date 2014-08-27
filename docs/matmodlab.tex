@@ -15,6 +15,7 @@
 \usepackage{verbatim}
 \usepackage{fancybox}
 \usepackage[linkcolor=red]{hyperref}
+\usepackage{lscape}
 
 %\def\SANDmain{}
 %\def\SANDauthor{}
@@ -64,6 +65,9 @@
 \newcommand{\wf}{\Tensor{w}{}{}}
 \newcommand{\vc}{\text{v}}
 \newcommand{\PrescStress}{\Tensor{\sigma}{}{p}}
+
+\newcommand{\DisplayMath}[1]{\ensuremath{\displaystyle #1}}
+\newcommand{\NewLine}{\\[9pt]}
 
 % --- xml
 \renewcommand{\tag}[1]{\texttt{<#1>}}
@@ -2184,7 +2188,9 @@ is used to determine if the output differs from a known base result
 \end{example}
 
 % ---------------------------------------------------------------------- %
-\section{Hyperelasticity}
+\chapter{Hyperelasticity}
+
+\section{The Second Piola-Kirchhoff Stress Tensor}
 \begin{equation}
   \label{eq:hyp-1}
   \PKTwo = 2\PDer{W}{\CauchyDef}
@@ -2192,40 +2198,306 @@ is used to determine if the output differs from a known base result
 
 For isotropic hyperelasticity $W=W\left(\IBOne, \IBTwo, \Jacobian\right)$ and
 
-\begin{align}
-  \PKTwo &= 2\left(\PDer{W}{\IBOne}\PDer{\IBOne}{\CauchyDef} +
+\begin{equation}
+  \PKTwo = 2\left(\PDer{W}{\IBOne}\PDer{\IBOne}{\CauchyDef} +
                    \PDer{W}{\IBTwo}\PDer{\IBTwo}{\CauchyDef} +
-                   \PDer{W}{\Jacobian}\PDer{\Jacobian}{\CauchyDef}\right) \\
-         &= 2\left[
-           \PDer{W}{\IBOne}\Jacobian^{-2/3}\left(
-             \Identity - \OneThird\IOne\CauchyDef
-           \right) +
-           \PDer{W}{\IBTwo}\Jacobian^{-4/3}\left(
-             \IOne\Identity - \CauchyDef - \TwoThird\ITwo\CauchyDef^{-1}
-           \right) +
-           \PDer{W}{\Jacobian}\OneHalf\Jacobian\CauchyDef^{-1}
-         \right] \\
-         &= 2\PDer{W}{\bar{I}_i} \PDer{\bar{I}_i}{\CauchyDef} \\
-         &= \Tensor{A}{}{} \DotProd \Tensor{B}{}{}
-\end{align}
+                   \PDer{W}{\Jacobian}\PDer{\Jacobian}{\CauchyDef}\right)
+         = \AA \DotProd \BB
+\end{equation}
 %
 where
 %
 \begin{equation}
-  \Tensor{A}{}{} = \left[\PDer{W}{\IBOne} \quad
-                         \PDer{W}{\IBTwo} \quad
-                         \PDer{W}{\Jacobian}\right]
+  \AA = \left[\PDer{W}{\IBOne} \quad
+              \PDer{W}{\IBTwo} \quad
+              \PDer{W}{\Jacobian}\right]
 \end{equation}
 %
 and
 %
 \begin{equation}
-  \Tensor{B}{}{} = \left[
-    \Jacobian^{-2/3}\left(\Identity - \OneThird\IOne\CauchyDef\right) \quad
+  \BB = \left[
+    \PDer{\IBOne}{\CauchyDef} \quad
+    \PDer{\IBTwo}{\CauchyDef} \quad
+    \PDer{\Jacobian}{\CauchyDef}
+  \right]
+\end{equation}
+
+\subsection{The $\BB$ Term}
+
+\begin{equation}
+  \BB = \left[
+    \Jacobian^{-2/3}\left(\Identity - \OneThird\IOne\Inv{\CauchyDef}\right) \quad
     \Jacobian^{-4/3}\left(
       \IOne\Identity - \CauchyDef - \TwoThird\ITwo\CauchyDef^{-1}\right)\quad
     \OneHalf\Jacobian\CauchyDef^{-1} \right]
 \end{equation}
+
+% --------------------------------------------------------------------------- %
+\section{Elastic Stiffness}
+
+Elastic stiffness in the material frame is given by
+
+\begin{align}
+  \MatStiff &= 4\SPDerTens{W}{\CauchyDef}{\CauchyDef}
+            = 4\LPDer{\AA\DotProd\BB}{\CauchyDef} \\
+            &= 4\left(\PDer{\AA}{\CauchyDef}\DotProd\BB +
+                      \AA\DotProd\PDer{\BB}{\CauchyDef}\right)
+\end{align}
+
+% --------------------------------------------------------------------------- %
+\subsection{The $\partial\AA/\partial\CauchyDef$ Term}
+
+\begin{align}
+  \PDer{A_1}{\CauchyDef} &= {
+    \PDer{A_1}{\IBOne}\PDer{\IBOne}{\CauchyDef} +
+    \PDer{A_1}{\IBTwo}\PDer{\IBTwo}{\CauchyDef} +
+    \PDer{A_1}{\Jacobian}\PDer{\Jacobian}{\CauchyDef}} \\
+  &= {
+    \SPDer{W}{\IBOne}{\IBOne}\PDer{\IBOne}{\CauchyDef} +
+    \SPDer{W}{\IBTwo}{\IBOne}\PDer{\IBTwo}{\CauchyDef} +
+    \SPDer{W}{\Jacobian}{\IBOne}\PDer{\Jacobian}{\CauchyDef}}
+\end{align}
+
+\begin{align}
+  \PDer{A_2}{\CauchyDef} &= {
+    \PDer{A_2}{\IBOne}\PDer{\IBOne}{\CauchyDef} +
+    \PDer{A_2}{\IBTwo}\PDer{\IBTwo}{\CauchyDef} +
+    \PDer{A_2}{\Jacobian}\PDer{\Jacobian}{\CauchyDef}} \\
+  &= {
+    \SPDer{W}{\IBOne}{\IBTwo}\PDer{\IBOne}{\CauchyDef} +
+    \SPDer{W}{\IBTwo}{\IBTwo}\PDer{\IBTwo}{\CauchyDef} +
+    \SPDer{W}{\Jacobian}{\IBTwo}\PDer{\Jacobian}{\CauchyDef}}
+\end{align}
+
+\begin{align}
+  \PDer{A_3}{\CauchyDef} &= {
+    \PDer{A_3}{\IBOne}\PDer{\IBOne}{\CauchyDef} +
+    \PDer{A_3}{\IBTwo}\PDer{\IBTwo}{\CauchyDef} +
+    \PDer{A_3}{\Jacobian}\PDer{\Jacobian}{\CauchyDef}} \\
+  &= {
+    \SPDer{W}{\IBOne}{\Jacobian}\PDer{\IBOne}{\CauchyDef} +
+    \SPDer{W}{\IBTwo}{\Jacobian}\PDer{\IBTwo}{\CauchyDef} +
+    \SPDer{W}{\Jacobian}{\Jacobian}\PDer{\Jacobian}{\CauchyDef}}
+\end{align}
+
+Combining gives
+
+\begin{align}
+  \PDer{\AA}{\CauchyDef} &= \begin{bmatrix}
+    \SPDer{W}{\IBOne}{\IBOne} &
+    \SPDer{W}{\IBTwo}{\IBOne} &
+    \SPDer{W}{\Jacobian}{\IBOne} \\
+    \SPDer{W}{\IBOne}{\IBTwo} &
+    \SPDer{W}{\IBTwo}{\IBTwo} &
+    \SPDer{W}{\Jacobian}{\IBTwo} \\
+    \SPDer{W}{\IBOne}{\Jacobian} &
+    \SPDer{W}{\IBTwo}{\Jacobian} &
+    \SPDer{W}{\Jacobian}{\Jacobian}
+  \end{bmatrix}
+  \begin{Bmatrix}
+    \PDer{\IBOne}{\CauchyDef} \\
+    \PDer{\IBTwo}{\CauchyDef} \\
+    \PDer{\Jacobian}{\CauchyDef}
+  \end{Bmatrix} \\
+  &= \Trans{\HH} \DotProd \BB
+\end{align}
+%
+where
+\begin{equation}
+  \HH = \begin{bmatrix}
+    \SPDer{W}{\IBOne}{\IBOne} &
+    \SPDer{W}{\IBOne}{\IBTwo} &
+    \SPDer{W}{\IBOne}{\Jacobian} \\
+    \SPDer{W}{\IBTwo}{\IBOne} &
+    \SPDer{W}{\IBTwo}{\IBTwo} &
+    \SPDer{W}{\IBTwo}{\Jacobian} \\
+    \SPDer{W}{\Jacobian}{\IBOne} &
+    \SPDer{W}{\Jacobian}{\IBTwo} &
+    \SPDer{W}{\Jacobian}{\Jacobian}
+  \end{bmatrix}
+\end{equation}
+
+% --------------------------------------------------------------------------- %
+\subsection{The $\partial\BB/\partial\CauchyDef$ Term}
+
+\begin{align}
+  \nonumber
+  \PDer{B_1}{\CauchyDef} &= \PDer{}{\CauchyDef}\left(
+    \Jacobian^{-2/3}\left(\Identity - \OneThird\IOne\Inv{\CauchyDef}\right)
+  \right) \\
+  \nonumber
+  &= \PDer{}{\CauchyDef}\left(\Jacobian^{-2/3}\right)\left(
+    \Identity - \OneThird\IOne\Inv{\CauchyDef}\right)
+  + \Jacobian^{-2/3}\PDer{}{\CauchyDef}\left(
+    \Identity - \OneThird\IOne\Inv{\CauchyDef}\right) \\
+  \nonumber
+  &= -\OneThird\Jacobian^{-2/3}\Inv{\CauchyDef}\left(
+    \Identity - \OneThird\IOne\Inv{\CauchyDef}\right)
+  - \OneThird\Jacobian^{-2/3}\left(
+    \Identity\Inv{\CauchyDef} - \IOne\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+  \right) \\
+  \nonumber
+  &= \OneThird\Jacobian^{-2/3}\left(
+    - \Inv{\CauchyDef}\Identity
+    - \Identity\Inv{\CauchyDef}
+    + \OneThird\IOne\Inv{\CauchyDef}\Inv{\CauchyDef}
+    + \IOne\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+  \right) \\
+  &= \boxed{\OneThird\Jacobian^{-2/3}\left[
+      - \left(
+        \Inv{\CauchyDef}\Identity + \Identity\Inv{\CauchyDef}
+      \right)
+      + \IOne\left(
+        \Inv{\CauchyDef}\OProd\Inv{\CauchyDef} +
+        \OneThird\Inv{\CauchyDef}\Inv{\CauchyDef}
+      \right)
+    \right]}
+\end{align}
+
+\begin{align}
+  \nonumber
+  \PDer{B_2}{\CauchyDef} &= \PDer{}{\CauchyDef}\left(
+    \Jacobian^{-4/3}\left(
+      \IOne\Identity - \CauchyDef - \TwoThird\ITwo\Inv{\CauchyDef} \right)
+  \right) \\
+  \nonumber
+  &= \PDer{}{\CauchyDef}\left(\Jacobian^{-4/3}\right)\left(
+    \IOne\Identity - \CauchyDef - \TwoThird\ITwo\Inv{\CauchyDef}
+  \right)
+  + \Jacobian^{-4/3}\PDer{}{\CauchyDef}\left(
+    \IOne\Identity - \CauchyDef - \TwoThird\ITwo\Inv{\CauchyDef}
+  \right) \\
+  \nonumber
+  &= -\TwoThird\Jacobian^{-4/3}\Inv{\CauchyDef}\left(
+    \IOne\Identity - \CauchyDef - \TwoThird\ITwo\Inv{\CauchyDef}
+  \right)
+  + \Jacobian^{-4/3}\left(
+    \IIII_1 - \IIII_2 - \TwoThird\left(
+      \left(\IOne\Identity - \CauchyDef\right)\Inv{\CauchyDef}
+      - \ITwo\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+    \right)
+  \right) \\
+  \nonumber
+  &= \Jacobian^{-4/3}\left[
+    \TwoThird\Inv{\CauchyDef}\left(
+      -\IOne\Identity + \CauchyDef + \TwoThird\ITwo\Inv{\CauchyDef}
+    \right)
+    + \left(
+      \IIII_1 - \IIII_2 - \TwoThird\left(
+        \left(\IOne\Identity - \CauchyDef\right)\Inv{\CauchyDef}
+        - \ITwo\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+      \right)
+    \right)
+  \right] \\
+  \nonumber
+  &= \Jacobian^{-4/3}\left[
+    - \TwoThird\IOne\Inv{\CauchyDef}\Identity
+    + \TwoThird\Inv{\CauchyDef}\CauchyDef
+    + \TwoThird\TwoThird\ITwo\Inv{\CauchyDef}\Inv{\CauchyDef}
+    + \IIII_1 - \IIII_2
+    - \TwoThird\left(
+      \left(\IOne\Identity - \CauchyDef\right)\Inv{\CauchyDef}
+      - \ITwo\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+    \right)
+  \right] \\
+  \nonumber
+  &= \Jacobian^{-4/3}\left(
+    - \TwoThird\IOne\Inv{\CauchyDef}\Identity
+    + \TwoThird\Inv{\CauchyDef}\CauchyDef
+    + \TwoThird\TwoThird\ITwo\Inv{\CauchyDef}\Inv{\CauchyDef}
+    + \IIII_1 - \IIII_2
+    - \TwoThird\IOne\Identity\Inv{\CauchyDef}
+    + \TwoThird\CauchyDef\Inv{\CauchyDef}
+    + \TwoThird\ITwo\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+  \right) \\
+  \nonumber
+  &= \Jacobian^{-4/3}\left[
+    - \TwoThird\IOne\left(
+      \Inv{\CauchyDef}\Identity + \Identity\Inv{\CauchyDef}
+    \right)
+    + \TwoThird\left(\Inv{\CauchyDef}\CauchyDef
+      + \CauchyDef\Inv{\CauchyDef}\right)
+    + \IIII_1 - \IIII_2
+    + \TwoThird\ITwo\left(
+      \Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+      + \TwoThird\Inv{\CauchyDef}\Inv{\CauchyDef}
+    \right)
+  \right] \\
+  &= \boxed{\TwoThird\Jacobian^{-4/3}\left[
+    \frac{3}{2}\left(\IIII_1 - \IIII_2\right)
+    + \left(\Inv{\CauchyDef}\CauchyDef
+      + \CauchyDef\Inv{\CauchyDef}
+    \right)
+    - \IOne\left(
+      \Inv{\CauchyDef}\Identity + \Identity\Inv{\CauchyDef}
+    \right)
+    + \ITwo\left(
+      \Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+      + \TwoThird\Inv{\CauchyDef}\Inv{\CauchyDef}
+    \right)
+  \right]}
+\end{align}
+%
+where
+%
+\begin{align}
+  \left(\IIII_1\right)_{ijkl} &= \Identity[ij]\Identity[kl] \\
+  \left(\IIII_2\right)_{ijkl} &= \Identity[ik]\Identity[jl]
+\end{align}
+
+\begin{align}
+  \nonumber
+  \PDer{B_3}{\CauchyDef} &= \OneHalf\PDer{}{\CauchyDef}\left(
+    \Jacobian\Inv{\CauchyDef}
+  \right) \\
+  \nonumber
+  &= \OneHalf\left(
+    \OneHalf\Jacobian\Inv{\CauchyDef}\Inv{\CauchyDef}
+    - \Jacobian\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+  \right) \\
+  &= \boxed{\OneFourth\Jacobian\left(
+    \Inv{\CauchyDef}\Inv{\CauchyDef} - 2\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+  \right)}
+\end{align}
+
+Collecting
+
+\begin{equation}
+  \PDer{\BB}{\CauchyDef} = \begin{Bmatrix}
+    \OneThird\Jacobian^{-2/3}\left[
+      \Identity\Inv{\CauchyDef}
+      - \Inv{\CauchyDef}\Identity
+      - \IOne\left(
+        \Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+        - \OneThird\Inv{\CauchyDef}\Inv{\CauchyDef}\right)
+    \right] \\
+    \TwoThird\Jacobian^{-4/3}\left[
+      \frac{3}{2}\left(\IIII_1 - \IIII_2\right)
+      + \left(\Inv{\CauchyDef}\CauchyDef
+        + \CauchyDef\Inv{\CauchyDef}
+      \right)
+      - \IOne\left(
+        \Inv{\CauchyDef}\Identity + \Identity\Inv{\CauchyDef}
+      \right)
+      - \ITwo\left(
+        \Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+        - \TwoThird\Inv{\CauchyDef}\Inv{\CauchyDef}
+      \right)
+    \right] \\
+    \OneFourth\Jacobian\left(
+      \Inv{\CauchyDef}\Inv{\CauchyDef} - 2\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+    \right)
+  \end{Bmatrix}
+\end{equation}
+
+Combining, we get
+
+\begin{align}
+  \MatStiff &= 4\left(\PDer{\AA}{\CauchyDef}\DotProd\BB +
+    \AA\DotProd\PDer{\BB}{\CauchyDef}\right) \\
+\end{align}
+
 
 % ---------------------------------------------------------------------- %
 % References
@@ -2235,6 +2507,49 @@ and
 \addcontentsline{toc}{chapter}{References}
 \bibliographystyle{plain}
 \bibliography{literature}
+
+% --------------------------------------------------------------------------- %
+% Appendix
+\appendix
+
+\chapter{Useful Identities}
+\label{chap:idents}
+
+\begin{landscape}
+\begin{table}[h]
+  \centering
+  \begin{tabular}[h]{p{3in}p{3in}p{3in}}
+    \hline
+    \hline
+    % ----------------------------------------------------------------------- %
+    \DisplayMath{\IOne = \CauchyDef\DDotProd\Identity} &
+    \DisplayMath{\ITwo = \OneHalf\left(\IOne^2 -
+        \CauchyDef\DDotProd\CauchyDef\right)} &
+    \DisplayMath{\Jacobian = \det{\DefGrad} = \sqrt{\det{\CauchyDef}}} \NewLine
+    % ----------------------------------------------------------------------- %
+    \DisplayMath{\PDer{\IOne}{\CauchyDef} = \Identity} &
+    \DisplayMath{\PDer{\ITwo}{\CauchyDef} = \IOne\Identity - \CauchyDef} &
+    \DisplayMath{\PDer{\Jacobian}{\CauchyDef} =
+      \OneHalf\Jacobian\Inv{\CauchyDef}} \NewLine
+    % ------------------------------------------------------------------------ %
+    \DisplayMath{\IBOne = \Jacobian^{-2/3}\IOne} &
+    \DisplayMath{\IBTwo = \Jacobian^{-4/3}\ITwo} &\NewLine
+    % ------------------------------------------------------------------------ %
+    \DisplayMath{\PDer{\IBOne}{\CauchyDef} = \Jacobian^{-2/3}\left(\Identity
+        - \OneThird\IOne\Inv{\CauchyDef}\right)} &
+    \DisplayMath{\PDer{\IBTwo}{\CauchyDef} = \Jacobian^{-4/3}\left(
+        \IOne\Identity - \CauchyDef - \TwoThird\ITwo\Inv{\CauchyDef}\right)} &
+    \DisplayMath{\PDer{}{\CauchyDef}\left(\Jacobian^{-i/3}\right) =
+      -\frac{i}{6}\Jacobian^{-i/3}\Inv{\CauchyDef}}
+    % ------------------------------------------------------------------------ %
+    \\
+    \hline
+    \hline
+  \end{tabular}
+  \caption{Identities}
+\end{table}
+\end{landscape}
+
 
 
 \end{document}

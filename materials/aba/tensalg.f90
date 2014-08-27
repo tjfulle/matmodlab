@@ -5,9 +5,8 @@
 ! -----
 ! 1) THIS FILE MUST BE LINKED AGAINST LAPACK. FOR TESTING, USE
 !    blas_lapack-lite.f. WHEN USED IN ABAQUS, LAPACK IS PROVIDED. BUT, LAPACK
-!    IS ONLY USED FOR THE EXPM AND SQRTM PROCEDURES. IF THOSE TWO PROCEDURES
-!    ARE NOT NEEDED, LAPACK DEPENDENCY IS REMOVED.
-! 2) FOR EXPM, THIS FILE MUST ALSO BE LINKED AGAINST dgpadm.f
+!    IS ONLY USED FOR THE SQRTM PROCEDURE. IF SQRTM IS NOT NEEDED,
+!    LAPACK DEPENDENCY IS REMOVED.
 ! 3) PROCEDURE MAKES EXPLICIT CALL TO ABAQUS STDB_ABQERR FOR ERROR HANDLING.
 !    FOR USE OUTSIDE OF ABAQUS, REPLACE CALL TO STDB_ABQERR WITH APPROPRIATE
 !    PRINT AND STOP STATEMENTS.
@@ -27,12 +26,55 @@
 !    Expressions.ipynb NOTEBOOK IN THE nb DIRECTORY.
 ! *************************************************************************** !
 MODULE TENSALG
-  USE NUMBERS
   IMPLICIT NONE
   PRIVATE
-  PUBLIC :: DET, INV, DBD, DEV, ISO, SQRTM, MAG, ASARRAY, ASMAT, EYE, EXPM, DOT
+  PUBLIC :: DET, INV, DBD, DEV, ISO, SQRTM, MAG, ASARRAY, ASMAT, EYE, DOT
   PUBLIC :: TRACE, I6, SYMSHUFF, SYMLEAFF, DYAD, PUSH, PULL, IDSPLIT, INVARS
-  PUBLIC :: SYMSQ, FLOORIT
+  PUBLIC :: SYMSQ, RELFLOOR, II1, II2, II3, II4, II5, MAKESYM, SHUFFLE
+
+  INTEGER, PARAMETER :: DP=SELECTED_REAL_KIND(14)
+  REAL(KIND=DP), PARAMETER :: ZERO=0._DP
+  REAL(KIND=DP), PARAMETER :: ONE=1._DP
+  REAL(KIND=DP), PARAMETER :: TWO=2._DP
+  REAL(KIND=DP), PARAMETER :: THREE=3._DP
+  REAL(KIND=DP), PARAMETER :: FOUR=4._DP
+  REAL(KIND=DP), PARAMETER :: SIX=6._DP
+  REAL(KIND=DP), PARAMETER :: TEN=10._DP
+  REAL(KIND=DP), PARAMETER :: TWELVE=12._DP
+  REAL(KIND=DP), PARAMETER :: THIRTY=30._DP
+
+  REAL(KIND=DP), PARAMETER :: P12TH=ONE/TWELVE
+  REAL(KIND=DP), PARAMETER :: P6TH=ONE/SIX
+  REAL(KIND=DP), PARAMETER :: P4TH=ONE/FOUR
+  REAL(KIND=DP), PARAMETER :: P3RD=ONE/THREE
+  REAL(KIND=DP), PARAMETER :: HALF=ONE/TWO
+  REAL(KIND=DP), PARAMETER :: P23RD=TWO/THREE
+  REAL(KIND=DP), PARAMETER :: P3HALF=THREE/TWO
+
+  REAL(KIND=DP), PARAMETER :: RT23RD=8.16496580927726034460079063137528E-01_DP
+  REAL(KIND=DP), PARAMETER :: ROOT2=0.1414213562373095048801688724209698078E+01_DP
+  REAL(KIND=DP), PARAMETER :: TOOR2=0.7071067811865475244008443621048490392E+00_DP
+  REAL(KIND=DP), PARAMETER :: RTPI=1.772453850905515881919427556567825E+00_DP
+
+  REAL(KIND=DP), PARAMETER :: BIGNUM=1.E+30_DP
+  REAL(KIND=DP), PARAMETER :: E20=1.E+20_DP
+
+  REAL(KIND=DP), PARAMETER :: EM1=1.E-01_DP
+  REAL(KIND=DP), PARAMETER :: EM3=1.E-3_DP
+  REAL(KIND=DP), PARAMETER :: EM4=1.E-4_DP
+  REAL(KIND=DP), PARAMETER :: EM10=1.E-10_DP
+  REAL(KIND=DP), PARAMETER :: EM12=1.E-12_DP
+  REAL(KIND=DP), PARAMETER :: EM30=1.E-30_DP
+  REAL(KIND=DP), PARAMETER :: MACHINE_EPSILON=EPSILON(ONE)
+
+  REAL(KIND=DP), PARAMETER :: POINT03=.03_DP
+  REAL(KIND=DP), PARAMETER :: TOLER=3.0001E+00_DP
+
+  ! FOR MESSAGES TO BE SENT TO ABAQUS
+  INTEGER, PARAMETER :: IMSG=1
+  INTEGER, PARAMETER :: IWRN=-1
+  INTEGER, PARAMETER :: IERR2=-2
+  INTEGER, PARAMETER :: IERR=-3
 
   ! ********************************************** PARAMETER DECLARATIONS *** !
   REAL(KIND=DP), PARAMETER :: VOIGHT(6)=(/ONE,ONE,ONE,TWO,TWO,TWO/)
@@ -41,6 +83,47 @@ MODULE TENSALG
                                                    ZERO, ONE, ZERO,&
                                                    ZERO, ZERO, ONE/), (/3,3/))
 
+  ! CONSTANT FOURTH ORDER "IDENTITY" TENSORS
+  ! II1[i,j,k,l] = I[i,j] I[k,l]
+  REAL(KIND=DP), PARAMETER :: II1(6,6)=RESHAPE((/&
+       ONE,ONE,ONE,ZERO,ZERO,ZERO,&
+       ONE,ONE,ONE,ZERO,ZERO,ZERO,&
+       ONE,ONE,ONE,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,ZERO/), (/6,6/))
+  ! II2[i,j,k,l] = I[i,k] I[j,l]  (II)
+  REAL(KIND=DP), PARAMETER :: II2(6,6)=RESHAPE((/&
+       ONE,ZERO,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ONE,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ONE,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ONE,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ONE,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,ONE/), (/6,6/))
+  ! II3[i,j,k,l] = I[i,l] I[j,k] (IIbar)
+  REAL(KIND=DP), PARAMETER :: II3(6,6)=RESHAPE((/&
+       ONE,ZERO,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ONE,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ONE,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,ZERO/), (/6,6/))
+  ! II4 = (II2 + II3) / 2
+  REAL(KIND=DP), PARAMETER :: II4(6,6)=RESHAPE((/&
+       ONE,ZERO,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ONE,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ONE,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,HALF,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,HALF,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,HALF/), (/6,6/))
+  ! II5[i,j,k,l] = (I[i,k] I[j,l] + I[i,l] I[j,k]) / 2
+  REAL(KIND=DP), PARAMETER :: II5(6,6)=RESHAPE((/&
+       ONE,ZERO,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ONE,ZERO,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ONE,ZERO,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,HALF,ZERO,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,HALF,ZERO,&
+       ZERO,ZERO,ZERO,ZERO,ZERO,HALF/), (/6,6/))
   ! *************************************************** PUBLIC INTERFACES *** !
   ! PUBLIC INTERFACES
   INTERFACE DET
@@ -67,9 +150,6 @@ MODULE TENSALG
   INTERFACE SQRTM
      MODULE PROCEDURE SQRTM_3X3, SQRTM_6X1
   END INTERFACE SQRTM
-  INTERFACE EXPM
-     MODULE PROCEDURE EXPM_3X3, EXPM_6X1
-  END INTERFACE EXPM
   INTERFACE DOT
      MODULE PROCEDURE D_LA_RA, D_LM_RM, D_LA_RM, D_LM_RA
   END INTERFACE DOT
@@ -77,10 +157,10 @@ MODULE TENSALG
      MODULE PROCEDURE TR_3X3, TR_6X1
   END INTERFACE TRACE
   INTERFACE PUSH
-     MODULE PROCEDURE PUSH_6X6, PUSH_6X1_STD, PUSH_6X1_MODE
+     MODULE PROCEDURE PUSH_6X6, PUSH_6X1
   END INTERFACE PUSH
   INTERFACE PULL
-     MODULE PROCEDURE PULL_6X1_STD, PULL_6X1_MODE
+     MODULE PROCEDURE PULL_3X3, PULL_6X1
   END INTERFACE PULL
   INTERFACE INVARS
      MODULE PROCEDURE INVARS_6X1
@@ -89,147 +169,160 @@ MODULE TENSALG
 ! ***************************************************** MODULE PROCEDURES *** !
 CONTAINS
 
-  FUNCTION EYE(N)
+  FUNCTION EYE(N) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! NxN IDENTITY TENSOR
     ! ----------------------------------------------------------------------- !
     INTEGER, INTENT(IN) :: N
-    REAL(KIND=DP) :: EYE(N,N)
+    REAL(KIND=DP) :: FN_VAL(N,N)
     INTEGER :: I
-    EYE = ZERO
-    FORALL(I=1:N) EYE(I,I) = ONE
+    FN_VAL = ZERO
+    FORALL(I=1:N) FN_VAL(I,I) = ONE
   END FUNCTION EYE
 
   ! ************************************************************************* !
 
-  REAL(KIND=DP) FUNCTION DET_3X3(A)
+  REAL(KIND=DP) FUNCTION DET_3X3(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! DETERMINANT OF SECOND ORDER TENSOR STORED AS 3x3
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    DET_3X3 = A(1,1) * A(2,2) * A(3,3) - A(1,2) * A(2,1) * A(3,3) &
-            + A(1,2) * A(2,3) * A(3,1) + A(1,3) * A(3,2) * A(2,1) &
-            - A(1,3) * A(3,1) * A(2,2) - A(2,3) * A(3,2) * A(1,1)
+    FN_VAL = A(1,1) * A(2,2) * A(3,3) - A(1,2) * A(2,1) * A(3,3) &
+           + A(1,2) * A(2,3) * A(3,1) + A(1,3) * A(3,2) * A(2,1) &
+           - A(1,3) * A(3,1) * A(2,2) - A(2,3) * A(3,2) * A(1,1)
   END FUNCTION DET_3X3
 
-  REAL(KIND=DP) FUNCTION DET_6X1(A)
+  REAL(KIND=DP) FUNCTION DET_6X1(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! DETERMINANT OF SECOND ORDER TENSOR STORED AS 6X1 ARRAY
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(6)
-    DET_6X1 = A(1) * A(2) * A(3) - A(1) * A(6) ** 2 &
-            - A(2) * A(5) ** 2 - A(3) * A(4) ** 2 &
-            + TWO * A(4) * A(5) * A(6)
+    FN_VAL = A(1) * A(2) * A(3) - A(1) * A(6) ** 2 &
+           - A(2) * A(5) ** 2 - A(3) * A(4) ** 2 &
+           + TWO * A(4) * A(5) * A(6)
   END FUNCTION DET_6X1
 
   ! ************************************************************************* !
 
-  FUNCTION INV_6X1(A)
+  FUNCTION INV_6X1(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! INVERSE OF 3X3 SYMMETRIC TENSOR STORED AS 6X1 ARRAY
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: INV_6X1(6)
+    REAL(KIND=DP) :: FN_VAL(6)
     REAL(KIND=DP), INTENT(IN) :: A(6)
-    INV_6X1(1) = A(2) * A(3) - A(6) ** 2
-    INV_6X1(2) = A(1) * A(3) - A(5) ** 2
-    INV_6X1(3) = A(1) * A(2) - A(4) ** 2
-    INV_6X1(4) = -A(3) * A(4) + A(5) * A(6)
-    INV_6X1(5) = -A(2) * A(5) + A(4) * A(6)
-    INV_6X1(6) = -A(1) * A(6) + A(4) * A(5)
-    INV_6X1 = INV_6X1 / DET_6X1(A)
+    FN_VAL(1) = A(2) * A(3) - A(6) ** 2
+    FN_VAL(2) = A(1) * A(3) - A(5) ** 2
+    FN_VAL(3) = A(1) * A(2) - A(4) ** 2
+    FN_VAL(4) = -A(3) * A(4) + A(5) * A(6)
+    FN_VAL(5) = -A(2) * A(5) + A(4) * A(6)
+    FN_VAL(6) = -A(1) * A(6) + A(4) * A(5)
+    FN_VAL = FN_VAL / DET_6X1(A)
   END FUNCTION INV_6X1
 
-  FUNCTION INV_3X3(A)
+  FUNCTION INV_3X3(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! INVERSE OF SYMMETRIC SECOND ORDER TENSOR STORED AS 3X3 MATRIX
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: INV_3X3(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
     REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    INV_3X3(1,1) =  A(2,2) * A(3,3) - A(2,3) * A(3,2)
-    INV_3X3(1,2) = -A(1,2) * A(3,3) + A(1,3) * A(3,2)
-    INV_3X3(1,3) =  A(1,2) * A(2,3) - A(1,3) * A(2,2)
-    INV_3X3(2,1) = -A(2,1) * A(3,3) + A(2,3) * A(3,1)
-    INV_3X3(2,2) =  A(1,1) * A(3,3) - A(1,3) * A(3,1)
-    INV_3X3(2,3) = -A(1,1) * A(2,3) + A(1,3) * A(2,1)
-    INV_3X3(3,1) =  A(2,1) * A(3,2) - A(2,2) * A(3,1)
-    INV_3X3(3,2) = -A(1,1) * A(3,2) + A(1,2) * A(3,1)
-    INV_3X3(3,3) =  A(1,1) * A(2,2) - A(1,2) * A(2,1)
-    INV_3X3 = INV_3X3 / DET_3X3(A)
+    FN_VAL(1,1) =  A(2,2) * A(3,3) - A(2,3) * A(3,2)
+    FN_VAL(1,2) = -A(1,2) * A(3,3) + A(1,3) * A(3,2)
+    FN_VAL(1,3) =  A(1,2) * A(2,3) - A(1,3) * A(2,2)
+    FN_VAL(2,1) = -A(2,1) * A(3,3) + A(2,3) * A(3,1)
+    FN_VAL(2,2) =  A(1,1) * A(3,3) - A(1,3) * A(3,1)
+    FN_VAL(2,3) = -A(1,1) * A(2,3) + A(1,3) * A(2,1)
+    FN_VAL(3,1) =  A(2,1) * A(3,2) - A(2,2) * A(3,1)
+    FN_VAL(3,2) = -A(1,1) * A(3,2) + A(1,2) * A(3,1)
+    FN_VAL(3,3) =  A(1,1) * A(2,2) - A(1,2) * A(2,1)
+    FN_VAL = FN_VAL / DET_3X3(A)
   END FUNCTION INV_3X3
 
   ! ************************************************************************* !
 
-  REAL(KIND=DP) FUNCTION MAG_6X1(A)
+  REAL(KIND=DP) FUNCTION MAG_6X1(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! L2-NORM (EUCLIDEAN MAGNITUDE) OF SECOND ORDER TENSOR STORED AS 6X1 ARRAY
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(6)
-    MAG_6X1 = SQRT(DBD_6X1(A, A))
+    FN_VAL = SQRT(DBD_6X1(A, A))
     RETURN
   END FUNCTION MAG_6X1
 
-  REAL(KIND=DP) FUNCTION MAG_3X3(A)
+  REAL(KIND=DP) FUNCTION MAG_3X3(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! L2-NORM (EUCLIDEAN MAGNITUDE) OF SECOND ORDER TENSOR STORED AS 6X1 ARRAY
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    MAG_3X3 = SQRT(DBD_3X3(A, A))
+    FN_VAL = SQRT(DBD_3X3(A, A))
     RETURN
   END FUNCTION MAG_3X3
 
   ! ************************************************************************* !
 
-  REAL(KIND=DP) FUNCTION DBD_6X1(A, B)
+  REAL(KIND=DP) FUNCTION DBD_6X1(A, B) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! DOUBLE DOT OF SECOND ORDER TENSORS STORED AS 6X1 ARRAYS
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(6), B(6)
-    DBD_6X1 = SUM(A * B * VOIGHT)
+    FN_VAL = SUM(A * B * VOIGHT)
     RETURN
   END FUNCTION DBD_6X1
 
-  REAL(KIND=DP) FUNCTION DBD_3X3(A, B)
+  REAL(KIND=DP) FUNCTION DBD_3X3(A, B) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! DOUBLE DOT OF SECOND ORDER TENSORS STORED AS 3X3 ARRAYS
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(3,3), B(3,3)
-    DBD_3X3 = SUM(A * B)
+    FN_VAL = SUM(A * B)
     RETURN
   END FUNCTION DBD_3X3
 
   ! ************************************************************************* !
 
-  FUNCTION TR_6X1(A)
+  FUNCTION TR_6X1(A, METRIC) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! TRACE OF SECOND ORDER TENSORS STORED AS 6X1 ARRAYS
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: TR_6X1
+    REAL(KIND=DP) :: FN_VAL
     REAL(KIND=DP), INTENT(IN) :: A(6)
-    TR_6X1 = SUM(A(1:3))
+    REAL(KIND=DP), INTENT(IN), OPTIONAL :: METRIC(6)
+    REAL(KIND=DP) :: I(6)
+    IF (PRESENT(METRIC)) THEN
+       I = METRIC
+    ELSE
+       I = I6
+    END IF
+    FN_VAL = DBD_6X1(A, I)
     RETURN
   END FUNCTION TR_6X1
 
-  FUNCTION TR_3X3(A)
+  FUNCTION TR_3X3(A, METRIC) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! TRACE OF SECOND ORDER TENSORS STORED AS 3X3 ARRAYS
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: TR_3X3
+    REAL(KIND=DP) :: FN_VAL
     REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    TR_3X3 = A(1,1) + A(2,2) + A(3,3)
+    REAL(KIND=DP), INTENT(IN), OPTIONAL :: METRIC(3,3)
+    REAL(KIND=DP) :: I(3,3)
+    IF (PRESENT(METRIC)) THEN
+       I = METRIC
+    ELSE
+       I = I3X3
+    END IF
+    FN_VAL = DBD_3X3(A, I)
     RETURN
   END FUNCTION TR_3X3
 
   ! ************************************************************************* !
 
-  FUNCTION ISO_6X1(A, METRIC)
+  FUNCTION ISO_6X1(A, METRIC) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! ISOTROPIC PART OF SECOND ORDER TENSORS STORED AS 6X1 ARRAYS
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: ISO_6X1(6)
+    REAL(KIND=DP) :: FN_VAL(6)
     REAL(KIND=DP), INTENT(IN) :: A(6)
     REAL(KIND=DP), INTENT(IN), OPTIONAL :: METRIC(6)
     REAL(KIND=DP) :: I(6), X(6)
-    REAL(KIND=DP), PARAMETER :: W(6)=(/ONE,ONE,ONE,TWO,TWO,TWO/)
     IF (PRESENT(METRIC)) THEN
        X = INV_6X1(METRIC)
        I = METRIC
@@ -237,15 +330,15 @@ CONTAINS
        X = I6
        I = I6
     END IF
-    ISO_6X1 = SUM(W * A * I) / THREE * X
+    FN_VAL = TR_6X1(A, I) / THREE * X
     RETURN
   END FUNCTION ISO_6X1
 
-  FUNCTION ISO_3X3(A, METRIC)
+  FUNCTION ISO_3X3(A, METRIC) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! ISOTROPIC PART OF SECOND ORDER TENSORS STORED AS 3X3 ARRAYS
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: ISO_3X3(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
     REAL(KIND=DP), INTENT(IN) :: A(3,3)
     REAL(KIND=DP), INTENT(IN), OPTIONAL :: METRIC(3,3)
     REAL(KIND=DP) :: I(3,3), X(3,3)
@@ -256,7 +349,7 @@ CONTAINS
        X = EYE(3)
        I = EYE(3)
     END IF
-    ISO_3X3 = DBD_3X3(A, I) / THREE * X
+    FN_VAL = TR_3X3(A, I) / THREE * X
     RETURN
   END FUNCTION ISO_3X3
 
@@ -294,56 +387,56 @@ CONTAINS
 
   ! ************************************************************************* !
 
-  FUNCTION DEV_6X1(LA, METRIC)
+  FUNCTION DEV_6X1(LA, METRIC) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! DEVIATORIC PART OF SECOND ORDER TENSORS STORED AS 6X1 ARRAYS
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: DEV_6X1(6)
+    REAL(KIND=DP) :: FN_VAL(6)
     REAL(KIND=DP), INTENT(IN) :: LA(6)
     REAL(KIND=DP), INTENT(IN), OPTIONAL :: METRIC(6)
     REAL(KIND=DP) :: M(6)
     M = I6
     IF (PRESENT(METRIC)) M = METRIC
-    DEV_6X1 = LA - ISO_6X1(LA, M)
+    FN_VAL = LA - ISO_6X1(LA, M)
     RETURN
   END FUNCTION DEV_6X1
 
-  FUNCTION DEV_3X3(LM, METRIC)
+  FUNCTION DEV_3X3(LM, METRIC) RESULT(FN_VAL)
     ! DEVIATORIC PART OF SECOND ORDER TENSORS STORED AS 3X3 ARRAYS
-    REAL(KIND=DP) :: DEV_3X3(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
     REAL(KIND=DP), INTENT(IN) :: LM(3,3)
     REAL(KIND=DP), INTENT(IN), OPTIONAL :: METRIC(3,3)
     REAL(KIND=DP) :: M(3,3)
     M = EYE(3)
     IF (PRESENT(METRIC)) M = METRIC
-    DEV_3X3 = LM - ISO_3X3(LM, M)
+    FN_VAL = LM - ISO_3X3(LM, M)
     RETURN
   END FUNCTION DEV_3X3
 
   ! ************************************************************************* !
 
-  FUNCTION ASMAT(A)
+  FUNCTION ASMAT(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! CONVERT TENSOR STORED AS 6x1 TO 3x3
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: ASMAT(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
     REAL(KIND=DP), INTENT(IN) :: A(:)
-    ASMAT = ZERO
-    ASMAT(1,1) = A(1); ASMAT(1,2) = A(4); ASMAT(1,3) = A(5)
-    ASMAT(2,1) = A(4); ASMAT(2,2) = A(2); ASMAT(2,3) = A(6)
-    ASMAT(3,1) = A(5); ASMAT(3,2) = A(6); ASMAT(3,3) = A(3)
+    FN_VAL = ZERO
+    FN_VAL(1,1) = A(1); FN_VAL(1,2) = A(4); FN_VAL(1,3) = A(5)
+    FN_VAL(2,1) = A(4); FN_VAL(2,2) = A(2); FN_VAL(2,3) = A(6)
+    FN_VAL(3,1) = A(5); FN_VAL(3,2) = A(6); FN_VAL(3,3) = A(3)
   END FUNCTION ASMAT
 
-  FUNCTION ASARRAY(A)
+  FUNCTION ASARRAY(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! CONVERT TENSOR STORED AS 3x3 TO 6x1
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: ASARRAY(6)
+    REAL(KIND=DP) :: FN_VAL(6)
     REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    ASARRAY = ZERO
-    ASARRAY(1) = A(1,1); ASARRAY(4) = A(1,2); ASARRAY(5) = A(1,3)
-                         ASARRAY(2) = A(2,2); ASARRAY(6) = A(2,3)
-                                              ASARRAY(3) = A(3,3)
+    FN_VAL = ZERO
+    FN_VAL(1) = A(1,1); FN_VAL(4) = A(1,2); FN_VAL(5) = A(1,3)
+                        FN_VAL(2) = A(2,2); FN_VAL(6) = A(2,3)
+                                            FN_VAL(3) = A(3,3)
   END FUNCTION ASARRAY
 
   FUNCTION SYMSQ(A) RESULT(FN_VAL)
@@ -432,7 +525,7 @@ CONTAINS
 
   ! ************************************************************************* !
 
-  FUNCTION DD66X6(A, X, JOB)
+  FUNCTION DD66X6(A, X, JOB) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! MULTIPLY A FOURTH-ORDER TENSOR A TIMES A SECOND-ORDER TENSOR B (OR VICE
     ! VERSA IF JOB=-1)
@@ -451,7 +544,7 @@ CONTAINS
     ! A:X IF JOB=1
     ! X:A IF JOB=-1
     INTEGER, INTENT(IN), OPTIONAL :: JOB
-    REAL(KIND=DP) :: DD66X6(6)
+    REAL(KIND=DP) :: FN_VAL(6)
     REAL(KIND=DP), INTENT(IN) :: X(6), A(6,6)
     INTEGER :: IJ, IO
     REAL(KIND=DP) :: T(6)
@@ -462,53 +555,53 @@ CONTAINS
     REAL(KIND=DP) :: REALV(1)
     ! ------------------------------------------------------------ DD66X6 --- !
     T = X * W
-    DD66X6 = ZERO
+    FN_VAL = ZERO
     IO = 1
     IF (PRESENT(JOB)) IO = JOB
     SELECT CASE(IO)
     CASE(1)
        ! ...COMPUTE THE MANDEL FORM OF A:X
-       FORALL(IJ=1:6) DD66X6(IJ) = SUM(A(IJ,:) * T(:))
+       FORALL(IJ=1:6) FN_VAL(IJ) = SUM(A(IJ,:) * T(:))
     CASE(-1)
        ! ...COMPUTE THE MANDEL FORM OF X:A
-       FORALL(IJ=1:6) DD66X6(IJ) = SUM(T(:) * A(:, IJ))
+       FORALL(IJ=1:6) FN_VAL(IJ) = SUM(T(:) * A(:, IJ))
     CASE DEFAULT
        MSG = 'UNKNOWN JOB SENT TO DD66X6'
        CALL TENSERR(IERR, MSG, INTV, REALV, CHARV)
     END SELECT
     ! ...CONVERT RESULT TO VOIGT FORM
-    DD66X6(4:6) = DD66X6(4:6) * TOOR2
+    FN_VAL(4:6) = FN_VAL(4:6) * TOOR2
     RETURN
   END FUNCTION DD66X6
 
   ! ************************************************************************* !
 
-  FUNCTION SQRTM_6X1(A)
+  FUNCTION SQRTM_6X1(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! COMPUTES THE MATRIX SQRT
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: SQRTM_6X1(6)
+    REAL(KIND=DP) :: FN_VAL(6)
     REAL(KIND=DP), INTENT(IN) :: A(6)
     REAL(KIND=DP) :: B(3,3),SQRTB(3,3)
     B = ASMAT(A)
     SQRTB = SQRTM_3X3(B)
-    SQRTM_6X1 = ASARRAY(SQRTB)
+    FN_VAL = ASARRAY(SQRTB)
   END FUNCTION SQRTM_6X1
 
-  FUNCTION SQRTM_3X3(A)
+  FUNCTION SQRTM_3X3(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! COMPUTES THE MATRIX SQRT
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: SQRTM_3X3(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
     REAL(KIND=DP), INTENT(IN) :: A(3,3)
     INTEGER, PARAMETER :: N=3, LWORK=3*N-1
     REAL(KIND=DP) :: W(N), WORK(LWORK), V(3,3), L(3,3)
     INTEGER :: INFO
-    SQRTM_3X3 = ZERO
+    FN_VAL = ZERO
     IF (ISDIAG(A)) THEN
-       SQRTM_3X3(1,1) = SQRT(A(1,1))
-       SQRTM_3X3(2,2) = SQRT(A(2,2))
-       SQRTM_3X3(3,3) = SQRT(A(3,3))
+       FN_VAL(1,1) = SQRT(A(1,1))
+       FN_VAL(2,2) = SQRT(A(2,2))
+       FN_VAL(3,3) = SQRT(A(3,3))
        RETURN
     END IF
     ! EIGENVALUES/VECTORS OF A
@@ -518,7 +611,7 @@ CONTAINS
     L(1,1) = SQRT(W(1))
     L(2,2) = SQRT(W(2))
     L(3,3) = SQRT(W(3))
-    SQRTM_3X3 = MATMUL(MATMUL(V, L ), TRANSPOSE(V))
+    FN_VAL = MATMUL(MATMUL(V, L ), TRANSPOSE(V))
     RETURN
   END FUNCTION SQRTM_3X3
 
@@ -536,87 +629,29 @@ CONTAINS
 
   ! ************************************************************************* !
 
-  FUNCTION DIAG(A)
+  FUNCTION DIAG(A) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! CREATE DIAGONAL 3x3 WITH ENTRIES = A
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: DIAG(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
     REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    DIAG = ZERO
-    DIAG(1,1) = A(1,1)
-    DIAG(2,2) = A(2,2)
-    DIAG(3,3) = A(3,3)
+    FN_VAL = ZERO
+    FN_VAL(1,1) = A(1,1)
+    FN_VAL(2,2) = A(2,2)
+    FN_VAL(3,3) = A(3,3)
     RETURN
   END FUNCTION DIAG
 
   ! ************************************************************************* !
 
-  FUNCTION EXPM_6X1(A)
+  SUBROUTINE MAKESYM(A)
     ! ----------------------------------------------------------------------- !
-    ! MATRIX EXPONENTIAL
+    ! MAKE A SYMMETRIC
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: EXPM_6X1(6)
-    REAL(KIND=DP), INTENT(IN) :: A(6)
-    REAL(KIND=DP) :: B(3,3),EXPB(3,3)
-    B = ASMAT(A)
-    EXPB = EXPM_3X3(B)
-    EXPM_6X1 = ASARRAY(EXPB)
-  END FUNCTION EXPM_6X1
-
-  FUNCTION EXPM_3X3(A)
-    ! ----------------------------------------------------------------------- !
-    ! MATRIX EXPONENTIAL
-    ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP) :: EXPM_3X3(3,3)
-    REAL(KIND=DP), INTENT(IN) :: A(3,3)
-    INTEGER, PARAMETER :: M=3, LDH=3, IDEG=6, LWSP=4*M*M+IDEG+1
-    INTEGER, PARAMETER :: N=3, LWORK=3*N-1
-    REAL(KIND=DP) :: T, WSP(LWSP), V(3,3)
-    REAL(KIND=DP) :: W(N), WORK(LWORK), L(3,3)
-    INTEGER :: IPIV(M), IEXPH, NS, IFLAG, INFO
-    CHARACTER*120 :: MSG
-    CHARACTER*8 :: CHARV(1)
-    INTEGER :: INTV(1)
-    REAL(KIND=DP) :: REALV(1)
-    ! ----------------------------------------------------------------------- !
-    EXPM_3X3 = ZERO
-    IF (ALL(ABS(A) <= EPSILON(A))) THEN
-       EXPM_3X3 = EYE(3)
-       RETURN
-    ELSE IF (ISDIAG(A)) THEN
-       EXPM_3X3(1,1) = EXP(A(1,1))
-       EXPM_3X3(2,2) = EXP(A(2,2))
-       EXPM_3X3(3,3) = EXP(A(3,3))
-       RETURN
-    END IF
-
-    ! TRY DGPADM (USUALLY GOOD)
-    T = ONE
-    IFLAG = 0
-    CALL DGPADM(IDEG, M, T, A, LDH, WSP, LWSP, IPIV, IEXPH, NS, IFLAG)
-    IF (IFLAG >= 0) THEN
-       EXPM_3X3 = RESHAPE(WSP(IEXPH:IEXPH+M*M-1), SHAPE(EXPM_3X3))
-       RETURN
-    END IF
-
-    ! PROBLEM WITH DGPADM, USE OTHER METHOD
-    IF (IFLAG == -8) THEN
-       MSG = 'TENSALG.EXPM: BAD SIZES (IN INPUT OF DGPADM)'
-    ELSE IF (IFLAG == -9) THEN
-       MSG = 'TENSALG.EXPM: ERROR - NULL H IN INPUT OF DGPADM.'
-    ELSE IF (IFLAG == -7) THEN
-       MSG = 'TENSALG.EXPM: PROBLEM IN DGESV (WITHIN DGPADM)'
-    END IF
-    CALL TENSERR(IERR, MSG, INTV, REALV, CHARV)
-    V = A
-    CALL DSYEV("V", "L", 3, V, 3, W, WORK, LWORK, INFO)
-    L = ZERO
-    L(1,1) = EXP(W(1))
-    L(2,2) = EXP(W(2))
-    L(3,3) = EXP(W(3))
-    EXPM_3X3 = MATMUL(MATMUL(V, L ), TRANSPOSE(V))
+    REAL(KIND=DP), INTENT(INOUT) :: A(:,:)
+    A = HALF * (A + TRANSPOSE(A))
     RETURN
-  END FUNCTION EXPM_3X3
+  END SUBROUTINE MAKESYM
 
   ! ************************************************************************* !
   ! THE FOLLOWING FUNCTIONS DEFINE THE DOT PRODUCT OF TWO TENSORS
@@ -626,210 +661,173 @@ CONTAINS
   !             [LR]M = LEFT|RIGHT MATRIX
   ! ************************************************************************* !
 
-  FUNCTION D_LA_RM(LA, RM)
+  FUNCTION D_LA_RM(LA, RM) RESULT(FN_VAL)
     REAL(KIND=DP), INTENT(IN) :: LA(6), RM(3,3)
-    REAL(KIND=DP) :: D_LA_RM(3,3)
-    D_LA_RM(1,1) = LA(1)*RM(1,1)+LA(4)*RM(2,1)+LA(5)*RM(3,1)
-    D_LA_RM(1,2) = LA(1)*RM(1,2)+LA(4)*RM(2,2)+LA(5)*RM(3,2)
-    D_LA_RM(1,3) = LA(1)*RM(1,3)+LA(4)*RM(2,3)+LA(5)*RM(3,3)
-    D_LA_RM(2,1) = LA(2)*RM(2,1)+LA(4)*RM(1,1)+LA(6)*RM(3,1)
-    D_LA_RM(2,2) = LA(2)*RM(2,2)+LA(4)*RM(1,2)+LA(6)*RM(3,2)
-    D_LA_RM(2,3) = LA(2)*RM(2,3)+LA(4)*RM(1,3)+LA(6)*RM(3,3)
-    D_LA_RM(3,1) = LA(3)*RM(3,1)+LA(5)*RM(1,1)+LA(6)*RM(2,1)
-    D_LA_RM(3,2) = LA(3)*RM(3,2)+LA(5)*RM(1,2)+LA(6)*RM(2,2)
-    D_LA_RM(3,3) = LA(3)*RM(3,3)+LA(5)*RM(1,3)+LA(6)*RM(2,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
+    FN_VAL(1,1) = LA(1)*RM(1,1)+LA(4)*RM(2,1)+LA(5)*RM(3,1)
+    FN_VAL(1,2) = LA(1)*RM(1,2)+LA(4)*RM(2,2)+LA(5)*RM(3,2)
+    FN_VAL(1,3) = LA(1)*RM(1,3)+LA(4)*RM(2,3)+LA(5)*RM(3,3)
+    FN_VAL(2,1) = LA(2)*RM(2,1)+LA(4)*RM(1,1)+LA(6)*RM(3,1)
+    FN_VAL(2,2) = LA(2)*RM(2,2)+LA(4)*RM(1,2)+LA(6)*RM(3,2)
+    FN_VAL(2,3) = LA(2)*RM(2,3)+LA(4)*RM(1,3)+LA(6)*RM(3,3)
+    FN_VAL(3,1) = LA(3)*RM(3,1)+LA(5)*RM(1,1)+LA(6)*RM(2,1)
+    FN_VAL(3,2) = LA(3)*RM(3,2)+LA(5)*RM(1,2)+LA(6)*RM(2,2)
+    FN_VAL(3,3) = LA(3)*RM(3,3)+LA(5)*RM(1,3)+LA(6)*RM(2,3)
     RETURN
   END FUNCTION D_LA_RM
 
-  FUNCTION D_LM_RA(LM, RA)
+  FUNCTION D_LM_RA(LM, RA) RESULT(FN_VAL)
     REAL(KIND=DP), INTENT(IN) :: LM(3,3), RA(6)
-    REAL(KIND=DP) :: D_LM_RA(3,3)
-    D_LM_RA(1,1) = RA(1)*LM(1,1)+RA(4)*LM(1,2)+RA(5)*LM(1,3)
-    D_LM_RA(1,2) = RA(2)*LM(1,2)+RA(4)*LM(1,1)+RA(6)*LM(1,3)
-    D_LM_RA(1,3) = RA(3)*LM(1,3)+RA(5)*LM(1,1)+RA(6)*LM(1,2)
-    D_LM_RA(2,1) = RA(1)*LM(2,1)+RA(4)*LM(2,2)+RA(5)*LM(2,3)
-    D_LM_RA(2,2) = RA(2)*LM(2,2)+RA(4)*LM(2,1)+RA(6)*LM(2,3)
-    D_LM_RA(2,3) = RA(3)*LM(2,3)+RA(5)*LM(2,1)+RA(6)*LM(2,2)
-    D_LM_RA(3,1) = RA(1)*LM(3,1)+RA(4)*LM(3,2)+RA(5)*LM(3,3)
-    D_LM_RA(3,2) = RA(2)*LM(3,2)+RA(4)*LM(3,1)+RA(6)*LM(3,3)
-    D_LM_RA(3,3) = RA(3)*LM(3,3)+RA(5)*LM(3,1)+RA(6)*LM(3,2)
+    REAL(KIND=DP) :: FN_VAL(3,3)
+    FN_VAL(1,1) = RA(1)*LM(1,1)+RA(4)*LM(1,2)+RA(5)*LM(1,3)
+    FN_VAL(1,2) = RA(2)*LM(1,2)+RA(4)*LM(1,1)+RA(6)*LM(1,3)
+    FN_VAL(1,3) = RA(3)*LM(1,3)+RA(5)*LM(1,1)+RA(6)*LM(1,2)
+    FN_VAL(2,1) = RA(1)*LM(2,1)+RA(4)*LM(2,2)+RA(5)*LM(2,3)
+    FN_VAL(2,2) = RA(2)*LM(2,2)+RA(4)*LM(2,1)+RA(6)*LM(2,3)
+    FN_VAL(2,3) = RA(3)*LM(2,3)+RA(5)*LM(2,1)+RA(6)*LM(2,2)
+    FN_VAL(3,1) = RA(1)*LM(3,1)+RA(4)*LM(3,2)+RA(5)*LM(3,3)
+    FN_VAL(3,2) = RA(2)*LM(3,2)+RA(4)*LM(3,1)+RA(6)*LM(3,3)
+    FN_VAL(3,3) = RA(3)*LM(3,3)+RA(5)*LM(3,1)+RA(6)*LM(3,2)
     RETURN
   END FUNCTION D_LM_RA
 
-  FUNCTION D_LM_RM(LM, RM)
+  FUNCTION D_LM_RM(LM, RM) RESULT(FN_VAL)
     REAL(KIND=DP), INTENT(IN) :: LM(3,3), RM(3,3)
-    REAL(KIND=DP) :: D_LM_RM(3,3)
-    D_LM_RM(1,1) = LM(1,1)*RM(1,1)+LM(1,2)*RM(2,1)+LM(1,3)*RM(3,1)
-    D_LM_RM(1,2) = LM(1,1)*RM(1,2)+LM(1,2)*RM(2,2)+LM(1,3)*RM(3,2)
-    D_LM_RM(1,3) = LM(1,1)*RM(1,3)+LM(1,2)*RM(2,3)+LM(1,3)*RM(3,3)
-    D_LM_RM(2,1) = LM(2,1)*RM(1,1)+LM(2,2)*RM(2,1)+LM(2,3)*RM(3,1)
-    D_LM_RM(2,2) = LM(2,1)*RM(1,2)+LM(2,2)*RM(2,2)+LM(2,3)*RM(3,2)
-    D_LM_RM(2,3) = LM(2,1)*RM(1,3)+LM(2,2)*RM(2,3)+LM(2,3)*RM(3,3)
-    D_LM_RM(3,1) = LM(3,1)*RM(1,1)+LM(3,2)*RM(2,1)+LM(3,3)*RM(3,1)
-    D_LM_RM(3,2) = LM(3,1)*RM(1,2)+LM(3,2)*RM(2,2)+LM(3,3)*RM(3,2)
-    D_LM_RM(3,3) = LM(3,1)*RM(1,3)+LM(3,2)*RM(2,3)+LM(3,3)*RM(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
+    FN_VAL(1,1) = LM(1,1)*RM(1,1)+LM(1,2)*RM(2,1)+LM(1,3)*RM(3,1)
+    FN_VAL(1,2) = LM(1,1)*RM(1,2)+LM(1,2)*RM(2,2)+LM(1,3)*RM(3,2)
+    FN_VAL(1,3) = LM(1,1)*RM(1,3)+LM(1,2)*RM(2,3)+LM(1,3)*RM(3,3)
+    FN_VAL(2,1) = LM(2,1)*RM(1,1)+LM(2,2)*RM(2,1)+LM(2,3)*RM(3,1)
+    FN_VAL(2,2) = LM(2,1)*RM(1,2)+LM(2,2)*RM(2,2)+LM(2,3)*RM(3,2)
+    FN_VAL(2,3) = LM(2,1)*RM(1,3)+LM(2,2)*RM(2,3)+LM(2,3)*RM(3,3)
+    FN_VAL(3,1) = LM(3,1)*RM(1,1)+LM(3,2)*RM(2,1)+LM(3,3)*RM(3,1)
+    FN_VAL(3,2) = LM(3,1)*RM(1,2)+LM(3,2)*RM(2,2)+LM(3,3)*RM(3,2)
+    FN_VAL(3,3) = LM(3,1)*RM(1,3)+LM(3,2)*RM(2,3)+LM(3,3)*RM(3,3)
     RETURN
   END FUNCTION D_LM_RM
 
-  FUNCTION D_LA_RA(LA, RA)
+  FUNCTION D_LA_RA(LA, RA) RESULT(FN_VAL)
     REAL(KIND=DP), INTENT(IN) :: LA(6), RA(6)
-    REAL(KIND=DP) :: D_LA_RA(6)
-    D_LA_RA(1) = LA(1)*RA(1)+LA(4)*RA(4)+LA(5)*RA(5)
-    D_LA_RA(2) = LA(2)*RA(2)+LA(4)*RA(4)+LA(6)*RA(6)
-    D_LA_RA(3) = LA(3)*RA(3)+LA(5)*RA(5)+LA(6)*RA(6)
-    D_LA_RA(4) = LA(1)*RA(4)+LA(4)*RA(2)+LA(5)*RA(6)
-    D_LA_RA(5) = LA(1)*RA(5)+LA(4)*RA(6)+LA(5)*RA(3)
-    D_LA_RA(6) = LA(2)*RA(6)+LA(4)*RA(5)+LA(6)*RA(3)
+    REAL(KIND=DP) :: FN_VAL(6)
+    FN_VAL(1) = LA(1)*RA(1)+LA(4)*RA(4)+LA(5)*RA(5)
+    FN_VAL(2) = LA(2)*RA(2)+LA(4)*RA(4)+LA(6)*RA(6)
+    FN_VAL(3) = LA(3)*RA(3)+LA(5)*RA(5)+LA(6)*RA(6)
+    FN_VAL(4) = LA(1)*RA(4)+LA(4)*RA(2)+LA(5)*RA(6)
+    FN_VAL(5) = LA(1)*RA(5)+LA(4)*RA(6)+LA(5)*RA(3)
+    FN_VAL(6) = LA(2)*RA(6)+LA(4)*RA(5)+LA(6)*RA(3)
   END FUNCTION D_LA_RA
 
   ! ************************************************************************* !
 
-  FUNCTION DYAD(A, B)
+  FUNCTION DYAD(A, B) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! DYADIC PRODUCT OF A AND B
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(:), B(:)
-    REAL(KIND=DP) :: DYAD(SIZE(A),SIZE(A))
+    REAL(KIND=DP) :: FN_VAL(SIZE(A),SIZE(A))
     INTEGER :: I, J
-    FORALL(I=1:SIZE(A), J=1:SIZE(A)) DYAD(I,J) = A(I) * B(J)
+    FORALL(I=1:SIZE(A), J=1:SIZE(A)) FN_VAL(I,J) = A(I) * B(J)
     RETURN
   END FUNCTION DYAD
 
   ! ************************************************************************* !
 
-  FUNCTION PUSH_6X6(F, RM)
+  FUNCTION PUSH_6X6(F, RM) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! PUSH TRANSFORMATION OF RM
     ! PUSH: RM' = 1/J F.F.RM.FT.FT
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: F(3,3), RM(6,6)
-    REAL(KIND=DP) :: PUSH_6X6(6,6)
+    REAL(KIND=DP) :: FN_VAL(6,6)
     REAL(KIND=DP) :: JAC, Q(6,6)
     Q = SYMLEAFF(F)
-    PUSH_6X6 = MATMUL(MATMUL(Q, RM), TRANSPOSE(Q))
+    JAC = DET_3X3(F)
+    FN_VAL = MATMUL(MATMUL(Q, RM), TRANSPOSE(Q)) / JAC
     RETURN
   END FUNCTION PUSH_6X6
 
-  ! ************************************************************************* !
-
-  FUNCTION PUSH_6X1(F, RA, DNOM) RESULT(FN_VAL)
+  FUNCTION PUSH_6X1(F, RA) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! PUSH TRANSFORMATION OF RA
     ! PUSH: RA' = 1/DNOM F.RA.FT
     ! ----------------------------------------------------------------------- !
-    REAL(KIND=DP), INTENT(IN) :: F(3,3), RA(6), DNOM
+    REAL(KIND=DP), INTENT(IN) :: F(3,3), RA(6)
     REAL(KIND=DP) :: FN_VAL(6)
-    FN_VAL(1) = (F(1,1)*(F(1,1)*RA(1) + F(1,2)*RA(4) + F(1,3)*RA(5)) + &
-                 F(1,2)*(F(1,1)*RA(4) + F(1,2)*RA(2) + F(1,3)*RA(6)) + &
-                 F(1,3)*(F(1,1)*RA(5) + F(1,2)*RA(6) + F(1,3)*RA(3))) / DNOM
-    FN_VAL(2) = (F(2,1)*(F(2,1)*RA(1) + F(2,2)*RA(4) + F(2,3)*RA(5)) + &
-                 F(2,2)*(F(2,1)*RA(4) + F(2,2)*RA(2) + F(2,3)*RA(6)) + &
-                 F(2,3)*(F(2,1)*RA(5) + F(2,2)*RA(6) + F(2,3)*RA(3))) / DNOM
-    FN_VAL(3) = (F(3,1)*(F(3,1)*RA(1) + F(3,2)*RA(4) + F(3,3)*RA(5)) + &
-                 F(3,2)*(F(3,1)*RA(4) + F(3,2)*RA(2) + F(3,3)*RA(6)) + &
-                 F(3,3)*(F(3,1)*RA(5) + F(3,2)*RA(6) + F(3,3)*RA(3))) / DNOM
-    FN_VAL(4) = (F(2,1)*(F(1,1)*RA(1) + F(1,2)*RA(4) + F(1,3)*RA(5)) + &
-                 F(2,2)*(F(1,1)*RA(4) + F(1,2)*RA(2) + F(1,3)*RA(6)) + &
-                 F(2,3)*(F(1,1)*RA(5) + F(1,2)*RA(6) + F(1,3)*RA(3))) / DNOM
-    FN_VAL(5) = (F(3,1)*(F(1,1)*RA(1) + F(1,2)*RA(4) + F(1,3)*RA(5)) + &
-                 F(3,2)*(F(1,1)*RA(4) + F(1,2)*RA(2) + F(1,3)*RA(6)) + &
-                 F(3,3)*(F(1,1)*RA(5) + F(1,2)*RA(6) + F(1,3)*RA(3))) / DNOM
-    FN_VAL(6) = (F(3,1)*(F(2,1)*RA(1) + F(2,2)*RA(4) + F(2,3)*RA(5)) + &
-                 F(3,2)*(F(2,1)*RA(4) + F(2,2)*RA(2) + F(2,3)*RA(6)) + &
-                 F(3,3)*(F(2,1)*RA(5) + F(2,2)*RA(6) + F(2,3)*RA(3))) / DNOM
+    REAL(KIND=DP) :: Q(6,6), JAC
+    Q = SYMLEAFF(F)
+    JAC = DET_3X3(F)
+    FN_VAL = MATMUL(Q, RA) / JAC
     RETURN
   END FUNCTION PUSH_6X1
 
-  FUNCTION PUSH_6X1_STD(F, RA) RESULT(FN_VAL)
+  FUNCTION PUSH_6X1_EXPLICIT(F, RA) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! PUSH TRANSFORMATION OF RA
-    ! PUSH: RA' = 1/J F.RA.FT
+    ! PUSH: RA' = 1/JAC F.RA.FT
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: F(3,3), RA(6)
     REAL(KIND=DP) :: FN_VAL(6)
     REAL(KIND=DP) :: JAC
     JAC = DET_3X3(F)
-    FN_VAL = PUSH_6X1(F, RA, JAC)
+    FN_VAL(1) = (F(1,1)*(F(1,1)*RA(1) + F(1,2)*RA(4) + F(1,3)*RA(5)) + &
+                 F(1,2)*(F(1,1)*RA(4) + F(1,2)*RA(2) + F(1,3)*RA(6)) + &
+                 F(1,3)*(F(1,1)*RA(5) + F(1,2)*RA(6) + F(1,3)*RA(3))) / JAC
+    FN_VAL(2) = (F(2,1)*(F(2,1)*RA(1) + F(2,2)*RA(4) + F(2,3)*RA(5)) + &
+                 F(2,2)*(F(2,1)*RA(4) + F(2,2)*RA(2) + F(2,3)*RA(6)) + &
+                 F(2,3)*(F(2,1)*RA(5) + F(2,2)*RA(6) + F(2,3)*RA(3))) / JAC
+    FN_VAL(3) = (F(3,1)*(F(3,1)*RA(1) + F(3,2)*RA(4) + F(3,3)*RA(5)) + &
+                 F(3,2)*(F(3,1)*RA(4) + F(3,2)*RA(2) + F(3,3)*RA(6)) + &
+                 F(3,3)*(F(3,1)*RA(5) + F(3,2)*RA(6) + F(3,3)*RA(3))) / JAC
+    FN_VAL(4) = (F(2,1)*(F(1,1)*RA(1) + F(1,2)*RA(4) + F(1,3)*RA(5)) + &
+                 F(2,2)*(F(1,1)*RA(4) + F(1,2)*RA(2) + F(1,3)*RA(6)) + &
+                 F(2,3)*(F(1,1)*RA(5) + F(1,2)*RA(6) + F(1,3)*RA(3))) / JAC
+    FN_VAL(5) = (F(3,1)*(F(1,1)*RA(1) + F(1,2)*RA(4) + F(1,3)*RA(5)) + &
+                 F(3,2)*(F(1,1)*RA(4) + F(1,2)*RA(2) + F(1,3)*RA(6)) + &
+                 F(3,3)*(F(1,1)*RA(5) + F(1,2)*RA(6) + F(1,3)*RA(3))) / JAC
+    FN_VAL(6) = (F(3,1)*(F(2,1)*RA(1) + F(2,2)*RA(4) + F(2,3)*RA(5)) + &
+                 F(3,2)*(F(2,1)*RA(4) + F(2,2)*RA(2) + F(2,3)*RA(6)) + &
+                 F(3,3)*(F(2,1)*RA(5) + F(2,2)*RA(6) + F(2,3)*RA(3))) / JAC
     RETURN
-  END FUNCTION PUSH_6X1_STD
+  END FUNCTION PUSH_6X1_EXPLICIT
 
-  FUNCTION PUSH_6X1_MODE(F, RA, MODE) RESULT(FN_VAL)
-    ! ----------------------------------------------------------------------- !
-    ! PUSH TRANSFORMATION OF RA
-    ! PUSH: RA' = 1/J F.RA.FT
-    ! ----------------------------------------------------------------------- !
-    INTEGER, INTENT(IN) :: MODE
-    REAL(KIND=DP), INTENT(IN) :: F(3,3), RA(6)
-    REAL(KIND=DP) :: FN_VAL(6)
-    REAL(KIND=DP) :: DNOM
-    SELECT CASE(MODE)
-    CASE(1)
-       DNOM = ONE
-    CASE DEFAULT
-       DNOM = DET_3X3(F)
-    END SELECT
-    FN_VAL = PUSH_6X1(F, RA, DNOM)
-    RETURN
-  END FUNCTION PUSH_6X1_MODE
-
-  FUNCTION PUSH_3X3(F, RM3)
+  FUNCTION PUSH_3X3(F, RM3) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! PUSH TRANSFORMATION OF RM3
     ! PUSH: RM3' = 1/J F.RM3.FT
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: F(3,3), RM3(3,3)
-    REAL(KIND=DP) :: PUSH_3X3(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
     REAL(KIND=DP) :: JAC
     JAC = DET_3X3(F)
-    PUSH_3X3 = MATMUL(MATMUL(F, RM3), TRANSPOSE(F)) / JAC
+    FN_VAL = MATMUL(MATMUL(F, RM3), TRANSPOSE(F)) / JAC
     RETURN
   END FUNCTION PUSH_3X3
 
   ! ************************************************************************* !
 
-  FUNCTION PULL_6X1_STD(F, RA) RESULT(FN_VAL)
+  FUNCTION PULL_6X1(F, RA) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! PULL TRANSFORMATION OF RA
     ! PULL: RA' = J FI.RA.FIT
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: F(3,3), RA(6)
     REAL(KIND=DP) :: FN_VAL(6)
-    REAL(KIND=DP) :: FI(3,3), DNOM
+    REAL(KIND=DP) :: FI(3,3)
     FI = INV_3X3(F)
-    DNOM = DET_3X3(FI)
-    FN_VAL = PUSH_6X1(FI, RA, DNOM)
+    FN_VAL = PUSH_6X1(FI, RA)
     RETURN
-  END FUNCTION PULL_6X1_STD
+  END FUNCTION PULL_6X1
 
-  FUNCTION PULL_6X1_MODE(F, RA, MODE) RESULT(FN_VAL)
-    ! ----------------------------------------------------------------------- !
-    ! PULL TRANSFORMATION OF RA
-    ! ----------------------------------------------------------------------- !
-    INTEGER, INTENT(IN) :: MODE
-    REAL(KIND=DP), INTENT(IN) :: F(3,3), RA(6)
-    REAL(KIND=DP) :: FN_VAL(6)
-    REAL(KIND=DP) :: FI(3,3), DNOM
-    FI = INV(F)
-    SELECT CASE(MODE)
-    CASE(1)
-       DNOM = ONE
-    CASE DEFAULT
-       DNOM = DET_3X3(FI)
-    END SELECT
-    FN_VAL = PUSH_6X1(FI, RA, DNOM)
-    RETURN
-  END FUNCTION PULL_6X1_MODE
-
-  FUNCTION PULL_3X3(F, RM)
+  FUNCTION PULL_3X3(F, RM) RESULT(FN_VAL)
     ! ----------------------------------------------------------------------- !
     ! PULL TRANSFORMATION OF RM
     ! PULL: RM' = J FI.RM.FIT
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: F(3,3), RM(3,3)
-    REAL(KIND=DP) :: PULL_3X3(3,3)
+    REAL(KIND=DP) :: FN_VAL(3,3)
     REAL(KIND=DP) :: FI(3,3)
     FI = INV_3X3(F)
-    PULL_3X3 = PUSH_3X3(FI, RM)
+    FN_VAL = PUSH_3X3(FI, RM)
     RETURN
   END FUNCTION PULL_3X3
 
@@ -850,73 +848,131 @@ CONTAINS
   END SUBROUTINE INVARS_6X1
 
   ! ************************************************************************* !
-
-  FUNCTION SYMSHUFF(A) RESULT(FN_VAL)
+  SUBROUTINE SYMMETRIC_SHUFFLE(A, B, L)
     ! ----------------------------------------------------------------------- !
     ! SYMMETRIC SHUFFLE
     !
     ! NOTES
     ! -----
-    !                    Lijkl = .5 (Aik Ajl + Ail Ajk)        (*)
-    ! ARISES IN DERIVATIVE OF INVERSE:
-    !
-    !                   dAij^(-1)
-    !                   --------- = Aik^(-1) Alj^(-1)          (**)
-    !                     dAkl
-    ! When A is symmetric, (**) becomes (*)
+    !                    Lijkl = .5 (Aik Bjl + Ail Bjk)
+    ! ----------------------------------------------------------------------- !
+    REAL(KIND=DP), INTENT(IN) :: A(6), B(6)
+    REAL(KIND=DP), INTENT(OUT) :: L(6,6)
+    ! ----------------------------------------------------------------------- !
+    L(1,1) = A(1)*B(1)
+    L(1,2) = A(4)*B(4)
+    L(1,3) = A(5)*B(5)
+    L(1,4) = (A(1)*B(4) + A(4)*B(1)) / TWO
+    L(1,5) = (A(1)*B(5) + A(5)*B(1)) / TWO
+    L(1,6) = (A(4)*B(5) + A(5)*B(4)) / TWO
+    L(2,1) = A(4)*B(4)
+    L(2,2) = A(2)*B(2)
+    L(2,3) = A(6)*B(6)
+    L(2,4) = (A(2)*B(4) + A(4)*B(2)) / TWO
+    L(2,5) = (A(4)*B(6) + A(6)*B(4)) / TWO
+    L(2,6) = (A(2)*B(6) + A(6)*B(2)) / TWO
+    L(3,1) = A(5)*B(5)
+    L(3,2) = A(6)*B(6)
+    L(3,3) = A(3)*B(3)
+    L(3,4) = (A(5)*B(6) + A(6)*B(5)) / TWO
+    L(3,5) = (A(3)*B(5) + A(5)*B(3)) / TWO
+    L(3,6) = (A(3)*B(6) + A(6)*B(3)) / TWO
+    L(4,1) = A(1)*B(4)
+    L(4,2) = A(4)*B(2)
+    L(4,3) = A(5)*B(6)
+    L(4,4) = (A(1)*B(2) + A(4)*B(4)) / TWO
+    L(4,5) = (A(1)*B(6) + A(5)*B(4)) / TWO
+    L(4,6) = (A(4)*B(6) + A(5)*B(2)) / TWO
+    L(5,1) = A(1)*B(5)
+    L(5,2) = A(4)*B(6)
+    L(5,3) = A(5)*B(3)
+    L(5,4) = (A(1)*B(6) + A(4)*B(5)) / TWO
+    L(5,5) = (A(1)*B(3) + A(5)*B(5)) / TWO
+    L(5,6) = (A(4)*B(3) + A(5)*B(6)) / TWO
+    L(6,1) = A(4)*B(5)
+    L(6,2) = A(2)*B(6)
+    L(6,3) = A(6)*B(3)
+    L(6,4) = (A(2)*B(5) + A(4)*B(6)) / TWO
+    L(6,5) = (A(4)*B(3) + A(6)*B(5)) / TWO
+    L(6,6) = (A(2)*B(3) + A(6)*B(6)) / TWO
+    RETURN
+  END SUBROUTINE SYMMETRIC_SHUFFLE
+
+  ! ************************************************************************* !
+
+  FUNCTION SYMSHUFF(A, B) RESULT(FN_VAL)
+    ! ----------------------------------------------------------------------- !
+    ! INTERFACE TO SYMMETRIC SHUFFLE SUBROUTINE
     ! ----------------------------------------------------------------------- !
     REAL(KIND=DP), INTENT(IN) :: A(6)
+    REAL(KIND=DP), INTENT(IN), OPTIONAL :: B(6)
     REAL(KIND=DP) :: FN_VAL(6,6)
-    FN_VAL(1,1) = A(1) ** 2
-    FN_VAL(1,2) = A(4) ** 2
-    FN_VAL(1,3) = A(5) ** 2
-    FN_VAL(1,4) = A(1) * A(4)
-    FN_VAL(1,5) = A(1) * A(5)
-    FN_VAL(1,6) = A(4) * A(5)
-    FN_VAL(2,1) = A(4) ** 2
-    FN_VAL(2,2) = A(2) ** 2
-    FN_VAL(2,3) = A(6) ** 2
-    FN_VAL(2,4) = A(2) * A(4)
-    FN_VAL(2,5) = A(4) * A(6)
-    FN_VAL(2,6) = A(2) * A(6)
-    FN_VAL(3,1) = A(5) ** 2
-    FN_VAL(3,2) = A(6) ** 2
-    FN_VAL(3,3) = A(3) ** 2
-    FN_VAL(3,4) = A(5) * A(6)
-    FN_VAL(3,5) = A(3) * A(5)
-    FN_VAL(3,6) = A(3) * A(6)
-    FN_VAL(4,1) = A(1) * A(4)
-    FN_VAL(4,2) = A(2) * A(4)
-    FN_VAL(4,3) = A(5) * A(6)
-    FN_VAL(4,4) = (A(1) * A(2) + A(4) ** 2) / TWO
-    FN_VAL(4,5) = (A(1) * A(6) + A(4) * A(5)) / TWO
-    FN_VAL(4,6) = (A(2) * A(5) + A(4) * A(6)) / TWO
-    FN_VAL(5,1) = A(1) * A(5)
-    FN_VAL(5,2) = A(4) * A(6)
-    FN_VAL(5,3) = A(3) * A(5)
-    FN_VAL(5,4) = (A(1) * A(6) + A(4) * A(5)) / TWO
-    FN_VAL(5,5) = (A(1) * A(3) + A(5) ** 2) / TWO
-    FN_VAL(5,6) = (A(3) * A(4) + A(5) * A(6)) / TWO
-    FN_VAL(6,1) = A(4) * A(5)
-    FN_VAL(6,2) = A(2) * A(6)
-    FN_VAL(6,3) = A(3) * A(6)
-    FN_VAL(6,4) = (A(2) * A(5) + A(4) * A(6)) / TWO
-    FN_VAL(6,5) = (A(3) * A(4) + A(5) * A(6)) / TWO
-    FN_VAL(6,6) = (A(2) * A(3) + A(6) ** 2) / TWO
+    IF (PRESENT(B)) THEN
+       CALL SYMMETRIC_SHUFFLE(A, B, FN_VAL)
+    ELSE
+       CALL SYMMETRIC_SHUFFLE(A, A, FN_VAL)
+    END IF
   END FUNCTION SYMSHUFF
 
   ! ************************************************************************* !
 
-  SUBROUTINE FLOORIT(A, T)
+ FUNCTION SHUFFLE(A) RESULT(FN_VAL)
+    ! ----------------------------------------------------------------------- !
+    ! SHUFFLE : Lijkl = Aik Ajl
+    ! ----------------------------------------------------------------------- !
+    REAL(KIND=DP), INTENT(IN) :: A(6)
+    REAL(KIND=DP) :: FN_VAL(6,6)
+    FN_VAL(1,1) = A(1)**2
+    FN_VAL(1,2) = A(4)**2
+    FN_VAL(1,3) = A(5)**2
+    FN_VAL(1,4) = A(1)*A(4)
+    FN_VAL(1,5) = A(1)*A(5)
+    FN_VAL(1,6) = A(4)*A(5)
+    FN_VAL(2,1) = A(4)**2
+    FN_VAL(2,2) = A(2)**2
+    FN_VAL(2,3) = A(6)**2
+    FN_VAL(2,4) = A(2)*A(4)
+    FN_VAL(2,5) = A(4)*A(6)
+    FN_VAL(2,6) = A(2)*A(6)
+    FN_VAL(3,1) = A(5)**2
+    FN_VAL(3,2) = A(6)**2
+    FN_VAL(3,3) = A(3)**2
+    FN_VAL(3,4) = A(5)*A(6)
+    FN_VAL(3,5) = A(3)*A(5)
+    FN_VAL(3,6) = A(3)*A(6)
+    FN_VAL(4,1) = A(1)*A(4)
+    FN_VAL(4,2) = A(2)*A(4)
+    FN_VAL(4,3) = A(5)*A(6)
+    FN_VAL(4,4) = A(1)*A(2)
+    FN_VAL(4,5) = A(1)*A(6)
+    FN_VAL(4,6) = A(4)*A(6)
+    FN_VAL(5,1) = A(1)*A(5)
+    FN_VAL(5,2) = A(4)*A(6)
+    FN_VAL(5,3) = A(3)*A(5)
+    FN_VAL(5,4) = A(1)*A(6)
+    FN_VAL(5,5) = A(1)*A(3)
+    FN_VAL(5,6) = A(3)*A(4)
+    FN_VAL(6,1) = A(4)*A(5)
+    FN_VAL(6,2) = A(2)*A(6)
+    FN_VAL(6,3) = A(3)*A(6)
+    FN_VAL(6,4) = A(4)*A(6)
+    FN_VAL(6,5) = A(3)*A(4)
+    FN_VAL(6,6) = A(2)*A(3)
+    RETURN
+  END FUNCTION SHUFFLE
+
+  ! ************************************************************************* !
+
+  SUBROUTINE RELFLOOR(A, T)
     REAL(KIND=DP), INTENT(INOUT) :: A(:,:)
     REAL(KIND=DP), INTENT(IN), OPTIONAL :: T
     REAL(KIND=DP) :: TOL
     TOL = EM12
     IF (PRESENT(T)) TOL = T
-    WHERE (A / MAXVAL(ABS(A)) < TOL)
+    WHERE (ABS(A) / MAXVAL(ABS(A)) < TOL)
        A = ZERO
     END WHERE
-  END SUBROUTINE FLOORIT
+  END SUBROUTINE RELFLOOR
 
   ! ************************************************************************* !
 
