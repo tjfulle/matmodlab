@@ -3,6 +3,7 @@
 \RequirePackage{bbm,bm}
 \RequirePackage{ifthen}
 \RequirePackage{upgreek}
+\RequirePackage{accents}
 \RequirePackage{stmaryrd}
 \RequirePackage{color}
 \RequirePackage{mathtools}
@@ -17,6 +18,7 @@
 \def\textsub#1{_{\SSSCRSIZE\mathrm{#1}}}
 \def\mathsup#1{^{\SSSCRSIZE{#1}}}
 \def\mathsub#1{_{\SSSCRSIZE{#1}}}
+\def\triover#1{\accentset{\nabla}{#1}}
 
 % --------------------------------------------------------------------------- %
 % -------------------------- M A T H  M A C R O S --------------------------- %
@@ -45,6 +47,9 @@
 \newcommand{\DBar}{\mathchar'26\mkern-12mu {\rm d}}
 
 % -- derivatives
+\newcommand{\LieDer}[2][]{\ifthenelse{\equal{#1}{}}{%
+    \mathscr{L}_{\varphi}\left[#2\right]}{%
+    \mathscr{L}_{#1}\left[#2\right]}}
 \newcommand{\MatDer}[1][\@empty]{% material derivative
   \ifx\@empty#1 \frac{\mathrm{D}}{\mathrm{D}t} %
   \else \frac{\mathrm{D} #1}{\mathrm{D}t} \fi}
@@ -264,6 +269,7 @@
 \newcommand{\BackStressSym}{\alpha}
 % --------------------------------------------------------------------------- c
 \newcommand{\CauchyStressSym}{\sigma}
+\newcommand{\KirchhoffStressSym}{\tau}
 \newcommand{\CauchyDefSym}{\textbf{C}}
 \newcommand{\ChargeSym}{Q}
 \newcommand{\ComplianceSym}{S}
@@ -290,7 +296,7 @@
 \newcommand{\ForceSym}{f}
 % --------------------------------------------------------------------------- g
 \newcommand{\GibbsFreeEnergySym}{g}
-\newcommand{\GreenStrainSym}{\Gamma}
+\newcommand{\GreenStrainSym}{E}
 % --------------------------------------------------------------------------- h
 \newcommand{\HeatFluxSym}{q}
 % --------------------------------------------------------------------------- i
@@ -305,6 +311,8 @@
 \newcommand{\MagFieldSym}{B}
 \newcommand{\MagnetizationDensitySym}{M}
 \newcommand{\MechPolarizationSym}{\pi}
+\newcommand{\Mapping}[1][]{\ifthenelse{\equal{#1}{}}{J^{-1}\varphi}{J^{-1}\varphi\left(#1\right)}}
+\newcommand{\InvMapping}[1][]{\ifthenelse{\equal{#1}{}}{J\varphi^{-1}}{J\varphi^{-1}\left(#1\right)}}
 % --------------------------------------------------------------------------- n
 % --------------------------------------------------------------------------- o
 % --------------------------------------------------------------------------- p
@@ -343,6 +351,7 @@
 % --------------------------------------------------------------------------- s
 \newcommand{\secsym}{\hat}
 \newcommand{\SymVelGradSym}{d}
+\newcommand{\SkewVelGradSym}{w}
 \newcommand{\ShiftedStressSym}{\xi}
 \newcommand{\SODielectricComplianceSym}{H}
 \newcommand{\SpecEnergySym}{e}
@@ -351,6 +360,7 @@
 \newcommand{\SpontStrainSym}{\GreenStrainSym}
 \newcommand{\StiffnessSym}{C}
 \newcommand{\MatStiffSym}{L}
+\newcommand{\JaumannStiffSym}{D}
 \newcommand{\StrainSym}{\varepsilon}
 \newcommand{\StressSym}{\sigma}
 \newcommand{\SusceptibilitySym}{\chi}
@@ -450,6 +460,21 @@
   \ifthenelse{\equal{#1}{}}{%
     \Tensor{\CauchyStressSym}{}{}}{%
     \CauchyStressSym\mathsub{#1}}}
+
+% -- Cauchy stress
+\newcommand{\KirchhoffStress}[1][]{%
+  \ifthenelse{\equal{#1}{}}{%
+    \Tensor{\KirchhoffStressSym}{}{}}{%
+    \KirchhoffStressSym\mathsub{#1}}}
+\newcommand{\jKirchhoffStress}[1][]{\ifthenelse{\equal{#1}{}}{%
+    \Tensor[\triover]{\KirchhoffStressSym}{}{}}{%
+    \triover{\KirchhoffStressSym}\mathsub{#1}}}
+\newcommand{\dKirchhoffStress}[1][]{\ifthenelse{\equal{#1}{}}{%
+    \Tensor[\inctyp]{\KirchhoffStressSym}{}{}}{%
+    \inctyp{\KirchhoffStressSym}\mathsub{#1}}}
+\newcommand{\rKirchhoffStress}[1][]{\ifthenelse{\equal{#1}{}}{%
+    \Tensor[\mathring]{\KirchhoffStressSym}{}{}}{%
+    \mathring{\KirchhoffStressSym}\mathsub{#1}}}
 
 % -- 2nd Piola-Kirchhoff stress
 \newcommand{\PKTwo}[1][]{%
@@ -571,6 +596,9 @@
   \ifthenelse{\equal{#1}{}}{%
     \Tensor{\DefGradSym}{#1}{}}{%
     \DefGradSym\mathsub{#1}}}
+\newcommand{\dDefGrad}[1][]{\ifthenelse{\equal{#1}{}}{%
+    \Tensor[\inctyp]{\DefGradSym}{}{}}{%
+    \inctyp{\DefGradSym}\mathsub{#1}}}
 
 % -- symmetric part of veocity gradient -> rate of deformation
 \newcommand{\RateOfDef}[1][]{\SymVelGrad[#1]}
@@ -578,6 +606,10 @@
   \ifthenelse{\equal{#1}{}}{%
     \Tensor{\SymVelGradSym}{}{}}{%
     \SymVelGradSym\mathsub{#1}}}
+\newcommand{\SkewVelGrad}[1][]{%
+  \ifthenelse{\equal{#1}{}}{%
+    \Tensor{\SkewVelGradSym}{}{}}{%
+    \SkewVelGradSym\mathsub{#1}}}
 
 % -- veocity gradient
 \newcommand{\VelGrad}[1][]{%
@@ -620,6 +652,10 @@
   \ifthenelse{\equal{#1}{}}{%
     \Tensor{\mathbb{\MatStiffSym}}{}{}}{%
     \MatStiffSym\mathsub{#1}}}
+\newcommand{\JaumannStiff}[1][]{%
+  \ifthenelse{\equal{#1}{}}{%
+    \Tensor{\mathbb{\JaumannStiffSym}}{}{}}{%
+    \JaumannStiffSym\mathsub{#1}}}
 
 % -- porosity
 \newcommand{\Porosity}[1][]{%
@@ -873,6 +909,12 @@
 \newcommand{\dCauchyStress}[1][]{\ifthenelse{\equal{#1}{}}{%
     \Tensor[\inctyp]{\CauchyStressSym}{}{}}{%
     \inctyp{\CauchyStressSym}\mathsub{#1}}}
+\newcommand{\rCauchyStress}[1][]{\ifthenelse{\equal{#1}{}}{%
+    \Tensor[\mathring]{\CauchyStressSym}{}{}}{%
+    \mathring{\CauchyStressSym}\mathsub{#1}}}
+\newcommand{\jCauchyStress}[1][]{\ifthenelse{\equal{#1}{}}{%
+    \Tensor[\triover]{\CauchyStressSym}{}{}}{%
+    \triover{\CauchyStressSym}\mathsub{#1}}}
 \newcommand{\dChargeDensity}{\inctyp{\ChargeDensitySym}}
 \newcommand{\dDensity}[1][]{\ifthenelse{\equal{#1}{}}{%
     \inctyp{\DensitySym}}{%
@@ -999,6 +1041,7 @@
 \newcommand{\ISV}[1][k]{\Tensor{\eta}{}{#1}}
 % --------------------------------------------------------------------------- j
 \newcommand{\Jacobian}[1][]{\ifthenelse{\equal{#1}{}}{J}{J\mathsub{#1}}}
+\newcommand{\dJacobian}[1][]{\ifthenelse{\equal{#1}{}}{\dot{J}}{\dot{J}\mathsub{#1}}}
 % --------------------------------------------------------------------------- k
 \newcommand{\KronDelta}[1][ij]{\delta\mathsub{#1}}
 \newcommand{\Ks}[1]{\secsym{\BMod}_{\scriptscriptstyle #1}}

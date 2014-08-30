@@ -8,6 +8,7 @@
 \usepackage{url}
 \usepackage{enumitem}
 \usepackage{multirow}
+\usepackage{accents}
 \usepackage{fancyvrb}
 \usepackage{xcolor}
 \usepackage{adjustbox}
@@ -2244,6 +2245,285 @@ Elastic stiffness in the material frame is given by
             &= 4\left(\PDer{\AA}{\CauchyDef}\DotProd\BB +
                       \AA\DotProd\PDer{\BB}{\CauchyDef}\right)
 \end{align}
+%
+where
+%
+\begin{equation}
+  \PDer{\AA}{\CauchyDef} = \Trans{\HH} \DotProd \BB, \quad
+  \HH = \begin{bmatrix}
+    \SPDer{W}{\IBOne}{\IBOne} &
+    \SPDer{W}{\IBOne}{\IBTwo} &
+    \SPDer{W}{\IBOne}{\Jacobian} \\
+    \SPDer{W}{\IBTwo}{\IBOne} &
+    \SPDer{W}{\IBTwo}{\IBTwo} &
+    \SPDer{W}{\IBTwo}{\Jacobian} \\
+    \SPDer{W}{\Jacobian}{\IBOne} &
+    \SPDer{W}{\Jacobian}{\IBTwo} &
+    \SPDer{W}{\Jacobian}{\Jacobian}
+  \end{bmatrix}
+\end{equation}
+%
+and
+%
+\begin{equation}
+  \PDer{\BB}{\CauchyDef} = \begin{Bmatrix}
+    \OneThird\Jacobian^{-2/3}\left[
+      \Identity\Inv{\CauchyDef}
+      - \Inv{\CauchyDef}\Identity
+      - \IOne\left(
+        \Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+        - \OneThird\Inv{\CauchyDef}\Inv{\CauchyDef}\right)
+    \right] \\
+    \TwoThird\Jacobian^{-4/3}\left[
+      \frac{3}{2}\left(\IIII_1 - \IIII_2\right)
+      + \left(\Inv{\CauchyDef}\CauchyDef
+        + \CauchyDef\Inv{\CauchyDef}
+      \right)
+      - \IOne\left(
+        \Inv{\CauchyDef}\Identity + \Identity\Inv{\CauchyDef}
+      \right)
+      - \ITwo\left(
+        \Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+        - \TwoThird\Inv{\CauchyDef}\Inv{\CauchyDef}
+      \right)
+    \right] \\
+    \OneFourth\Jacobian\left(
+      \Inv{\CauchyDef}\Inv{\CauchyDef} - 2\Inv{\CauchyDef}\OProd\Inv{\CauchyDef}
+    \right)
+  \end{Bmatrix}
+\end{equation}
+
+See Appendix \ref{chap:c-deriv} for the straightforward, yet lengthy,
+derivation of the above quantitites.
+
+\section{Requirements of Objectivity}
+\label{sec:objectivity}
+The constitutive equations for the hyperelastic material evaluate the stress
+directly in the reference configuration. The components of the stress are
+identified as the components of the Second Piola-Kirchhoff stress $\PKTwo$.
+The push forward of the Second Piola-Kirchhoff stress gives the Cauchy stress
+$\CauchyStress$ in the spatial configuration, as required by most finite
+element packages.  The push forward of the corresponding material stiffness
+$\MatStiff$ does not, however, correspond to the rate of Cauchy stress but
+the Truesdell rate of the Cauchy stress.  Furthermore, the rate of Cauchy
+stress is not objective, requiring finite element packages to use other
+so-called objective stress rates in the incremental solution of the momentum
+equation.  In the following sections, it is demonstrated that the push forward
+of the material stiffness does not correspond to the rate of Cauchy stress and
+equations relating the stiffness corresponding to the Jaumann rate of the
+Kirchhoff stress to the push forward of the material stiffness are developed.
+
+The rate of change of Cauchy stress
+%
+\begin{align}
+  \dCauchyStress &= \Der{}{t}\left(
+    \OneOver{\Jacobian}\DefGrad\DotProd\PKTwo\DotProd\Trans{\DefGrad}
+  \right) \\
+  &= \OneOver{\Jacobian}\left[
+    -\frac{\dJacobian}{\Jacobian}\DefGrad\DotProd\PKTwo\DotProd\Trans{\DefGrad}
+    + \dDefGrad\DotProd\PKTwo\DotProd\Trans{\DefGrad}
+    + \DefGrad{
+      \DotProd\Der{\PKTwo}{\GreenStrain}\DDotProd\dGreenStrain
+    }\DotProd\Trans{\DefGrad}
+   + \DefGrad\DotProd\PKTwo\DotProd\Trans{\dDefGrad}
+  \right]
+\end{align}
+
+With the following identities
+
+\begin{equation}
+  \Trace{\RateOfDef} = \frac{\dJacobian}{\Jacobian} \quad
+  \dDefGrad = \VelGrad\DotProd\DefGrad \quad
+  \dGreenStrain = \Trans{\DefGrad}\DotProd\RateOfDef\DotProd\DefGrad \quad
+  \Trans{\dDefGrad} = \Trans{\DefGrad}\DotProd\Trans{\VelGrad}
+\end{equation}
+
+\begin{align}
+  \dCauchyStress &= \OneOver{\Jacobian}\left[
+    -\Trace{\RateOfDef}\CauchyStress
+    + \VelGrad\DotProd\DefGrad\DotProd\PKTwo\DotProd\Trans{\DefGrad}
+    + \DefGrad\DotProd\MatStiff\DDotProd\left(
+      \Trans{\DefGrad}\DotProd\RateOfDef\DotProd\DefGrad
+    \right)\DotProd\Trans{\DefGrad}
+    + \DefGrad\DotProd\PKTwo\DotProd\Trans{\DefGrad}\DotProd\Trans{\VelGrad}
+  \right] \\
+  &= -\Trace{\RateOfDef}\CauchyStress
+    + \VelGrad\DotProd\CauchyStress
+    + \OneOver{\Jacobian}\left(
+      \DefGrad\DotProd\DefGrad\DotProd
+      \MatStiff
+      \DotProd\Trans{\DefGrad}\DotProd\Trans{\DefGrad}
+    \right)\DDotProd\RateOfDef
+    + \CauchyStress\DotProd\Trans{\VelGrad} \\
+  &= -\Trace{\RateOfDef}\CauchyStress
+    + \VelGrad\DotProd\CauchyStress
+    + \Stiffness\DDotProd\RateOfDef
+    + \CauchyStress\DotProd\Trans{\VelGrad}
+\end{align}
+%
+rearranging
+%
+\begin{align}
+  \dCauchyStress
+  - \CauchyStress\DotProd\Trans{\VelGrad}
+  - \VelGrad\DotProd\CauchyStress
+  + \Trace{\RateOfDef}\CauchyStress
+  &= \Stiffness\DDotProd\RateOfDef \\
+  \rCauchyStress &= \Stiffness\DDotProd\RateOfDef
+\end{align}
+%
+where
+%
+\begin{align}
+  \rCauchyStress = \dCauchyStress
+  - \CauchyStress\DotProd\Trans{\VelGrad}
+  - \VelGrad\DotProd\CauchyStress
+  + \Trace{\RateOfDef}\CauchyStress
+\end{align}
+%
+is the Truesdell rate of the Cauchy stress.  The Truesdell rate of the Cauchy
+stress is related to the Lie derivative of the Kirchhoff stress by
+%
+\begin{equation}
+  \rCauchyStress = \OneOver{\Jacobian}\DefGrad\DotProd\dPKTwo\Trans{\DefGrad}
+  = \OneOver{\Jacobian}\DefGrad\DotProd\left[\Der{}{t}\left(
+      \Jacobian\Inv{\DefGrad}\DotProd\CauchyStress\InvTrans{\DefGrad}
+    \right)\right]\Trans{\DefGrad}
+  = \OneOver{\Jacobian}\DefGrad\DotProd\left[\Der{}{t}\left(
+      \Inv{\DefGrad}\DotProd\KirchhoffStress\InvTrans{\DefGrad}
+    \right)\right]\Trans{\DefGrad}
+  = \OneOver{\Jacobian}\LieDer{\KirchhoffStress}
+\end{equation}
+
+Thus, the push forward of the material time derivative of $\PKTwo$ is the
+Truesdell rate of the Cauchy stress.  Correspondingly, the Truesdell rate of
+the Kirchhoff stress is related to the push forward of the material stiffness
+$\MatStiff$ by
+%
+\begin{equation}
+  \LieDer{\KirchhoffStress} = \Jacobian\Stiffness\DDotProd\RateOfDef
+\end{equation}
+
+In many finite element packages, the Jaumann rate of the Kirchhoff stress, and
+not the Truesdell rate, is required. Thus, the elastic stiffness must
+correspond to the Jaummann rate.. The Jaumann rate of the Kirchhoff stress is
+given by
+%
+\begin{align}
+  \jKirchhoffStress &= {
+    \dKirchhoffStress
+    + \KirchhoffStress\DotProd\SkewVelGrad
+    - \SkewVelGrad\DotProd\KirchhoffStress
+  } \\
+  &= \dJacobian\CauchyStress
+    + \Jacobian\dCauchyStress
+    + \Jacobian\CauchyStress\DotProd\SkewVelGrad
+    - \SkewVelGrad\DotProd\Jacobian\CauchyStress \\
+  &= \Jacobian\left(\Trace{\RateOfDef}\CauchyStress
+    + \dCauchyStress
+    + \CauchyStress\DotProd\SkewVelGrad
+    - \SkewVelGrad\DotProd\Jacobian\CauchyStress\right) \\
+  &= \Jacobian\JaumannStiff\DDotProd\RateOfDef
+\end{align}
+%
+where $\JaumannStiff$ is the stiffness corresponding to the Jaumann rate.
+Subtracting $\rKirchhoffStress$ from $\jKirchhoffStress$, the Jaumann stiffness
+can be cast in terms of $\Stiffness$
+
+\begin{align}
+  \left(\JaumannStiff - \Stiffness\right)\DDotProd\RateOfDef &=
+  \left(\Trace{\RateOfDef}\CauchyStress
+    + \dCauchyStress
+    + \CauchyStress\DotProd\SkewVelGrad
+    - \SkewVelGrad\DotProd\CauchyStress\right)
+  -
+  \left(\dCauchyStress
+    - \CauchyStress\DotProd\Trans{\VelGrad}
+    - \VelGrad\DotProd\CauchyStress
+    + \Trace{\RateOfDef}\CauchyStress\right) \\
+  &= \CauchyStress\DotProd\SkewVelGrad
+  + \CauchyStress\DotProd\Trans{\VelGrad}
+  + \VelGrad\DotProd\CauchyStress
+  - \SkewVelGrad\DotProd\CauchyStress \\
+  &= \CauchyStress\DotProd\RateOfDef + \RateOfDef\DotProd\CauchyStress \\
+\end{align}
+%
+Using indicial notation, and the fact that $\RateOfDef$ and $\CauchyStress$
+are symmetric,
+%
+\begin{align}
+  \left(\JaumannStiff[ijkl] - \Stiffness[ijkl]\right)\RateOfDef[kl]
+  &= \CauchyStress[im]\RateOfDef[mj] + \RateOfDef[im]\CauchyStress[mj] \\
+  &= \left(
+    \CauchyStress[ik]\Identity[jl] + \Identity[il]\CauchyStress[jk]
+  \right)\RateOfDef[kl]
+\end{align}
+%
+from which
+%
+\begin{align}
+  \label{eq:jcall}
+  \left(
+    \JaumannStiff[ijkl]
+    - \Stiffness[ijkl]
+    - \CauchyStress[ik]\Identity[jl]
+    - \Identity[il]\CauchyStress[jk] \right)\RateOfDef[kl] = 0_{ij}
+\end{align}
+%
+Since \eqref{eq:jcall} must hold for all $\RateOfDef[kl]$, the stiffness
+corresponding to the Jaumman rate of the Kirchhoff stress is related to the
+stiffness corresponding to the Truesdell rate of the Kirchhoff stress as
+%
+\begin{align}
+  \label{eq:jstiff-v-tstiff}
+  \JaumannStiff[ijkl] = \Stiffness[ijkl] + \CauchyStress[ik]\Identity[jl]
+    + \Identity[il]\CauchyStress[jk]
+\end{align}
+%
+Note that the stiffness in \eqref{eq:jstiff-v-tstiff} must be made minor
+symmetric
+%
+\begin{align}
+  \label{eq:jstiff-msym}
+  \JaumannStiff[ijkl] = \Stiffness[ijkl] + \OneHalf\left(
+    \CauchyStress[ik]\Identity[jl] +
+    \CauchyStress[il]\Identity[jk] +
+    \Identity[il]\CauchyStress[jk] +
+    \Identity[ik]\CauchyStress[jl]
+  \right)
+\end{align}
+
+The correct stiffness corresponding to the Jaumann rate of the Kirchhoff
+stress, in terms of the push forward of the material stiffness is, thus, given by
+\eqref{eq:jstiff-msym}.  Equations relating $\Stiffness$ to stiffnesses
+corresponding to other objective rates are derived similarly.
+
+
+
+
+% ---------------------------------------------------------------------- %
+% References
+%
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{References}
+\bibliographystyle{plain}
+\bibliography{literature}
+
+% --------------------------------------------------------------------------- %
+% Appendix
+\appendix
+
+\chapter{Derivation of Hyperelastic Material Stiffness}
+\label{chap:c-deriv}
+Elastic stiffness in the material frame is given by
+
+\begin{align}
+  \MatStiff &= 4\SPDerTens{W}{\CauchyDef}{\CauchyDef}
+            = 4\LPDer{\AA\DotProd\BB}{\CauchyDef} \\
+            &= 4\left(\PDer{\AA}{\CauchyDef}\DotProd\BB +
+                      \AA\DotProd\PDer{\BB}{\CauchyDef}\right)
+\end{align}
 
 % --------------------------------------------------------------------------- %
 \subsection{The $\partial\AA/\partial\CauchyDef$ Term}
@@ -2498,23 +2778,6 @@ Combining, we get
     \AA\DotProd\PDer{\BB}{\CauchyDef}\right) \\
 \end{align}
 
-
-% ---------------------------------------------------------------------- %
-% References
-%
-\clearpage
-\phantomsection
-\addcontentsline{toc}{chapter}{References}
-\bibliographystyle{plain}
-\bibliography{literature}
-
-% --------------------------------------------------------------------------- %
-% Appendix
-\appendix
-
-\chapter{Useful Identities}
-\label{chap:idents}
-
 \begin{landscape}
 \begin{table}[h]
   \centering
@@ -2540,7 +2803,15 @@ Combining, we get
     \DisplayMath{\PDer{\IBTwo}{\CauchyDef} = \Jacobian^{-4/3}\left(
         \IOne\Identity - \CauchyDef - \TwoThird\ITwo\Inv{\CauchyDef}\right)} &
     \DisplayMath{\PDer{}{\CauchyDef}\left(\Jacobian^{-i/3}\right) =
-      -\frac{i}{6}\Jacobian^{-i/3}\Inv{\CauchyDef}}
+      -\frac{i}{6}\Jacobian^{-i/3}\Inv{\CauchyDef}} \NewLine
+    % ------------------------------------------------------------------------ %
+    \DisplayMath{\Trace{\RateOfDef} = \frac{\dJacobian}{\Jacobian}} &
+    \DisplayMath{\dDefGrad = \VelGrad\DotProd\DefGrad} &
+    \DisplayMath{\Trans{\dDefGrad} =
+      \Trans{\DefGrad}\DotProd\Trans{\VelGrad}} \NewLine
+    % ------------------------------------------------------------------------ %
+    \DisplayMath{\dGreenStrain =
+      \Trans{\DefGrad}\DotProd\RateOfDef\DotProd\DefGrad}
     % ------------------------------------------------------------------------ %
     \\
     \hline
