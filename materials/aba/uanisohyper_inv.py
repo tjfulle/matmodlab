@@ -2,10 +2,7 @@ import sys
 import numpy as np
 from materials.aba.aba_uanisohyper_inv import AbaUAnisoHyper
 from core.mmlio import Error1, log_message, log_error, log_warning
-try:
-    from lib.mmlabpack import mmlabpack
-except ImportError:
-    import utils.mmlabpack as mmlabpack
+import utils.mmlabpack as mmlabpack
 try:
     import lib.uanisohyper as umat
 except ImportError:
@@ -51,4 +48,3 @@ class UAnisoHyper(AbaUAnisoHyper):
                                     incmpflag, ihybflag, statev, fieldv,
                                     fieldvinc, self.params[:-4],
                                     log_error, log_message, log_warning)
-

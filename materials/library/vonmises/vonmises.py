@@ -23,7 +23,6 @@ class VonMises(Material):
         """Set up the von Mises material
 
         """
-        self.use_constant_jacobian = True
         # Check inputs
         if self.params.modelname == self.name:
             K = self.params["K"]
@@ -66,12 +65,13 @@ class VonMises(Material):
         self.register_xtra_variables(self.sv_names)
         self.set_initial_state(sv_values)
 
-    def update_state(self, dt, d, stress, xtra, *args, **kwargs):
+    def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters
         ----------
-        dt : float
+        dtime : float
             Time step
 
         d : array_like
@@ -97,7 +97,7 @@ class VonMises(Material):
                        xtra[idx('BS_XY')], xtra[idx('BS_YZ')], xtra[idx('BS_XZ')]])
         yn = xtra[idx('Y')]
 
-        de = d * dt
+        de = d * dtime
 
         iso = de[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         dev = de - iso
@@ -109,7 +109,7 @@ class VonMises(Material):
 
         if xi_trial_eqv <= yn:
             xtra[idx('SIGE')] = xi_trial_eqv
-            return stress_trial, xtra
+            return stress_trial, xtra, self.constant_jacobian
         else:
             N = xi_trial - xi_trial[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
             N = N / (np.sqrt(2.0 / 3.0) * xi_trial_eqv)
@@ -129,7 +129,7 @@ class VonMises(Material):
             xtra[idx('BS_YZ')] = bs[4]
             xtra[idx('BS_XZ')] = bs[5]
             xtra[idx('SIGE')] = self.eqv(stress_final - bs)
-            return stress_final, xtra
+            return stress_final, xtra, self.constant_jacobian
 
 
     def eqv(self, sig):

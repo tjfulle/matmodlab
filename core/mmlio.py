@@ -95,7 +95,14 @@ def log_redirect(_handler=[]):
 def log_warning(message, limit=False):
     increment_warning()
     max_warn = 10
-    if limit and WARNINGS_LOGGED >= max_warn:
+    if LOGGER is None:
+        cerr("***WARNING: " + message.rstrip())
+        return
+
+    elif opts.Werror:
+        log_error(message)
+
+    elif limit and WARNINGS_LOGGED >= max_warn:
         if WARNINGS_LOGGED == max_warn:
             LOGGER.warning("maximum number of warnings reached, "
                            "remainder suppressed")

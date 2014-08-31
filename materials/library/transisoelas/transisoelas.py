@@ -16,7 +16,6 @@ class TransIsoElas(Material):
         """
         # Check inputs
         #self.ui = dict(zip(self.param_names, self.params))
-        self.use_constant_jacobian = True
 
         # If the user wants a linear elastic primitive:
         if self.params["K"] > 0.0 and self.params["G"] > 0.0:
@@ -39,12 +38,13 @@ class TransIsoElas(Material):
         self.bulk_modulus = self.params["B0"]
         self.shear_modulus = self.params["A0"]
 
-    def update_state(self, dt, d, stress, xtra, *args, **kwargs):
+    def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters
         ----------
-        dt : float
+        dtime : float
             Time step
 
         d : array_like
@@ -67,7 +67,7 @@ class TransIsoElas(Material):
         """
 
         # Handle strain-related tasks
-        eps = np.array(xtra) + d * dt
+        eps = np.array(xtra) + d * dtime
         D = np.array([[eps[0], eps[3], eps[5]],
                       [eps[3], eps[1], eps[4]],
                       [eps[5], eps[4], eps[2]]])
@@ -89,4 +89,4 @@ class TransIsoElas(Material):
         retstress = np.array([stress[0, 0], stress[1, 1], stress[2, 2],
                               stress[0, 1], stress[1, 2], stress[0, 2]])
 
-        return retstress, xtra
+        return retstress, xtra, self.constant_jacobian

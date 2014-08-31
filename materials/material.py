@@ -2,10 +2,7 @@ import numpy as np
 
 from core.mmlio import Error1, log_warning, log_error, log_message
 from materials.parameters import Parameters
-try:
-    from lib.mmlabpack import mmlabpack
-except ImportError:
-    import utils.mmlabpack as mmlabpack
+import utils.mmlabpack as mmlabpack
 try:
     from lib.visco import visco as ve
 except ImportError:
@@ -25,7 +22,7 @@ class Material(object):
         self._constant_jacobian = False
         self.bulk_modulus = None
         self.shear_modulus = None
-        self._jacobian = None
+        self.J0 = None
         self.xinit = np.zeros(self.nxtra)
         self.mtl_variables = []
         self.initialized = True
@@ -95,7 +92,7 @@ class Material(object):
             log_warning("{0}: shear modulus not defined".format(self.name))
             return
 
-        self._jacobian = np.zeros((6, 6))
+        self.J0 = np.zeros((6, 6))
         threek = 3. * self.bulk_modulus
         twog = 2. * self.shear_modulus
         nu = (threek - twog) / (2. * threek + twog)
@@ -104,14 +101,14 @@ class Material(object):
 
         # set diagonal
         for i in range(3):
-            self._jacobian[i, i] = threek * c1
+            self.J0[i, i] = threek * c1
         for i in range(3, 6):
-            self._jacobian[i, i] = twog
+            self.J0[i, i] = twog
 
         # off diagonal
-        (self._jacobian[0, 1], self._jacobian[0, 2],
-         self._jacobian[1, 0], self._jacobian[1, 2],
-         self._jacobian[2, 0], self._jacobian[2, 1]) = [threek * c2] * 6
+        (self.J0[0, 1], self.J0[0, 2],
+         self.J0[1, 0], self.J0[1, 2],
+         self.J0[2, 0], self.J0[2, 1]) = [threek * c2] * 6
         return
 
     def register_mtl_variable(self, var, vtype="SCALAR", units=None):
@@ -136,27 +133,21 @@ class Material(object):
 
         """
         d = np.zeros(6)
-        sig = np.zeros(6)
-        t = 0.
-        f0 = np.eye(3).reshape(9,)
-        f = np.eye(3).reshape(9,)
-        eps = np.zeros(6)
-        ef = np.zeros(3)
-        tmpr = 0.
-        dtmpr = 0.
-        ufield = 0.
-        args = (t, f0, f, eps, ef, tmpr, dtmpr, ufield)
-        return self.numerical_jacobian(1., d, sig, self.xinit, range(6), *args)
-
-    def jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
-                 stress, statev, elec_field, user_field, v):
-        if self.use_constant_jacobian:
-            return self.constant_jacobian(v)
-        return self.numerical_jacobian(time, dtime, temp, dtemp, F0, F, stran, d,
-                                       stress, statev, elec_field, user_field, v)
+        stress = np.zeros(6)
+        time = 0.
+        dtime = 1.
+        F0 = np.eye(3).reshape(9,)
+        F = np.eye(3).reshape(9,)
+        stran = np.zeros(6)
+        elec_field = np.zeros(3)
+        temp = self._initial_temperature
+        dtemp = 0.
+        user_field = 0.
+        return self.numerical_jacobian(time, dtime, temp, dtemp, F0, F, stran,
+            d, elec_field, user_field, stress, self.xinit, range(6))
 
     def numerical_jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
-                           stress, statev, elec_field, user_field, v):
+                           elec_field, user_field, stress, xtra, v):
         """Numerically compute material Jacobian by a centered difference scheme.
 
         Returns
@@ -190,7 +181,7 @@ class Material(object):
 
         """
         if self._constant_jacobian:
-            return self.constant_jacobian(v)
+            return self.constant_jacobian
 
         # local variables
         nv = len(v)
@@ -204,18 +195,18 @@ class Material(object):
             Dp[v[i]] = d[v[i]] + (deps / dtime) / 2.
             Fp, Ep = mmlabpack.update_deformation(dtime, 0., F, Dp)
             sigp = stress.copy()
-            xtrap = statev.copy()
-            sigp, xtrap = self.compute_updated_state(time, dtime, temp, dtemp,
-                F0, Fp, Ep, Dp, sigp, xtrap, elec_field, user_field)
+            xtrap = xtra.copy()
+            sigp, xtrap, stif = self.compute_updated_state(time, dtime, temp,
+                dtemp, F0, Fp, Ep, Dp, elec_field, user_field, sigp, xtrap)
 
             # perturb backward
             Dm = d.copy()
             Dm[v[i]] = d[v[i]] - (deps / dtime) / 2.
             Fm, Em = mmlabpack.update_deformation(dtime, 0., F, Dm)
             sigm = stress.copy()
-            xtram = statev.copy()
-            sigp, xtrap = self.compute_updated_state(time, dtime, temp, dtemp,
-                F0, Fm, Em, Dm, sigm, xtram, elec_field, user_field)
+            xtram = xtra.copy()
+            sigm, xtram, stif = self.compute_updated_state( time, dtime, temp,
+                dtemp, F0, Fm, Em, Dm, elec_field, user_field, sigm, xtram)
 
             # compute component of jacobian
             Jsub[i, :] = (sigp[v] - sigm[v]) / deps
@@ -300,7 +291,7 @@ class Material(object):
         raise Error1("update_state must be provided by model")
 
     def compute_updated_state(self, time, dtime, temp, dtemp, F0, F, stran, d,
-        stress, statev, elec_field, user_field, last=False, **kwargs):
+        elec_field, user_field, stress, xtra, disp=0, v=None, last=False):
         """Update the material state
 
         """
@@ -316,21 +307,30 @@ class Material(object):
             Fm = Fm.reshape(9,)
             Em = mmlabpack.update_strain(self._kappa, Fm)
 
-        # update material state (with mechanical deformation)
-        args = (time, F0, Fm, Em, elec_field, temp, dtemp, user_field)
-        kwargs["last"] = last
-        sig, statev[:N] = self.update_state(dtime, d, stress, statev[:N],
-                                            *args, **kwargs)
+        rho = 1.
+        energy = 1.
+        sig, xtra[:N], stif = self.update_state(time, dtime, temp, dtemp,
+            energy, rho, F0, F, stran, d, elec_field, user_field, stress,
+            xtra[:N], last=last, mode=0)
 
         if self.visco_params is not None:
             # get visco correction
-            X = statev[N:]
+            X = xtra[N:]
             I, J = self.viscopoint
             sig = ve.viscorelax(dtime, time, temp, dtemp, self.visco_params,
                                 F.reshape(3,3), X, sig, *comm)
-            statev[N:] = X[:]
+            xtra[N:] = X[:]
 
-        return sig, statev
+        if v is not None:
+            stif = stif[[[i] for i in v], v]
+
+        if disp == 2:
+            return stif
+
+        elif disp == 1:
+            return sig, xtra
+
+        return sig, xtra, stif
 
     def adjust_initial_state(self, *args, **kwargs):
         self.set_initial_state(args[0])
@@ -340,13 +340,13 @@ class Material(object):
 
         """
         N = self.nxtra
-        statev = self.initial_state
+        xtra = self.initial_state
         if self.visco_params is not None:
             # initialize the visco variables
-            x = statev[N:]
+            x = xtra[N:]
             ve.viscoini(self.visco_params, x,
                         log_error, log_message, log_warning)
-            statev[N:] = x
+            xtra[N:] = x
         time = 0.
         dtime = 1.
         dtemp = 0.
@@ -356,9 +356,9 @@ class Material(object):
         d = np.zeros(6)
         stress = np.zeros(6)
         elec_field = np.zeros(3)
-        stress, statev = self.compute_updated_state(time, dtime, temp,
-                dtemp, F0, F, stran, d, stress, statev, elec_field, user_field)
-        return stress, statev
+        stress, xtra, stif = self.compute_updated_state(time, dtime, temp, dtemp,
+            F0, F, stran, d, elec_field, user_field, stress, xtra)
+        return stress, xtra, stif
 
     def set_initial_state(self, xtra):
         self.xinit = np.array(xtra)
@@ -371,5 +371,6 @@ class Material(object):
     def material_variables(self):
         return self.mtl_variables
 
-    def constant_jacobian(self, v=np.arange(6)):
-        return self._jacobian[[[x] for x in v], v]
+    @property
+    def constant_jacobian(self):
+        return self.J0

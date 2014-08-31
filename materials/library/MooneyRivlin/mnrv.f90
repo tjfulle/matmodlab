@@ -316,7 +316,7 @@ END SUBROUTINE EXTMOD
 
 ! *************************************************************************** !
 
-SUBROUTINE MNRVJM(PROP, V, T, XTRA, NW, W, JSUB)
+SUBROUTINE MNRVJM(PROP, V, T, XTRA, NW, JSUB)
   ! ------------------------------------------------------------------------- !
   ! Compute the material Jacobian matrix dsig / deps
   !
@@ -339,13 +339,14 @@ SUBROUTINE MNRVJM(PROP, V, T, XTRA, NW, W, JSUB)
   IMPLICIT NONE
   INCLUDE "mnrv.h"
   INCLUDE "symdot.h"
-  INTEGER, INTENT(IN) :: NW, W(NW)
+  INTEGER, INTENT(IN) :: NW
   REAL(DP), INTENT(IN) :: PROP(NPROP), V(6), T(1), XTRA(NX)
   REAL(DP), INTENT(OUT) :: JSUB(NW,NW)
   INTEGER :: I, J
   REAL(DP) :: B(6), EPS(6), DEPS(6), D
   REAL(DP) :: VP(6), XP(NX), SP(6)
   REAL(DP) :: VM(6), XM(NX), SM(6)
+  REAL(DP), PARAMETER :: W=(/1,2,3,4,5,6/)
   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MNRVJM ~~~ !
   D = SQRT(EPSILON(V))
   B = SYMDOT(V(1:6), V(1:6))

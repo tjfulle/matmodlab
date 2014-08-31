@@ -12,7 +12,6 @@ class PyElastic(Material):
 
         """
         # Check inputs
-        self.use_constant_jacobian = True
         K, G, = self.params
         if K <= 0.0: log_error = "Bulk modulus K must be positive"
         if G <= 0.0: log_error = "Shear modulus G must be positive"
@@ -24,12 +23,13 @@ class PyElastic(Material):
         self.bulk_modulus = K
         self.shear_modulus = G
 
-    def update_state(self, dt, d, stress, xtra, *args, **kwargs):
+    def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters
         ----------
-        dt : float
+        dtime : float
             Time step
 
         d : array_like
@@ -50,10 +50,12 @@ class PyElastic(Material):
             Updated extra variables
 
         """
-        de = d * dt
+        de = d * dtime
 
         iso = de[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         dev = de - iso
 
-        stress = stress + 3.0 * self.bulk_modulus * iso + 2.0 * self.shear_modulus * dev
-        return stress, xtra
+        K = self.bulk_modulus
+        G = self.shear_modulus
+        stress = stress + 3.0 * K * iso + 2.0 * G * dev
+        return stress, xtra, self.constant_jacobian

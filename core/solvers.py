@@ -4,10 +4,7 @@ import math
 import numpy as np
 import sys
 
-try:
-    from lib.mmlabpack import mmlabpack
-except ImportError:
-    import utils.mmlabpack as mmlabpack
+import utils.mmlabpack as mmlabpack
 import core.mmlio as io
 from core.runtime import opts
 
@@ -141,16 +138,17 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
         return None
 
     # update the material state to get the first guess at the new stress
-    sig, xtra = material.compute_updated_state(t, dt, temp, dtemp, f0, f,
-        stran, d, sig, xtra, efield, ufield)
+    sig, xtra, stif = material.compute_updated_state(t, dt, temp, dtemp, f0, f,
+        stran, d, efield, ufield, sig, xtra)
     sigerr = sig[v] - sigspec
 
     # --- Perform Newton iteration
     for i in range(maxit2):
         sig = sigsave.copy()
         xtra = xtrasave.copy()
-        Jsub = material.jacobian(t, dt, temp, dtemp, f0, f, stran, d,
-                                 sig, xtra, efield, ufield, v)
+        Jsub = material.compute_updated_state(t, dt, temp, dtemp, f0, f, stran, d,
+            efield, ufield, sig, xtra, v=v, disp=2)
+
         if opts.sqa:
             evals = np.linalg.eigvalsh(Jsub)
             if np.any(evals < 0.):
@@ -168,9 +166,10 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
             # increment too large
             return None
 
+        # with the updated rate of deformation, update stress and check
         fp, _ = mmlabpack.update_deformation(dt, 0., f, d)
-        sig, xtra = material.compute_updated_state(t, dt, temp, dtemp,
-            f0, fp, stran, d, sig, xtra, efield, ufield)
+        sig, xtra, stif = material.compute_updated_state(t, dt, temp, dtemp,
+            f0, fp, stran, d, efield, ufield, sig, xtra)
         sigerr = sig[v] - sigspec
         dnom = max(np.amax(np.abs(sigspec)), 1.)
         relerr = np.amax(np.abs(sigerr) / dnom)
@@ -242,8 +241,8 @@ def func(x, material, t, dt, temp, dtemp, f0, farg, stran, darg,
     fp, _ = mmlabpack.update_deformation(dt, 0., f, d)
 
     # store the best guesses
-    sig, xtra = material.compute_updated_state(t, dt, temp, dtemp,
-        f0, fp, stran, d, sig, xtra, efield, ufield)
+    sig, xtra, stif = material.compute_updated_state(t, dt, temp, dtemp,
+        f0, fp, stran, d, efield, ufield, sig, xtra)
 
     # check the error
     error = 0.

@@ -3,10 +3,7 @@ import numpy as np
 
 from materials.material import Material
 from core.mmlio import Error1, log_message, log_error
-try:
-    from lib.mmlabpack import mmlabpack
-except ImportError:
-    import utils.mmlabpack as mmlabpack
+import utils.mmlabpack as mmlabpack
 try:
     import lib.mnrv as mnrv
 except ImportError:
@@ -46,10 +43,11 @@ class MooneyRivlin(Material):
         v = np.arange(6, dtype=np.int)
         return
 
-    def update_state(self, dt, d, sig, xtra, *args, **kwargs):
+    def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """ update the material state based on current state and stretch """
 
-        Fij = np.reshape(args[2], (3, 3))
+        Fij = np.reshape(F, (3, 3))
 
         # left stretch
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
@@ -62,24 +60,12 @@ class MooneyRivlin(Material):
         T = 298.
 
         sig = mnrv.mnrvus(self.params, Rij, Vij, T, xtra, log_error, log_message)
+        ddsdde = mnrv.mnrvjm(self.params, Vij, T, xtra, log_error, log_message)
 
-        return np.reshape(sig, (6,)), np.reshape(xtra, (self.nxtra,))
-
+        return np.reshape(sig, (6,)), np.reshape(xtra, (self.nxtra,)), ddsdde
 
     def set_constant_jacobian(self):
         Vij = mmlabpack.asarray(np.eye(3), 6)
         T0 = 298. if not self.params["T0"] else self.params["T0"]
-        v = np.arange(6, dtype=np.int)
-        self._jacobian = self._jacobian_routine(Vij, T0, self.xinit, v)
-
-    def jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
-                 stress, statev, elec_field, user_field, v):
-        Fij = np.reshape(F, (3, 3))
-        Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
-        Vij = mmlabpack.asarray(Vij, 6)
-        T = 298. if not self.params["T0"] else self.params["T0"]
-        return self._jacobian_routine(Vij, T, statev, v)
-
-    def _jacobian_routine(self, Vij, T, xtra, v):
-        w = v + 1 # +1 for fortran
-        return mnrv.mnrvjm(self.params, Vij, T, xtra, w, log_error, log_message)
+        self.J0 = mnrv.mnrvjm(self.params, Vij, T0, self.xinit,
+                              log_error, log_message)

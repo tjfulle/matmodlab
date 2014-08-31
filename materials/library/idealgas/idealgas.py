@@ -24,15 +24,15 @@ class IdealGas(Material):
         self.register_mtl_variable("DEDR", "SCALAR",
             units="SPECIFIC_ENERGY_UNITS_OVER_DENSITY_UNITS")
 
-    def update_state(self, dt, d, sig, xtra, *margs, **kwargs):
-        """Evaluate the eos - rho and tmpr are in CGSEV
+    def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
+        """Evaluate the eos - rho and temp are in CGSEV
 
         By the end of this routine, the following variables should be
         updated
                   density, temperature, energy, pressure
         """
         mode = kwargs.get("mode", 0)
-        rho, tmpr, enrgy = margs[-3:]
 
         # unit_system = kwargs["UNITS"]
         M = self.params["M"]
@@ -46,18 +46,18 @@ class IdealGas(Material):
 
 
         if mode == 0:
-            # get (pres, enrgy) as functions of args=(rho, tmpr)
-            pres, enrgy = eosigr(M, CV, R, rho, tmpr)
+            # get (pres, enrgy) as functions of args=(rho, temp)
+            pres, enrgy = eosigr(M, CV, R, rho, temp+dtemp)
 
         elif mode == 1:
-            # get (pres, tmpr) as functions of args=(rho, enrgy)
-            pres, tmpr = eosigv(M, CV, R, rho, enrgy)
+            # get (pres, temp) as functions of args=(rho, enrgy)
+            pres, temp = eosigv(M, CV, R, rho, enrgy)
 
         else:
             raise Error1("idealgas: {0}: unrecognized mode".format(mode))
 
-        cs = (R * tmpr / M) ** 2
-        dpdr = R * tmpr / M
+        cs = (R * temp / M) ** 2
+        dpdr = R * temp / M
         dpdt = R * rho / M
         dedt = CV * R
         dedr = CV * pres * M / rho ** 2
@@ -67,21 +67,21 @@ class IdealGas(Material):
         sig = np.array([-pres, -pres, -pres, 0, 0, 0])
         if mode == 0:
             return sig, [enrgy, cs, scratch]
-        return sig, [tmpr, cs, scratch]
+        return sig, [temp, cs, scratch]
 
 
-def eosigr(M, CV, R, rho, tmpr) :
+def eosigr(M, CV, R, rho, temp) :
     """Pressure and energy as functions of density and temperature
 
     """
-    enrgy = CV * R * tmpr
-    pres = R * tmpr * rho / M
+    enrgy = CV * R * temp
+    pres = R * temp * rho / M
     return pres, enrgy
 
 def eosigv(M, CV, R, rho, enrgy) :
     """Pressure and temperature as functions of density and energy
 
     """
-    tmpr = enrgy / CV / R
-    pres = R * tmpr * rho / M
-    return pres, tmpr
+    temp = enrgy / CV / R
+    pres = R * temp * rho / M
+    return pres, temp

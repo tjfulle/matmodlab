@@ -14,7 +14,6 @@ class Plastic(Material):
         """Set up the Plastic material
 
         """
-        self.use_constant_jacobian = True
         if plastic is None:
             raise Error1("plastic model not imported")
         plastic.plastic_check(self.params, log_error, log_message)
@@ -22,12 +21,13 @@ class Plastic(Material):
         self.bulk_modulus = K
         self.shear_modulus = G
 
-    def update_state(self, dt, d, stress, xtra, *args, **kwargs):
+    def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters
         ----------
-        dt : float
+        dtime : float
             Time step
 
         d : array_like
@@ -48,6 +48,6 @@ class Plastic(Material):
             Updated extra variables
 
         """
-        plastic.plastic_update_state(dt, self.params, d, stress,
+        plastic.plastic_update_state(dtime, self.params, d, stress,
                                      log_error, log_message)
-        return stress, xtra
+        return stress, xtra, self.constant_jacobian

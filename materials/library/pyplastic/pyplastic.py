@@ -27,7 +27,6 @@ class Pyplastic(Material):
         """Set up the plastic material
 
         """
-        self.use_constant_jacobian = True
         # Check inputs
         if self.params.modelname == self.name:
             K = self.params["K"]
@@ -84,12 +83,13 @@ class Pyplastic(Material):
         self.register_xtra_variables(self.sv_names)
         self.set_initial_state(sv_values)
 
-    def update_state(self, dt, d, stress, xtra, *args, **kwargs):
+    def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters
         ----------
-        dt : float
+        dtime : float
             Time step
 
         d : array_like
@@ -118,7 +118,7 @@ class Pyplastic(Material):
         ep = xtra[idx('EP_XX'):idx('EP_YZ')+1]
 
         # Compute the trial stress and invariants
-        stress = stress + self.dot_with_elastic_stiffness(d * dt)
+        stress = stress + self.dot_with_elastic_stiffness(d * dtime)
         i1 = self.i1(stress)
         rootj2 = self.rootj2(stress)
         if rootj2 - (A1 - A4 * i1) <= 0.0:
@@ -157,7 +157,7 @@ class Pyplastic(Material):
         xtra[idx('YROOTJ2')] = A1 - A4 * self.i1(stress)
 
         print("sig yz {0:.20e}".format((stress-sigsave)[4]))
-        return stress, xtra
+        return stress, xtra, self.constant_jacobian
 
     def dot_with_elastic_stiffness(self, A):
         return (3.0 * self.params["K"] * self.iso(A) +

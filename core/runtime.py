@@ -8,6 +8,7 @@ opts.sqa = False
 opts.I = None
 opts.verbosity = 0
 opts.runid = None
+opts.Werror = False
 
 def set_runtime_opt(opt, val):
     setattr(opts, opt, val)

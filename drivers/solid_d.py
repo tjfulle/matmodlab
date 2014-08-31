@@ -11,10 +11,7 @@ from drivers.driver import Driver
 from core.solvers import sig2d
 from core.mmlio import (fatal_inp_error, input_errors,
                         log_message, log_warning, Error1)
-try:
-    from lib.mmlabpack import mmlabpack
-except ImportError:
-    import utils.mmlabpack as mmlabpack
+import utils.mmlabpack as mmlabpack
 try:
     from mml_user_sub import eval_at_step
 except ImportError:
@@ -110,7 +107,7 @@ class SolidDriver(Driver):
                     raise Error1("incorrect len(InitialState)")
             else:
                 # initialize material
-                sig, xtra = self.material.initialize(itmpr, ifield)
+                sig, xtra, stif = self.material.initialize(itmpr, ifield)
                 mml_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
 
             pres = -np.sum(sig[:3]) / 3.
@@ -151,7 +148,7 @@ class SolidDriver(Driver):
         sigdum = np.zeros((2, NSYMM))
 
         # compute the initial jacobian
-        J0 = self.material.constant_jacobian()
+        J0 = self.material.constant_jacobian
 
         # v array is an array of integers that contains the rows and columns of
         # the slice needed in the jacobian subroutine.
@@ -265,8 +262,8 @@ class SolidDriver(Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.material.compute_updated_state(t, dt, temp, dtmpr,
-                    f0, f, eps, d, sig, xtra, ef, ufield, last=True)
+                sig, xtra = self.material.compute_updated_state(t, dt, temp,
+                    dtmpr, f0, f, eps, d, ef, ufield, sig, xtra, last=True, disp=1)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)

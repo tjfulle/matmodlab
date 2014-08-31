@@ -2,10 +2,7 @@ import sys
 import numpy as np
 from materials.aba.aba_umat import AbaUMat
 from core.mmlio import Error1, log_message, log_error, log_warning
-try:
-    from lib.mmlabpack import mmlabpack
-except ImportError:
-    import utils.mmlabpack as mmlabpack
+import utils.mmlabpack as mmlabpack
 try:
     import lib.uhyper as umat
 except ImportError:
@@ -51,10 +48,9 @@ class UHyper(AbaUMat):
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc):
         """update the material state"""
-        utime = np.array([time,time])
         umat.umat(stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
-            utime, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
+            time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc, log_error,
             log_message, log_warning)
