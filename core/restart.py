@@ -233,9 +233,12 @@ def write_driver_info(db, name, path, options):
     dim = DIM_NUM_DRIVER_OPTS(uniq_name)
     vals = VALS_DRIVER_OPTS(uniq_name)
     num_opts = len(options)
+    num_opts = 3
+    opts = [options["restart"], options["kappa"], options["proportional"]]
     db.createDimension(dim, num_opts)
     db.createVariable(vals, DTYPE_FLT, (dim, ))
-    db.variables[vals][:] = options
+    # tjf: not right, since options is a dictionary, values won't be in order
+    db.variables[vals][:] = opts
 
     return
 

@@ -6,6 +6,7 @@ from core.mmlio import Error1, log_error, log_message
 class PyElastic(Material):
     name = "pyelastic"
     param_names = ["K", "G"]
+    constant_j = True
 
     def setup(self):
         """Set up the Elastic material

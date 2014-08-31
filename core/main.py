@@ -185,7 +185,12 @@ def func(fargs):
 
         elif stype == "Physics":
             try:
-                model = PhysicsHandler(runid, verb, *uinp)
+                driver, material, extract = uinp
+                driver_name, driver_path, driver_opts = driver
+                mat_model, mat_params, mat_opts, mat_istate = material
+                model = PhysicsHandler(runid, verb, driver_name, driver_path,
+                    driver_opts, mat_model, mat_params, mat_opts,
+                    mat_istate, extract)
             except Error1, e:
                 logerr("failed to instantiate driver with "
                        "message: {0}".format(e.message))

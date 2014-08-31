@@ -18,6 +18,7 @@ class VonMises(Material):
                            #    BETA = 1 for kinematic hardening
                   ]
     param_defaults = [0.0, 0.0, 1.0e30, 0.0, 0.0]
+    constant_j = True
 
     def setup(self):
         """Set up the von Mises material

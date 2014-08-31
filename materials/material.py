@@ -26,9 +26,9 @@ class Material(object):
         self.xinit = np.zeros(self.nxtra)
         self.mtl_variables = []
         self.initialized = True
-        self.use_constant_jacobian = False
         self.visco_params = None
         self.exp_params = None
+        self.constant_j = False
         if not hasattr(self, "param_names"):
             raise Error1("{0}: param_names not defined".format(self.name))
         self._verify_param_names()
@@ -290,13 +290,21 @@ class Material(object):
     def update_state(self, *args, **kwargs):
         raise Error1("update_state must be provided by model")
 
-    def compute_updated_state(self, time, dtime, temp, dtemp, F0, F, stran, d,
-        elec_field, user_field, stress, xtra, disp=0, v=None, last=False):
+    def compute_updated_state(self, time, dtime, temp, dtemp, F0, F,
+        stran, d, elec_field, user_field, stress, statev,
+        disp=0, v=None, last=False):
         """Update the material state
 
         """
+        if disp == 2 and self.constant_j:
+            # only jacobian requested
+            return self.constant_jacobian
+
         N = self.nxtra
         comm = (log_error, log_message, log_warning)
+
+        sig = np.array(stress)
+        xtra = np.array(statev)
 
         # Mechanical deformation
         Fm, Em = F, stran
@@ -310,7 +318,7 @@ class Material(object):
         rho = 1.
         energy = 1.
         sig, xtra[:N], stif = self.update_state(time, dtime, temp, dtemp,
-            energy, rho, F0, F, stran, d, elec_field, user_field, stress,
+            energy, rho, F0, F, stran, d, elec_field, user_field, sig,
             xtra[:N], last=last, mode=0)
 
         if self.visco_params is not None:
@@ -332,15 +340,16 @@ class Material(object):
 
         return sig, xtra, stif
 
-    def adjust_initial_state(self, *args, **kwargs):
-        self.set_initial_state(args[0])
-
-    def initialize(self, temp, user_field):
+    def initialize(self, stress, xtra, temp, user_field):
         """Call the material with initial state
 
         """
         N = self.nxtra
-        xtra = self.initial_state
+        if xtra is None:
+            xtra = self.initial_state
+        if stress is None:
+            stress = np.zeros(6)
+
         if self.visco_params is not None:
             # initialize the visco variables
             x = xtra[N:]
@@ -354,18 +363,26 @@ class Material(object):
         F = np.eye(3).reshape(9,)
         stran = np.zeros(6)
         d = np.zeros(6)
-        stress = np.zeros(6)
         elec_field = np.zeros(3)
         stress, xtra, stif = self.compute_updated_state(time, dtime, temp, dtemp,
             F0, F, stran, d, elec_field, user_field, stress, xtra)
-        return stress, xtra, stif
 
-    def set_initial_state(self, xtra):
+        self.set_initial_state(stress, xtra)
+
+    def set_initial_state(self, stress, xtra):
+        self.sigini = np.array(stress)
         self.xinit = np.array(xtra)
+
+    def adjust_initial_state(self, *args, **kwargs):
+        self.xinit = np.array(args[0])
 
     @property
     def initial_state(self):
         return self.xinit
+
+    @property
+    def initial_stress(self):
+        return self.sigini
 
     @property
     def material_variables(self):

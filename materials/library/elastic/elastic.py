@@ -10,6 +10,7 @@ except ImportError:
 class Elastic(Material):
     name = "elastic"
     param_names = ["K", "G"]
+    constant_j = True
 
     def setup(self):
         """Set up the Elastic material

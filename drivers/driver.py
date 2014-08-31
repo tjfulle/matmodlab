@@ -150,12 +150,9 @@ def getdriver(drivername):
     return DRIVER_DB.get(" ".join(drivername.split()).lower())
 
 
-def create_driver(driver, material):
-    drivername = driver[0]
-    path = driver[1]
-    opts = driver[2]
-    drvcls = getdrvcls(drivername)
-    return drvcls(path, opts, material)
+def create_driver(driver_name, path, driver_opts, material):
+    drvcls = getdrvcls(driver_name)
+    return drvcls(path, driver_opts, material)
 
 
 def getdrvcls(drivername):

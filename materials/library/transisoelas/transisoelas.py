@@ -9,6 +9,7 @@ class TransIsoElas(Material):
                    "B0", "B1", "C0", "C1",
                    "V1", "V2", "V3",
                    "K", "G"]
+    constant_j = True
 
     def setup(self):
         """Set up the Transversely Isotropic Linear Elastic  material

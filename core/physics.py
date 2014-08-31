@@ -10,19 +10,26 @@ from drivers.driver import create_driver
 
 class PhysicsHandler(object):
 
-    def __init__(self, runid, verbosity, driver, material, extract):
+    def __init__(self, runid, verbosity, driver_name, driver_path, driver_opts,
+                 mat_model, mat_params, mat_opts, mat_istate, extract):
         """Initialize the PhysicsHandler object
 
         """
         self.runid = runid
         set_runtime_opt("runid", runid)
 
-        restart = driver[2][0] == RESTART
+        restart = driver_opts["restart"] == RESTART
         mode = "a" if restart else "w"
         io.setup_logger(runid, verbosity, mode=mode)
         io.log_message("{0}: setting up".format(self.runid))
 
-        self.driver = create_driver(driver, material)
+        # Create the material
+        mat_opts["initial_temperature"] = driver_opts["initial_temperature"]
+        mat_opts["user_field"] = driver_opts["initial_user_field"]
+        mat_opts["kappa"] = driver_opts["kappa"]
+        mat = mat_model.instantiate_material(mat_params, mat_istate, **mat_opts)
+
+        self.driver = create_driver(driver_name, driver_path, driver_opts, mat)
         self.extract = extract
 
         # set up timing
@@ -47,7 +54,7 @@ class PhysicsHandler(object):
         title = "mmd {0} simulation".format(self.driver.name)
         mat = (self.driver.material.name, self.driver.material.param_names,
                self.driver.material.params)
-        drv = (self.driver.name, self.driver.path, self.driver.opts)
+        drv = (self.driver.name, self.driver.path, self.driver.options)
         info = [mat, drv, self.extract]
         self.exo = io.ExoManager.new_from_runid(
             self.runid, title, glob_var_names, ele_var_names, info)

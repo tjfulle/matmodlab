@@ -6,6 +6,7 @@ from xml.parsers.expat import ExpatError
 from mml import PKG_D
 from utils.misc import load_file
 from utils.fortran.info import FIO, SO_EXT
+from core.mmlio import Error1
 
 D = os.path.dirname(os.path.realpath(__file__))
 def cout(string):
@@ -62,7 +63,7 @@ class _Material:
     def add_to_sources(self, files):
         self.source_files.extend(files)
 
-    def instantiate_material(self, params, options):
+    def instantiate_material(self, params, istate, **options):
         """Instantiate the material model"""
 
         mtlmod = load_file(self.interface_file)
@@ -75,8 +76,21 @@ class _Material:
             mat.setup_umat(params, statev,
                            fiber_direction=options.get("umat_fiber_direction"))
             del options["umat_depvar"]
+
         mat.setup_new_material(params)
         mat.set_constant_jacobian()
+
+        sig, xtra = None, None
+        if len(istate):
+            # --- initial state is given
+            sig = istate[:6]
+            xtra = istate[6:]
+            if len(xinit) != mat.nxtra:
+                raise Error1("incorrect len(InitialState)")
+
+        # initialize material
+        mat.initialize(sig, xtra, options["initial_temperature"],
+                       options["user_field"])
 
         return mat
 

@@ -5,6 +5,12 @@ from materials.material import Material
 from core.mmlio import Error1, log_error, log_message
 
 
+ROOT2 = np.sqrt(2.0)
+ROOT3 = np.sqrt(3.0)
+TOOR2 = 1.0 / ROOT2
+TOOR3 = 1.0 / ROOT3
+I6 = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+
 class Pyplastic(Material):
     name = "pyplastic"
     param_names = ["K",    # Linear elastic bulk modulus
@@ -16,12 +22,7 @@ class Pyplastic(Material):
                    "A4"]   # Pressure dependence term.
                            #   A4 = -d(sqrt(J2)) / d(I1)  # always positive
     param_defaults = [0.0, 0.0, 1.0e99, 0.0]
-
-    root2 = np.sqrt(2.0)
-    root3 = np.sqrt(3.0)
-    toor2 = 1.0 / root2
-    toor3 = 1.0 / root3
-    I = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+    constant_j = True
 
     def setup(self):
         """Set up the plastic material
@@ -45,7 +46,7 @@ class Pyplastic(Material):
                   format(self.name, self.params.modelname))
             K = self.params["K"]
             G = self.params["G"]
-            A1 = self.params["Y0"] * self.toor3
+            A1 = self.params["Y0"] * TOOR3
             A4 = 0.0
             if self.params["H"] != 0.0:
                 log_error = ("model {0} cannot mimic {1} with hardening".
@@ -127,7 +128,7 @@ class Pyplastic(Material):
             xtra[idx('ISPLASTIC')] = 1.0
 
             s = self.dev(stress)
-            N = self.root2 * A4 * self.I + s / self.tensor_mag(s)
+            N = ROOT2 * A4 * I6 + s / self.tensor_mag(s)
             N = N / np.sqrt(6.0 * A4 ** 2 + 1.0)
             P = self.dot_with_elastic_stiffness(N)
 
@@ -137,11 +138,11 @@ class Pyplastic(Material):
             if (A4 != 0.0 and
                     i1 > A1 / A4 and
                     rootj2 / (i1 - A1 / A4) < self.rootj2(P) / self.i1(P)):
-                dstress = stress - A1 / A4 / 3.0 * self.I
+                dstress = stress - A1 / A4 / 3.0 * I6
                 # convert all of the extra strain into plastic strain
                 ep += self.iso(dstress) / (3.0 * self.params["K"])
                 ep += self.dev(dstress) / (2.0 * self.params["G"])
-                stress = A1 / A4 / 3.0 * self.I
+                stress = A1 / A4 / 3.0 * I6
             else:
                 # not in vertex; do regular return
                 lamb = ((rootj2 - A1 + A4 * i1) / (A4 * self.i1(P)
@@ -167,14 +168,14 @@ class Pyplastic(Material):
         return np.sqrt(np.dot(A[:3], A[:3]) + 2.0 * np.dot(A[3:], A[3:]))
 
     def iso(self, sig):
-        return sig[:3].sum() / 3.0 * self.I
+        return sig[:3].sum() / 3.0 * I6
 
     def dev(self, sig):
         return sig - self.iso(sig)
 
     def rootj2(self, sig):
         s = self.dev(sig)
-        return self.tensor_mag(s) * self.toor2
+        return self.tensor_mag(s) * TOOR2
 
     def i1(self, sig):
         return np.sum(sig[:3])

@@ -12,10 +12,6 @@ from core.solvers import sig2d
 from core.mmlio import (fatal_inp_error, input_errors,
                         log_message, log_warning, Error1)
 import utils.mmlabpack as mmlabpack
-try:
-    from mml_user_sub import eval_at_step
-except ImportError:
-    eval_at_step = None
 
 NSYMM = 6
 NTENS = 9
@@ -25,7 +21,7 @@ Z3 = np.zeros(3)
 I6 = np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
 W = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
 DI3 = [[0, 1, 2], [0, 1, 2]]
-DEFAULT_TMPR = 298.
+DEFAULT_TEMP = 298.
 CONTROL_FLAGS = {"D": 1,  # strain rate
                  "E": 2,  # strain
                  "R": 3,  # stress rate
@@ -42,21 +38,13 @@ np.set_printoptions(precision=4)
 
 class SolidDriver(Driver):
     name = "solid"
-    def __init__(self, path, opts, material):
+    def __init__(self, path, options, material):
         super(SolidDriver, self).__init__()
-        self.opts = opts
-        self.kappa = opts[1]
-        self.proportional = bool(opts[2])
+        self.options = options
+        self.kappa = options["kappa"]
+        self.proportional = bool(options["proportional"])
         self.path = path
-
-        # Create material
-        itmpr = path[0][18]
-        ifield = path[0][19:]
-        mtl, params, options, istate = material
-        options["initial_temperature"] = itmpr
-        options["kappa"] = self.kappa
-        self._mtl_istate = istate
-        self.material = mtl.instantiate_material(params, options)
+        self.material = material
 
         # register variables
         self.register_glob_variable("TIME_STEP")
@@ -72,7 +60,7 @@ class SolidDriver(Driver):
         self.register_variable("PRESSURE", vtype="SCALAR")
         self.register_variable("SMISES", vtype="SCALAR")
         self.register_variable("DSTRESS", vtype="SYMTENS")
-        self.register_variable("TMPR", vtype="SCALAR")
+        self.register_variable("TEMP", vtype="SCALAR")
 
         # register material variables
         self.xtra_start = self.ndata
@@ -86,9 +74,9 @@ class SolidDriver(Driver):
         # allocate storage
         self.allocd()
 
-        if opts[0] == RESTART:
+        if options["restart"] == RESTART:
             # restart info given
-            start_leg, time, glob_data, elem_data = opts[3]
+            start_leg, time, glob_data, elem_data = options[3]
             self._glob_data[:] = glob_data
             self._data[:] = elem_data
             self.start_leg = start_leg
@@ -98,20 +86,12 @@ class SolidDriver(Driver):
         else:
             # initialize nonzero data
             self._data[self.defgrad_slice] = I9
-
-            if len(self._mtl_istate):
-                # --- initial state is given
-                sig = self._mtl_istate[:NSYMM]
-                xtra = self._mtl_istate[NSYMM:]
-                if len(xtra) != self.material.nxtra:
-                    raise Error1("incorrect len(InitialState)")
-            else:
-                # initialize material
-                sig, xtra, stif = self.material.initialize(itmpr, ifield)
-                mml_user_sub_eval(0., np.zeros(NSYMM), sig, xtra)
+            sig = self.material.initial_stress
+            xtra = self.material.initial_state
 
             pres = -np.sum(sig[:3]) / 3.
-            self.setvars(stress=sig, pressure=pres, xtra=xtra, tmpr=itmpr)
+            itemp = path[0][18]
+            self.setvars(stress=sig, pressure=pres, xtra=xtra, temp=itemp)
 
             self.start_leg = 0
             self.step_num = 0
@@ -136,8 +116,8 @@ class SolidDriver(Driver):
         glob_step_num = self.step_num
         xtra = self.elem_var_vals("XTRA")
         sig = self.elem_var_vals("STRESS")
-        tmpr = np.zeros(3)
-        tmpr[1] = self.elem_var_vals("TMPR")
+        temp = np.zeros(3)
+        temp[1] = self.elem_var_vals("TEMP")
         tleg = np.zeros(2)
         d = np.zeros(NSYMM)
         dt = 0.
@@ -161,7 +141,7 @@ class SolidDriver(Driver):
         for (ileg, leg) in enumerate(legs):
             leg_num = self.start_leg + ileg
             tleg[0] = tleg[1]
-            tmpr[0] = tmpr[1]
+            temp[0] = temp[1]
             sigdum[0] = sig[:]
             if nv:
                 sigdum[0, v] = sigspec[1]
@@ -172,7 +152,7 @@ class SolidDriver(Driver):
             c = leg[8:14]
             ndumps = leg[14]
             ef = leg[15:18]
-            tmpr[1] = leg[18]
+            temp[1] = leg[18]
             ufield = leg[19:]
 
             delt = tleg[1] - tleg[0]
@@ -213,7 +193,7 @@ class SolidDriver(Driver):
 
             t = tleg[0]
             dt = delt / nsteps
-            dtmpr = (tmpr[1] - tmpr[0]) / nsteps
+            dtemp = (temp[1] - temp[0]) / nsteps
 
             if not nv:
                 # strain or strain rate prescribed and d is constant over
@@ -244,14 +224,14 @@ class SolidDriver(Driver):
                 a1 = float(nsteps - (n + 1)) / nsteps
                 a2 = float(n + 1) / nsteps
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
-                tmpr[2] = a1 * tmpr[0] + a2 * tmpr[1]
-                temp = tmpr[2] - dtmpr
+                temp[2] = a1 * temp[0] + a2 * temp[1]
+                tempn = temp[2] - dtemp
 
                 # --- find current value of d: sym(velocity gradient)
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    d = sig2d(self.material, t, dt, temp, dtmpr,
+                    d = sig2d(self.material, t, dt, tempn, dtemp,
                               f0, f, eps, depsdt, sig, xtra, ef, ufield,
                               v, sigspec[2], self.proportional)
 
@@ -262,8 +242,8 @@ class SolidDriver(Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.material.compute_updated_state(t, dt, temp,
-                    dtmpr, f0, f, eps, d, ef, ufield, sig, xtra, last=True, disp=1)
+                sig, xtra = self.material.compute_updated_state(t, dt, tempn,
+                    dtemp, f0, f, eps, d, ef, ufield, sig, xtra, last=True, disp=1)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)
@@ -283,9 +263,8 @@ class SolidDriver(Driver):
                 self.setvars(stress=sig, strain=eps, defgrad=f,
                              symm_l=d, efield=ef, eqstrain=eqeps,
                              vstrain=epsv, pressure=pres,
-                             dstress=dstress, xtra=xtra, tmpr=tmpr[2],
+                             dstress=dstress, xtra=xtra, temp=temp[2],
                              smises=smises)
-                mml_user_sub_eval(t, d, sig, xtra)
 
                 # --- write state to file
                 endstep = abs(t - tleg[1]) / tleg[1] < 1.E-12
@@ -321,9 +300,14 @@ class SolidDriver(Driver):
 
         """
         path = pPrdef(pathdict, functions, tterm)
+        itemp = path[0][18]
+        ifield = path[0][19:]
         if input_errors():
             return
-        return path, (0, pathdict["kappa"], pathdict["proportional"])
+        popts = {"initial_temperature": itemp, "initial_user_field": ifield,
+                 "restart": 0, "kappa": pathdict["kappa"],
+                 "proportional": pathdict["proportional"]}
+        return path, popts
 
 def mybool(a):
     if str(a).lower().strip() in ("false", "no", "0", "none"):
@@ -734,7 +718,7 @@ def _format_path(path, pathdict, tterm):
             continue
 
         # pull out electric field from other deformation specifications
-        tmpr = DEFAULT_TMPR
+        temp = DEFAULT_TEMP
         efcomp = np.zeros(3)
         user_field = []
         trtbl = np.array([True] * len(control))
@@ -746,7 +730,7 @@ def _format_path(path, pathdict, tterm):
                     efcomp[j] = effac * Cij[i]
                     j += 1
                 elif c == 7:
-                    tmpr = Cij[i]
+                    temp = Cij[i]
                 else:
                     user_field.append(Cij[i])
 
@@ -845,7 +829,7 @@ def _format_path(path, pathdict, tterm):
         leg.extend(Cij)
         leg.append(ndumps)
         leg.extend(efcomp)
-        leg.append(tmpr)
+        leg.append(temp)
         leg.extend(user_field)
         path[ileg] = leg
 
@@ -856,10 +840,3 @@ def _format_path(path, pathdict, tterm):
         continue
 
     return np.array(path)
-
-def mml_user_sub_eval(t, d, sig, xtra):
-    """Evaluate a user subroutine
-
-    """
-    if eval_at_step:
-        eval_at_step(opts.runid, t, d, sig, xtra)

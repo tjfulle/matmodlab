@@ -10,6 +10,7 @@ except ImportError:
 class Plastic(Material):
     name = "plastic"
     param_names = ["K", "G", "A1", "A4"]
+    constant_j = True
     def setup(self):
         """Set up the Plastic material
 

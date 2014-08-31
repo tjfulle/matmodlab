@@ -639,7 +639,7 @@ def pPhysics(physdict, functions, mtlswapdict=None):
     if input_errors():
         raise UserInputError("failed to parse material")
 
-    mdl, params, mopts, istate = parsed
+    mat_model, mat_params, mat_opts, istate = parsed
     dcls = getdrvcls(physdict["driver"])
     p = dcls.format_path_and_opts(
         physdict["Elements"]["Path"], functions,
@@ -651,16 +651,16 @@ def pPhysics(physdict, functions, mtlswapdict=None):
     driver = [physdict["driver"], dpath, dopts]
     extract = pExtract(physdict["Elements"].pop("Extract"), dcls)
 
-    mopts["viscoelastic"] = pVisco(physdict["Elements"].pop("Viscoelastic"))
-    mopts["trs"] = pTRS(physdict["Elements"].pop("TimeTemperatureShift"))
+    mat_opts["viscoelastic"] = pVisco(physdict["Elements"].pop("Viscoelastic"))
+    mat_opts["trs"] = pTRS(physdict["Elements"].pop("TimeTemperatureShift"))
     aa = pThermalExpansion(physdict["Elements"].pop("ThermalExpansion"))
-    mopts["expansion"] = aa
+    mat_opts["expansion"] = aa
 
     runid = physdict.get("runid")
 
     # Return the physics dictionary
-    material_def = (mdl, params, mopts, istate)
-    return ["Physics", runid, driver, material_def, extract]
+    material = (mat_model, mat_params, mat_opts, istate)
+    return ["Physics", runid, driver, material, extract]
 
 
 def pMaterial(mtldict, mtlswapdict=None):
