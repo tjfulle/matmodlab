@@ -9,7 +9,7 @@ import numpy as np
 import multiprocessing as mp
 from itertools import izip, product
 
-from mml import MML_ENV
+from project import MML_ENV
 import core.mmlio as io
 from core.runtime import opts
 from utils.mmltab import MMLTabularWriter

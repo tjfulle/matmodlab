@@ -8,7 +8,7 @@ import argparse
 import multiprocessing as mp
 from os.path import splitext
 
-from mml import SPLASH, ROOT_D, PKG_D
+from project import SPLASH, ROOT_D, PKG_D
 from runtime import set_runtime_opt
 import core.inpparse as inp
 from core.physics import PhysicsHandler

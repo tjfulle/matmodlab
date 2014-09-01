@@ -1,5 +1,5 @@
 import os
-from mml import ROOT_D
+from project import ROOT_D
 from utils.fortran.info import FIO
 
 _D = os.path.dirname(os.path.realpath(__file__))

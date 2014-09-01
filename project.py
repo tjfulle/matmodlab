@@ -51,3 +51,7 @@ SPLASH = """\
                      Material Model Laboratory v {0}
 
 """.format(".".join("{0}".format(i) for i in __version__))
+
+DEFAULT_TEMP = 298.
+NTENS = 9
+NSYMM = 6

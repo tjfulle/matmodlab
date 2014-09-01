@@ -1,6 +1,6 @@
 import os
 from numpy.distutils.misc_util import get_shared_lib_extension as np_so_ext
-from mml import PKG_D
+from project import PKG_D
 _D = os.path.dirname(os.path.realpath(__file__))
 LAPACK = os.path.join(_D, "blas_lapack-lite.f")
 LAPACK_OBJ = os.path.join(PKG_D, "blas_lapack-lite.o")

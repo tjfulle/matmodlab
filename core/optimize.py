@@ -6,7 +6,7 @@ import numpy as np
 import shutil
 import datetime
 
-from mml import MML_ENV
+from project import MML_ENV
 from runtime import opts
 import core.mmlio as io
 from utils.respfcn import evaluate_response_function

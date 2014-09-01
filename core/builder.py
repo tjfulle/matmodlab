@@ -5,7 +5,7 @@ import glob
 import shutil
 import argparse
 
-from mml import ROOT_D
+from project import ROOT_D
 from core.mmlio import cout
 from materials.info import MATERIAL_DB
 from utils.misc import load_file, int2str

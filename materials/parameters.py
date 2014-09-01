@@ -2,8 +2,6 @@ import os
 import sys
 import numpy as np
 
-from core.mmlio import Error1
-
 class _Parameter(object):
     def __init__(self, name, value, index):
         self.name = name
@@ -33,13 +31,13 @@ class Parameters(np.ndarray):
         obj = np.asarray(values).view(cls)
         obj.modelname = modelname
         obj.names = [s.upper() for s in names]
-        obj.named_idx = dict((s, i) for (i, s) in enumerate(obj.names))
+        obj.named_idx = dict(("_" + s, i) for (i, s) in enumerate(obj.names))
         for (name, i) in obj.named_idx.items():
             try:
                 setattr(obj, name, _Parameter(name, obj[i], i))
             except:
-                raise Error1("{0}: parameter name reserved for "
-                             "internal use, rename".format(name))
+                raise ValueError("{0}: parameter name reserved for "
+                                 "internal use, rename".format(name))
         return obj
 
     def __str__(self):
@@ -49,7 +47,7 @@ class Parameters(np.ndarray):
 
     def getidx(self, key):
         if isinstance(key, (str, basestring)):
-            idx = self.named_idx.get(key.upper(), key)
+            idx = self.named_idx.get("_" + key.upper(), key)
         else:
             idx = key
         return idx

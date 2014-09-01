@@ -81,8 +81,7 @@ class Pyplastic(Material):
                          "I1", "ROOTJ2", "YROOTJ2", "ISPLASTIC"]
         sv_values = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                      0.0, 0.0, 0.0, 0.0]
-        self.register_xtra_variables(self.sv_names)
-        self.set_initial_state(sv_values)
+        self.register_xtra_variables(self.sv_names, sv_values)
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):

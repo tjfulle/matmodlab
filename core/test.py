@@ -12,7 +12,7 @@ import xml.dom.minidom as xdom
 
 import utils.xmltools as xmltools
 from utils.namespace import Namespace
-from mml import SPLASH, TLS_D, TESTS_D, ROOT_D, MML_ENV, PYEXE
+from project import SPLASH, TLS_D, TESTS_D, ROOT_D, MML_ENV, PYEXE
 
 D = os.path.dirname(os.path.realpath(__file__))
 R = os.path.realpath(os.path.join(D, "../"))

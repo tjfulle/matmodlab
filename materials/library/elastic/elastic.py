@@ -1,17 +1,16 @@
 import numpy as np
 
-from materials.material import Material
+from materials.mat_model import MaterialModel
 from core.mmlio import Error1, log_error, log_message
 try:
     import lib.elastic as elastic
 except ImportError:
     elastic = None
 
-class Elastic(Material):
+class Elastic(MaterialModel):
     name = "elastic"
     param_names = ["K", "G"]
     constant_j = True
-
     def setup(self):
         """Set up the Elastic material
 

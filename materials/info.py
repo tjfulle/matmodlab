@@ -1,6 +1,6 @@
 import os
 import sys
-from mml import UMATS
+from project import UMATS
 from materials.materialdb import MaterialDB
 D = os.path.dirname(os.path.realpath(__file__))
 MTL_DB_D = os.path.join(D, "db")

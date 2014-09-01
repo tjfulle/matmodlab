@@ -3,7 +3,7 @@ import sys
 import time
 import numpy as np
 
-from mml import RESTART
+from project import RESTART
 from core.runtime import set_runtime_opt
 import core.mmlio as io
 from drivers.driver import create_driver

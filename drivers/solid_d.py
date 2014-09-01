@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from numpy.linalg import solve, lstsq
 
-from mml import RESTART
+from project import RESTART
 from core.runtime import opts
 import utils.xmltools as xmltools
 from drivers.driver import Driver

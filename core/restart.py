@@ -6,7 +6,7 @@ if __name__ == "__main__":
     from os.path import dirname, realpath
     sys.path.insert(0, dirname(dirname(realpath(__file__))))
 
-from mml import __version__
+from project import __version__
 from utils.exo.exoinc import *
 
 
@@ -52,7 +52,7 @@ def assert_restart_version(db):
                            "{0} got {1}".format(RESTART_VERSION, restart_version))
 
 
-def write_restart_info(exofile, material_info, driver_info, extract_info):
+def write_restart_info(exofile, material_info, driver_info):
     db = exofile.db
 
     setattr(db, ATT_RESTART_VERSION, RESTART_VERSION)
@@ -60,12 +60,8 @@ def write_restart_info(exofile, material_info, driver_info, extract_info):
     mat_name, param_names, param_vals = material_info
     write_mat_info(db, mat_name, param_names, param_vals)
 
-    driver_name, driver_path, driver_opts = driver_info
-    write_driver_info(db, driver_name, driver_path, driver_opts)
-
-    if extract_info:
-        ofmt, step, ffmt, vars, paths = extract_info
-        write_extract_info(db, ofmt, step, ffmt, vars, paths)
+    driver_name, driver_path = driver_info
+    write_driver_info(db, driver_name, driver_path)
 
 
 def read_restart_info(filepath, time):
@@ -195,7 +191,7 @@ def read_mat_info(db):
     return mat_name, names, vals
 
 
-def write_driver_info(db, name, path, options):
+def write_driver_info(db, name, path):
     """Write the driver information to the exodus file
 
     Parameters
@@ -205,9 +201,6 @@ def write_driver_info(db, name, path, options):
 
     path : array_like
         Deformation path
-
-    options : array_like
-        List of driver options
 
     """
     db.createDimension(DIM_NUM_DRIVER, 1)
@@ -228,17 +221,6 @@ def write_driver_info(db, name, path, options):
     db.createVariable(var, DTYPE_FLT, (dim_a, dim_b))
     for (i, leg) in enumerate(path):
         db.variables[var][i, :num_comps] = leg[:]
-
-    # write the options
-    dim = DIM_NUM_DRIVER_OPTS(uniq_name)
-    vals = VALS_DRIVER_OPTS(uniq_name)
-    num_opts = len(options)
-    num_opts = 3
-    opts = [options["restart"], options["kappa"], options["proportional"]]
-    db.createDimension(dim, num_opts)
-    db.createVariable(vals, DTYPE_FLT, (dim, ))
-    # tjf: not right, since options is a dictionary, values won't be in order
-    db.variables[vals][:] = opts
 
     return
 

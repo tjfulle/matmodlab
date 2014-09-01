@@ -13,7 +13,7 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
-from mml import FC, PKG_D, FFLAGS
+from project import FC, PKG_D, FFLAGS
 from core.mmlio import cout
 from utils.fortran.info import LAPACK, LAPACK_OBJ
 
