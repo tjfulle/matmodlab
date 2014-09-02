@@ -1,11 +1,4 @@
-#!/usr/bin/env python
-import os
-import sys
-try: sys.path.insert(0, os.environ["MMLROOT"])
-except KeyError: raise SystemExit("MMLROOT environment variable not set")
-
-from matmodlab import Driver, Material, MaterialPointSimulator
-
+#!/usr/bin/env mmd
 path = """
 0 0 444 0 0 0
 1 1 444 1 0 0

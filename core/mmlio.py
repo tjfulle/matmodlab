@@ -16,3 +16,8 @@ def log_message(msg):
 
 def Error1(msg):
     log_error(msg)
+
+class FileNotFoundError(Exception):
+    def __init__(self, filename):
+        message = "{0}: file not found".format(filename)
+        super(FileNotFoundError, self).__init__(message)

@@ -1,5 +1,41 @@
 import numpy as np
-from varinc import *
+
+VAR_TYPES = []
+VAR_SCALAR = 0
+DIM_SCALAR = 1
+CMP_SCALAR = lambda i: ""
+VAR_TYPES.append(VAR_SCALAR)
+
+VAR_VECTOR = 1
+DIM_VECTOR = 3
+CMP_VECTOR = lambda i: ["X", "Y", "Z"][i]
+VAR_TYPES.append(VAR_VECTOR)
+
+VAR_TENSOR = 2
+DIM_TENSOR = 9
+CMP_TENSOR = lambda i: ["XX", "XY", "XZ",
+                        "YX", "YY", "YZ",
+                        "ZX", "ZY", "ZZ"][i]
+VAR_TYPES.append(VAR_TENSOR)
+
+VAR_SYMTENSOR = 3
+DIM_SYMTENSOR = 6
+CMP_SYMTENSOR = lambda i: ["XX", "YY", "ZZ", "XY", "YZ", "XZ"][i]
+VAR_TYPES.append(VAR_SYMTENSOR)
+
+VAR_SKEWTENSOR = 4
+DIM_SKEWTENSOR = 3
+CMP_SKEWTENSOR = lambda i: ["XY", "YZ", "XZ"][i]
+VAR_TYPES.append(VAR_SKEWTENSOR)
+
+VAR_ARRAY = 5
+DIM_ARRAY = None
+CMP_ARRAY = lambda i: "{0}".format(i+1)
+VAR_TYPES.append(VAR_ARRAY)
+
+LOC_GLOB = 0
+LOC_NODE = 1
+LOC_ELEM = 2
 
 def catstr(a, b): return "{0}_{1}".format(a, b)
 
@@ -64,88 +100,6 @@ class Variable(object):
         self.keys = keys
 
         return
-
-
-class VariableContainer(np.ndarray):
-    """Array like object to hold simulation data. Data are
-    accessible by either index of name, i.e. data[0] or data["NAME"] (assuming
-    NAME has index 0)
-
-    """
-    def __new__(cls, *args):
-        values = []
-        keys = []
-        names = []
-        lengths = []
-        for arg in args:
-            for item in arg:
-                values.extend(item.initial_value)
-                keys.extend(item.keys)
-                names.append(item.name)
-                lengths.append(item.length)
-
-        obj = np.asarray(values).view(cls)
-        obj.names = names
-        obj.lengths = lengths
-        obj.keys = keys
-
-        I = 0
-        for (i, name) in enumerate(names):
-            l = lengths[i]
-            ikeys = keys[I:I+l]
-            setattr(obj, name, (I, l))
-            if len(ikeys) > 1:
-                J = I
-                for key in ikeys:
-                    setattr(obj, key, (J, 1))
-                    J += 1
-            I += l
-        return obj
-
-    def getidx(self, key):
-        if isinstance(key, (str, basestring)):
-            try:
-                I, stride = getattr(self, key.upper())
-            except AttributeError:
-                return key
-            if stride == 1:
-                idx = I
-            else:
-                idx = slice(I, I+stride)
-        else:
-            idx = key
-        return idx
-
-    def __getitem__(self, key):
-        idx = self.getidx(key)
-        print idx
-        print key
-        print len(self)
-        print
-        if idx == len(self):
-            idx == -1
-        return super(VariableContainer, self).__getitem__(idx)
-
-    def __setitem__(self, key, value):
-        idx = self.getidx(key)
-        super(VariableContainer, self).__setitem__(idx, value)
-
-    def __array_finalize__(self, obj):
-        self.names = getattr(obj, "names", None)
-        self.lengths = getattr(obj, "lengths", None)
-        self.keys = getattr(obj, "keys", None)
-        if self.names:
-            I = 0
-            for (i, name) in enumerate(self.names):
-                l = self.lengths[i]
-                ikeys = self.keys[I:I+l]
-                setattr(self, name, (I, l))
-                if len(ikeys) > 1:
-                    J = I
-                    for key in ikeys:
-                        setattr(self, key, J)
-                        J += 1
-                I += l
 
 def isscalar(a):
     try:

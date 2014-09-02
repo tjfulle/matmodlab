@@ -59,10 +59,12 @@ class ExodusIIManager(object):
         self.runid = runid
         self.num_dim = num_dim
         self.exofile = ExodusIIFile(runid, mode="w", d=d)
+        self.filepath = self.exofile.filepath
 
         # initialize file with parameters
         self.elem_blks = elem_blks
         self.num_nodes = coords.shape[0]
+        self.coords = coords
         self.num_elem = conn.shape[0]
         self.num_elem_blk = len(self.elem_blks)
         num_node_sets = len(node_sets)
@@ -222,7 +224,7 @@ class ExodusIIManager(object):
         num_elem_this_blk = 1
         num_elem_vars = len(elem_var_vals)
         for k in range(num_elem_vars):
-            self.exofile.put_elem_var(self.time_step, k, elem_blk_id,
+            self.exofile.put_elem_var(self.count, k, elem_blk_id,
                                       num_elem_this_blk, elem_var_vals.T[k])
             continue
 

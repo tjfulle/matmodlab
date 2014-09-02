@@ -2,9 +2,9 @@ import numpy as np
 
 #from core.mmlio import log_warning, log_error, log_message
 import utils.mmlabpack as mmlabpack
-from core.varinc import *
-from core.variable import Variable
-from materials.parameters import Parameters
+from core.variable import Variable, VAR_ARRAY, VAR_SCALAR
+from utils.array import Array
+from core.mmlio import log_message, log_warning, log_error
 try:
     from lib.visco import visco as ve
 except ImportError:
@@ -59,11 +59,11 @@ class MaterialModel(object):
                                  "for model {1}".format(key, model))
             params[param_names.index(key)] = value
 
-        self.iparams = Parameters(self._parameter_names(), params, self.name)
-        self.params = Parameters(self._parameter_names(), params, self.name)
+        data = [(n, n, [params[i]]) for (i, n) in enumerate(param_names)]
+        self.iparams = Array(data)
+        self.params = Array(data)
         self.setup()
         self.register_variable("XTRA", VAR_ARRAY, keys=self.xkeys, ivals=self.xinit)
-
 
         if self._viscoelastic is not None:
             if ve is None:
@@ -114,6 +114,8 @@ class MaterialModel(object):
 
         if self.visco_params is not None:
             ve.propcheck(self.visco_params, log_error, log_message, log_warning)
+
+        self.set_constant_jacobian()
 
     def register_variable(self, var_name, var_type, keys=None, ivals=None):
         if keys is not None:

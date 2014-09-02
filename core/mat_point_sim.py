@@ -5,8 +5,8 @@ import numpy as np
 
 from core.runtime import set_runtime_opt
 from core.mmlio import exo, logger
-from core.varinc import *
-from core.variable import Variable, VariableContainer
+from core.variable import Variable, VAR_SCALAR
+from utils.array import Array
 
 class MaterialPointSimulator(object):
     _vars = []
@@ -30,9 +30,19 @@ class MaterialPointSimulator(object):
         self.register_variable("STEP_NUM", VAR_SCALAR)
         self.register_variable("LEG_NUM", VAR_SCALAR)
 
-	self.data = VariableContainer(self.variables, self.driver.variables,
-				      self.material.variables)
+        glob_data = []
+        # two data arrays: global, element
+        for d in self.variables:
+            assert len(d.keys) == len(d.initial_value)
+            glob_data.append((d.name, d.keys, d.initial_value))
+        self.glob_data = Array(glob_data)
 
+        elem_data = []
+        for item in (self.driver.variables, self.material.variables):
+            for d in item:
+                assert len(d.keys) == len(d.initial_value)
+                elem_data.append((d.name, d.keys, d.initial_value))
+        self.elem_data = Array(elem_data)
 
         # set up timing
         self.timing = {}
@@ -71,18 +81,16 @@ class MaterialPointSimulator(object):
         elem_var_names = self.driver.plot_keys
 	ebid = 1
 	neeb = 1
-	vals = self.data[3:]
 	elems_this_blk = [0]
         elem_type = "HEX"
         num_node_per_elem = 8
-	elem_data = [[ebid, neeb, vals.reshape((neeb, len(elem_var_names)))]]
+	elem_data = [[ebid, neeb,
+                      self.elem_data.reshape((neeb, len(elem_var_names)))]]
 	elem_blks = [[ebid, elems_this_blk, elem_type, num_node_per_elem,
 		      elem_var_names]]
         elem_num_map = [0]
 
-        glob_var_names = self.plot_keys
-	glob_var_vals = self.data[:3]
-	glob_data = [glob_var_names, glob_var_vals]
+	glob_data = [self.plot_keys, self.glob_data]
 
         exo.put_init(self.runid, num_dim, coords, connect, elem_blks,
                      node_sets, side_sets, glob_data, elem_data, elem_num_map,
@@ -102,7 +110,7 @@ class MaterialPointSimulator(object):
         # write out plotable data
         logger.debug("Output Variables:")
         logger.debug("Global")
-        for item in glob_var_names:
+        for item in self.plot_keys:
             logger.debug("  " + item)
         logger.debug("Element")
         for item in elem_var_names:
@@ -113,50 +121,29 @@ class MaterialPointSimulator(object):
 
         """
         logger.write("{0}: starting calculations".format(self.runid))
-	retcode = self.driver.run(self.data[:3], self.data[3:], self.material)
+	retcode = self.driver.run(self.glob_data, self.elem_data, self.material)
         self.finish()
         return retcode
 
     def finish(self):
         # udpate and close the file
-        from utils.exo.exodump import exodump
         self.timing["end"] = time.time()
-        if self.driver._paths_and_surfaces_processed:
+        if self.driver.ran:
             logger.write("{0}: calculations completed ({1:.4f}s)".format(
                 self.runid, self.timing["end"] - self.timing["start"]))
         else:
             logger.error("{0}: calculations did not complete".format(self.runid),
                          r=0)
 
-        self.exo.finish()
+        exo.finish()
 
         return
 
-    def extract_from_db(self, format="ascii", step=1, ffmt=".18f",
-                        variables=None, paths=None):
-
+    def extract_from_db(self, variables=None, paths=None, format="ascii",
+                        step=1, ffmt=".18f"):
+        from utils.exo.exodump import exodump
         if variables:
-            exodump(self.exo.filepath, step=step, ffmt=ffmt,
+            exodump(exo.filepath, step=step, ffmt=ffmt,
                     variables=variables, ofmt=format)
         if paths:
-            self.driver.extract_paths(self.exo.filepath, paths)
-
-    def dump_state(self, time_end):
-        """Dump current state to exodus file
-
-        """
-        # global data
-        glob_var_vals = self.driver.glob_var_vals()
-
-        # element data
-        elem_var_vals = self.driver.elem_var_vals()
-
-        # determine displacement
-        F = np.reshape(self.driver.elem_var_vals("DEFGRAD"), (3, 3))
-        u = np.zeros(self.exo.num_nodes * self.exo.num_dim)
-        for i, X in enumerate(self.exo.coords):
-            k = i * self.exo.num_dim
-            u[k:k+self.exo.num_dim] = np.dot(F, X) - X
-
-        self.exo.write_data(time_end, glob_var_vals, elem_var_vals, u)
-        return
+            self.driver.extract_paths(exo.filepath, paths)

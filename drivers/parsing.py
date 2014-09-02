@@ -1,6 +1,6 @@
 import numpy as np
 
-from project import DEFAULT_TEMP, NTENS, NSYMM
+from utils.constants import DEFAULT_TEMP, NTENS, NSYMM
 
 CONTROL_FLAGS = {"D": 1,  # strain rate
                  "E": 2,  # strain

@@ -1,11 +1,15 @@
 import os
 import sys
 import numpy as np
+from numpy.linalg import solve, lstsq
 
-from core.varinc import *
 from core.variable import Variable
+from core.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
 from core.mmlio import exo, logger
 from drivers.parsing import parse_default_path, format_continuum_path
+from utils.constants import NSYMM, NTENS, I9
+import utils.mmlabpack as mmlabpack
+from core.solvers import sig2d
 
 D = os.path.dirname(os.path.realpath(__file__))
 
@@ -29,8 +33,8 @@ class _Driver(object):
     def plot_keys(self):
         return [x for l in [v.keys for v in self.variables] for x in l]
 
-    def register_variable(self, var_name, var_type):
-        self._vars.append(Variable(var_name, var_type))
+    def register_variable(self, var_name, var_type, initial_value=None):
+        self._vars.append(Variable(var_name, var_type, initial_value=initial_value))
 
 
 class ContinuumDriver(_Driver):
@@ -38,20 +42,7 @@ class ContinuumDriver(_Driver):
     def __init__(self, path=None, path_file=None, path_input="default",
                  kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1.,
                  num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1.,
-                 efstar=1., dstar=1., termination_time=None):
-
-        # Register variables specifically needed by driver
-        self.register_variable("STRESS", VAR_SYMTENSOR)
-        self.register_variable("STRAIN", VAR_SYMTENSOR)
-        self.register_variable("DEFGRAD", VAR_TENSOR)
-        self.register_variable("SYMM_L", VAR_SYMTENSOR)
-        self.register_variable("EFIELD", VAR_VECTOR)
-        self.register_variable("VSTRAIN", VAR_SCALAR)
-        self.register_variable("EQSTRAIN", VAR_SCALAR)
-        self.register_variable("PRESSURE", VAR_SCALAR)
-        self.register_variable("SMISES", VAR_SCALAR)
-        self.register_variable("DSTRESS", VAR_SYMTENSOR)
-        self.register_variable("TEMP", VAR_SCALAR)
+                 efstar=1., dstar=1., proportional=False, termination_time=None):
 
         if path is None and path_file is None:
             raise ValueError("Expected one of path or path_file")
@@ -73,6 +64,22 @@ class ContinuumDriver(_Driver):
             rate_multiplier, step_multiplier, num_io_dumps, estar,
             tstar, sstar, fstar, efstar, dstar, termination_time)
         self.kappa = kappa
+        self.proportional = proportional
+        itemp = path[0][18]
+
+        # Register variables specifically needed by driver
+        self.register_variable("STRESS", VAR_SYMTENSOR)
+        self.register_variable("STRAIN", VAR_SYMTENSOR)
+        self.register_variable("DEFGRAD", VAR_TENSOR, initial_value=I9)
+        self.register_variable("SYMM_L", VAR_SYMTENSOR)
+        self.register_variable("EFIELD", VAR_VECTOR)
+        self.register_variable("VSTRAIN", VAR_SCALAR)
+        self.register_variable("EQSTRAIN", VAR_SCALAR)
+        self.register_variable("PRESSURE", VAR_SCALAR)
+        self.register_variable("SMISES", VAR_SCALAR)
+        self.register_variable("DSTRESS", VAR_SYMTENSOR)
+        self.register_variable("TEMP", VAR_SCALAR, initial_value=itemp)
+
 
     def run(self, glob_data, elem_data, material):
         """Process the deformation path
@@ -97,21 +104,18 @@ class ContinuumDriver(_Driver):
         sig = elem_data["STRESS"]
         xtra = elem_data["XTRA"]
         temp = np.zeros(3)
-        print elem_data.keys
         temp[1] = elem_data["TEMP"]
-        print temp
-        sys.exit("need to make sure all data is initialized, particularly temp")
         tleg = np.zeros(2)
         d = np.zeros(NSYMM)
         dt = 0.
         eps = np.zeros(NSYMM)
-        f0 = np.reshape(np.eye(3), (NTENS,))
+        f0 = elem_data["DEFGRAD"]
         f = np.reshape(np.eye(3), (NTENS,))
         depsdt = np.zeros(NSYMM)
         sigdum = np.zeros((2, NSYMM))
 
         # compute the initial jacobian
-        J0 = self.material.constant_jacobian
+        J0 = material.constant_jacobian
 
         # v array is an array of integers that contains the rows and columns of
         # the slice needed in the jacobian subroutine.
@@ -121,8 +125,9 @@ class ContinuumDriver(_Driver):
         # Process each leg
         nlegs = len(legs)
         lsl = len(str(nlegs))
+        start_leg = 0
         for (ileg, leg) in enumerate(legs):
-            leg_num = self.start_leg + ileg
+            leg_num = start_leg + ileg
             tleg[0] = tleg[1]
             temp[0] = temp[1]
             sigdum[0] = sig[:]
@@ -174,7 +179,7 @@ class ContinuumDriver(_Driver):
             sigspec[:2] = sigdum[:2, v]
             Jsub = J0[[[x] for x in v], v]
 
-            t = tleg[0]
+            time = tleg[0]
             dt = delt / nsteps
             dtemp = (temp[1] - temp[0]) / nsteps
 
@@ -185,8 +190,8 @@ class ContinuumDriver(_Driver):
 
                 if opts.sqa and kappa == 0.:
                     if not np.allclose(d, depsdt):
-                        log_message("sqa: d != depsdt (k=0, leg"
-                                    "={0})".format(leg_num))
+                        logger.write("sqa: d != depsdt (k=0, leg"
+                                     "={0})".format(leg_num))
 
             else:
                 # Initial guess for d[v]
@@ -200,8 +205,8 @@ class ContinuumDriver(_Driver):
             for n in range(int(nsteps)):
 
                 # increment time
-                t += dt
-                self.time = t
+                time += dt
+                self.time = time
 
                 # interpolate values to the target values for this step
                 a1 = float(nsteps - (n + 1)) / nsteps
@@ -214,7 +219,7 @@ class ContinuumDriver(_Driver):
                 if nv:
                     # One or more stresses prescribed
                     # get just the prescribed stress components
-                    d = sig2d(self.material, t, dt, tempn, dtemp,
+                    d = sig2d(material, time, dt, tempn, dtemp,
                               f0, f, eps, depsdt, sig, xtra, ef, ufield,
                               v, sigspec[2], self.proportional)
 
@@ -225,7 +230,7 @@ class ContinuumDriver(_Driver):
                 # update material state
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
-                sig, xtra = self.material.compute_updated_state(t, dt, tempn,
+                sig, xtra = material.compute_updated_state(time, dt, tempn,
                     dtemp, f0, f, eps, d, ef, ufield, sig, xtra, last=True, disp=1)
 
                 # -------------------------- quantities derived from final state
@@ -235,7 +240,7 @@ class ContinuumDriver(_Driver):
 
                 pres = -np.sum(sig[:3]) / 3.
                 dstress = (sig - sigsave) / dt
-                smises = np.sqrt(3./2.) * mag(dev(sig))
+                smises = np.sqrt(3./2.) * mmlabpack.mag(mmlabpack.dev(sig))
                 f0 = f
 
                 # advance all data after updating state
@@ -249,28 +254,28 @@ class ContinuumDriver(_Driver):
                 elem_data["DEFGRAD"] = f
                 elem_data["SYMM_L"] = d
                 elem_data["EQSTRAIN"] = eqeps
-                elem_data["vSTRAIN"] = eqeps
+                elem_data["VSTRAIN"] = eqeps
                 elem_data["DSTRESS"] = epsv
                 elem_data["SMISES"] = smises
                 elem_data["XTRA"] = xtra
                 elem_data["TEMP"] = temp[2]
 
                 # --- write state to file
-                endstep = abs(t - tleg[1]) / tleg[1] < 1.E-12
+                endstep = abs(time - tleg[1]) / tleg[1] < 1.E-12
                 if (nsteps - n) % dump_interval == 0 or endstep:
                     exo.snapshot(time, glob_data, elem_data)
 
                 if n == 0 or round((nsteps - 1) / 2.) == n or endstep:
-                    log_message(consfmt.format(leg_num, n + 1, t, dt))
+                    logger.write(consfmt.format(leg_num, n + 1, time, dt))
 
                 if n > 1 and nv and not warned:
                     absmax = lambda a: np.max(np.abs(a))
                     sigerr = np.sqrt(np.sum((sig[v] - sigspec[2]) ** 2))
                     warned = True
-                    _tol = np.amax(np.abs(sig[v])) / self.material.bulk_modulus
+                    _tol = np.amax(np.abs(sig[v])) / material.bulk_modulus
                     _tol = max(_tol, 1e-4)
                     if sigerr > _tol:
-                        log_warning("leg: {0}, prescribed stress error: "
+                        logger.warn("leg: {0}, prescribed stress error: "
                                     "{1: .5f}. consider increasing number of "
                                     "steps".format(ileg, sigerr))
 

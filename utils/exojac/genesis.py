@@ -25,8 +25,8 @@ class Genesis(object):
 
         """
         d = d or os.getcwd()
-        filepath = os.path.join(d, runid + ".exo")
-        self.db = self.open_db(filepath, mode="w")
+        self.filepath = os.path.join(d, runid + ".exo")
+        self.db = self.open_db(self.filepath, mode="w")
 
         version = 5.0300002
         setattr(self.db, ATT_API_VERSION, version)
@@ -34,7 +34,7 @@ class Genesis(object):
         setattr(self.db, ATT_FLT_WORDSIZE, 4)
         setattr(self.db, ATT_FILESIZE, 1)
 
-        setattr(self.db, ATT_FILENAME, os.path.basename(filepath))
+        setattr(self.db, ATT_FILENAME, os.path.basename(self.filepath))
         setattr(self.db, ATT_RUNID, runid)
 
         # standard ExodusII dimensioning
@@ -705,4 +705,3 @@ class Genesis(object):
         for (i, info_record) in enumerate(info):
             self.db.variables[VAR_INFO][i] = info_record
         return
-
