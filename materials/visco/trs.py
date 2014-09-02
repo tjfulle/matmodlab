@@ -1,5 +1,5 @@
 import numpy as np
-from core.mmlio import Error1
+from utils.errors import GenericError
 
 class TRS(object):
     def __init__(self, defn, data):
@@ -7,7 +7,7 @@ class TRS(object):
         if self.defn == "WLF":
             # check data
             if data.shape[0] != 3:
-                raise Error1("expected 3 WLF parameters")
+                raise Error("expected 3 WLF parameters")
             self._data = np.array(data)
 
     @property

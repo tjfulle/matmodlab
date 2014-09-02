@@ -10,7 +10,7 @@ import multiprocessing as mp
 from itertools import izip, product
 
 from project import MML_ENV
-import core.mmlio as io
+import utils.mmlio as io
 from core.runtime import opts
 from utils.mmltab import MMLTabularWriter
 from utils.pprepro import find_and_make_subs

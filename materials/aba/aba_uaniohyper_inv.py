@@ -2,7 +2,8 @@ import sys
 import numpy as np
 
 form core.runtime import opts
-from core.mmlio import Error1, log_message, log_error, log_warning
+from utils.mmlio import log_message, log_error, log_warning
+from utils.errors import GenericError
 import utils.mmlabpack as mmlabpack
 from materials.material import Material
 try:

@@ -27,6 +27,9 @@ if errors:
                      "following errors:\n  {0}".format("\n  ".join(errors)))
 
 # Public methods to set up and run a simulation
-from drivers.driver import Driver
-from materials.material import Material
+from core.driver import Driver
+from core.material import Material
 from core.mat_point_sim import MaterialPointSimulator
+from utils.functions import Function
+import numpy as np
+from math import *

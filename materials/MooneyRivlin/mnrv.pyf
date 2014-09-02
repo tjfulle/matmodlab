@@ -1,0 +1,68 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+python module mml__user__routines
+    interface mml_user_interface
+        subroutine log_message(message)
+            intent(callback) log_message
+            character*(*) :: message
+        end subroutine log_message
+        subroutine log_error(message)
+            intent(callback) log_error
+            character*(*) :: message
+            real intent(callback) :: log_message
+        end subroutine log_error
+    end interface mml_user_interface
+end python module mml__user__routines
+
+python module mnrv ! in
+    interface  ! in :mnrv
+        subroutine mnrvus(nc,prop,r,v,t,xtra,sig) ! in :mnrv:mnrv.f90
+            use mml__user__routines
+            intent(callback) log_error
+            external log_error
+            intent(callback) log_message
+            external log_message
+            integer, optional,intent(in),check(shape(r,1)==nc),depend(r) :: nc=shape(r,1)
+            real(kind=8) dimension(6),intent(in) :: prop
+            real(kind=8) dimension(9,nc),intent(in) :: r
+            real(kind=8) dimension(6,nc),intent(in),depend(nc) :: v
+            real(kind=8) dimension(nc),intent(in),depend(nc) :: t
+            real(kind=8) dimension(3,nc),intent(inout),depend(nc) :: xtra
+            real(kind=8) dimension(6,nc),intent(out),depend(nc) :: sig
+        end subroutine mnrvus
+        subroutine mnrvcp(prop) ! in :mnrv:mnrv.f90
+            use mml__user__routines
+            intent(callback) log_error
+            external log_error
+            intent(callback) log_message
+            external log_message
+            real(kind=8) dimension(6),intent(inout) :: prop
+        end subroutine mnrvcp
+        subroutine mnrvxv(prop,nxtra,keya,xtra) ! in :mnrv:mnrv.f90
+            use mml__user__routines
+            intent(callback) log_error
+            external log_error
+            intent(callback) log_message
+            external log_message
+            real(kind=8) dimension(6),intent(in) :: prop
+            integer intent(out) :: nxtra
+            character(len=1) dimension(30),intent(out) :: keya
+            real(kind=8) dimension(3),intent(out) :: xtra
+        end subroutine mnrvxv
+        subroutine mnrvjm(prop,v,t,xtra,jsub) ! in :mnrv:mnrv.f90
+            use mml__user__routines
+            intent(callback) log_error
+            external log_error
+            intent(callback) log_message
+            external log_message
+            real(kind=8) dimension(6),intent(in) :: prop
+            real(kind=8) dimension(6),intent(in) :: v
+            real(kind=8) dimension(1),intent(in) :: t
+            real(kind=8) dimension(3),intent(in) :: xtra
+            real(kind=8) dimension(6,6),intent(out) :: jsub
+        end subroutine mnrvjm
+    end interface
+end python module mnrv
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

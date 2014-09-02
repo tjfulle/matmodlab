@@ -3,8 +3,8 @@ import os
 import sys
 import _setup
 from utils.misc import remove
-from core.mmlio import cout
-from mml import ROOT_D, PKG_D
+from utils.mmlio import cout
+from project import ROOT_D, PKG_D
 
 if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
     sys.exit("clean: Recursively clean the matmodlab project\nusage: clean")

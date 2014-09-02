@@ -8,7 +8,7 @@ import datetime
 
 from project import MML_ENV
 from runtime import opts
-import core.mmlio as io
+import utils.mmlio as io
 from utils.respfcn import evaluate_response_function
 from utils.mmltab import MMLTabularWriter
 import utils.pprepro as pprepro

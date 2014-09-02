@@ -3,7 +3,7 @@ and using the python version as a back up
 
 """
 from sys import modules
-from core.mmlio import log_warning
+from utils.mmlio import log_warning
 try:
     from lib.mmlabpack import mmlabpack as m
 except ImportError:

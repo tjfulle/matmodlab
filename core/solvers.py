@@ -5,7 +5,7 @@ import numpy as np
 import sys
 
 import utils.mmlabpack as mmlabpack
-import core.mmlio as io
+from utils.mmlio import log_warning
 from core.runtime import opts
 
 EPS = np.finfo(np.float).eps
@@ -152,15 +152,15 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
         if opts.sqa:
             evals = np.linalg.eigvalsh(Jsub)
             if np.any(evals < 0.):
-                io.log_warning("newton: "
-                               "negative value encountered in material Jacobian")
+                log_warning("newton: "
+                            "negative value encountered in material Jacobian")
         try:
             d[v] -= np.linalg.solve(Jsub, sigerr) / dt
 
         except:
             d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
-            io.log_warning("newton: using least squares approximation "
-                           "to matrix inverse", limit=True)
+            log_warning("newton: using least squares approximation "
+                        "to matrix inverse", limit=True)
 
         if (depsmag(d) > depsmax):
             # increment too large

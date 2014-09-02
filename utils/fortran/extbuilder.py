@@ -14,8 +14,8 @@ from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
 from project import FC, PKG_D, FFLAGS
-from core.mmlio import cout
-from utils.fortran.info import LAPACK, LAPACK_OBJ
+from utils.mmlio import cout
+from utils.fortran.mml_i import LAPACK, LAPACK_OBJ
 
 
 class ExtModuleNotBuilt(Exception): pass

@@ -22,7 +22,7 @@ import chaco.tools.api as ctapi
 import pyface.api as papi
 
 from viz.colors import random_color
-from utils.exo import ExodusIIFile
+from utils.exojac import ExodusIIFile
 
 EXE = "plot2d"
 Change_X_Axis_Enabled = True

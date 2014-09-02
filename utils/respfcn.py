@@ -3,7 +3,7 @@ import re
 import sys
 import subprocess
 import numpy as np
-from core.mmlio import fatal_inp_error
+from utils.mmlio import fatal_inp_error
 from project import MML_ENV
 
 MML_RESP_FCNS = {"max": np.amax, "min": np.amin, "mean": np.mean,

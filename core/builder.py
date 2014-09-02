@@ -5,12 +5,12 @@ import glob
 import shutil
 import argparse
 
-from project import ROOT_D
-from core.mmlio import cout
-from materials.info import MATERIAL_DB
+from project import ROOT_D, MML_IFILE
+from utils.mmlio import cout
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
-from utils.fortran.info import MMLABPACK_F90, DGPADM_F
+from utils.errors import DuplicateExtModule
+from core.material import MATERIALS
 
 
 class BuilderError(Exception):
@@ -23,99 +23,81 @@ class Builder(object):
         pass
 
     def build_materials(self, mats_to_build="all"):
-        self._add_mtls(mats_to_build)
+        self.fetch_fort_libs_to_build(mats_to_fetch=mats_to_build)
         self._build_extension_modules()
 
     def build_utils(self):
-        self._add_utils()
+        self.fetch_fort_libs_to_build(mats_to_fetch=None)
         self._build_extension_modules()
 
     def build_all(self, mats_to_build="all"):
-        self._add_utils()
-        self._add_mtls(mats_to_build)
+        self.fetch_fort_libs_to_build(mats_to_fetch=mats_to_build)
         self._build_extension_modules()
 
-    @property
-    def path(self):
-        if not MATERIAL_DB:
-            return []
-        return MATERIAL_DB.path
-
     @staticmethod
-    def build_umat(material, verbosity=0):
-        fb = FortranExtBuilder(material.name, verbosity=verbosity)
-        cout("building {0}".format(material.name))
-        fb.add_extension(material.name, material.source_files,
-                         requires_lapack="lite")
+    def build_umat(name, source_files, verbosity=0):
+        fb = FortranExtBuilder(name, verbosity=verbosity)
+        cout("building {0}".format(name))
+        fb.add_extension(name, source_files, requires_lapack="lite")
         fb.build_extension_modules()
         pass
 
     @staticmethod
-    def build_material(material, verbosity=0):
+    def build_material(name, info=None, verbosity=0):
         """Build a single material
 
         Parameters
         ----------
-        material : str
+        name : str
           The name of the material to build
 
         """
-        material = MATERIAL_DB[material]  #.material_from_name(material)
-        fb = FortranExtBuilder(material.name, verbosity=verbosity)
-        cout("building {0}".format(material.name))
-        fb.add_extension(material.name, material.source_files,
-                         requires_lapack=material.requires_lapack)
+        fb = FortranExtBuilder(name, verbosity=verbosity)
+        cout("building {0}".format(name))
+        if info is None:
+            info = MATERIALS[name]
+        fb.add_extension(name, info["source_files"],
+                         requires_lapack=info.get("requires_lapack"))
         fb.build_extension_modules(verbosity=verbosity)
         return
 
-    def _add_utils(self):
+    def fetch_fort_libs_to_build(self, mats_to_fetch="all"):
         """Add the fortran utilities to items to be built
 
         """
-        f = "info.py"
+        fort_libs = {}
         for (dirname, dirs, files) in os.walk(ROOT_D):
-            if f not in files:
+            if MML_IFILE not in files:
                 continue
-            info = load_file(os.path.join(dirname, f))
-            try:
-                fort_libs = info.fortran_libraries()
-            except AttributeError:
-                continue
-            for ext in fort_libs:
-                s = fort_libs[ext]["source_files"]
-                l = fort_libs[ext].get("lapack", False)
-                self.fb.add_extension(ext, s, requires_lapack=l)
+            libs = {}
+            info = load_file(os.path.join(dirname, MML_IFILE))
+            if hasattr(info, "fortran_libraries"):
+                libs.update(info.fortran_libraries())
 
-        return
-
-    def _add_mtls(self, mats_to_build):
-        """Add fortran material models
-
-        """
-        if mats_to_build == "all":
-            mats_to_build = [m.name for m in MATERIAL_DB]
-
-        cout("Material[s] to be built: {0}".format(", ".join(mats_to_build)))
-
-        for material in MATERIAL_DB:
-
-            if material.name not in mats_to_build:
+            if not libs:
                 continue
 
-            if material.python_model:
-                continue
+            for name in libs:
+                if name in fort_libs:
+                    raise DuplicateExtModule(name)
+                fort_libs.update({name: libs[name]})
+            del sys.modules[os.path.splitext(MML_IFILE)[0]]
 
-            include_dirs = [material.dirname]
-            d = material.include_dir
-            if d and d not in include_dirs:
-                include_dirs.append(d)
-            stat = self.fb.add_extension(
-                material.name, material.source_files,
-                include_dirs=include_dirs,
-                requires_lapack=material.requires_lapack)
-            if stat:
-                # failed to add extension
-                MATERIAL_DB.remove(material)
+        if mats_to_fetch is not None:
+            for name in MATERIALS:
+                if name in fort_libs:
+                    raise DuplicateExtModule(name)
+                if mats_to_fetch != "all" and name not in mats_to_fetch:
+                    continue
+                if not MATERIALS[name].get("source_files"):
+                    continue
+                fort_libs.update({name: MATERIALS[name]})
+
+        for ext in fort_libs:
+            s = fort_libs[ext]["source_files"]
+            l = fort_libs[ext].get("lapack", False)
+            I = fort_libs[ext].get("include_dirs", [])
+            self.fb.add_extension(ext, s, include_dirs=I, requires_lapack=l)
 
         return
 

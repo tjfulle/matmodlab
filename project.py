@@ -19,7 +19,10 @@ TESTS_D = os.path.join(ROOT_D, "tests")
 PKG_D = os.path.join(ROOT_D, "lib")
 BLD_D = os.path.join(ROOT_D, "build")
 LIB_D = os.path.join(ROOT_D, "lib")
-EXO_D = os.path.join(UTL_D, "exo")
+EXO_D = os.path.join(UTL_D, "exojac")
+MATLIB = os.path.join(ROOT_D, "materials")
+MML_IFILE = "mml_i.py"
+MML_MFILE = "mml_m.py"
 
 # environment variables
 PATH = os.getenv("PATH").split(os.pathsep)
