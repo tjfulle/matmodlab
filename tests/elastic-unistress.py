@@ -18,4 +18,4 @@ runid = "elastic-unistress"
 mps = MaterialPointSimulator(runid, driver, material)
 
 mps.run()
-mps.extract_from_db(format="ascii", variables=["STRESS", "STRAIN"])
+#mps.extract_from_db(format="ascii", variables=["STRESS", "STRAIN"])

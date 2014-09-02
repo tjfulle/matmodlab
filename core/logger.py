@@ -36,7 +36,7 @@ class Logger(object):
 
     def debug(self, string):
         if self.fh:
-            self.fh.write(string)
+            self.fh.write(string + "\n")
 
     def write_formatted(self, *args, **kwargs):
         fmt = kwargs["fmt"]
