@@ -27,3 +27,4 @@ mps.run()
 
 mps.extract_from_db(variables=["STRESS", "STRAIN"], format="ascii",
                     step=1, ffmt="12.6E")
+mps.visualize_results()
