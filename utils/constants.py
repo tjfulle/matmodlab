@@ -9,3 +9,4 @@ ROOT2 = np.sqrt(2.0)
 ROOT3 = np.sqrt(3.0)
 TOOR2 = 1.0 / ROOT2
 TOOR3 = 1.0 / ROOT3
+ROOT23 = ROOT2 / ROOT3

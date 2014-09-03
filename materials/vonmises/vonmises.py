@@ -1,10 +1,12 @@
 import numpy as np
 
-from materials.parameters import Parameters
-from materials.material import Material
+from core.runtime import opts
+from utils.data_containers import Parameters
+from core.material import MaterialModel
 from utils.mmlio import log_error, log_message
+from utils.constants import ROOT2, ROOT23
 
-class VonMises(Material):
+class VonMises(MaterialModel):
     name = "vonmises"
     param_names = ["K",    # Linear elastic bulk modulus
                    "G",    # Linear elastic shear modulus
@@ -18,14 +20,21 @@ class VonMises(Material):
                            #    BETA = 1 for kinematic hardening
                   ]
     param_defaults = [0.0, 0.0, 1.0e30, 0.0, 0.0]
-    constant_j = True
 
     def setup(self):
         """Set up the von Mises material
 
         """
         # Check inputs
-        if self.params.modelname == self.name:
+        if opts.mimic == "elastic":
+            logger.warn("model '{0}' mimicing '{1}'".format(self.name, "elastic"))
+            K = self.params["K"]
+            G = self.params["G"]
+            Y0 = 1.0e99
+            H = 0.0
+            BETA = 0.0
+
+        else:
             K = self.params["K"]
             G = self.params["G"]
             Y0 = self.params["Y0"]
@@ -40,17 +49,9 @@ class VonMises(Material):
             if nu < 0.0: log_message = "#---- WARNING: negative Poisson's ratio"
             if Y0 == 0.0: Y0 = 1.0e99
 
-        elif self.params.modelname == 'elastic':
-            print("model '{0}' mimicing '{1}'".format(self.name, self.params.modelname))
-            K = self.params["K"]
-            G = self.params["G"]
-            Y0 = 1.0e99
-            H = 0.0
-            BETA = 0.0
-
         newparams = [K, G, Y0, H, BETA]
         newnames = ["K", "G", "Y0", "H", "BETA"]
-        self.params = Parameters(newnames, newparams, self.name)
+        self.params = Parameters(newnames, newparams)
 
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]
@@ -59,12 +60,9 @@ class VonMises(Material):
         self.sv_names = ["EQPS", "Y",
                          "BS_XX", "BS_YY", "BS_ZZ", "BS_XY", "BS_XZ", "BS_YZ",
                          "SIGE"]
-        sv_values = [0.0, Y0,
-                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                     0.0]
+        sv_values = [0.0, Y0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-        self.register_xtra_variables(self.sv_names)
-        self.set_initial_state(sv_values)
+        self.register_xtra_variables(self.sv_names, sv_values)
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):
@@ -113,11 +111,11 @@ class VonMises(Material):
             return stress_trial, xtra, self.constant_jacobian
         else:
             N = xi_trial - xi_trial[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-            N = N / (np.sqrt(2.0 / 3.0) * xi_trial_eqv)
+            N = N / (ROOT23 * xi_trial_eqv)
             deqps = (xi_trial_eqv - yn) / (3.0 * self.shear_modulus + self.params["H"])
-            dps = np.sqrt(3.0 / 2.0) * deqps * N
+            dps = 1. / ROOT23 * deqps * N
 
-            stress_final = stress_trial - 2.0 * self.shear_modulus * np.sqrt(3.0 / 2.0) * deqps * N
+            stress_final = stress_trial - 2.0 * self.shear_modulus / ROOT23 * deqps * N
 
             bs = bs + 2.0 / 3.0 * self.params["H"] * self.params["BETA"] * dps
 
@@ -136,4 +134,4 @@ class VonMises(Material):
     def eqv(self, sig):
         # Returns sqrt(3 * rootj2) = sig_eqv = q
         s = sig - sig[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        return np.sqrt(3.0 / 2.0) * np.sqrt(np.dot(s[:3], s[:3]) + 2 * np.dot(s[3:], s[3:]))
+        return 1. / ROOT23 * np.sqrt(np.dot(s[:3], s[:3]) + 2 * np.dot(s[3:], s[3:]))
