@@ -1,7 +1,7 @@
 import numpy as np
 
 from materials.material import Material
-from utils.mmlio import log_error, log_message
+import utils.conlog as conlog
 from utils.errors import GenericError
 try:
     import lib.plastic as plastic
@@ -18,13 +18,13 @@ class Plastic(Material):
         """
         if plastic is None:
             raise Error1("plastic model not imported")
-        plastic.plastic_check(self.params, log_error, log_message)
+        plastic.plastic_check(self.params, conlog.error, conlog.write)
         K, G, = self.params
         self.bulk_modulus = K
         self.shear_modulus = G
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
-        stran, d, elec_field, user_field, stress, xtra, **kwargs):
+        stran, d, elec_field, user_field, stress, xtra, logger, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters
@@ -51,5 +51,5 @@ class Plastic(Material):
 
         """
         plastic.plastic_update_state(dtime, self.params, d, stress,
-                                     log_error, log_message)
+                                     logger.error, logger.write)
         return stress, xtra, self.constant_jacobian

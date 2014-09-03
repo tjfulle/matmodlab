@@ -11,6 +11,8 @@ opts.runid = None
 opts.Werror = False
 opts.switch = None
 opts.mimic = None
+opts.nprocs = 1
+opts.viz_on_completion = False
 
 def set_runtime_opt(opt, val):
     setattr(opts, opt, val)

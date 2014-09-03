@@ -26,17 +26,18 @@ SIDE_SETS = []
 CONNECT = np.array([range(8)], dtype=np.int)
 
 
-class ExodusIIManager(object):
+class ExodusII(object):
     """The main ExodusII manager
 
     """
 
-    def __init__(self):
-        self.exofile = None
-        pass
+    def __init__(self, runid, d=None):
+        # create new file
+        self.runid = runid
+        self.exofile = ExodusIIFile(runid, mode="w", d=d)
+        self.filepath = self.exofile.filepath
 
-    def put_init(self, runid, glob_data, glob_vars, elem_data, elem_vars,
-                 title=None, d=None):
+    def put_init(self, glob_data, glob_vars, elem_data, elem_vars, title=None):
         """Put initial data in to the ExodusII file
 
         """
@@ -45,11 +46,6 @@ class ExodusIIManager(object):
 	elem_blks = [[EBID, ELS_IN_BLK, ELEM_TYPE, NUM_NODE_IN_EL, elem_vars]]
 
 	glob_data = [glob_vars, glob_data]
-
-        # create new file
-        self.runid = runid
-        self.exofile = ExodusIIFile(runid, mode="w", d=d)
-        self.filepath = self.exofile.filepath
 
         # initialize file with parameters
         if not title:
@@ -107,7 +103,7 @@ class ExodusIIManager(object):
         hour = now.strftime("%H:%M:%S")
         num_qa_rec = 1
         qa_title = "FEM finite element simulation"
-        qa_record = np.array([[qa_title, runid, day, hour]])
+        qa_record = np.array([[qa_title, self.runid, day, hour]])
         self.exofile.put_qa(num_qa_rec, qa_record)
 
         # write results variables parameters and names

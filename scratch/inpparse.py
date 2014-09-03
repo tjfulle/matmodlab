@@ -6,7 +6,7 @@ from xml.etree.ElementTree import iterparse
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError as ExpatError
 
-from project import FC
+from matmodlab import FC
 import utils.pprepro as pp
 from materials.info import MATERIAL_DB, F_MTL_PARAM_DB
 from utils.mtldb import read_material_params_from_db
@@ -14,7 +14,7 @@ from utils.fcnbldr import build_lambda, build_interpolating_function
 from utils.xmltools import stringify
 from drivers.driver import isdriver, getdrvcls
 from utils.respfcn import check_response_function, MML_RESP_FCN_RE
-from utils.mmlio import fatal_inp_error, input_errors
+from utils.conlog import fatal_inp_error, input_errors
 from core.builder import Builder
 from core.runtime import opts
 from utils.misc import timed_raw_input, load_file

@@ -126,10 +126,12 @@ def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
         raise ExoDumpError("{0}: no such file".format(filepath))
 
     exof = ExodusIIReader(filepath)
+    return_time = True
     glob_var_names = exof.glob_var_names
     elem_var_names = exof.elem_var_names
 
     if variables[0] != "ALL":
+        return_time = "time" in [x.lower() for x in variables]
         glob_var_names = expand_var_names(glob_var_names, variables)
         elem_var_names = expand_var_names(elem_var_names, variables)
         bad = [x for x in variables if x is not None]
@@ -157,8 +159,13 @@ def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
     if len(header) != data.shape[1]:
         raise ExoDumpError("inconsistent data")
 
+    if not return_time:
+        data = data[:, 1:]
+        header = header[1:]
+
     if h:
         return header, data
+
     return data
 
 

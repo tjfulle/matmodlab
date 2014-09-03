@@ -1,8 +1,8 @@
 import sys
 import numpy as np
 
-form core.runtime import opts
-from utils.mmlio import log_message, log_error, log_warning
+from core.runtime import opts
+import utils.conlog as conlog
 from utils.errors import GenericError
 import utils.mmlabpack as mmlabpack
 from materials.material import Material
@@ -49,7 +49,7 @@ class AbaUAnisoHyper(Material):
 
         # Invariants and isochoric invariants
         if get_invars_time:
-            invars_time = get_invars_time(opts.runid, time)
+            invars_time = get_invars_time(runid, time)
             if invars_time is not None:
                 I1b, I2b, J, I4b, I5b = invars_time
                 I1 = J ** (2. / 3.) * I1b

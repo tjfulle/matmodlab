@@ -1,15 +1,22 @@
 import os
 import sys
 from utils.misc import who_is_calling
-from project import SPLASH
+from matmodlab import SPLASH
 
 
 class Logger(object):
-    def __init__(self):
+    def __init__(self, runid=None, verbosity=1, d=None):
         self.ch = sys.stdout
         self.eh = sys.stderr
         self.fh = None
+        self.set_verbosity(verbosity)
         self.write_intro()
+
+        # add file handler
+        if runid is not None:
+            d = d or os.getcwd()
+            filepath = os.path.join(d, runid + ".log")
+            self.add_file_handler(filepath)
 
     def write(self, string, beg="", end="\n", q=0):
         if q: return
@@ -33,8 +40,11 @@ class Logger(object):
         self.eh.write(message)
         if self.fh: self.fh.write(message)
         if r:
-            raise SystemExit(message)
-        else: sys.exit(1)
+            raise Exception(message)
+        elif r < 0:
+            return
+        else:
+            sys.exit(1)
 
     def debug(self, string):
         if self.fh:
@@ -52,14 +62,16 @@ class Logger(object):
         self.fh.write(SPLASH)
 
     def set_verbosity(self, v):
-        if not v: self.ch = None
+        if not v:
+            self.ch = None
 
     def write_intro(self):
-        self.ch.write(SPLASH)
+        self.write(SPLASH)
 
     def finish(self):
-        self.ch.flush()
         self.eh.flush()
+        if self.ch:
+            self.ch.flush()
         if self.fh:
             self.fh.flush()
             self.fh.close()

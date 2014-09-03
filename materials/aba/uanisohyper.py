@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from materials.aba.abamat import AbaqusMaterial
-from utils.mmlio import Error1, log_message, log_error, log_warning
+from utils.conlog import Error1, log_message, log_error, log_warning
 from utils.errors import ModelNotImportedError
 import utils.mmlabpack as mmlabpack
 try:

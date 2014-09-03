@@ -1,7 +1,6 @@
 import sys
 import numpy as np
 from materials.aba.abamat import AbaqusMaterial
-from utils.mmlio import log_message, log_error, log_warning
 from utils.errors import ModelNotImportedError
 import utils.mmlabpack as mmlabpack
 try:
@@ -20,12 +19,12 @@ class UHyper(AbaqusMaterial):
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
-            dfgrd1, noel, npt, layer, kspt, kstep, kinc):
+            dfgrd1, noel, npt, layer, kspt, kstep, kinc, logger):
         """update the material state"""
         uhyper.umat(stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
         nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
-            dfgrd1, noel, npt, layer, kspt, kstep, kinc, log_error,
-            log_message, log_warning)
+            dfgrd1, noel, npt, layer, kspt, kstep, kinc, logger.error,
+            logger.write, logger.warn)
         return stress, statev, ddsdde

@@ -6,10 +6,10 @@ import numpy as np
 from utils.errors import *
 from utils.constants import DEFAULT_TEMP
 from core.runtime import opts
-from project import UMATS, PKG_D, MATLIB, MML_MFILE
+from matmodlab import UMATS, PKG_D, MATLIB, MML_MFILE
 from utils.misc import load_file
 from utils.fortran.mml_i import FIO
-from utils.mmlio import cerr, log_message, log_warning, log_error
+import utils.conlog as conlog
 import utils.mmlabpack as mmlabpack
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 from utils.data_containers import Parameters
@@ -99,7 +99,7 @@ class MaterialModel(object):
 
         if self._viscoelastic is not None:
             if ve is None:
-                log_error("attempting visco analysis but visco.so not imported")
+                conlog.error("attempting visco analysis but visco.so not imported")
 
             # setup viscoelastic params
             self.visco_params = np.zeros(24)
@@ -139,13 +139,13 @@ class MaterialModel(object):
 
         if self._expansion is not None:
             if tm is None:
-                log_error("attempting thermal analysis but "
-                          "thermomech.so not imported")
+                conlog.error("attempting thermal analysis but "
+                             "thermomech.so not imported")
 
             self.exp_params = self._expansion.data
 
         if self.visco_params is not None:
-            ve.propcheck(self.visco_params, log_error, log_message, log_warning)
+            ve.propcheck(self.visco_params, conlog.error, conlog.write, conlog.warn)
 
         self.register_variable("XTRA", VAR_ARRAY, keys=self.xkeys, ivals=self.xinit)
 
@@ -172,10 +172,10 @@ class MaterialModel(object):
 
     def set_constant_jacobian(self):
         if not self.bulk_modulus:
-            log_warning("{0}: bulk modulus not defined".format(self.name))
+            conlog.warn("{0}: bulk modulus not defined".format(self.name))
             return
         if not self.shear_modulus:
-            log_warning("{0}: shear modulus not defined".format(self.name))
+            conlog.warn("{0}: shear modulus not defined".format(self.name))
             return
 
         self.J0 = np.zeros((6, 6))
@@ -322,16 +322,18 @@ class MaterialModel(object):
 
     def compute_updated_state(self, time, dtime, temp, dtemp, F0, F,
         stran, d, elec_field, user_field, stress, statev,
-        disp=0, v=None, last=False):
+        disp=0, v=None, last=False, logger=None):
         """Update the material state
 
         """
+        if logger is None:
+            logger = conlog
         if disp == 2 and self.constant_j:
             # only jacobian requested
             return self.constant_jacobian
 
         N = self.nxtra
-        comm = (log_error, log_message, log_warning)
+        comm = (logger.error, logger.write, logger.warn)
 
         sig = np.array(stress)
         xtra = np.array(statev)
@@ -349,7 +351,7 @@ class MaterialModel(object):
         energy = 1.
         sig, xtra[:N], stif = self.update_state(time, dtime, temp, dtemp,
             energy, rho, F0, F, stran, d, elec_field, user_field, sig,
-            xtra[:N], last=last, mode=0)
+            xtra[:N], logger, last=last, mode=0)
 
         if self.visco_params is not None:
             # get visco correction
@@ -384,7 +386,7 @@ class MaterialModel(object):
             # initialize the visco variables
             x = xtra[N:]
             ve.viscoini(self.visco_params, x,
-                        log_error, log_message, log_warning)
+                        conlog.error, conlog.write, conlog.warn)
             xtra[N:] = x
         time = 0.
         dtime = 1.
@@ -436,7 +438,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
     """
     # switch model, if requested
     if opts.switch:
-        logger.warn("switching {0} for {1}".format(model, opts.switch))
+        conlog.warn("switching {0} for {1}".format(model, opts.switch))
         model = opts.switch
 
     from core.builder import Builder
@@ -525,7 +527,7 @@ def find_materials():
     for d in UMATS:
         f = os.path.join(d, MML_MFILE)
         if not os.path.isfile(f):
-            cerr("***WARNING: {0} not found in {1}".format(MML_MFILE, d))
+            conlog.warn("{0} not found for {1}".format(MML_MFILE, d))
             continue
         info = load_file(info_file)
         try:
@@ -535,7 +537,7 @@ def find_materials():
 
         for lib in libs:
             if lib in mat_libs:
-                cerr("***ERROR: {0}: duplicate material library".format(lib))
+                conlog.error("{0}: duplicate material library".format(lib), r=0)
                 errors.append(lib)
                 continue
             mat_libs.update({lib: libs[lib]})

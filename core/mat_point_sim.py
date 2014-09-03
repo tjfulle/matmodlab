@@ -3,8 +3,9 @@ import sys
 import time
 import numpy as np
 
-from core.runtime import set_runtime_opt
-from utils.mmlio import exo, logger
+from core.runtime import opts
+from utils.logger import Logger
+from utils.exomgr import ExodusII
 from utils.variable import Variable, VAR_SCALAR
 from utils.data_containers import DataContainer
 from core.driver import PathDriver
@@ -12,22 +13,25 @@ from core.material import MaterialModel
 
 class MaterialPointSimulator(object):
     _vars = []
-    def __init__(self, runid, driver, material, verbosity=0, title=None):
+    def __init__(self, runid, driver, material, verbosity=1, d=None):
         """Initialize the MaterialPointSimulator object
 
         """
         self.runid = runid
-        set_runtime_opt("runid", runid)
-	self.title = "matmodlab single element simulation"
 
-        logger.add_file_handler(os.path.join(os.getcwd(), self.runid + ".log"))
-
+        # check input
         if not isinstance(driver, PathDriver):
             raise UserInputError("driver must be instance of Driver")
         self.driver = driver
         if not isinstance(material, MaterialModel):
             raise UserInputError("material must be instance of Material")
         self.material = material
+
+        # setup IO
+	self.title = "matmodlab single element simulation"
+        self.logger = Logger(self.runid, verbosity=verbosity, d=d)
+        self.exo_db = ExodusII(self.runid)
+        self.exo_file = self.exo_db.filepath
 
 	# register global variables
         self.register_variable("TIME_STEP", VAR_SCALAR)
@@ -56,9 +60,7 @@ class MaterialPointSimulator(object):
         self.timing = {}
         self.timing["start"] = time.time()
 
-        self.setup_exo_db()
-        self.output_db = exo.filepath
-
+        self.setup_io()
         self.write_summary()
 
     def register_variable(self, var_name, var_type):
@@ -80,12 +82,12 @@ material: {3}
   number of sdv's: {5}
 """.format(self.runid, self.driver.kind, self.driver.num_leg,
            self.material.name, self.material.num_prop, self.material.num_xtra)
-        logger.write(summary)
+        self.logger.write(summary)
 
-    def setup_exo_db(self):
+    def setup_io(self):
 
-        exo.put_init(self.runid, self.glob_data.data, self.glob_vars,
-                     self.elem_data.data, self.elem_vars, title=self.title)
+        self.exo_db.put_init(self.glob_data.data, self.glob_vars,
+                             self.elem_data.data, self.elem_vars, title=self.title)
 
         # Write info to log file
         L = max(max(len(n) for n in self.elem_vars), 10)
@@ -93,27 +95,28 @@ material: {3}
         iparam_vals = self.material.initial_parameters
         param_vals = self.material.parameters
 
-        logger.debug("Material Parameters")
-        logger.debug("  {1:{0}s}  {2:12}  {3:12}".format(
+        self.logger.debug("Material Parameters")
+        self.logger.debug("  {1:{0}s}  {2:12}  {3:12}".format(
             L, "Name", "iValue", "Value"))
         for p in zip(param_names, iparam_vals, param_vals):
-            logger.debug("  {1:{0}s} {2: 12.6E} {3: 12.6E}".format(L, *p))
+            self.logger.debug("  {1:{0}s} {2: 12.6E} {3: 12.6E}".format(L, *p))
 
         # write out plotable data
-        logger.debug("Output Variables:")
-        logger.debug("Global")
+        self.logger.debug("Output Variables:")
+        self.logger.debug("Global")
         for item in self.glob_vars:
-            logger.debug("  " + item)
-        logger.debug("Element")
+            self.logger.debug("  " + item)
+        self.logger.debug("Element")
         for item in self.elem_vars:
-            logger.debug("  " + item)
+            self.logger.debug("  " + item)
 
     def run(self):
         """Run the problem
 
         """
-        logger.write("starting calculations...")
-	retcode = self.driver.run(self.glob_data, self.elem_data, self.material)
+        self.logger.write("starting calculations...")
+	retcode = self.driver.run(self.glob_data, self.elem_data,
+                                  self.material, self.logger, self.exo_db)
         self.finish()
         return retcode
 
@@ -122,23 +125,31 @@ material: {3}
         self.timing["end"] = time.time()
         if self.driver.ran:
             dt_run = self.timing["end"] - self.timing["start"]
-            logger.write("...calculations completed ({0:.4f}s)".format(dt_run))
+            self.logger.write("...calculations completed ({0:.4f}s)".format(dt_run))
         else:
-            logger.error("calculations did not complete", r=0)
-        exo.finish()
-        logger.finish()
+            self.logger.error("calculations did not complete", r=0)
+        self.exo_db.finish()
+        self.logger.finish()
+
+        if opts.viz_on_completion:
+            self.visualize_results()
 
         return
 
-    def extract_from_db(self, variables=None, paths=None, format="ascii",
-                        step=1, ffmt=".18f"):
+    def dump(self, variables=None, paths=None, format="ascii", step=1, ffmt=".18f"):
         from utils.exojac.exodump import exodump
         if variables:
-            exodump(exo.filepath, step=step, ffmt=ffmt,
+            exodump(self.exo_file, step=step, ffmt=ffmt,
                     variables=variables, ofmt=format)
         if paths:
-            self.driver.extract_paths(exo.filepath, paths)
+            self.driver.extract_paths(self.exo_file, paths)
+
+    def extract_from_db(self, variables, step=1):
+        from utils.exojac.exodump import read_vars_from_exofile
+        data = read_vars_from_exofile(self.exo_file, variables=variables,
+                                      step=step, h=0)
+        return data
 
     def visualize_results(self, overlay=None):
         from viz.plot2d import create_model_plot
-        create_model_plot([self.output_db])
+        create_model_plot(self.exo_file)

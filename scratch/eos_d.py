@@ -5,10 +5,10 @@ import math
 import numpy as np
 from itertools import product
 
-from project import RESTART
+from matmodlab import RESTART
 import utils.xmltools as xmltools
 from drivers.driver import Driver
-from utils.mmlio import fatal_inp_error, input_errors, log_message, log_error
+from utils.conlog import fatal_inp_error, input_errors, log_message, log_error
 from utils.errors import GenericError
 
 

@@ -6,7 +6,7 @@ import math
 import numpy as np
 import xml.dom.minidom as xdom
 
-from project import ROOT_D
+from matmodlab import ROOT_D
 
 
 # safe values to be used in eval

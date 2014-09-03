@@ -1,3 +1,6 @@
+import sys
+import random
+QUOTES = """
 Ninety-nine percent of lawyers give the rest a bad name.
 Borrow money from a pessimist -- they don't expect it back.
 Time is what keeps things from happening all at once.
@@ -248,3 +251,12 @@ ximelolagnia: The urge to stare at women who are sitting with crossed legs
 xylopolist: One who sells wood products
 yclept: By the name of; called
 zenzizenzizenzic: A number raised to the eighth power
+""".split("\n")
+
+def random_quote():
+    """A random quote"""
+    return QUOTES[random.randint(0, len(QUOTES)-1)].strip()
+
+def write_random_quote(fh=None):
+    if fh is None: fh = sys.stdout
+    fh.write("\n{0}\n".format(random_quote()))

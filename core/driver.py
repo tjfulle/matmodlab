@@ -5,7 +5,6 @@ from numpy.linalg import solve, lstsq
 
 from utils.variable import Variable
 from utils.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
-from utils.mmlio import exo, logger
 from utils.errors import FileNotFoundError, UserInputError
 from core.dparse import (parse_default_path, format_continuum_path,
     parse_function_path)
@@ -93,7 +92,7 @@ class ContinuumDriver(PathDriver):
     def num_leg(self):
         return len(self.path)
 
-    def run(self, glob_data, elem_data, material):
+    def run(self, glob_data, elem_data, material, logger, out_db):
         """Process the deformation path
 
         Parameters
@@ -233,7 +232,7 @@ class ContinuumDriver(PathDriver):
                     # get just the prescribed stress components
                     d = sig2d(material, time, dt, tempn, dtemp,
                               f0, f, eps, depsdt, sig, xtra, ef, ufield,
-                              v, sigspec[2], self.proportional)
+                              v, sigspec[2], self.proportional, logger)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
@@ -243,7 +242,8 @@ class ContinuumDriver(PathDriver):
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
                 sig, xtra = material.compute_updated_state(time, dt, tempn,
-                    dtemp, f0, f, eps, d, ef, ufield, sig, xtra, last=True, disp=1)
+                    dtemp, f0, f, eps, d, ef, ufield, sig, xtra, last=True,
+                    disp=1, logger=logger)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)
@@ -262,12 +262,13 @@ class ContinuumDriver(PathDriver):
 
                 elem_data.update(stress=sig, strain=eps, defgrad=f, symm_l=d,
                                  eqstrain=eqeps, vstrain=eqeps, dstress=epsv,
-                                 smises=smises, xtra=xtra, temp=temp[2])
+                                 smises=smises, xtra=xtra, temp=temp[2],
+                                 pressure=pres)
 
                 # --- write state to file
                 endstep = abs(time - tleg[1]) / tleg[1] < 1.E-12
                 if (nsteps - n) % dump_interval == 0 or endstep:
-                    exo.snapshot(time, glob_data, elem_data)
+                    out_db.snapshot(time, glob_data, elem_data)
 
                 if n == 0 or round((nsteps - 1) / 2.) == n or endstep:
                     logger.write(consfmt.format(leg_num, n + 1, time, dt))

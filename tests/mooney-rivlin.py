@@ -1,4 +1,5 @@
-#!/usr/bin/env mmd
+#!/usr/bin/env xpython
+from matmodlab import *
 
 eps = 6.9314718055994529E-01
 path = """
@@ -7,11 +8,16 @@ path = """
 2 10 244    0 0 0
 3 10 244 -{E} 0 0
 """.format(E=eps)
-driver = Driver("Continuum", path=path, step_multiplier=100)
 
-parameters = {"C10": 72, "C01": 7.56, "NU": .49}
-material = Material("mnrv", parameters=parameters)
+@matmodlab
+def runner():
+    driver = Driver("Continuum", path=path, step_multiplier=100)
 
-runid = "mooney-rivlin"
-mps = MaterialPointSimulator(runid, driver, material)
-mps.run()
+    parameters = {"C10": 72, "C01": 7.56, "NU": .49}
+    material = Material("mnrv", parameters=parameters)
+
+    runid = "mooney-rivlin"
+    mps = MaterialPointSimulator(runid, driver, material)
+    mps.run()
+
+runner()

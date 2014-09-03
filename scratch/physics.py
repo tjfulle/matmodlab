@@ -3,9 +3,9 @@ import sys
 import time
 import numpy as np
 
-from project import RESTART
+from matmodlab import RESTART
 from core.runtime import set_runtime_opt
-import utils.mmlio as io
+import utils.conlog as io
 from drivers.driver import create_driver
 
 class PhysicsHandler(object):

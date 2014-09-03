@@ -1,14 +1,14 @@
 import numpy as np
 import os
 import numpy as np
-from project import UMATS, PKG_D, MATLIB
+from matmodlab import UMATS, PKG_D, MATLIB
 from utils.misc import load_file
 from utils.errors import *
 
 import utils.mmlabpack as mmlabpack
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 from utils.data_containers import Parameters
-from utils.mmlio import log_message, log_warning, log_error
+from utils.conlog import log_message, log_warning, log_error
 from materials.matdb import MATERIALS
 from core.builder import Builder
 

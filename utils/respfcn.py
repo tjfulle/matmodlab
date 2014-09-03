@@ -3,8 +3,8 @@ import re
 import sys
 import subprocess
 import numpy as np
-from utils.mmlio import fatal_inp_error
-from project import MML_ENV
+from utils.errors import UserInputError
+from matmodlab import MML_ENV
 
 MML_RESP_FCNS = {"max": np.amax, "min": np.amin, "mean": np.mean,
                  "ave": np.average,
@@ -52,18 +52,18 @@ def check_response_function(respfcn):
     if respfcn.startswith("mml."):
         s = re.search(MML_RESP_FCN_RE, respfcn)
         if not s:
-            fatal_inp_error("expected builtin in form mml.fcn(VAR), "
-                            "got {1}".format(respfcn))
+            raise UserInputError("expected builtin in form mml.fcn(VAR), "
+                                 "got {1}".format(respfcn))
             return
         fcn = s.group("fcn")
         var = s.group("var")
         if fcn.lower() not in MML_RESP_FCNS:
-            fatal_inp_error("{0}: not a valid mml function, choose "
-                            "from {1}".format(fcn, ", ".join(MML_RESP_FCNS)))
+            raise UserInputError("{0}: not a valid mml function, choose "
+                                 "from {1}".format(fcn, ", ".join(MML_RESP_FCNS)))
         respfcn = "mml.{0}({1})".format(fcn.lower(), var.upper())
 
     elif not os.path.isfile(respfcn):
-        fatal_inp_error("{0}: no such file".format(respfcn))
+        raise UserInputError("{0}: no such file".format(respfcn))
 
     else:
         respfcn = os.path.realpath(respfcn)

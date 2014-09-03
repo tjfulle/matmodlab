@@ -5,8 +5,8 @@ import glob
 import shutil
 import argparse
 
-from project import ROOT_D, MML_IFILE
-from utils.mmlio import cout
+from matmodlab import ROOT_D, MML_IFILE
+import utils.conlog as logger
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
 from utils.errors import DuplicateExtModule
@@ -37,7 +37,7 @@ class Builder(object):
     @staticmethod
     def build_umat(name, source_files, verbosity=0):
         fb = FortranExtBuilder(name, verbosity=verbosity)
-        cout("building {0}".format(name))
+        logger.write("building {0}".format(name))
         fb.add_extension(name, source_files, requires_lapack="lite")
         fb.build_extension_modules()
         pass
@@ -53,7 +53,7 @@ class Builder(object):
 
         """
         fb = FortranExtBuilder(name, verbosity=verbosity)
-        cout("building {0}".format(name))
+        logger.write("building {0}".format(name))
         if info is None:
             info = MATERIALS[name]
         fb.add_extension(name, info["source_files"],
@@ -107,7 +107,7 @@ class Builder(object):
         """
         self.fb.build_extension_modules()
         for ext in self.fb.exts_failed:
-            cout("*** warning: {0}: failed to build".format(ext))
+            logger.write("*** warning: {0}: failed to build".format(ext))
 
 
 def main(argv=None):

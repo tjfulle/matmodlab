@@ -4,12 +4,12 @@ import sys
 import numpy as np
 from numpy.linalg import solve, lstsq
 
-from project import RESTART
+from matmodlab import RESTART
 from core.runtime import opts
 import utils.xmltools as xmltools
 from drivers.driver import Driver
 from core.solvers import sig2d
-from utils.mmlio import (fatal_inp_error, input_errors,
+from utils.conlog import (fatal_inp_error, input_errors,
                         log_message, log_warning, Error1)
 import utils.mmlabpack as mmlabpack
 

@@ -5,14 +5,14 @@ import numpy as np
 import sys
 
 import utils.mmlabpack as mmlabpack
-from utils.mmlio import log_warning
 from core.runtime import opts
+import utils.conlog as conlog
 
 EPS = np.finfo(np.float).eps
 
 
 def sig2d(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
-          efield, ufield, v, sigspec, proportional):
+          efield, ufield, v, sigspec, proportional, logger=None):
     """Determine the symmetric part of the velocity gradient given stress
 
     Parameters
@@ -40,11 +40,13 @@ def sig2d(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
       3) Call simplex with d[v] = 0. to solve 1, return stress, xtra, d
 
     """
+    if logger is None:
+        logger = conlog
     dsave = d.copy()
 
     if not proportional:
         d = _newton(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
-                    efield, ufield, v, sigspec, proportional)
+                    efield, ufield, v, sigspec, proportional, logger)
         if d is not None:
             return d
 
@@ -53,7 +55,7 @@ def sig2d(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
         d = dsave.copy()
         d[v] = np.zeros(len(v))
         d = _newton(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
-                    efield, ufield, v, sigspec, proportional)
+                    efield, ufield, v, sigspec, proportional, logger)
         if d is not None:
             return d
 
@@ -61,11 +63,11 @@ def sig2d(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
     #     whatever answer it returns:
     d = dsave.copy()
     return _simplex(material, t, dt, temp, dtemp, f0, f, stran, d, sig, xtra,
-                    efield, ufield, v, sigspec, proportional)
+                    efield, ufield, v, sigspec, proportional, logger)
 
 
 def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg,
-            efield, ufield, v, sigspec, proportional):
+            efield, ufield, v, sigspec, proportional, logger):
     """Seek to determine the unknown components of the symmetric part of velocity
     gradient d[v] satisfying
 
@@ -139,7 +141,7 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
 
     # update the material state to get the first guess at the new stress
     sig, xtra, stif = material.compute_updated_state(t, dt, temp, dtemp, f0, f,
-        stran, d, efield, ufield, sig, xtra)
+        stran, d, efield, ufield, sig, xtra, logger=logger)
     sigerr = sig[v] - sigspec
 
     # --- Perform Newton iteration
@@ -147,20 +149,19 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
         sig = sigsave.copy()
         xtra = xtrasave.copy()
         Jsub = material.compute_updated_state(t, dt, temp, dtemp, f0, f, stran, d,
-            efield, ufield, sig, xtra, v=v, disp=2)
+            efield, ufield, sig, xtra, v=v, disp=2, logger=logger)
 
         if opts.sqa:
             evals = np.linalg.eigvalsh(Jsub)
             if np.any(evals < 0.):
-                log_warning("newton: "
-                            "negative value encountered in material Jacobian")
+                logger.warn("negative value encountered in material Jacobian")
         try:
             d[v] -= np.linalg.solve(Jsub, sigerr) / dt
 
         except:
             d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
-            log_warning("newton: using least squares approximation "
-                        "to matrix inverse", limit=True)
+            logger.warn("using least squares approximation to "
+                        "matrix inverse", limit=True)
 
         if (depsmag(d) > depsmax):
             # increment too large
@@ -169,7 +170,7 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
         # with the updated rate of deformation, update stress and check
         fp, _ = mmlabpack.update_deformation(dt, 0., f, d)
         sig, xtra, stif = material.compute_updated_state(t, dt, temp, dtemp,
-            f0, fp, stran, d, efield, ufield, sig, xtra)
+            f0, fp, stran, d, efield, ufield, sig, xtra, logger=logger)
         sigerr = sig[v] - sigspec
         dnom = max(np.amax(np.abs(sigspec)), 1.)
         relerr = np.amax(np.abs(sigerr) / dnom)
@@ -187,7 +188,7 @@ def _newton(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg, xtraarg
 
 
 def _simplex(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg,
-             xtraarg, efield, ufield, v, sigspec, proportional):
+             xtraarg, efield, ufield, v, sigspec, proportional, logger):
     """Perform a downhill simplex search to find sym_velgrad[v] such that
 
                         sig(sym_velgrad[v]) = sigspec[v]
@@ -221,13 +222,13 @@ def _simplex(material, t, dt, temp, dtemp, f0, farg, stran, darg, sigarg,
     sig = sigarg.copy()
     xtra = xtraarg.copy()
     args = (material, t, dt, temp, dtemp, f0, f, stran, d,
-            sig, xtra, efield, ufield, v, sigspec, proportional)
+            sig, xtra, efield, ufield, v, sigspec, proportional, logger)
     d[v] = scipy.optimize.fmin(func, d[v], args=args, maxiter=20, disp=False)
     return d
 
 
 def func(x, material, t, dt, temp, dtemp, f0, farg, stran, darg,
-         sigarg, xtraarg, efield, ufield, v, sigspec, proportional):
+         sigarg, xtraarg, efield, ufield, v, sigspec, proportional, logger):
     """Objective function to be optimized by simplex
 
     """
@@ -242,7 +243,7 @@ def func(x, material, t, dt, temp, dtemp, f0, farg, stran, darg,
 
     # store the best guesses
     sig, xtra, stif = material.compute_updated_state(t, dt, temp, dtemp,
-        f0, fp, stran, d, efield, ufield, sig, xtra)
+        f0, fp, stran, d, efield, ufield, sig, xtra, logger=logger)
 
     # check the error
     error = 0.

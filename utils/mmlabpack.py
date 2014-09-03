@@ -2,12 +2,19 @@
 and using the python version as a back up
 
 """
+import os
 from sys import modules
-from utils.mmlio import log_warning
+from utils.conlog import warn
+from matmodlab import PKG_D
 try:
     from lib.mmlabpack import mmlabpack as m
 except ImportError:
-    log_warning("fortran mmlabpack not imported, using python backup")
+    if not os.path.isfile(os.path.join(PKG_D, "mmlabpack.so")):
+        warn("fortran mmlabpack.so not found, using python backup")
+        warn("run the build script to create mmlabpack.so")
+    else:
+        warn("error importing fortran mmlabpack, using python backup")
+    warn("python backup is significantly slower")
     import _mmlabpack as m
 
 for method in dir(m):

@@ -4,7 +4,7 @@ This file is used only during the setup phase to build and install materials.
 
 """
 import os
-from project import MATLIB
+from matmodlab import MATLIB
 
 BUILTIN = {}
 

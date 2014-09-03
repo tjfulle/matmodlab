@@ -6,9 +6,9 @@ import numpy as np
 import shutil
 import datetime
 
-from project import MML_ENV
+from matmodlab import MML_ENV
 from runtime import opts
-import utils.mmlio as io
+import utils.conlog as io
 from utils.respfcn import evaluate_response_function
 from utils.mmltab import MMLTabularWriter
 import utils.pprepro as pprepro

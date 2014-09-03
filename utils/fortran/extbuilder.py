@@ -13,8 +13,8 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
-from project import FC, PKG_D, FFLAGS
-from utils.mmlio import cout
+from matmodlab import FC, PKG_D, FFLAGS
+import utils.conlog as logger
 from utils.fortran.mml_i import LAPACK, LAPACK_OBJ
 
 
@@ -60,8 +60,8 @@ class FortranExtBuilder(object):
             else:
                 lapack = self._find_lapack()
                 if not lapack:
-                    cout("*** warning: {0}: required lapack package "
-                         "not found, skipping".format(name))
+                    logger.write("*** warning: {0}: required lapack package "
+                                 "not found, skipping".format(name))
                     return -1
                 options.update(lapack)
         idirs = kwargs.get("include_dirs")
@@ -127,7 +127,7 @@ class FortranExtBuilder(object):
     def logmes(self, message, end="\n"):
         """Write message to stdout """
         if not self.silent:
-            cout(message, end=end)
+            logger.write(message, end=end)
 
     @staticmethod
     def _find_lapack():
@@ -144,15 +144,15 @@ class FortranExtBuilder(object):
         """Build the blas_lapack-lite object
 
         """
-        cout("Building blas_lapack-lite", end="... ")
+        logger.write("Building blas_lapack-lite", end="... ")
         cmd = [self.fc, "-fPIC", "-shared", "-O3", LAPACK, "-o" + LAPACK_OBJ]
         build = subprocess.Popen(cmd, stdout=open(os.devnull, "a"),
                                  stderr=subprocess.STDOUT)
         build.wait()
         if build.returncode == 0:
-            cout("done")
+            logger.write("done")
         else:
-            cout("no")
+            logger.write("no")
         return build.returncode
 
 

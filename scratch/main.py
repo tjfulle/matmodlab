@@ -8,13 +8,13 @@ import argparse
 import multiprocessing as mp
 from os.path import splitext
 
-from project import SPLASH, ROOT_D, PKG_D
+from matmodlab import SPLASH, ROOT_D, PKG_D
 from runtime import set_runtime_opt
 import core.inpparse as inp
 from core.physics import PhysicsHandler
 from core.permutate import PermutationHandler
 from core.optimize import OptimizationHandler
-from utils.mmlio import Error1 as Error1, input_errors
+from utils.conlog import Error1 as Error1, input_errors
 
 FILE = os.path.realpath(__file__)
 ALPHA = (x for x in string.ascii_letters)

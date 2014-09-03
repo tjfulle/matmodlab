@@ -1,7 +1,7 @@
 import numpy as np
 
 from core.material import MaterialModel
-from utils.mmlio import log_error, log_message
+import utils.conlog as conlog
 
 class PyElastic(MaterialModel):
     name = "pyelastic"
@@ -12,18 +12,18 @@ class PyElastic(MaterialModel):
         """
         # Check inputs
         K, G, = self.params
-        if K <= 0.0: log_error = "Bulk modulus K must be positive"
-        if G <= 0.0: log_error = "Shear modulus G must be positive"
+        if K <= 0.0: conlog.error("Bulk modulus K must be positive")
+        if G <= 0.0: conlog.error("Shear modulus G must be positive")
         nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
-        if nu > 0.5: log_error = "Poisson's ratio > .5"
-        if nu < -1.0: log_error = "Poisson's ratio < -1."
-        if nu < 0.0: log_message = "#---- WARNING: negative Poisson's ratio"
+        if nu > 0.5: conlog.error("Poisson's ratio > .5")
+        if nu < -1.0: conlog.error("Poisson's ratio < -1.")
+        if nu < 0.0: conlog.warn("#---- WARNING: negative Poisson's ratio")
 
         self.bulk_modulus = K
         self.shear_modulus = G
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
-        stran, d, elec_field, user_field, stress, xtra, **kwargs):
+        stran, d, elec_field, user_field, stress, xtra, logger, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters

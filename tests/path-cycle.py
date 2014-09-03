@@ -1,6 +1,5 @@
 #!/usr/bin/env mmd
 
-
 path = """
 0E+00 0 EEEEEE 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
 1E+00 100 EEEEEE 1E-01 0E+00 0E+00 0E+00 0E+00 0E+00

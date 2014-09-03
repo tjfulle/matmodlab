@@ -3,7 +3,6 @@ import numpy as np
 import utils.mmlabpack as mmlabpack
 from core.material import MaterialModel
 from utils.misc import who_is_calling
-from utils.mmlio import log_error
 try:
     import lib.umat as umat
 except ImportError:
@@ -34,7 +33,7 @@ class AbaqusMaterial(MaterialModel):
         self.shear_modulus = mu
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
-        stran, d, elec_field, user_field, stress, statev, **kwargs):
+        stran, d, elec_field, user_field, stress, statev, logger, **kwargs):
         """Update the state of an anisotropic hyperelastic model.  Implementation
         based on Abaqus conventions
 
@@ -90,8 +89,8 @@ class AbaqusMaterial(MaterialModel):
             stress, statev, ddsdde, sse, spd, scd, rpl, ddsddt, drplde, drpldt,
             stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
             ndi, nshr, self.nxtra, self.params, coords, drot, pnewdt, celent,
-            dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc)
+            dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc, logger)
         if np.any(np.isnan(stress)):
-            log_error("umat stress contains nan's")
+            logger.error("umat stress contains nan's")
         ddsdde[3:, 3:] *= 2.
         return stress, statev, ddsdde

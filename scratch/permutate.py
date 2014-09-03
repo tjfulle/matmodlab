@@ -9,8 +9,8 @@ import numpy as np
 import multiprocessing as mp
 from itertools import izip, product
 
-from project import MML_ENV
-import utils.mmlio as io
+from matmodlab import MML_ENV
+import utils.conlog as io
 from core.runtime import opts
 from utils.mmltab import MMLTabularWriter
 from utils.pprepro import find_and_make_subs
@@ -22,7 +22,7 @@ PERM_METHODS = ("zip", "combine", )
 NJOBS = 0
 
 
-class PermutationHandler(object):
+class Permutator(object):
     def __init__(self, runid, verbosity, exe, nproc, method, respfcn,
                  parameters, basexml, correlation):
         global NJOBS

@@ -1,4 +1,4 @@
-from utils.mmlio import fatal_inp_error
+from utils.conlog import fatal_inp_error
 class Expansion(object):
     def __init__(self, exp_type, data):
         self._type = exp_type.upper()
