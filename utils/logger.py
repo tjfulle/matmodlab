@@ -10,7 +10,6 @@ class Logger(object):
         self.eh = sys.stderr
         self.fh = None
         self.set_verbosity(verbosity)
-        self.write_intro()
 
         # add file handler
         if runid is not None:
@@ -19,11 +18,14 @@ class Logger(object):
             self.add_file_handler(filepath)
 
     def write(self, string, beg="", end="\n", q=0):
-        if q: return
+        if q:
+            return
+
         string = "{0}{1}{2}".format(beg, string, end).upper()
         if self.ch:
             self.ch.write(string)
             self.ch.flush()
+
         if self.fh:
             self.fh.write(string)
 

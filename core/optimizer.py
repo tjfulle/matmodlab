@@ -6,18 +6,17 @@ import numpy as np
 import shutil
 import datetime
 
-from matmodlab import MML_ENV
 from runtime import opts
 import utils.conlog as io
-from utils.respfcn import evaluate_response_function
 from utils.mmltab import MMLTabularWriter
-import utils.pprepro as pprepro
+from utils.logger import Logger
 
 IOPT = -1
 HUGE = 1.e80
 OPT_METHODS = ("simplex", "powell", "cobyla",)
+logger = Logger()
 
-class OptimizationHandler(object):
+class Optimizer(object):
     def __init__(self, runid, verbosity, exe, method, respfcn,
                  parameters, tolerance, maxiter, basexml, auxiliary):
 
@@ -254,3 +253,27 @@ def func(xcall, *args):
     os.chdir(rootd)
 
     return opterr
+
+class OptimizedVariable(object):
+
+    def __init__(self, name, initial_value, bounds=None):
+        self.name = name
+        self.ival = initial_value
+        self.cval = initial_value
+        if bounds is not None:
+            if not isinstance(bounds, (list, tuple, np.ndarray)):
+                raise UserInputError("expected bounds to be a tuple of length 2")
+            if len(bounds) != 2:
+                raise UserInputError("expected bounds to be a tuple of length 2")
+        self.bounds = np.array(bounds)
+
+    def __repr__(self):
+        return "opt{0}({1})".format(self.name, self.initial_value)
+
+    @property
+    def current_value(self):
+        return self.cval
+
+    @property
+    def initial_value(self):
+        return self.ival

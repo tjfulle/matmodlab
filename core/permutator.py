@@ -102,6 +102,7 @@ variables: {3:d}
         os.chdir(self.rootd)
 
         self.timing["start"] = time.time()
+        logger.write("starting {0} permutation jobs...".format(NJOBS))
 
         args = [(self.func, x, self.funcargs, i, self.rootd, self.names,
                  self.respdesc, self.tabular)
@@ -115,7 +116,7 @@ variables: {3:d}
             pool.close()
             pool.join()
 
-        logger.write("finished permutation jobs")
+        logger.write("...finished permutation jobs")
         self.timing["end"] = time.time()
 
         self.finish()

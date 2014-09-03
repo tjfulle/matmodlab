@@ -144,10 +144,10 @@ material: {3}
         if paths:
             self.driver.extract_paths(self.exo_file, paths)
 
-    def extract_from_db(self, variables, step=1):
+    def extract_from_db(self, variables, step=1, t=0):
         from utils.exojac.exodump import read_vars_from_exofile
         data = read_vars_from_exofile(self.exo_file, variables=variables,
-                                      step=step, h=0)
+                                      step=step, h=0, t=t)
         return data
 
     def visualize_results(self, overlay=None):

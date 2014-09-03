@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.errors import GenericError
+from utils.errors import GenericError, UserInputError
 from utils.constants import DEFAULT_TEMP, NTENS, NSYMM
 import utils.mmlabpack as mmlabpack
 from utils.functions import Function, DEFAULT_FUNCTIONS
@@ -378,8 +378,8 @@ def parse_function_path(lines, functions, num_steps, cfmt):
 
     # --- Check lengths of Cij and control are consistent
     if len(Cij) != len(control):
-        fatal_inp_error("Path: len(Cij) != len(control) in leg {0}"
-                        .format(leg_num))
+        raise UserInputError("Path: len(Cij) != len(control) in leg {0}"
+                             .format(leg_num))
 
     path = []
     vals = np.zeros(len(control))
@@ -408,3 +408,73 @@ def format_functions(funcs):
                                    "of utils.functions.Function")
             functions[func.func_id] = func
     return functions
+
+def parse_table_path(lines, tfmt, cols, cfmt, lineskip):
+    """Parse the path table
+
+    """
+    path = []
+    final_time = 0.
+    termination_time = 0.
+    leg_num = 1
+
+    # check the control
+    control = format_path_control(cfmt)
+
+    tbl = []
+    for idx, line in enumerate(lines):
+        if idx < lineskip or not line:
+            continue
+        if line[0].strip().startswith("#"):
+            continue
+        try:
+            line = [float(x) for x in line]
+        except ValueError:
+            raise UserInputError("Expected floats in leg {0}, got {1}".format(
+                leg_num, line))
+            continue
+        tbl.append(line)
+    tbl = np.array(tbl)
+
+    # if cols was not specified, must want all
+    if not cols:
+        columns = list(range(tbl.shape[1]))
+    else:
+        columns = cols
+
+    for line in tbl:
+        try:
+            line = line[columns]
+        except IndexError:
+            raise UserInputError("Requested column not found in leg "
+                                 "{0}".format(leg_num))
+            continue
+
+        if tfmt == "dt":
+            termination_time += line[0]
+        else:
+            termination_time = line[0]
+
+        Cij = line[1:]
+
+        # check entries
+        # --- termination time
+        termination_time = format_termination_time(
+            leg_num, termination_time, final_time)
+        if termination_time is None:
+            continue
+        final_time = termination_time
+
+        # --- number of steps
+        num_steps = 1
+
+        # --- Check lengths of Cij and control are consistent
+        if len(Cij) != len(control):
+            raise UserInputError("Path: len(Cij) != len(control) in leg {0}"
+                                 .format(leg_num))
+
+        path.append([termination_time, num_steps, control, Cij])
+        leg_num += 1
+        continue
+
+    return path

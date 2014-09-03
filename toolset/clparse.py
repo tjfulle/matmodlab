@@ -6,6 +6,7 @@ def parse_sim_argv(argv=None, get_f=False):
     from core.runtime import set_runtime_opt
     from materials.aba.mml_i import ABAMATS
     from utils.errors import FileNotFoundError
+    from matmodlab import PKG_D
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser(prog="mmd")

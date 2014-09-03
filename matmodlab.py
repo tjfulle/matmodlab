@@ -84,10 +84,12 @@ SPLASH = """\
 """.format(".".join("{0}".format(i) for i in __version__))
 
 # ------------------------ FACTORY METHODS TO SET UP AND RUN A SIMULATION --- #
+sys.stdout.write(SPLASH)
 from core.driver import Driver
 from core.material import Material
 from core.mat_point_sim import MaterialPointSimulator
 from core.permutator import Permutator, PerturbedVariable
+from core.optimizer import Optimizer, OptimizedVariable
 from utils.functions import Function
 
 # --- DECORATOR FOR SIMULATION
@@ -123,3 +125,5 @@ def matmodlab(func):
 
     return decorated_func
 
+def gen_runid(f):
+    return os.path.splitext(os.path.basename(f))[0]

@@ -108,10 +108,11 @@ def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
 
 
 def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
-                           elem_blk=1, elem_num=1):
+                           elem_blk=1, elem_num=1, t=0):
     """Read the specified variables from the exodus file in filepath
 
     """
+    want_time = t != 0
     # setup variables
     if variables is None:
         variables = ["ALL"]
@@ -131,7 +132,7 @@ def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
     elem_var_names = exof.elem_var_names
 
     if variables[0] != "ALL":
-        return_time = "time" in [x.lower() for x in variables]
+        return_time = "time" in [x.lower() for x in variables] or want_time
         glob_var_names = expand_var_names(glob_var_names, variables)
         elem_var_names = expand_var_names(elem_var_names, variables)
         bad = [x for x in variables if x is not None]

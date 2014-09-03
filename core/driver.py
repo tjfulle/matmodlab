@@ -7,7 +7,7 @@ from utils.variable import Variable
 from utils.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
 from utils.errors import FileNotFoundError, UserInputError
 from core.dparse import (parse_default_path, format_continuum_path,
-    parse_function_path)
+    parse_function_path, parse_table_path)
 from core.runtime import opts
 from utils.constants import NSYMM, NTENS, I9
 import utils.mmlabpack as mmlabpack
@@ -38,7 +38,8 @@ class ContinuumDriver(PathDriver):
                  kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1.,
                  num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1.,
                  efstar=1., dstar=1., proportional=False, termination_time=None,
-                 functions=None, cfmt=None, num_steps=None):
+                 functions=None, cfmt=None, tfmt="time", num_steps=None,
+                 cols=None, lineskip=0):
 
         if path is None and path_file is None:
             raise UserInputError("Expected one of path or path_file")
@@ -60,6 +61,14 @@ class ContinuumDriver(PathDriver):
                 raise UserInputError("expected keyword cfmt")
             num_steps = int(num_steps * step_multiplier)
             path = parse_function_path(path, functions, num_steps, cfmt)
+        elif path_input.lower() == "table":
+            if cfmt is None:
+                raise UserInputError("expected keyword cfmt")
+            if cols is None:
+                raise UserInputError("expected keyword cols")
+            if not isinstance(cols, (list, tuple)):
+                raise UserInputError("expected cols to be a list")
+            path = parse_table_path(path, tfmt, cols, cfmt, lineskip)
         else:
             raise UserInputError("{0}: path_input not "
                                  "recognized".format(path_input))
