@@ -3,7 +3,7 @@ import numpy as np
 from core.runtime import opts
 from utils.data_containers import Parameters
 from core.material import MaterialModel
-from utils.mmlio import log_error, log_message
+from utils.mmlio import logger
 from utils.constants import ROOT2, ROOT23
 
 class VonMises(MaterialModel):
@@ -41,12 +41,12 @@ class VonMises(MaterialModel):
             H = self.params["H"]
             BETA = self.params["BETA"]
 
-            if K <= 0.0: log_error = "Bulk modulus K must be positive"
-            if G <= 0.0: log_error = "Shear modulus G must be positive"
+            if K <= 0.0: logger.error("Bulk modulus K must be positive")
+            if G <= 0.0: logger.error("Shear modulus G must be positive")
             nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
-            if nu > 0.5: log_error = "Poisson's ratio > .5"
-            if nu < -1.0: log_error = "Poisson's ratio < -1."
-            if nu < 0.0: log_message = "#---- WARNING: negative Poisson's ratio"
+            if nu > 0.5: logger.error("Poisson's ratio > .5")
+            if nu < -1.0: logger.error("Poisson's ratio < -1.")
+            if nu < 0.0: logger.warn("negative Poisson's ratio")
             if Y0 == 0.0: Y0 = 1.0e99
 
         newparams = [K, G, Y0, H, BETA]

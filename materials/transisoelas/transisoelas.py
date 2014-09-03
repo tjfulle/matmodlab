@@ -1,24 +1,19 @@
 import numpy as np
 
-from materials.material import Material
-from utils.mmlio import log_error, log_message
-from utils.errors import GenericError
+from core.material import MaterialModel
 
-class TransIsoElas(Material):
+class TransIsoElas(MaterialModel):
     name = "transisoelas"
     param_names = ["A0", "A1", "A2", "A3",  # A0 = A1 = 0 for natural state
                    "B0", "B1", "C0", "C1",
                    "V1", "V2", "V3",
                    "K", "G"]
-    constant_j = True
 
     def setup(self):
         """Set up the Transversely Isotropic Linear Elastic  material
 
         """
         # Check inputs
-        #self.ui = dict(zip(self.param_names, self.params))
-
         # If the user wants a linear elastic primitive:
         if self.params["K"] > 0.0 and self.params["G"] > 0.0:
             for key in self.params.keys():
@@ -33,9 +28,9 @@ class TransIsoElas(Material):
         vec = vec / vmag if vmag > 0.0 else np.array([1, 0, 0])
         self.M = np.outer(vec, vec)
 
-        self.register_xtra_variables(["EPS_XX", "EPS_YY", "EPS_ZZ",
-                                      "EPS_XY", "EPS_YZ", "EPS_XZ"])
-        self.set_initial_state(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
+        xkeys = ["EPS_XX", "EPS_YY", "EPS_ZZ", "EPS_XY", "EPS_YZ", "EPS_XZ"]
+        xvals = np.zeros(len(xkeys))
+        self.register_xtra_variables(xkeys, xvals)
 
         self.bulk_modulus = self.params["B0"]
         self.shear_modulus = self.params["A0"]
