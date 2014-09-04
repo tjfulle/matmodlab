@@ -25,7 +25,7 @@ docs/*.toc
 docs/*.bbl
 docs/*.blg
 docs/*.synctex.gz
-
+params.in
 lib/material_models.db
 lib/*.so
 

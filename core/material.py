@@ -451,6 +451,8 @@ def Material(model, parameters=None, depvar=None, constants=None,
 
     if m in ABAMATS:
         # Abaqus model
+        lib = m
+
         # Check input
         if constants is None:
             raise UserInputError("abaqus material expected keyword constants")
@@ -459,12 +461,17 @@ def Material(model, parameters=None, depvar=None, constants=None,
             raise UserInputError("len(parameters) != constants")
         parameters = np.array([float(x) for x in parameters])
 
-        # Build model
-        lib = m
         lib_info = ABAMATS[lib]
+
+        # Check if model is already built
+        so_lib = os.path.join(PKG_D, lib + ".so")
         source_files = get_aba_sources(source_files, source_directory)
         lib_info["source_files"].extend(source_files)
-        Builder.build_umat(lib, lib_info["source_files"], verbosity=opts.verbosity)
+        if not os.path.isfile(so_lib):
+            Builder.build_umat(lib, lib_info["source_files"],
+                               verbosity=opts.verbosity)
+        if not os.path.isfile(so_lib):
+            raise ModelLibNotFoundError(model)
 
     else:
         for lib in MATERIALS:

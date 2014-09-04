@@ -17,7 +17,7 @@ import utils.mmltab as mmltab
 from utils.errors import UserInputError, GenericError
 
 
-PERM_METHODS = ("zip", "combine", "shotgun", )
+PERM_METHODS = ("zip", "combination", "shotgun", )
 NJOBS = 0
 RAND = np.random.RandomState()
 logger = Logger()
@@ -25,7 +25,7 @@ logger = Logger()
 
 class Permutator(object):
     def __init__(self, func, xinit, runid, method="zip", correlations=False,
-                 verbosity=1, descriptor=None, nprocs=1, funcargs=[]):
+                 verbosity=1, descriptor=None, nprocs=1, funcargs=[], d=None):
         global NJOBS
 
         self.runid = runid
@@ -41,7 +41,20 @@ class Permutator(object):
 
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
-        self.funcargs = funcargs
+        self.funcargs = [x for x in funcargs]
+        # funcargs sent to every evaluation with first argument
+        # the evaluation directory
+        self.funcargs = [None] + funcargs
+
+        # set up logger
+        d = d or os.getcwd()
+        self.rootd = os.path.join(d, runid + ".eval")
+        if os.path.isdir(self.rootd):
+            shutil.rmtree(self.rootd)
+        os.makedirs(self.rootd)
+        filepath = os.path.join(self.rootd, runid + ".log")
+        logger.add_file_handler(filepath)
+        logger.set_verbosity(verbosity)
 
         # check method
         m = method.lower()
@@ -58,14 +71,6 @@ class Permutator(object):
             self.names.append(x.name)
             idata.append(x.data)
 
-        # set up logger
-        self.rootd = os.path.join(os.getcwd(), runid + ".eval")
-        if os.path.isdir(self.rootd):
-            shutil.rmtree(self.rootd)
-        os.makedirs(self.rootd)
-        filepath = os.path.join(self.rootd, runid + ".log")
-        logger.add_file_handler(filepath)
-
         # set up the jobs
         if self.method in ("zip", "shotgun"):
             if not all(len(x) == len(idata[0]) for x in idata):
@@ -75,7 +80,7 @@ class Permutator(object):
                 raise GenericError(msg)
             self.data = zip(*idata)
 
-        elif self.method == "combine":
+        elif self.method == "combination":
             self.data = list(product(*idata))
 
         NJOBS = len(self.data)
@@ -85,25 +90,24 @@ class Permutator(object):
         self.tabular = mmltab.MMLTabularWriter(self.runid, d=self.rootd)
 
         # write summary to the log file
-        str_pars = "\n".join("  {0}={1:.2g}".format(name, idata[i][0])
+        str_pars = "\n".join("    {0}={1:.2g}".format(name, idata[i][0])
                              for (i, name) in enumerate(self.names))
         summary = """
-summary of permutation job
-------- -- ----------- ---
+summary of permutation job input
+------- -- ----------- --- -----
 runid: {0}
 method: {1}
 number of realizations: {2}
 variables: {3:d}
+starting values:
 {4}
 """.format(self.runid, self.method, NJOBS, len(self.names), str_pars)
         logger.write(summary)
 
     def run(self):
-        os.chdir(self.rootd)
 
         self.timing["start"] = time.time()
-        logger.write("starting {0} permutation jobs...".format(NJOBS))
-
+        logger.write("{0}: starting permutation jobs...".format(self.runid))
         args = [(self.func, x, self.funcargs, i, self.rootd, self.names,
                  self.descriptor, self.tabular)
                  for (i, x) in enumerate(self.data)]
@@ -116,7 +120,7 @@ variables: {3:d}
             pool.close()
             pool.join()
 
-        logger.write("...finished permutation jobs")
+        logger.write("\npermutation jobs complete")
         self.timing["end"] = time.time()
 
         self.finish()
@@ -219,7 +223,7 @@ def run_job(args):
     job_num = i + 1
     evald = catd(rootd, job_num)
     os.makedirs(evald)
-    os.chdir(evald)
+    funcargs[0] = evald
 
     # write the params.in for this run
     parameters = zip(names, x)
@@ -237,7 +241,7 @@ def run_job(args):
     except:
         logger.error("job {0} failed".format(job_num), r=0)
         stat = 1
-        resp = np.nan,
+        resp = [np.nan for _ in range(len(descriptor))]
 
     response = None
     if descriptor is not None:

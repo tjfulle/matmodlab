@@ -100,7 +100,8 @@ class ContinuumDriver(PathDriver):
     def num_leg(self):
         return len(self.path)
 
-    def run(self, glob_data, elem_data, material, logger, out_db):
+    def run(self, glob_data, elem_data, material, logger, out_db,
+            termination_time=None):
         """Process the deformation path
 
         Parameters
@@ -291,6 +292,10 @@ class ContinuumDriver(PathDriver):
                         logger.warn("leg: {0}, prescribed stress error: "
                                     "{1: .5f}. consider increasing number of "
                                     "steps".format(ileg, sigerr))
+
+                if termination_time is not None and time >= termination_time:
+                    self.ran = True
+                    return 0
 
                 continue  # continue to next step
 

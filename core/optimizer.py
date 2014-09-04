@@ -19,7 +19,7 @@ OPT_METHODS = ("simplex", "powell", "cobyla",)
 logger = Logger()
 
 class Optimizer(object):
-    def __init__(self, func, xinit, runid, method="simplex", verbosity=1,
+    def __init__(self, func, xinit, runid, method="simplex", verbosity=1, d=None,
                  maxiter=MAXITER, tolerance=TOL, descriptor=None, funcargs=[]):
         set_runtime_opt("raise_e", True)
         self.runid = runid
@@ -32,13 +32,26 @@ class Optimizer(object):
 
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
-        self.funcargs = funcargs
+        self.funcargs = [x for x in funcargs]
+        # funcargs sent to every evaluation with first argument
+        # the evaluation directory
+        self.funcargs = [None] + funcargs
 
         # check method
         m = method.lower()
         if m not in OPT_METHODS:
             raise UserInputError("{0}: unrecognized method".format(method))
         self.method = m
+
+        # set up logger
+        d = d or os.getcwd()
+        self.rootd = os.path.join(d, runid + ".eval")
+        if os.path.isdir(self.rootd):
+            shutil.rmtree(self.rootd)
+        os.makedirs(self.rootd)
+        filepath = os.path.join(self.rootd, runid + ".log")
+        logger.add_file_handler(filepath)
+        logger.set_verbosity(verbosity)
 
         # check xinit
         self.names = []
@@ -60,14 +73,6 @@ class Optimizer(object):
         if self.method in ("simplex", "powell"):
             self.bounds = None
 
-        # set up logger
-        self.rootd = os.path.join(os.getcwd(), runid + ".opt")
-        if os.path.isdir(self.rootd):
-            shutil.rmtree(self.rootd)
-        os.makedirs(self.rootd)
-        filepath = os.path.join(self.rootd, runid + ".log")
-        logger.add_file_handler(filepath)
-
         if maxiter <= 0:
             logger.warn("maxiter < 0, setting to default value")
             maxiter = MAXITER
@@ -86,8 +91,8 @@ class Optimizer(object):
                              for (i, name) in enumerate(self.names))
         resp = "\n".join("  {0}".format(it) for it in self.descriptor)
         summary = """
-summary of optimization job
-------- -- ------------ ---
+summary of optimization job input
+------- -- ------------ --- -----
 runid: {0}
 method: {1}
 variables: {2:d}
@@ -104,7 +109,6 @@ response descriptors:
 
         """
         import scipy.optimize
-        os.chdir(self.rootd)
 
         self.timing["start"] = time.time()
         logger.write("{0}: starting optimization jobs...".format(self.runid))
@@ -153,6 +157,8 @@ response descriptors:
 
         self.timing["end"] = time.time()
 
+        logger.write("\noptimization jobs complete")
+
         self.finish()
 
         return 0
@@ -167,7 +173,7 @@ response descriptors:
 summary of optimization results
 ------- -- ------------ -------
 {0}: calculations completed ({1:.4f}s.)
-iteractions: {2}
+iterations: {2}
 optimized parameters
 {3}
 """.format(self.runid, opt_time, IOPT, opt_pars)
@@ -207,7 +213,7 @@ def run_job(xcall, *args):
     IOPT += 1
     evald = catd(rootd, IOPT)
     os.mkdir(evald)
-    os.chdir(evald)
+    funcargs[0] = evald
 
     # write the params.in for this run
     x = xcall * xfac
@@ -230,9 +236,6 @@ def run_job(xcall, *args):
         err = np.nan
 
     tabular.write_eval_info(IOPT, stat, evald, parameters, ((desc[0], err),))
-
-    # go back to the rootd
-    os.chdir(rootd)
 
     return err
 

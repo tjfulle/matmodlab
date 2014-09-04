@@ -9,6 +9,7 @@ opts.I = None
 opts.verbosity = 0
 opts.runid = None
 opts.Werror = False
+opts.Wall = False
 opts.switch = None
 opts.mimic = None
 opts.nprocs = 1

@@ -1,7 +1,6 @@
 import sys
 from utils.misc import who_is_calling
 from core.runtime import opts
-from errors import GenericError
 
 def warn(string, limit=False, warnings=[0]):
     warnings[0] += 1
@@ -19,7 +18,7 @@ def error(string, r=1):
     sys.__stderr__.write("*** ERROR: {0} ({1})\n".format(string.upper(), who))
     sys.__stderr__.flush()
     if r:
-        raise GenericError(string)
+        raise Exception(string)
 
 def write(string, end="\n"):
     """Write message to stdout """

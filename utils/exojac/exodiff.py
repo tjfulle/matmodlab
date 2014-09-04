@@ -9,21 +9,32 @@ import linecache
 
 from exoread import ExodusIIReader
 
+SAME = 0
+DIFF = 1
+NOT_SAME = 2
+
+
 class Logger(object):
-    def __init__(self):
-        self.log = sys.stdout
+    def __init__(self, f, v=1):
+        self.fh = open(f, "w")
+        self.ch = None if not v else sys.stdout
     def info(self, message, end="\n"):
-        self.log.write(str(message) + end)
+        self.write(message, end=end)
     def warning(self, message):
-        self.log.write("*** warning: {0}\n".format(message))
+        self.write("*** warning: {0}".format(message))
     def error(self, message):
-        self.log.write("*** error: {0}\n".format(message))
-LOG = Logger()
+        self.write("*** error: {0}".format(message))
+    def write(self, string, end="\n"):
+        message = string.upper() + end
+        self.fh.write(message)
+        if self.ch:
+            self.ch.write(message)
+
 DIFFTOL = 1.E-06
 FAILTOL = 1.E-04
 FLOOR = 1.E-12
 
-EXE= "exdiff"
+EXE= "exodiff"
 
 
 def main(argv=None):
@@ -39,47 +50,55 @@ def main(argv=None):
     parser.add_argument("source1")
     parser.add_argument("source2")
     args = parser.parse_args(argv)
-    return exodiff(args)
+    return exodiff(args.source1, args.source2, control_file=args.f,
+                   interp=args.interp)
 
 
-def exodiff(args):
-    if not os.path.isfile(args.source1):
-        LOG.error("{0}: no such file".format(args.source1))
-    if not os.path.isfile(args.source2):
-        LOG.error("{0}: no such file".format(args.source2))
+def exodiff(source1, source2, control_file=None, interp=False, f=None, d=None, v=1):
+    d = d or os.getcwd()
+    if not f:
+        f = os.path.join(d, "exodiff.log")
+    logger = Logger(f, v=v)
 
-    H1, D1 = loadcontents(args.source1)
-    H2, D2 = loadcontents(args.source2)
+    if not os.path.isfile(source1):
+        logger.error("{0}: no such file".format(source1))
+    if not os.path.isfile(source2):
+        logger.error("{0}: no such file".format(source2))
 
-    if args.f is not None:
-        if not os.path.isfile(args.f):
-            LOG.error("{0}: no such file".format(args.f))
+    H1, D1 = loadcontents(source1, logger)
+    H2, D2 = loadcontents(source2, logger)
+
+    if control_file is not None:
+        if not os.path.isfile(control_file):
+            logger.error("{0}: no such file".format(control_file))
             return 2
-        variables = read_diff_file(args.f)
+        variables = read_diff_file(control_file, logger)
     else:
         variables = zip(H1, [DIFFTOL] * len(H1), [FAILTOL] * len(H1),
                         [FLOOR] * len(H1))
 
-
-    status = diff_files(H1, D1, H2, D2, variables, interp=args.interp)
+    status = diff_files(H1, D1, H2, D2, variables, logger, interp=interp)
 
     if status == 0:
-        LOG.info("\nFiles are the same")
+        logger.info("\nFiles are the same")
+
     elif status == 1:
-        LOG.info("\nFiles diffed")
+        logger.info("\nFiles diffed")
+
     else:
-        LOG.info("\nFiles are different")
+        logger.info("\nFiles are different")
+
     return status
 
 
-def loadcontents(filepath):
+def loadcontents(filepath, logger):
     if filepath.endswith((".exo", ".e", ".base_exo")):
-        return loadexo(filepath)
-    return loadascii(filepath)
+        return loadexo(filepath, logger)
+    return loadascii(filepath, logger)
 
 
-def loadexo(filepath):
-    LOG.info("Reading {0}".format(filepath))
+def loadexo(filepath, logger):
+    logger.info("Reading {0}".format(filepath))
     exof = ExodusIIReader(filepath)
     glob_var_names = exof.glob_var_names
     elem_var_names = exof.elem_var_names
@@ -94,10 +113,10 @@ def loadexo(filepath):
     return head, data
 
 
-def loadascii(filepath):
-    LOG.info("Reading {0}".format(filepath))
+def loadascii(filepath, logger):
+    logger.info("Reading {0}".format(filepath))
     head = loadhead(filepath)
-    data = loadtxt(filepath, skiprows=1)
+    data = loadtxt(filepath, logger, skiprows=1)
     return head, data
 
 
@@ -111,7 +130,7 @@ def loadhead(filepath, comments="#"):
     return line.split()
 
 
-def loadtxt(f, skiprows=0, comments="#"):
+def loadtxt(f, logger, skiprows=0, comments="#"):
     """Load text from output files
 
     """
@@ -126,14 +145,14 @@ def loadtxt(f, skiprows=0, comments="#"):
         if len(line) < ncols:
             break
         if len(line) > ncols:
-            LOG.error("*** {0}: error: {1}: inconsistent data in row {1}".format(
+            logger.error("*** {0}: error: {1}: inconsistent data in row {1}".format(
                 EXE, os.path.basename(f), iline))
             raise SystemExit(2)
         lines.append(line)
     return np.array(lines)
 
 
-def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
+def diff_files(head1, data1, head2, data2, vars_to_compare, logger, interp=False):
     """Diff the files
 
     """
@@ -141,24 +160,25 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
     try:
         t1 = data1[:, head1.index("TIME")]
     except:
-        LOG.error("TIME not in File1")
-        return 2
+        logger.error("TIME not in File1")
+        return NOT_SAME
     try:
         t2 = data2[:, head2.index("TIME")]
     except:
-        LOG.error("TIME not in File2")
-        return 2
+        logger.error("TIME not in File2")
+        return NOT_SAME
 
     if not interp:
         # interpolation will not be used when comparing values, so the
         # timesteps must be equal
         if t1.shape[0] != t2.shape[0]:
-            LOG.error("Number of timesteps in File1 and File2 differ")
-            return 2
+            logger.error("Number of timesteps in File1({0:d}) and "
+                         "File2({1:d}) differ".format(t1.shape[0], t2.shape[0]))
+            return NOT_SAME
 
         if not np.allclose(t1, t2, atol=FAILTOL, rtol=FAILTOL):
-            LOG.error("Timestep size in File1 and File2 differ")
-            return 2
+            logger.error("Timestep size in File1 and File2 differ")
+            return NOT_SAME
 
     status = []
     bad = [[], []]
@@ -170,54 +190,54 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, interp=False):
         try:
             i1 = head1.index(var)
         except ValueError:
-            LOG.warning("{0}: not in File1\n".format(var))
+            logger.warning("{0}: not in File1\n".format(var))
             continue
 
         try:
             i2 = head2.index(var)
         except ValueError:
-            LOG.warning("{0}: not in File2\n".format(var))
+            logger.warning("{0}: not in File2\n".format(var))
             continue
 
         d1 = afloor(data1[:, i1], floor)
         d2 = afloor(data2[:, i2], floor)
 
-        LOG.info("Comparing {0}".format(var), end="." * (40 - len(var)))
+        logger.info("Comparing {0}".format(var), end="." * (40 - len(var)))
 
         if not interp:
             if np.allclose(d1, d2, atol=ftol, rtol=ftol):
-                LOG.info(" pass")
-                LOG.info("File1.{0} := File2.{0}\n".format(var))
-                status.append(0)
+                logger.info(" pass")
+                logger.info("File1.{0} := File2.{0}\n".format(var))
+                status.append(SAME)
                 continue
 
         rms, nrms = rms_error(t1, d1, t2, d2)
         if nrms < dtol:
-            LOG.info(" pass")
-            LOG.info("File1.{0} == File2.{0}".format(var))
-            status.append(0)
+            logger.info(" pass")
+            logger.info("File1.{0} == File2.{0}".format(var))
+            status.append(SAME)
 
         elif nrms < ftol:
-            LOG.info(" diff")
-            LOG.warning("File1.{0} ~= File2.{0}".format(var))
-            status.append(1)
+            logger.info(" diff")
+            logger.warning("File1.{0} ~= File2.{0}".format(var))
+            status.append(DIFF)
             bad[1].append(var)
 
         else:
-            LOG.info(" fail")
-            LOG.error("File1.{0} != File2.{0}".format(var))
-            status.append(2)
+            logger.info(" fail")
+            logger.error("File1.{0} != File2.{0}".format(var))
+            status.append(NOT_SAME)
             bad[0].append(var)
 
-        LOG.info("NRMS(File.{0}, File2.{0}) = {1: 12.6E}\n".format(var, nrms))
+        logger.info("NRMS(File.{0}, File2.{0}) = {1: 12.6E}\n".format(var, nrms))
         continue
 
     failed = ", ".join("{0}".format(f) for f in bad[0])
     diffed = ", ".join("{0}".format(f) for f in bad[1])
     if failed:
-        LOG.info("Variabes that failed: {0}".format(failed))
+        logger.info("Variabes that failed: {0}".format(failed))
     if diffed:
-        LOG.info("Variabes that diffed: {0}".format(diffed))
+        logger.info("Variabes that diffed: {0}".format(diffed))
 
     return max(status)
 
@@ -249,7 +269,7 @@ def interp_rms_error(t1, d1, t2, d2):
     return rms
 
 
-def read_diff_file(filepath):
+def read_diff_file(filepath, logger):
     """Read the diff instruction file
 
     Parameters
@@ -280,7 +300,7 @@ def read_diff_file(filepath):
     try:
         exdiff = doc.getElementsByTagName("ExDiff")[0]
     except IndexError:
-        LOG.error("{0}: expected root element 'ExDiff'".format(filepath))
+        logger.error("{0}: expected root element 'ExDiff'".format(filepath))
         sys.exit(2)
     ftol = exdiff.getAttribute("ftol")
     if ftol: ftol = float(ftol)

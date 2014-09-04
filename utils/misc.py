@@ -34,7 +34,7 @@ def timed_raw_input(message, timeout=10, default=None):
         return default
 
 
-def load_file(filepath):
+def load_file(filepath, disp=0):
     """Load a python module by filepath
 
     Parameters

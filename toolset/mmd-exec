@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+import os
+import sys
+import random
+import argparse
+
+from _setup import *
+from matmodlab import *
+from clparse import parse_sim_argv
+
+def main(argv=None):
+    args = parse_sim_argv(argv=argv, get_f=True)
+
+    # execute the file
+    exec(compile(open(args.source, "rb").read(), args.source, 'exec'))
+
+    if args.v:
+        # a fun quote to end with
+        from utils.quotes import write_random_quote
+        write_random_quote()
+
+if __name__ == "__main__":
+    main()

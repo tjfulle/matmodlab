@@ -12,12 +12,14 @@ from core.driver import PathDriver
 from core.material import MaterialModel
 
 class MaterialPointSimulator(object):
-    def __init__(self, runid, driver, material, verbosity=1, d=None):
+    def __init__(self, runid, driver, material, termination_time=None,
+                 verbosity=1, d=None):
         """Initialize the MaterialPointSimulator object
 
         """
         self._vars = []
         self.runid = runid
+        self.termination_time = termination_time
 
         # check input
         if not isinstance(driver, PathDriver):
@@ -28,9 +30,10 @@ class MaterialPointSimulator(object):
         self.material = material
 
         # setup IO
+        d = d or os.getcwd()
 	self.title = "matmodlab single element simulation"
         self.logger = Logger(self.runid, verbosity=verbosity, d=d)
-        self.exo_db = ExodusII(self.runid)
+        self.exo_db = ExodusII(self.runid, d=d)
         self.exo_file = self.exo_db.filepath
 
 	# register global variables
@@ -116,7 +119,8 @@ material: {3}
         """
         self.logger.write("starting calculations...")
 	retcode = self.driver.run(self.glob_data, self.elem_data,
-                                  self.material, self.logger, self.exo_db)
+                                  self.material, self.logger, self.exo_db,
+                                  termination_time=self.termination_time)
         self.finish()
         return retcode
 
@@ -153,3 +157,7 @@ material: {3}
     def visualize_results(self, overlay=None):
         from viz.plot2d import create_model_plot
         create_model_plot(self.exo_file)
+
+    @property
+    def exodus_file(self):
+        return self.exo_file

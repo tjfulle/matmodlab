@@ -28,6 +28,8 @@ def parse_sim_argv(argv=None, get_f=False):
         help="Launch visualization on completion [default: %(default)s]")
     parser.add_argument("-j", type=int, default=1,
         help="Number of simultaneous jobs [default: %(default)s]")
+    parser.add_argument("-W", choices=["std", "all", "error"], default="std",
+        help="Warning level [default: %(default)s]")
     if get_f:
         parser.add_argument("source", help="Source file [default: %(default)s]")
     args = parser.parse_args(argv)
@@ -36,6 +38,11 @@ def parse_sim_argv(argv=None, get_f=False):
     set_runtime_opt("debug", args.dbg)
     set_runtime_opt("sqa", args.sqa)
     set_runtime_opt("nprocs", args.j)
+    if args.W == "error":
+        set_runtime_opt("Wall", True)
+        set_runtime_opt("Werror", True)
+    elif args.W == "all":
+        set_runtime_opt("Wall", True)
 
     # directory to look for hrefs and other files
     set_runtime_opt("I", args.I)

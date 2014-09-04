@@ -31,7 +31,7 @@ class ExodusII(object):
 
     """
 
-    def __init__(self, runid, d=None):
+    def __init__(self, runid, d):
         # create new file
         self.runid = runid
         self.exofile = ExodusIIFile(runid, mode="w", d=d)

@@ -1,6 +1,7 @@
 import os
 import sys
 import inspect
+import warnings
 from math import *
 from distutils.spawn import find_executable as which
 
@@ -36,7 +37,7 @@ CORE = os.path.join(ROOT_D, "core")
 VIZ_D = os.path.join(ROOT_D, "viz")
 UTL_D = os.path.join(ROOT_D, "utils")
 TLS_D = os.path.join(ROOT_D, "toolset")
-TESTS_D = os.path.join(ROOT_D, "tests")
+TEST_D = os.path.join(ROOT_D, "tests")
 PKG_D = os.path.join(ROOT_D, "lib")
 BLD_D = os.path.join(ROOT_D, "build")
 LIB_D = os.path.join(ROOT_D, "lib")
@@ -85,15 +86,16 @@ SPLASH = """\
 """.format(".".join("{0}".format(i) for i in __version__))
 
 # ------------------------ FACTORY METHODS TO SET UP AND RUN A SIMULATION --- #
-sys.stdout.write(SPLASH)
 from core.driver import Driver
 from core.material import Material
 from core.mat_point_sim import MaterialPointSimulator
 from core.permutator import Permutator, PermutateVariable
 from core.optimizer import Optimizer, OptimizeVariable
 from utils.functions import Function
+from core.test import TestBase
 
 # --- DECORATOR FOR SIMULATION
+already_splashed = False
 def matmodlab(func):
     """Decorator for func
 
@@ -114,8 +116,15 @@ def matmodlab(func):
 
     """
     from toolset.clparse import parse_sim_argv
+    from core.runtime import opts, set_runtime_opt
     def decorated_func(*args, **kwargs):
+        global already_splashed
         clargs = parse_sim_argv()
+        if clargs.v > 0 and not already_splashed:
+            sys.stdout.write(SPLASH)
+            already_splashed = True
+        if not opts.Wall:
+            warnings.simplefilter("ignore")
 
         # execute the function
         out = func(*args, **kwargs)
