@@ -32,11 +32,11 @@ def func(x, *args):
 def runner():
 
     runid = "permutation"
-    K = PerturbedVariable("K", 125e9, method="weibull", arg=14, N=3)
-    G = PerturbedVariable("G", 45e9, method="percentage", arg=10, N=3)
+    K = PermutateVariable("K", 125e9, method="weibull", arg=14, N=3)
+    G = PermutateVariable("G", 45e9, method="percentage", arg=10, N=3)
     xinit = [K, G]
     permutator = Permutator(func, xinit, runid=runid,
-                            respdesc=["MAX_PRES", "MAX_SMISES"],
+                            descriptor=["MAX_PRES", "MAX_SMISES"],
                             method="zip", correlations=True, funcargs=(runid,))
     permutator.run()
 

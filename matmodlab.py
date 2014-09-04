@@ -1,5 +1,6 @@
 import os
 import sys
+import inspect
 from math import *
 from distutils.spawn import find_executable as which
 
@@ -88,8 +89,8 @@ sys.stdout.write(SPLASH)
 from core.driver import Driver
 from core.material import Material
 from core.mat_point_sim import MaterialPointSimulator
-from core.permutator import Permutator, PerturbedVariable
-from core.optimizer import Optimizer, OptimizedVariable
+from core.permutator import Permutator, PermutateVariable
+from core.optimizer import Optimizer, OptimizeVariable
 from utils.functions import Function
 
 # --- DECORATOR FOR SIMULATION
@@ -125,5 +126,14 @@ def matmodlab(func):
 
     return decorated_func
 
-def gen_runid(f):
-    return os.path.splitext(os.path.basename(f))[0]
+
+def gen_runid():
+    stack = inspect.stack()[1]
+    return os.path.splitext(os.path.basename(stack[1]))[0]
+
+
+def get_my_directory():
+    """return the directory of the calling function"""
+    stack = inspect.stack()[1]
+    d = os.path.dirname(os.path.realpath(stack[1]))
+    return d

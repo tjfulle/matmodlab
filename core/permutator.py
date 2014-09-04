@@ -25,19 +25,19 @@ logger = Logger()
 
 class Permutator(object):
     def __init__(self, func, xinit, runid, method="zip", correlations=False,
-                 verbosity=1, respdesc=None, nprocs=1, funcargs=[]):
+                 verbosity=1, descriptor=None, nprocs=1, funcargs=[]):
         global NJOBS
 
         self.runid = runid
-        self.func = (func.__module__, func.func_name)
+        #self.func = (func.__module__, func.func_name)
         self.func = func
         self.nprocs = max(nprocs, opts.nprocs)
         self.correlations = correlations
 
-        if not isinstance(respdesc, (list, tuple)):
-            respdesc = [respdesc]
-        self.respdesc = respdesc
-        self.nresp = len(respdesc)
+        if not isinstance(descriptor, (list, tuple)):
+            descriptor = [descriptor]
+        self.descriptor = descriptor
+        self.nresp = len(descriptor)
 
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
@@ -51,11 +51,10 @@ class Permutator(object):
 
         # check xinit
         self.names = []
-        self.timing = {}
         idata = []
         for x in xinit:
-            if not isinstance(x, PerturbedVariable):
-                raise UserInputError("all xinit must be of type PerturbedVariable")
+            if not isinstance(x, PermutateVariable):
+                raise UserInputError("all xinit must be of type PermutateVariable")
             self.names.append(x.name)
             idata.append(x.data)
 
@@ -80,6 +79,7 @@ class Permutator(object):
             self.data = list(product(*idata))
 
         NJOBS = len(self.data)
+        self.timing = {}
 
         # setup the mml-evaldb file
         self.tabular = mmltab.MMLTabularWriter(self.runid, d=self.rootd)
@@ -105,7 +105,7 @@ variables: {3:d}
         logger.write("starting {0} permutation jobs...".format(NJOBS))
 
         args = [(self.func, x, self.funcargs, i, self.rootd, self.names,
-                 self.respdesc, self.tabular)
+                 self.descriptor, self.tabular)
                  for (i, x) in enumerate(self.data)]
         nprocs = min(min(mp.cpu_count(), self.nprocs), len(self.data))
         if nprocs == 1:
@@ -151,7 +151,7 @@ variables: {3:d}
         seedset[0] = 1
 
 
-class PerturbedVariable(object):
+class PermutateVariable(object):
 
     def __init__(self, name, *args, **kwargs):
         N = int(kwargs.get("N", 10))
@@ -213,7 +213,7 @@ def run_job(args):
     """Run the single permutation job
 
     """
-    (func, x, funcargs, i, rootd, names, respdesc, tabular) = args
+    (func, x, funcargs, i, rootd, names, descriptor, tabular) = args
     #func = getattr(sys.modules[func[0]], func[1])
 
     job_num = i + 1
@@ -235,21 +235,20 @@ def run_job(args):
         logger.write("finished job {0}".format(job_num))
         stat = 0
     except:
-        logger.write("*** error: job {0} failed".format(job_num))
+        logger.error("job {0} failed".format(job_num), r=0)
         stat = 1
         resp = np.nan,
 
     response = None
-    if respdesc is not None:
+    if descriptor is not None:
         if not isinstance(resp, tuple):
             resp = resp,
-        if len(respdesc) != len(resp):
-            logger.write("*** error: job {0}: number of responses does not "
-                         "match number of response descriptors".format(job_num))
+        if len(descriptor) != len(resp):
+            logger.error("job {0}: number of responses does not match number "
+                         "of response descriptors".format(job_num), r=0)
         else:
-            response = [(n, resp[i]) for (i, n) in enumerate(respdesc)]
+            response = [(n, resp[i]) for (i, n) in enumerate(descriptor)]
 
     tabular.write_eval_info(job_num, stat, evald, parameters, response)
 
     return stat
-

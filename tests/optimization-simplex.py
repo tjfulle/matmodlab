@@ -3,10 +3,9 @@ from matmodlab import *
 
 def func(x, *args):
 
-    runid = args[0]
+    runid, path_file, aux = args[:3]
 
     # set up driver
-    path_file = "exmpls.tbl"
     driver = Driver("Continuum", path_file=path_file, cols=[0,2,3,4],
                     cfmt="222", tfmt="time", path_input="table")
 
@@ -22,12 +21,11 @@ def func(x, *args):
                    "STRESS_XX", "STRESS_YY", "STRESS_ZZ")
 
     # read in baseline data
-    aux = "opt-baseline.dat"
     auxhead = open(aux).readline().split()
     auxdat = np.loadtxt(aux, skiprows=1)
     I = [auxhead.index(var) for var in vars_to_get]
     baseevol = auxdat[:, I[0]] + auxdat[:, I[1]] + auxdat[:, I[2]]
-    basepress = (auxdat[:, I[3]] + auxdat[:, I[4]] + auxdat[:, I[5]]) / 3.
+    basepress = -(auxdat[:, I[3]] + auxdat[:, I[4]] + auxdat[:, I[5]]) / 3.
     basetime = auxdat[:, auxhead.index("TIME")]
 
     # read in output data
@@ -53,20 +51,21 @@ def func(x, *args):
     if dnom < 1.e-12: dnom = 1.
     error = rms / dnom
 
-    return error
+    return rms
 
 @matmodlab
 def runner():
-    runid = "optimization-simplex"
-    K = OptimizedVariable("K", 129e9, bounds=(125e9, 150e9))
-    G = OptimizedVariable("G", 54e9, bounds=(45e9, 57e9))
-    print K
-    print G
+    r = gen_runid()
+    d = os.path.dirname(os.path.realpath(__file__))
+    f = os.path.join(d, "exmpls.tbl")
+    a = os.path.join(d, "opt-baseline.dat")
+    K = OptimizeVariable("K", 129e9, bounds=(125e9, 150e9))
+    G = OptimizeVariable("G", 54e9, bounds=(45e9, 57e9))
     xinit = [K, G]
-    exit("finish me")
-    optimizer = Optimizer(func, xinit, runid=runid,
-                          respdesc=["PRES_V_EVOL"], method="simplex",
-                          maxiter=25, tolerance=1.e-4, funcargs=(runid,))
+    optimizer = Optimizer(func, xinit, runid=r,
+                          descriptor=["PRES_V_EVOL"], method="cobyla",
+                          maxiter=25, tolerance=1.e-4, funcargs=(r, f, a))
     optimizer.run()
+    return
 
 runner()

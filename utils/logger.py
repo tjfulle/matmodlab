@@ -36,14 +36,14 @@ class Logger(object):
     def error(self, string, r=1, c=1, caller=None):
         if caller is None:
             caller = who_is_calling()
-        if c: message = "*** ERROR: {0}: {1}\n"
-        else: message = "*** ERROR: {1}\n"
-        message = message.format(caller, string).upper()
+        if c: message = "*** ERROR: {0} ({1})\n"
+        else: message = "*** ERROR: {0}\n"
+        message = message.format(string, caller).upper()
         self.eh.write(message)
         if self.fh: self.fh.write(message)
         if r:
             raise Exception(message)
-        elif r < 0:
+        elif r == 0:
             return
         else:
             sys.exit(1)

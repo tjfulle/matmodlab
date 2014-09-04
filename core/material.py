@@ -29,10 +29,10 @@ class MaterialModel(object):
     """The base material class
 
     """
-    _vars = []
     param_defaults = None
 
     def __init__(self):
+        self._vars = []
         self.nvisco = 0
         self._viscoelastic = None
         self._trs = None

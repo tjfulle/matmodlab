@@ -12,11 +12,11 @@ from core.driver import PathDriver
 from core.material import MaterialModel
 
 class MaterialPointSimulator(object):
-    _vars = []
     def __init__(self, runid, driver, material, verbosity=1, d=None):
         """Initialize the MaterialPointSimulator object
 
         """
+        self._vars = []
         self.runid = runid
 
         # check input

@@ -6,86 +6,96 @@ import numpy as np
 import shutil
 import datetime
 
-from runtime import opts
-import utils.conlog as io
+from runtime import opts, set_runtime_opt
+import utils.conlog as conlog
 from utils.mmltab import MMLTabularWriter
 from utils.logger import Logger
 
-IOPT = -1
-HUGE = 1.e80
+IOPT = 0
+BIGNUM = 1.E+20
+MAXITER = 50
+TOL = 1.E-06
 OPT_METHODS = ("simplex", "powell", "cobyla",)
 logger = Logger()
 
 class Optimizer(object):
-    def __init__(self, runid, verbosity, exe, method, respfcn,
-                 parameters, tolerance, maxiter, basexml, auxiliary):
+    def __init__(self, func, xinit, runid, method="simplex", verbosity=1,
+                 maxiter=MAXITER, tolerance=TOL, descriptor=None, funcargs=[]):
+        set_runtime_opt("raise_e", True)
+        self.runid = runid
+        self.func = func
 
-        # root directory to run the problem
-        self.rootd = os.path.join(os.getcwd(), runid + ".eval")
+        if not isinstance(descriptor, (list, tuple)):
+            descriptor = [descriptor]
+        self.descriptor = descriptor
+        self.nresp = len(descriptor)
+
+        if not isinstance(funcargs, (list, tuple)):
+            funcargs = [funcargs]
+        self.funcargs = funcargs
+
+        # check method
+        m = method.lower()
+        if m not in OPT_METHODS:
+            raise UserInputError("{0}: unrecognized method".format(method))
+        self.method = m
+
+        # check xinit
+        self.names = []
+        self.idata = []
+        self.bounds = []
+        for x in xinit:
+            if not isinstance(x, OptimizeVariable):
+                raise UserInputError("all xinit must be of type OptimizeVariable")
+
+            self.names.append(x.name)
+            self.idata.append(x.initial_value)
+
+            if x.bounds is not None:
+                if self.method in ("simplex", "powell"):
+                    logger.warn("{0}: method does not support bounds".format(m))
+                    x.bounds = None
+            self.bounds.append(x.bounds)
+
+        if self.method in ("simplex", "powell"):
+            self.bounds = None
+
+        # set up logger
+        self.rootd = os.path.join(os.getcwd(), runid + ".opt")
         if os.path.isdir(self.rootd):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
-        descriptor, script = respfcn
+        filepath = os.path.join(self.rootd, runid + ".log")
+        logger.add_file_handler(filepath)
 
-        # logger
-        io.setup_logger(runid, verbosity, d=self.rootd)
-
-        # check inputs
-        self.method = method.lower()
-        if self.method not in OPT_METHODS:
-            io.log_warning("{0}: unrecognized optimization method".format(method))
-
-        for x in exe.split():
-            if not os.path.isfile(x):
-                io.log_warning("{0}: no such file".format(x))
-        if not os.path.isfile(script):
-            io.log_warning("{0}: no such file".format(script))
         if maxiter <= 0:
-            io.log_warning("maxiter must be greater than zero")
-        if tolerance <= 0:
-            io.log_warning("tolerance must be greater than zero")
-
-        # check parameters to be optimized
-        self.ivals = []
-        self.bounds = []
-        self.names = []
-        inp_subs = pprepro.find_subs_to_make(basexml)
-        for i, (name, ival, bounds) in enumerate(parameters):
-            if name not in inp_subs:
-                io.log_warning("{0}: not in xml input".format(name))
-
-            if any(abs(b) != np.inf for b in bounds):
-                if self.method in ("simplex", "powell"):
-                    io.log_message("*** warning: {0}: bounds not supported "
-                                   "and will be ignored".format(self.method))
-
-                if bounds[0] > bounds[1]:
-                    io.log_warning("{0}: upper bound must be greater than "
-                                   "lower".format(name))
-                if bounds[1] < ival < bounds[0]:
-                    io.log_warning("{0}: initial value out of "
-                                   "bounds".format(name))
-
-            self.bounds.append(bounds)
-            self.names.append(name)
-            self.ivals.append(ival)
-
-        if io.WARNINGS_LOGGED:
-            raise io.Error1("Stopping due to previous errors")
-
-        self.runid = runid
-        self.exe = exe
-        self.script = script
-        self.descriptor = descriptor
-        self.tolerance = tolerance
+            logger.warn("maxiter < 0, setting to default value")
+            maxiter = MAXITER
         self.maxiter = maxiter
-        self.basexml = basexml
-        self.auxiliary_files = auxiliary
+
+        if tolerance <= 0:
+            logger.warn("tolerance < 0, setting to default value")
+            tolerance = TOL
+        self.tolerance = tolerance
+
         self.tabular = MMLTabularWriter(runid, self.rootd)
         self.timing = {}
 
-    def setup(self):
-        pass
+        # write summary to the log file
+        str_pars = "\n".join("  {0}={1:.2g}".format(name, self.idata[i])
+                             for (i, name) in enumerate(self.names))
+        resp = "\n".join("  {0}".format(it) for it in self.descriptor)
+        summary = """
+summary of optimization job
+------- -- ------------ ---
+runid: {0}
+method: {1}
+variables: {2:d}
+{3}
+response descriptors:
+{4}
+""".format(self.runid, self.method, len(self.names), str_pars, resp)
+        logger.write(summary)
 
     def run(self):
         """Run the optimization job
@@ -95,177 +105,167 @@ class Optimizer(object):
         """
         import scipy.optimize
         os.chdir(self.rootd)
-        cwd = os.getcwd()
-        io.log_message("{0}: starting jobs".format(self.runid))
-        io.log_message("{0}: optimization method: {1}".format(
-            self.runid, self.method))
-        io.log_message("{0}: number of variables to optimize: {1}".format(
-            self.runid, len(self.names)))
-        io.log_message("{0}: variables to optimize: "
-                       "{1}".format(self.runid, ", ".join(self.names)))
 
         self.timing["start"] = time.time()
+        logger.write("{0}: starting optimization jobs...".format(self.runid))
 
         # optimization methods work best with number around 1, here we
         # normalize the optimization variables and save the multiplier to be
         # used when the function gets called by the optimizer.
         xfac = []
-        for ival in self.ivals:
+        for ival in self.idata:
             mag = eval("1.e" + "{0:12.6E}".format(ival).split("E")[1])
             xfac.append(mag)
             continue
         xfac = np.array(xfac)
-        x0 = self.ivals / xfac
+        x0 = self.idata / xfac
 
-        if any(b is not None for bound in self.bounds for b in bound):
+        if self.bounds is not None:
             # user has specified bounds on the parameters to be optimized. Here,
             # we convert the bounds to inequality constraints
             lcons, ucons = [], []
             for ibnd, bound in enumerate(self.bounds):
                 lbnd, ubnd = bound
-                if lbnd is None:
-                    lbnd = -1.e20
-                if ubnd is None:
-                    ubnd = 1.e20
-
-                lcons.append(lambda z, idx=ibnd, bnd=lbnd: z[idx] - bnd / xfac[idx])
-                ucons.append(lambda z, idx=ibnd, bnd=ubnd: bnd / xfac[idx] - z[idx])
-
+                lcons.append(lambda z, idx=ibnd, bnd=lbnd: z[idx]-bnd/xfac[idx])
+                ucons.append(lambda z, idx=ibnd, bnd=ubnd: bnd/xfac[idx]-z[idx])
                 self.bounds[ibnd] = (lbnd, ubnd)
-
                 continue
-
             cons = lcons + ucons
 
-        fargs = (self.rootd, self.runid, self.names, self.basexml, self.exe,
-                 self.script, self.descriptor, self.auxiliary_files,
-                 self.tabular, xfac,)
+        args = (self.func, self.funcargs, self.rootd, self.names,
+                self.descriptor, self.tabular, xfac)
 
         if self.method == "simplex":
             xopt = scipy.optimize.fmin(
-                func, x0, xtol=self.tolerance, ftol=self.tolerance,
-                maxiter=self.maxiter, args=fargs, disp=0)
+                run_job, x0, xtol=self.tolerance, ftol=self.tolerance,
+                maxiter=self.maxiter, args=args, disp=0)
 
         elif self.method == "powell":
             xopt = scipy.optimize.fmin_powell(
-                func, x0, xtol=self.tolerance, ftol=self.tolerance,
-                maxiter=self.maxiter, args=fargs, disp=0)
+                run_job, x0, xtol=self.tolerance, ftol=self.tolerance,
+                maxiter=self.maxiter, args=args, disp=0)
 
         elif self.method == "cobyla":
             xopt = scipy.optimize.fmin_cobyla(
-                func, x0, cons, consargs=(), args=fargs, disp=0)
+                run_job, x0, cons, consargs=(), args=args, disp=0)
 
         self.xopt = xopt * xfac
 
         self.timing["end"] = time.time()
+
+        self.finish()
 
         return 0
 
     def finish(self):
         """ finish up the optimization job """
         self.tabular.close()
-        io.log_message("{0}: calculations completed ({1:.4f}s)".format(
-            self.runid, self.timing["end"] - self.timing["start"]))
-        io.log_message("optimized parameters found in {0} iterations".format(IOPT))
-        io.log_message("optimized parameters:")
-        for (i, name) in enumerate(self.names):
-            io.log_message("\t{0} = {1:12.6E}".format(name, self.xopt[i]))
+        opt_pars = "\n".join("  {0}={1:12.6E}".format(name, self.xopt[i])
+                             for (i, name) in enumerate(self.names))
+        opt_time = self.timing["end"] - self.timing["start"]
+        summary = """
+summary of optimization results
+------- -- ------------ -------
+{0}: calculations completed ({1:.4f}s.)
+iteractions: {2}
+optimized parameters
+{3}
+""".format(self.runid, opt_time, IOPT, opt_pars)
+        logger.write(summary)
 
         # close the log
-        io.close_and_reset_logger()
+        logger.finish()
 
         # write out optimized params
         with open(os.path.join(self.rootd, "params.opt"), "w") as fobj:
             for (i, name) in enumerate(self.names):
                 fobj.write("{0} = {1: .18f}\n".format(name, self.xopt[i]))
 
+    @property
     def output(self):
         return self.tabular._filepath
 
+def catd(d, i):
+    N = 3
+    return os.path.join(d, "eval_{0:0{1}d}".format(i, N))
 
-def func(xcall, *args):
+def run_job(xcall, *args):
     """Objective function
 
-    Creates a directory to run the current job, runs the job through Payette
-    and then gets the average normalized root mean squared error between the
-    output and the gold file.
-
-    Parameters
-    ----------
+    Creates a directory to run the current job, runs the job, returns the
+    value of the objective function determined.
 
     Returns
     -------
     error : float
-        Average root mean squared error between the out file and gold file
+        Error in job
 
     """
     global IOPT
-    (rootd, runid, xnames, basexml, exe, script, desc, aux, tabular, xfac) = args
+    func, funcargs, rootd, xnames, desc, tabular, xfac = args
 
     IOPT += 1
-    nnn = IOPT + 1
-    evald = os.path.join(rootd, "eval_{0}".format(IOPT))
+    evald = catd(rootd, IOPT)
     os.mkdir(evald)
     os.chdir(evald)
 
     # write the params.in for this run
-    parameters = zip(xnames, xcall * xfac)
+    x = xcall * xfac
+    parameters = zip(xnames, x)
     with open("params.in", "w") as fobj:
         for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
 
-    io.log_message("starting job {0} with {1}".format(
-        nnn, ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
+    logger.write("starting job {0} with {1}".format(
+        IOPT, ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)),
+        end="... ")
 
-    # Preprocess the input
-    xmlinp = pprepro.find_and_make_subs(basexml, prepro=dict(parameters))
-    xmlf = os.path.join(evald, runid + ".xml.preprocessed")
-    with open(xmlf, "w") as fobj:
-        fobj.write(xmlinp)
+    try:
+        err = func(x, *funcargs)
+        logger.write("done (error={0:.4e})".format(err))
+        stat = 0
+    except:
+        logger.write("failed")
+        stat = 1
+        err = np.nan
 
-    # Run the job
-    cmd = "{0} -I{1} {2}".format(exe, opts.I, xmlf)
-    out = open(os.path.join(evald, runid + ".con"), "w")
-    job = subprocess.Popen(cmd.split(), env=MML_ENV,
-                           stdout=out, stderr=subprocess.STDOUT)
-    job.wait()
-
-    if job.returncode != 0:
-        tabular.write_eval_info(IOPT, job.returncode, evald,
-                                parameters, ((desc, np.nan),))
-        io.log_message("**** error: job {0} failed".format(nnn))
-        return np.nan
-
-    # Now the response function
-    io.log_message("analyzing results of job {0}".format(nnn))
-    outf = os.path.join(evald, runid + ".exo")
-    opterr = evaluate_response_function(script, outf, aux)
-    if opterr is None:
-        opterr = np.nan
-        io.log_message("*** error: job {0} response function failed".format(nnn))
-    tabular.write_eval_info(IOPT, job.returncode, evald,
-                            parameters, ((desc, opterr),))
-
-    io.log_message("finished with job {0}".format(nnn))
-
+    tabular.write_eval_info(IOPT, stat, evald, parameters, ((desc[0], err),))
 
     # go back to the rootd
     os.chdir(rootd)
 
-    return opterr
+    return err
 
-class OptimizedVariable(object):
+class OptimizeVariable(object):
 
     def __init__(self, name, initial_value, bounds=None):
         self.name = name
         self.ival = initial_value
         self.cval = initial_value
+        self.bounds = bounds
+
+        errors = 0
+        # check bounds
         if bounds is not None:
             if not isinstance(bounds, (list, tuple, np.ndarray)):
                 raise UserInputError("expected bounds to be a tuple of length 2")
             if len(bounds) != 2:
                 raise UserInputError("expected bounds to be a tuple of length 2")
-        self.bounds = np.array(bounds)
+            if bounds[0] is None: bounds[0] = -BIGNUM
+            if bounds[1] is None: bounds[1] =  BIGNUM
+
+            if bounds[0] > bounds[1]:
+                errors += 1
+                conlog.error("{0}: upper bound < lower bound".format(name), r=0)
+
+            if bounds[1] < initial_value < bounds[0]:
+                errors += 1
+                conlog.error("{0}: initial value not bracketed "
+                             "by bounds".format(name), r=0)
+            if errors:
+                raise UserInputError("stopping due to previous errors")
+
+            self.bounds = np.array(bounds)
 
     def __repr__(self):
         return "opt{0}({1})".format(self.name, self.initial_value)

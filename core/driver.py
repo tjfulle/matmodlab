@@ -16,8 +16,6 @@ from core.solvers import sig2d
 
 class PathDriver(object):
     kind = None
-    _vars = []
-    _opts = []
     ran = False
 
     @property
@@ -41,6 +39,7 @@ class ContinuumDriver(PathDriver):
                  functions=None, cfmt=None, tfmt="time", num_steps=None,
                  cols=None, lineskip=0):
 
+        self._vars = []
         if path is None and path_file is None:
             raise UserInputError("Expected one of path or path_file")
         if path is not None and path_file is not None:

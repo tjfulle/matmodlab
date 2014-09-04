@@ -160,6 +160,7 @@ class ExodusII(object):
         # udpate and close the file
         self.exofile.update()
         self.exofile.close()
+        del self.exofile.db
         self.exofile = None
         return
 

@@ -4,12 +4,12 @@ from matmodlab import *
 K = 10.e9
 G = 3.75e9
 
-mat_path = """
-{0} 2:1.e-1 0 0
-""".format(2*pi)
-
 @matmodlab
 def runner():
+
+    path = """
+    {0} 2:1.e-1 0 0
+    """.format(2*pi)
 
     runid = "functions"
 
@@ -19,7 +19,7 @@ def runner():
     functions = [f2, f3]
 
     # set up the driver
-    driver = Driver("Continuum", path=mat_path, path_input="function",
+    driver = Driver("Continuum", path=path, path_input="function",
                     num_steps=200, functions=functions, cfmt="222")
 
     # set up the material
@@ -31,6 +31,7 @@ def runner():
     mps.run()
 
     mps.dump(variables=["STRESS", "STRAIN"], format="ascii", step=1, ffmt="12.6E")
-    mps.visualize_results()
 
-runner()
+
+if __name__ == "__main__":
+    runner()
