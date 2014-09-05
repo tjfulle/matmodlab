@@ -44,7 +44,7 @@ class Permutator(object):
         self.funcargs = [x for x in funcargs]
         # funcargs sent to every evaluation with first argument
         # the evaluation directory
-        self.funcargs = [None] + funcargs
+        self.funcargs.insert(0, None)
 
         # set up logger
         d = d or os.getcwd()
@@ -227,7 +227,7 @@ def run_job(args):
 
     # write the params.in for this run
     parameters = zip(names, x)
-    with open("params.in", "w") as fobj:
+    with open(os.path.join(evald, "params.in"), "w") as fobj:
         for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
 

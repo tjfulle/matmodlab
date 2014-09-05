@@ -35,7 +35,7 @@ class Optimizer(object):
         self.funcargs = [x for x in funcargs]
         # funcargs sent to every evaluation with first argument
         # the evaluation directory
-        self.funcargs = [None] + funcargs
+        self.funcargs.insert(0, None)
 
         # check method
         m = method.lower()
@@ -218,7 +218,7 @@ def run_job(xcall, *args):
     # write the params.in for this run
     x = xcall * xfac
     parameters = zip(xnames, x)
-    with open("params.in", "w") as fobj:
+    with open(os.path.join(evald, "params.in"), "w") as fobj:
         for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
 

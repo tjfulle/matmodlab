@@ -3,11 +3,11 @@ import re
 import sys
 import imp
 import time
+import shutil
 import random
 import string
 import argparse
 from matmodlab import SPLASH
-from core.runtime import set_runtime_opt
 from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN
 
 TESTRE = re.compile(r"(?:^|[\\b_\\.-])[Tt]est")
@@ -34,10 +34,10 @@ class Logger(object):
         self.fh.flush()
         self.fh.close()
 
-root_dir = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
-if not os.path.isdir(root_dir):
-    os.makedirs(root_dir)
-logger = Logger(root_dir)
+ROOT_DIR = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
+if not os.path.isdir(ROOT_DIR):
+    os.makedirs(ROOT_DIR)
+logger = Logger(ROOT_DIR)
 
 
 def main(argv=None):
@@ -48,6 +48,8 @@ def main(argv=None):
         help="Keywords to include [default: ]")
     p.add_argument("-K", action="append", default=[],
         help="Keywords to exclude [default: ]")
+    p.add_argument("--keep-passed", action="store_true", default=False,
+        help="Do not tear down passed tests on completion [default: ]")
     p.add_argument("sources", nargs="+")
 
     # parse out known arguments and reset sys.argv
@@ -56,10 +58,11 @@ def main(argv=None):
     # suppress logging from other products
     sys.argv.extend(["-v", "0"])
 
-    gather_and_run_tests(args.sources, args.k, args.K)
+    gather_and_run_tests(args.sources, args.k, args.K,
+                         tear_down=not args.keep_passed)
 
 
-def gather_and_run_tests(sources, include, exclude):
+def gather_and_run_tests(sources, include, exclude, tear_down=True):
     """Gather and run all tests
 
     Parameters
@@ -79,13 +82,13 @@ def gather_and_run_tests(sources, include, exclude):
     s = "\n".join("    {0}".format(x) for x in sources)
     kw = ", ".join("{0}".format(x) for x in include)
     KW = ", ".join("{0}".format(x) for x in exclude)
-    logger.write("\nGATHERING TESTS FROM\n{0}".format(s))
-    logger.write("KEYWORDS TO INCLUDE\n    {0}".format(kw))
-    logger.write("KEYWORDS TO EXCLUDE\n    {0}".format(KW))
+    logger.write("\nGATHERING TESTS FROM\n{0}"
+                 "\nKEYWORDS TO INCLUDE\n    {1}"
+                 "\nKEYWORDS TO EXCLUDE\n    {2}".format(s, kw, KW))
 
     # gather the tests
     TIMING.append(time.time())
-    tests = gather_and_filter_tests(sources, root_dir, include, exclude)
+    tests = gather_and_filter_tests(sources, ROOT_DIR, include, exclude)
 
     # write information
     TIMING.append(time.time())
@@ -98,21 +101,36 @@ def gather_and_run_tests(sources, include, exclude):
     results = run_tests(tests)
     logger.write("ALL TESTS COMPLETED")
 
+    # collect results
+    for (module, info) in tests.items():
+        tests[module]["results"] = []
+        for (i, the_test) in enumerate(info["filtered"]):
+            tests[module]["results"].append(results[module][i])
+
     # write out some information
     TIMING.append(time.time())
     logger.write("\nSUMMARY OF TESTS\nRAN {0:d} TESTS "
                  "IN {1:.4f}s".format(ntests, TIMING[-1]-TIMING[0]))
 
-    npass, nfail, nftr, ndiff = 0, 0, 0, 0
     S = []
-    for (module, stats) in results.items():
-        if not tests[module]["filtered"]:
+    npass, nfail, nftr, ndiff = 0, 0, 0, 0
+    for (module, info) in tests.items():
+
+        if not info["filtered"]:
             continue
-        npass += len([i for i in stats if i == PASSED])
-        nfail += len([i for i in stats if i == FAILED])
-        nftr += len([i for i in stats if i == FAILED_TO_RUN])
-        ndiff += len([i for i in stats if i == DIFFED])
-        s = "[{0}]".format(" ".join(STR_RESULTS[i] for i in stats))
+
+        my_results = dict([(I, 0) for I in STR_RESULTS])
+        for (i, test) in enumerate(info["filtered"]):
+            result = info["results"][i]
+            my_results[result] += 1
+            if result == PASSED and tear_down:
+                test.tear_down()
+
+        npass += my_results[PASSED]
+        nfail += my_results[FAILED]
+        nftr += my_results[FAILED_TO_RUN]
+        ndiff += my_results[DIFFED]
+        s = "[{0}]".format(" ".join(STR_RESULTS[i] for i in info["results"]))
         S.append("    {0}: {1}".format(module, s))
 
     logger.write("   {0: 3d} PASSED\n"
@@ -122,13 +140,28 @@ def gather_and_run_tests(sources, include, exclude):
                                                            nfail, ndiff, nftr))
     logger.write("\n".join(S))
 
+    if tear_down:
+        logger.write("\nTEARING DOWN PASSED TESTS")
+        # tear down indivdual tests
+        torn_down = 0
+        for (module, info) in tests.items():
+            for (i, test) in enumerate(info["filtered"]):
+                if info["results"][i] == PASSED:
+                    test.tear_down()
+                    torn_down += test.torn_down
+
+        if torn_down == ntests:
+            shutil.rmtree(ROOT_DIR)
+
     logger.finish()
+
     return
 
 
 def fillwithdots(a, b):
     dots = "." * (WIDTH - len(a) - len(b))
     return "{0}{1}{2}".format(a, dots, b)
+
 
 def isclass(item):
     return type(item) == type(object)
@@ -161,8 +194,6 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
     ----------
     sources : list
         files or directories to scan for tests
-    root_dir : str
-        root directory for running tests
     include : list
         list of test keywords to include
     exclude : list
@@ -199,7 +230,7 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
     all_tests = {}
     for test_file in test_files:
         module, file_dir, file_name, tests, reprs = load_test_file(test_file)
-        d = file_dir.replace(os.getcwd() + os.path.sep, "")
+        d = os.path.basename(file_dir)
         test_dir = os.path.join(root_dir, d)
         if not os.path.isdir(test_dir):
             os.makedirs(test_dir)
@@ -240,7 +271,29 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
 def run_tests(tests):
     results = {}
     for (module, info) in tests.items():
-        d = info["file_dir"]
+        results[module] = []
+        for (i, the_test) in enumerate(info["filtered"]):
+            test_repr = info["repr"][i]
+            ti = time.time()
+            logger.write(fillwithdots(test_repr, "RUNNING"))
+            stat = the_test.setup(logger)
+            if stat:
+                logger.error("{0}: FAILED TO SETUP".format(module))
+                results[module].append(self.stat)
+                continue
+            the_test.run(logger)
+            results[module].append(the_test.stat)
+            dt = time.time() - ti
+            line = fillwithdots(test_repr, "FINISHED")
+            s = " [{1}] ({0:.1f}s)".format(dt, STR_RESULTS[the_test.stat])
+            logger.write(line + s)
+
+    return results
+
+
+def run_test(self):
+    results = {}
+    for (module, info) in tests.items():
         results[module] = []
         for (i, the_test) in enumerate(info["filtered"]):
             test_repr = info["repr"][i]

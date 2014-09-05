@@ -20,7 +20,7 @@ class TestBase(object):
         self.test_dir = test_dir
         self.src_dir = src_dir
         self.module = module
-        self.src_dir
+        self.torn_down = 0
 
         errors = 0
 
@@ -112,6 +112,7 @@ class TestBase(object):
             if self.module in f or self.runid in f:
                 if f.endswith((".log", ".exo", ".pyc", ".con", ".eval")):
                     remove(os.path.join(self.test_dir, f))
+        self.torn_down = 1
 
 def remove(f):
     if os.path.isdir(f):
