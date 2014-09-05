@@ -111,13 +111,13 @@ starting values:
                  for (i, x) in enumerate(self.data)]
         nprocs = min(min(mp.cpu_count(), self.nprocs), len(self.data))
 
-        output = []
+        self.statuses = []
         if nprocs == 1:
-            output.extend([run_job(arg) for arg in args])
+            self.statuses.extend([run_job(arg) for arg in args])
         else:
             pool = mp.Pool(processes=nprocs)
             try:
-                p = pool.map_async(run_job, args, callback=output.extend)
+                p = pool.map_async(run_job, args, callback=self.statuses.extend)
                 p.wait()
                 pool.close()
                 pool.join()
@@ -136,10 +136,13 @@ starting values:
         # write the summary
         self.tabular.close()
 
-        logger.write("{0}: calculations completed ({1:.4f}s)".format(
-            self.runid, self.timing["end"] - self.timing["start"]))
+        if not [x for x in self.statuses if x == 0]:
+            logger.write("{0}: all calculations failed".format(self.runid))
+        else:
+            logger.write("{0}: calculations completed ({1:.4f}s)".format(
+                self.runid, self.timing["end"] - self.timing["start"]))
 
-        if self.correlations:
+        if self.correlations and [x for x in self.statuses if x == 0]:
             logger.write("{0}: creating correlation matrix".format(self.runid))
             mmltab.correlations(self.tabular._filepath)
             mmltab.plot_correlations(self.tabular._filepath)
@@ -243,8 +246,9 @@ def run_job(args):
         resp = func(x, *funcargs)
         logger.write("finished job {0}".format(job_num))
         stat = 0
-    except:
-        logger.error("job {0} failed".format(job_num))
+    except BaseException as e:
+        logger.error("JOB {0} FAILED WITH EXCEPTION:\n   "
+                     "{1}".format(job_num, e.message), transform=str)
         stat = 1
         resp = [np.nan for _ in range(len(descriptor))]
 

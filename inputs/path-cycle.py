@@ -1,4 +1,7 @@
-#!/usr/bin/env mmd
+#!/usr/bin/env mmd-exec
+
+K = 1.350E+11
+G = 5.300E+10
 
 path = """
 0E+00 0 EEEEEE 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
@@ -21,7 +24,7 @@ driver = Driver("Continuum", path=path, kappa=0.0, amplitude=1.0,
                 dstar=1.0, proportional=False, termination_time=None)
 
 # set up the material
-parameters = {"K":1.350E+11, "G":5.300E+10}
+parameters = {"K": K, "G": G}
 material = Material("elastic", parameters=parameters)
 
 # set up and run the model

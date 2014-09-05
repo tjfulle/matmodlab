@@ -1,5 +1,8 @@
-#!/usr/bin/env xpython
+#!/usr/bin/env mmd
 from matmodlab import *
+
+K = 9.980040E+09
+G = 3.750938E+09
 
 path = """
 0 0 444 0 0 0
@@ -16,7 +19,7 @@ def runner():
                     step_multiplier=1000, rate_multiplier=1., path=path)
 
     # set up the material
-    parameters = {"K": 9.980040E+09, "G": 3.750938E+09}
+    parameters = {"K": K, "G": G}
     material = Material("elastic", parameters=parameters)
 
     runid = "elastic-unistress"

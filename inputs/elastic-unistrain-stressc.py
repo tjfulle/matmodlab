@@ -1,4 +1,4 @@
-#!/usr/bin/env xpython
+#!/usr/bin/env mmd
 from matmodlab import *
 
 K = 9.980040E+09
@@ -21,7 +21,7 @@ def runner():
                     dstar=1.0, proportional=False, termination_time=None)
 
     # set up the material
-    parameters = {"K":9.980040E+09, "G":3.750938E+09}
+    parameters = {"K": K, "G": G}
     material = Material("elastic", parameters=parameters)
 
     # set up and run the model

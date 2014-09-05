@@ -77,26 +77,28 @@ class Logger(object):
         self.write(message, log_to_eh=1)
         warnings[0] += 1
 
-    def raise_error(self, message, raise_error=1, report_caller=1, caller=None):
+    def raise_error(self, message, raise_error=1, report_caller=1, caller=None,
+                    **kwargs):
         if caller is None:
             caller = who_is_calling()
         if report_caller:
             conmsg = "*** ERROR: {0} ({1})\n"
         else:
             conmsg = "*** ERROR: {0}\n"
-        conmsg = conmsg.format(upper(message), caller)
-        self.write(conmsg, log_to_eh=1, transform=str)
+        transform = kwargs.pop("transform", str)
+        conmsg = conmsg.format(transform(message), caller)
+        self.write(message, log_to_eh=1, transform=str, **kwargs)
         if raise_error > 0:
-            raise Exception(message)
+            raise Exception(conmsg)
         elif raise_error == 0:
             return
         sys.exit(1)
 
-    def error(self, message, raise_error=0, report_caller=0):
+    def error(self, message, raise_error=0, report_caller=0, **kwargs):
         caller = None
         if report_caller:
             caller = who_is_calling()
-        self.raise_error(message, raise_error=raise_error, caller=caller)
+        self.raise_error(message, raise_error=raise_error, caller=caller, **kwargs)
 
     def debug(self, message):
         self.write(message, write_to_console=0)

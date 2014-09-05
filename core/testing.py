@@ -134,11 +134,16 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
         logger.write("  (*) tests filtered out by keyword "
                      "request ({0:d})".format(n_notinc))
 
+    if not ntests_to_run:
+        logger.write("nothing to do")
+        return
+
     nprocs = min(min(mp.cpu_count(), nprocs), len(tests))
 
     # run the tests
     logger.write("\nRUNNING TESTS")
     output = []
+    print nprocs
     if nprocs == 1:
         for test in tests:
             output.append(run_test(test))

@@ -1,7 +1,5 @@
-#!/usr/bin/env xpython
+#!/usr/bin/env mmd
 from matmodlab import *
-
-runid = gen_runid()
 
 path = """
 0 0 222222 0 0 0 0 0 0
@@ -13,17 +11,20 @@ path = """
 
 def func(x, *args):
 
-    d = args[0]
+    d, runid = args[:2]
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=0)
 
     # set up the driver
-    driver = Driver("Continuum", path=path, estar=-.5, step_multiplier=1000)
+    driver = Driver("Continuum", path=path, estar=-.5, step_multiplier=1000,
+                    logger=logger)
 
     # set up the material
     parameters = {"K": x[0], "G": x[1]}
-    material = Material("elastic", parameters=parameters)
+    material = Material("elastic", parameters=parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, verbosity=0, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
     pres = mps.extract_from_db(["PRESSURE"])
 
@@ -37,7 +38,7 @@ def runner():
     G = PermutateVariable("G", 45e9, method="percentage", arg=10, N=3)
     xinit = [K, G]
     permutator = Permutator(func, xinit, runid=runid, descriptor=["MAX_PRES"],
-                            method="zip", correlations=True)
+                            method="zip", correlations=True, funcargs=[runid])
     permutator.run()
 
 runner()
