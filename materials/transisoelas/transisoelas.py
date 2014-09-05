@@ -36,7 +36,7 @@ class TransIsoElas(MaterialModel):
         self.shear_modulus = self.params["A0"]
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
-        stran, d, elec_field, user_field, stress, xtra, logger, **kwargs):
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters

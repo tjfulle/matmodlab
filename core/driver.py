@@ -3,6 +3,7 @@ import sys
 import numpy as np
 from numpy.linalg import solve, lstsq
 
+from core.logger import Logger
 from utils.variable import Variable
 from utils.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
 from utils.errors import FileNotFoundError, UserInputError
@@ -37,7 +38,13 @@ class ContinuumDriver(PathDriver):
                  num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1.,
                  efstar=1., dstar=1., proportional=False, termination_time=None,
                  functions=None, cfmt=None, tfmt="time", num_steps=None,
-                 cols=None, lineskip=0):
+                 cols=None, lineskip=0, logger=None):
+
+        if logger is None:
+            logger = Logger()
+        self.logger = logger
+
+        self.logger.write("setting up the {0} driver".format(self.kind))
 
         self._vars = []
         if path is None and path_file is None:
@@ -93,6 +100,21 @@ class ContinuumDriver(PathDriver):
         self.register_variable("TEMP", VAR_SCALAR, initial_value=self.itemp)
 
     @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, new_logger):
+        try:
+            new_logger.write
+            new_logger.warn
+            new_logger.error
+        except AttributeError, TypeError:
+            raise TypeError("attempting to assign a non logger "
+                            "to the {0} Driver logger".format(self.kind))
+        self._logger = new_logger
+
+    @property
     def initial_temp(self):
         return self.itemp
 
@@ -100,7 +122,7 @@ class ContinuumDriver(PathDriver):
     def num_leg(self):
         return len(self.path)
 
-    def run(self, glob_data, elem_data, material, logger, out_db,
+    def run(self, glob_data, elem_data, material, out_db,
             termination_time=None):
         """Process the deformation path
 
@@ -210,8 +232,8 @@ class ContinuumDriver(PathDriver):
 
                 if opts.sqa and kappa == 0.:
                     if not np.allclose(d, depsdt):
-                        logger.write("sqa: d != depsdt (k=0, leg"
-                                     "={0})".format(leg_num))
+                        self.logger.write("sqa: d != depsdt (k=0, leg"
+                                          "={0})".format(leg_num))
 
             else:
                 # Initial guess for d[v]
@@ -241,7 +263,7 @@ class ContinuumDriver(PathDriver):
                     # get just the prescribed stress components
                     d = sig2d(material, time, dt, tempn, dtemp,
                               f0, f, eps, depsdt, sig, xtra, ef, ufield,
-                              v, sigspec[2], self.proportional, logger)
+                              v, sigspec[2], self.proportional, self.logger)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
@@ -252,7 +274,7 @@ class ContinuumDriver(PathDriver):
                 xtrasave = np.array(xtra)
                 sig, xtra = material.compute_updated_state(time, dt, tempn,
                     dtemp, f0, f, eps, d, ef, ufield, sig, xtra, last=True,
-                    disp=1, logger=logger)
+                    disp=1)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)
@@ -280,7 +302,7 @@ class ContinuumDriver(PathDriver):
                     out_db.snapshot(time, glob_data, elem_data)
 
                 if n == 0 or round((nsteps - 1) / 2.) == n or endstep:
-                    logger.write(consfmt.format(leg_num, n + 1, time, dt))
+                    self.logger.write(consfmt.format(leg_num, n + 1, time, dt))
 
                 if n > 1 and nv and not warned:
                     absmax = lambda a: np.max(np.abs(a))
@@ -289,9 +311,9 @@ class ContinuumDriver(PathDriver):
                     _tol = np.amax(np.abs(sig[v])) / material.bulk_modulus
                     _tol = max(_tol, 1e-4)
                     if sigerr > _tol:
-                        logger.warn("leg: {0}, prescribed stress error: "
-                                    "{1: .5f}. consider increasing number of "
-                                    "steps".format(ileg, sigerr))
+                        self.logger.warn("leg: {0}, prescribed stress error: "
+                                         "{1: .5f}. consider increasing number of "
+                                         "steps".format(ileg, sigerr))
 
                 if termination_time is not None and time >= termination_time:
                     self.ran = True

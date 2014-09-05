@@ -1,9 +1,8 @@
 import numpy as np
 
 from core.runtime import opts
-from utils.data_containers import Parameters
 from core.material import MaterialModel
-import utils.conlog as conlog
+from utils.data_containers import Parameters
 from utils.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6
 
 
@@ -33,14 +32,15 @@ class Pyplastic(MaterialModel):
             A1 = 1.0e99
             A4 = 0.0
         elif opts.mimic == 'vonmises':
-            conlog.write("model '{0}' mimicing '{1}'".format(self.name, opts.mimic))
+            self.logger.write("model '{0}' mimicing "
+                              "'{1}'".format(self.name, opts.mimic))
             K = self.params["K"]
             G = self.params["G"]
             A1 = self.params["Y0"] * TOOR3
             A4 = 0.0
             if self.params["H"] != 0.0:
-                conlog.error("model {0} cannot mimic {1} with "
-                             "hardening".format(self.name, opts.mimic))
+                self.logger.error("model {0} cannot mimic {1} with "
+                                  "hardening".format(self.name, opts.mimic))
         else:
             # default
             K = self.params["K"]
@@ -49,21 +49,32 @@ class Pyplastic(MaterialModel):
             A4 = self.params["A4"]
 
         # Check the input parameters
+        errors = 0
         if K <= 0.0:
-            logger.error("Bulk modulus K must be positive")
+            errors += 1
+            self.logger.error("Bulk modulus K must be positive", raise_error=0)
         if G <= 0.0:
-            logger.error("Shear modulus G must be positive")
+            errors += 1
+            self.logger.error("Shear modulus G must be positive", raise_error=0)
         nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
         if nu > 0.5:
-            logger.error("Poisson's ratio > .5")
+            errors += 1
+            self.logger.error("Poisson's ratio > .5", raise_error=0)
         if nu < -1.0:
-            logger.error("Poisson's ratio < -1.")
+            errors += 1
+            self.logger.error("Poisson's ratio < -1.", raise_error=0)
         if nu < 0.0:
-            logger.write("#---- WARNING: negative Poisson's ratio")
+            errors += 1
+            self.logger.write("#---- WARNING: negative Poisson's ratio",
+                              raise_error=0)
         if A1 <= 0.0:
-            logger.error("A1 must be positive nonzero")
+            errors += 1
+            self.logger.error("A1 must be positive nonzero", raise_error=0)
         if A4 <= 0.0:
-            logger.error("A4 must be positive nonzero")
+            errors += 1
+            self.logger.error("A4 must be positive nonzero", raise_error=0)
+        if errors:
+            self.logger.error("stopping due to previous errors")
 
         # Save the new parameters
         newparams = [K, G, A1, A4]
@@ -79,7 +90,7 @@ class Pyplastic(MaterialModel):
         self.register_xtra_variables(self.sv_names, sv_values)
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
-        stran, d, elec_field, user_field, stress, xtra, logger, **kwargs):
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters

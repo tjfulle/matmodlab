@@ -24,7 +24,7 @@ class IdealGas(Material):
             units="SPECIFIC_ENERGY_UNITS_OVER_DENSITY_UNITS")
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
-        stran, d, elec_field, user_field, stress, xtra, logger, **kwargs):
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Evaluate the eos - rho and temp are in CGSEV
 
         By the end of this routine, the following variables should be

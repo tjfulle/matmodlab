@@ -92,6 +92,7 @@ from core.mat_point_sim import MaterialPointSimulator
 from core.permutator import Permutator, PermutateVariable
 from core.optimizer import Optimizer, OptimizeVariable
 from utils.functions import Function
+from core.logger import Logger
 from core.test import TestBase
 
 # --- DECORATOR FOR SIMULATION

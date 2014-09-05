@@ -15,14 +15,14 @@ class TestZip(TestBase):
         self.keywords = ["long", "correlations", "zip",
                          "permutation", "builtin", "feature"]
     def setup(self,*args,**kwargs): pass
-    def run(self, logger):
+    def run(self):
         self.stat = self.failed_to_run
         try:
             runner("zip", d=self.test_dir, v=0)
             self.stat = self.passed
         except BaseException as e:
-            logger.error("{0}: failed with the following "
-                         "exception: {1}".format(self.runid, e.message))
+            self.logger.error("{0}: failed with the following "
+                              "exception: {1}".format(self.runid, e.message))
 
 class TestCombi(TestBase):
     def __init__(self):
@@ -30,29 +30,32 @@ class TestCombi(TestBase):
         self.keywords = ["long", "correlations", "combination",
                          "permutation", "builtin", "feature"]
     def setup(self,*args,**kwargs): pass
-    def run(self, logger):
+    def run(self):
         self.stat = self.failed_to_run
         try:
             runner("combination", d=self.test_dir, v=0, N=2)
             self.stat = self.passed
         except BaseException as e:
-            logger.error("{0}: failed with the following "
-                         "exception: {1}".format(self.runid, e.message))
+            self.logger.error("{0}: failed with the following "
+                              "exception: {1}".format(self.runid, e.message))
 
 
 def func(x, *args):
 
     d, runid = args[:2]
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=0)
 
     # set up the driver
-    driver = Driver("Continuum", path=path, estar=-.5, step_multiplier=1000)
+    driver = Driver("Continuum", path=path, estar=-.5, step_multiplier=1000,
+                    logger=logger)
 
     # set up the material
     parameters = {"K": x[0], "G": x[1]}
-    material = Material("elastic", parameters=parameters)
+    material = Material("elastic", parameters=parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, verbosity=0, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
     pres = mps.extract_from_db(["PRESSURE"])
 
@@ -61,11 +64,11 @@ def func(x, *args):
 @matmodlab
 def runner(method, d=None, v=1, N=3):
     d = d or os.getcwd()
+    runid = "perm_{0}".format(method)
     K = PermutateVariable("K", 125e9, method="weibull", arg=14, N=N)
     G = PermutateVariable("G", 45e9, method="percentage", arg=10, N=N)
     xinit = [K, G]
-    runid = "perm_{0}".format(method)
-    permutator = Permutator(func, xinit, runid=runid, descriptor=["MAX_PRES"],
+    permutator = Permutator(func, xinit, runid, descriptor=["MAX_PRES"],
                             method=method, correlations=True, d=d, verbosity=v,
                             funcargs=[runid])
     permutator.run()

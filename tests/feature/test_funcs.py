@@ -16,6 +16,8 @@ class TestFunc(TestBase):
 def runner(d=None, v=1):
 
     d = d or os.getcwd()
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
 
     path = """
     {0} 2:1.e-1 0 0
@@ -29,16 +31,16 @@ def runner(d=None, v=1):
     # set up the driver
     driver = Driver("Continuum", path=path, path_input="function",
                     num_steps=200, termination_time=1.8*pi,
-                    functions=functions, cfmt="222")
+                    functions=functions, cfmt="222", logger=logger)
 
     # set up the material
     K = 10.e9
     G = 3.75e9
     parameters = {"K":K, "G":G}
-    material = Material("elastic", parameters=parameters)
+    material = Material("elastic", parameters=parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, d=d, verbosity=v)
+    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
 
     mps.run()
 

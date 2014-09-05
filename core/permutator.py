@@ -10,8 +10,7 @@ import multiprocessing as mp
 from itertools import izip, product
 
 from matmodlab import MML_ENV
-import utils.conlog as conlog
-from utils.logger import Logger
+from core.logger import Logger
 from core.runtime import opts
 import utils.mmltab as mmltab
 from utils.errors import UserInputError, GenericError
@@ -47,14 +46,13 @@ class Permutator(object):
         self.funcargs.insert(0, None)
 
         # set up logger
-        d = d or os.getcwd()
-        self.rootd = os.path.join(d, runid + ".eval")
+        self.rootd = os.path.join(d or os.getcwd(), runid + ".eval")
         if os.path.isdir(self.rootd):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
-        filepath = os.path.join(self.rootd, runid + ".log")
-        logger.add_file_handler(filepath)
-        logger.set_verbosity(verbosity)
+        logfile = os.path.join(self.rootd, runid + ".log")
+        logger.logfile = logfile
+        logger.verbosity = verbosity
 
         # check method
         m = method.lower()
@@ -149,7 +147,7 @@ starting values:
     @staticmethod
     def set_random_seed(seed, seedset=[0]):
         if seedset[0]:
-            conlog.warn("random seed already set")
+            logger.warn("random seed already set")
         global RAND
         RAND = np.random.RandomState(seed)
         seedset[0] = 1
@@ -239,7 +237,7 @@ def run_job(args):
         logger.write("finished job {0}".format(job_num))
         stat = 0
     except:
-        logger.error("job {0} failed".format(job_num), r=0)
+        logger.error("job {0} failed".format(job_num))
         stat = 1
         resp = [np.nan for _ in range(len(descriptor))]
 
@@ -249,7 +247,7 @@ def run_job(args):
             resp = resp,
         if len(descriptor) != len(resp):
             logger.error("job {0}: number of responses does not match number "
-                         "of response descriptors".format(job_num), r=0)
+                         "of response descriptors".format(job_num))
         else:
             response = [(n, resp[i]) for (i, n) in enumerate(descriptor)]
 

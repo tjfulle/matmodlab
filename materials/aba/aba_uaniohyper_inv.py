@@ -2,8 +2,6 @@ import sys
 import numpy as np
 
 from core.runtime import opts
-import utils.conlog as conlog
-from utils.errors import GenericError
 import utils.mmlabpack as mmlabpack
 from materials.material import Material
 try:

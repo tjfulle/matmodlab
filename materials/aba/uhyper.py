@@ -19,12 +19,12 @@ class UHyper(AbaqusMaterial):
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
-            dfgrd1, noel, npt, layer, kspt, kstep, kinc, logger):
+            dfgrd1, noel, npt, layer, kspt, kstep, kinc):
         """update the material state"""
         uhyper.umat(stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
         nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
-            dfgrd1, noel, npt, layer, kspt, kstep, kinc, logger.error,
-            logger.write, logger.warn)
+            dfgrd1, noel, npt, layer, kspt, kstep, kinc, self.logger.error,
+            self.logger.write, self.logger.warn)
         return stress, statev, ddsdde

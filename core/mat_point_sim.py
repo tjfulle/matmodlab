@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 from core.runtime import opts
-from utils.logger import Logger
+from core.logger import Logger
 from utils.exomgr import ExodusII
 from utils.variable import Variable, VAR_SCALAR
 from utils.data_containers import DataContainer
@@ -13,7 +13,7 @@ from core.material import MaterialModel
 
 class MaterialPointSimulator(object):
     def __init__(self, runid, driver, material, termination_time=None,
-                 verbosity=1, d=None):
+                 verbosity=1, d=None, logger=None):
         """Initialize the MaterialPointSimulator object
 
         """
@@ -30,10 +30,17 @@ class MaterialPointSimulator(object):
         self.material = material
 
         # setup IO
-        d = d or os.getcwd()
+        run_dir = d or os.getcwd()
 	self.title = "matmodlab single element simulation"
-        self.logger = Logger(self.runid, verbosity=verbosity, d=d)
-        self.exo_db = ExodusII(self.runid, d=d)
+        if logger is None:
+            logfile = os.path.join(run_dir, self.runid + ".log")
+            logger = Logger(logfile=logfile, verbosity=verbosity)
+        self.logger = logger
+
+        material.logger = self.logger
+        driver.logger = self.logger
+
+        self.exo_db = ExodusII(self.runid, d=run_dir)
         self.exo_file = self.exo_db.filepath
 
 	# register global variables
@@ -68,6 +75,14 @@ class MaterialPointSimulator(object):
 
     def register_variable(self, var_name, var_type):
         self._vars.append(Variable(var_name, var_type))
+
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, value):
+        self._logger = value
 
     @property
     def variables(self):
@@ -119,7 +134,7 @@ material: {3}
         """
         self.logger.write("starting calculations...")
 	retcode = self.driver.run(self.glob_data, self.elem_data,
-                                  self.material, self.logger, self.exo_db,
+                                  self.material, self.exo_db,
                                   termination_time=self.termination_time)
         self.finish()
         return retcode

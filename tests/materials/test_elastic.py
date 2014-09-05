@@ -29,6 +29,8 @@ G = 3.750938E+09
 def elastic_unistrain(d=None, v=1):
     d = d or os.getcwd()
     runid = "elastic_unistrain"
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
     path = """
     0 0 222222 0 0 0 0 0 0
     1 1 222222 1 0 0 0 0 0
@@ -41,14 +43,15 @@ def elastic_unistrain(d=None, v=1):
     driver = Driver("Continuum", path=path, kappa=0.0, amplitude=1.0,
                     rate_multiplier=1.0, step_multiplier=1000.0, num_io_dumps=20,
                     estar=-0.5, tstar=1.0, sstar=1.0, fstar=1.0, efstar=1.0,
-                    dstar=1.0, proportional=False, termination_time=None)
+                    dstar=1.0, proportional=False, termination_time=None,
+                    logger=logger)
 
     # set up the material
     parameters = {"K":K, "G":G}
-    material = Material("elastic", parameters=parameters)
+    material = Material("elastic", parameters=parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, verbosity=v, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
     return
 
@@ -57,6 +60,8 @@ def elastic_unistrain(d=None, v=1):
 def elastic_unistrain_stressc(d=None, v=1):
     d = d or os.getcwd()
     runid = "elastic_unistrain_stressc"
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
     path = """
     0 0 222 0 0 0
     1 1 444 -7490645504 -3739707392 -3739707392
@@ -67,10 +72,11 @@ def elastic_unistrain_stressc(d=None, v=1):
     driver = Driver("Continuum", path=path, kappa=0.0, amplitude=1.0,
                     rate_multiplier=1.0, step_multiplier=100.0, num_io_dumps=20,
                     estar=1.0, tstar=1.0, sstar=1.0, fstar=1.0, efstar=1.0,
-                    dstar=1.0, proportional=False, termination_time=None)
+                    dstar=1.0, proportional=False, termination_time=None,
+                    logger=logger)
     parameters = {"K":K, "G":G}
-    material = Material("elastic", parameters=parameters)
-    mps = MaterialPointSimulator(runid, driver, material, verbosity=v, d=d)
+    material = Material("elastic", parameters=parameters, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
     return
 
@@ -79,6 +85,8 @@ def elastic_unistrain_stressc(d=None, v=1):
 def elastic_unistress(d=None, v=1):
     d = d or os.getcwd()
     runid = "elastic_unistress"
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
     path = """
     0 0 444 0 0 0
     1 1 444 1 0 0
@@ -86,11 +94,12 @@ def elastic_unistress(d=None, v=1):
     3 1 444 1 0 0
     4 1 444 0 0 0
     """
-    driver = Driver(kind="Continuum", kappa=0., tstar=1., sstar=-1e-6, amplitude=1.,
-                    step_multiplier=1000, rate_multiplier=1., path=path)
+    driver = Driver(kind="Continuum", kappa=0., tstar=1., sstar=-1e-6,
+                    amplitude=1., step_multiplier=1000, rate_multiplier=1.,
+                    path=path, logger=logger)
     parameters = {"K": K, "G": G}
-    material = Material("elastic", parameters=parameters)
-    mps = MaterialPointSimulator(runid, driver, material, verbosity=v, d=d)
+    material = Material("elastic", parameters=parameters, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
     return
 

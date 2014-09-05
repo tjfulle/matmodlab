@@ -10,28 +10,28 @@ class TestCobyla(TestBase):
         self.runid = "opt_cobyla"
         self.keywords = ["long", "cobyla", "optimization", "feature"]
     def setup(self,*args,**kwargs): pass
-    def run(self, logger):
+    def run(self):
         self.stat = self.failed_to_run
         try:
             runner("cobyla", d=self.test_dir, v=0)
             self.stat = self.passed
         except BaseException as e:
-            logger.error("{0}: failed with the following "
-                         "exception: {1}".format(self.runid, e.message))
+            self.logger.error("{0}: failed with the following "
+                              "exception: {1}".format(self.runid, e.message))
 
 class TestSimplex(TestBase):
     def __init__(self):
         self.runid = "opt_simplex"
         self.keywords = ["long", "simplex", "optimization", "feature"]
     def setup(self,*args,**kwargs): pass
-    def run(self, logger):
+    def run(self):
         self.stat = self.failed_to_run
         try:
             runner("simplex", d=self.test_dir, v=0)
             self.stat = self.passed
         except BaseException as e:
-            logger.error("{0}: failed with the following "
-                         "exception: {1}".format(self.runid, e.message))
+            self.logger.error("{0}: failed with the following "
+                              "exception: {1}".format(self.runid, e.message))
 
 class TestPowell(TestBase):
     def __init__(self):
@@ -39,29 +39,32 @@ class TestPowell(TestBase):
         self.runid = "opt_powell"
         self.keywords = ["long", "powell", "optimization", "feature"]
     def setup(self,*args,**kwargs): pass
-    def run(self, logger):
+    def run(self):
         self.stat = self.failed_to_run
         try:
             runner("powell", d=self.test_dir, v=0)
             self.stat = self.passed
         except BaseException as e:
-            logger.error("{0}: failed with the following "
-                         "exception: {1}".format(self.runid, e.message))
+            self.logger.error("{0}: failed with the following "
+                              "exception: {1}".format(self.runid, e.message))
 
 def func(x, *args):
 
     evald, runid = args[:2]
 
+    logfile = os.path.join(evald, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=0)
+
     # set up driver
     driver = Driver("Continuum", path_file=path_file, cols=[0,2,3,4],
-                    cfmt="222", tfmt="time", path_input="table")
+                    cfmt="222", tfmt="time", path_input="table", logger=logger)
 
     # set up material
     parameters = {"K": x[0], "G": x[1]}
-    material = Material("elastic", parameters=parameters)
+    material = Material("elastic", parameters=parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, verbosity=0, d=evald)
+    mps = MaterialPointSimulator(runid, driver, material, d=evald, logger=logger)
     mps.run()
 
     error = my_opt.opt_sig_v_time(mps.exodus_file)
@@ -71,6 +74,7 @@ def func(x, *args):
 def runner(method, d=None, v=1):
 
     d = d or os.getcwd()
+    runid = "opt_{0}".format(method)
 
     # run the optimization job.
     # the optimizer expects:
@@ -84,8 +88,7 @@ def runner(method, d=None, v=1):
     G = OptimizeVariable("G", 54e9, bounds=(45e9, 57e9))
     xinit = [K, G]
 
-    runid = "opt_{0}".format(method)
-    optimizer = Optimizer(func, xinit, runid=runid, d=d,
+    optimizer = Optimizer(func, xinit, runid, d=d,
                           descriptor=["PRES_V_EVOL"], method=method,
                           maxiter=25, tolerance=1.e-4, verbosity=v,
                           funcargs=[runid])

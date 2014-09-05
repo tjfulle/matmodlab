@@ -3,17 +3,17 @@ import sys
 
 import numpy as np
 
+from core.runtime import opts
+from core.logger import Logger, ConsoleLogger
 from utils.errors import *
 from utils.constants import DEFAULT_TEMP
-from core.runtime import opts
-from matmodlab import UMATS, PKG_D, MATLIB, MML_MFILE
 from utils.misc import load_file
 from utils.fortran.mml_i import FIO
-import utils.conlog as conlog
 import utils.mmlabpack as mmlabpack
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 from utils.data_containers import Parameters
 from materials.aba.mml_i import ABAMATS
+from matmodlab import UMATS, PKG_D, MATLIB, MML_MFILE
 
 try:
     from lib.visco import visco as ve
@@ -31,7 +31,7 @@ class MaterialModel(object):
     """
     param_defaults = None
 
-    def __init__(self):
+    def __init__(self, logger=None):
         self._vars = []
         self.nvisco = 0
         self._viscoelastic = None
@@ -50,6 +50,9 @@ class MaterialModel(object):
         self.itemp = DEFAULT_TEMP
         if not hasattr(self, "param_names"):
             raise AttributeError("{0}: param_names not defined".format(self.name))
+        if logger is None:
+            logger = Logger()
+        self.logger = logger
 
     @classmethod
     def _parameter_names(self, n):
@@ -57,6 +60,21 @@ class MaterialModel(object):
 
         """
         return [n.split(":")[0].upper() for n in self.param_names]
+
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, new_logger):
+        try:
+            new_logger.write
+            new_logger.warn
+            new_logger.error
+        except AttributeError, TypeError:
+            raise TypeError("attempting to assign a non logger "
+                            "to the {0} material logger".format(self.name))
+        self._logger = new_logger
 
     @property
     def initial_temp(self):
@@ -69,6 +87,7 @@ class MaterialModel(object):
         param_names = self._parameter_names(len(parameters))
         nprops = len(param_names)
         self.itemp = initial_temp
+        self.logger.write("setting up {0} material".format(self.name))
 
         if self.name in ABAMATS:
             # parameters are given as an array
@@ -99,7 +118,8 @@ class MaterialModel(object):
 
         if self._viscoelastic is not None:
             if ve is None:
-                conlog.error("attempting visco analysis but visco.so not imported")
+                self.logger.error("attempting visco analysis but "
+                                  "visco.so not imported")
 
             # setup viscoelastic params
             self.visco_params = np.zeros(24)
@@ -139,13 +159,14 @@ class MaterialModel(object):
 
         if self._expansion is not None:
             if tm is None:
-                conlog.error("attempting thermal analysis but "
-                             "thermomech.so not imported")
+                self.logger.error("attempting thermal analysis but "
+                                  "thermomech.so not imported")
 
             self.exp_params = self._expansion.data
 
         if self.visco_params is not None:
-            ve.propcheck(self.visco_params, conlog.error, conlog.write, conlog.warn)
+            comm = (self.logger.error, self.logger.write, self.logger.warn)
+            ve.propcheck(self.visco_params, *comm)
 
         self.register_variable("XTRA", VAR_ARRAY, keys=self.xkeys, ivals=self.xinit)
 
@@ -172,10 +193,10 @@ class MaterialModel(object):
 
     def set_constant_jacobian(self):
         if not self.bulk_modulus:
-            conlog.warn("{0}: bulk modulus not defined".format(self.name))
+            self.logger.warn("{0}: bulk modulus not defined".format(self.name))
             return
         if not self.shear_modulus:
-            conlog.warn("{0}: shear modulus not defined".format(self.name))
+            self.logger.warn("{0}: shear modulus not defined".format(self.name))
             return
 
         self.J0 = np.zeros((6, 6))
@@ -286,7 +307,7 @@ class MaterialModel(object):
             Fm, Em = mmlabpack.update_deformation(dtime, 0., F, Dm)
             sigm = stress.copy()
             xtram = xtra.copy()
-            sigm, xtram, stif = self.compute_updated_state( time, dtime, temp,
+            sigm, xtram, stif = self.compute_updated_state(time, dtime, temp,
                 dtemp, F0, Fm, Em, Dm, elec_field, user_field, sigm, xtram)
 
             # compute component of jacobian
@@ -320,20 +341,17 @@ class MaterialModel(object):
     def update_state(self, *args, **kwargs):
         raise NotImplementedError
 
-    def compute_updated_state(self, time, dtime, temp, dtemp, F0, F,
-        stran, d, elec_field, user_field, stress, statev,
-        disp=0, v=None, last=False, logger=None):
+    def compute_updated_state(self, time, dtime, temp, dtemp, F0, F, stran, d,
+            elec_field, user_field, stress, statev, disp=0, v=None, last=False):
         """Update the material state
 
         """
-        if logger is None:
-            logger = conlog
         if disp == 2 and self.constant_j:
             # only jacobian requested
             return self.constant_jacobian
 
         N = self.nxtra
-        comm = (logger.error, logger.write, logger.warn)
+        comm = (self.logger.error, self.logger.write, self.logger.warn)
 
         sig = np.array(stress)
         xtra = np.array(statev)
@@ -351,7 +369,7 @@ class MaterialModel(object):
         energy = 1.
         sig, xtra[:N], stif = self.update_state(time, dtime, temp, dtemp,
             energy, rho, F0, F, stran, d, elec_field, user_field, sig,
-            xtra[:N], logger, last=last, mode=0)
+            xtra[:N], last=last, mode=0)
 
         if self.visco_params is not None:
             # get visco correction
@@ -385,8 +403,8 @@ class MaterialModel(object):
         if self.visco_params is not None:
             # initialize the visco variables
             x = xtra[N:]
-            ve.viscoini(self.visco_params, x,
-                        conlog.error, conlog.write, conlog.warn)
+            comm = (self.logger.error, self.logger.write, self.logger.warn)
+            ve.viscoini(self.visco_params, x, *comm)
             xtra[N:] = x
         time = 0.
         dtime = 1.
@@ -432,13 +450,17 @@ class MaterialModel(object):
 
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
-             source_files=None, source_directory=None, initial_temp=None):
+             source_files=None, source_directory=None, initial_temp=None,
+             logger=None):
     """Material model factory method
 
     """
     # switch model, if requested
+    if logger is None:
+        logger = Logger()
+
     if opts.switch:
-        conlog.warn("switching {0} for {1}".format(model, opts.switch))
+        logger.warn("switching {0} for {1}".format(model, opts.switch))
         model = opts.switch
 
     from core.builder import Builder
@@ -493,7 +515,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
     # Instantiate the material
     interface = load_file(lib_info["interface"])
     mat = getattr(interface, lib_info["class"])
-    material = mat()
+    material = mat(logger=logger)
     material.setup_new_material(parameters, depvar, initial_temp)
 
     return material
@@ -534,7 +556,7 @@ def find_materials():
     for d in UMATS:
         f = os.path.join(d, MML_MFILE)
         if not os.path.isfile(f):
-            conlog.warn("{0} not found for {1}".format(MML_MFILE, d))
+            ConsoleLogger.warn("{0} not found for {1}".format(MML_MFILE, d))
             continue
         info = load_file(info_file)
         try:
@@ -544,7 +566,8 @@ def find_materials():
 
         for lib in libs:
             if lib in mat_libs:
-                conlog.error("{0}: duplicate material library".format(lib), r=0)
+                ConsoleLogger.error("{0}: duplicate material "
+                                    "library".format(lib))
                 errors.append(lib)
                 continue
             mat_libs.update({lib: libs[lib]})

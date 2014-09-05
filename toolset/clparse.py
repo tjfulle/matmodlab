@@ -38,6 +38,7 @@ def parse_sim_argv(argv=None, get_f=False):
     set_runtime_opt("debug", args.dbg)
     set_runtime_opt("sqa", args.sqa)
     set_runtime_opt("nprocs", args.j)
+    set_runtime_opt("verbosity", args.v)
     if args.W == "error":
         set_runtime_opt("Wall", True)
         set_runtime_opt("Werror", True)

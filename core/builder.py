@@ -6,11 +6,11 @@ import shutil
 import argparse
 
 from matmodlab import ROOT_D, MML_IFILE
-import utils.conlog as logger
 from utils.misc import load_file, int2str
 from utils.fortran.extbuilder import FortranExtBuilder
 from utils.errors import DuplicateExtModule
 from core.material import MATERIALS
+from core.logger import ConsoleLogger as logger
 
 
 class BuilderError(Exception):

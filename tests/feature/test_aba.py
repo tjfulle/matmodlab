@@ -32,28 +32,34 @@ class TestUHyper(TestBase):
 def run_umat(d=None, v=1):
     d = d or os.getcwd()
     runid = umat
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
     driver = Driver("Continuum", path=path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2,
-                    termination_time=1.8*pi)
+                    termination_time=1.8*pi, logger=logger)
     constants = [E, Nu]
     material = Material("umat", parameters=constants, constants=2,
                         source_files=["neohooke.f90"],
-                        source_directory="{0}/materials/abaumats".format(ROOT_D))
-    mps = MaterialPointSimulator(runid, driver, material, d=d, verbosity=v)
+                        source_directory="{0}/materials/abaumats".format(ROOT_D),
+                        logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
 @matmodlab
 def run_uhyper(d=None, v=1):
     d = d or os.getcwd()
     runid = uhyper
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
     driver = Driver("Continuum", path=path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2,
-                    termination_time=1.8*pi)
+                    termination_time=1.8*pi, logger=logger)
     constants = [C10, D1]
     material = Material("uhyper", parameters=constants, constants=2,
                         source_files=["uhyper.f90"],
-                        source_directory="{0}/materials/abaumats".format(ROOT_D))
-    mps = MaterialPointSimulator(runid, driver, material, d=d, verbosity=v)
+                        source_directory="{0}/materials/abaumats".format(ROOT_D),
+                        logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
 if __name__ == "__main__":

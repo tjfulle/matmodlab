@@ -8,6 +8,7 @@ import random
 import string
 import argparse
 from matmodlab import SPLASH
+from core.logger import Logger
 from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN
 
 TESTRE = re.compile(r"(?:^|[\\b_\\.-])[Tt]est")
@@ -16,28 +17,11 @@ STR_RESULTS = {PASSED: "PASS", DIFFED: "DIFF", FAILED: "FAIL",
 TIMING = []
 WIDTH = 80
 
-class Logger(object):
-    def __init__(self, d):
-        self.ch = sys.__stdout__
-        self.fh = open(os.path.join(d, "testing.log"), "w")
-    def write(self, string, end="\n"):
-        self.ch.write(string + end)
-        self.fh.write(string + end)
-    def warn(self, string, end="\n"):
-        string = "*** WARNING: {0}".format(string)
-        self.write(string, end)
-    def error(self, string, end="\n"):
-        string = "*** ERROR: {0}".format(string)
-        self.write(string, end)
-    def finish(self):
-        self.ch.flush()
-        self.fh.flush()
-        self.fh.close()
-
 ROOT_DIR = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
 if not os.path.isdir(ROOT_DIR):
     os.makedirs(ROOT_DIR)
-logger = Logger(ROOT_DIR)
+logfile = os.path.join(ROOT_DIR, "testing.log")
+logger = Logger(logfile=logfile, ignore_opts=1)
 
 
 def main(argv=None):
@@ -84,7 +68,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True):
     KW = ", ".join("{0}".format(x) for x in exclude)
     logger.write("\nGATHERING TESTS FROM\n{0}"
                  "\nKEYWORDS TO INCLUDE\n    {1}"
-                 "\nKEYWORDS TO EXCLUDE\n    {2}".format(s, kw, KW))
+                 "\nKEYWORDS TO EXCLUDE\n    {2}".format(s, kw, KW), transform=str)
 
     # gather the tests
     TIMING.append(time.time())
@@ -109,8 +93,8 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True):
 
     # write out some information
     TIMING.append(time.time())
-    logger.write("\nSUMMARY OF TESTS\nRAN {0:d} TESTS "
-                 "IN {1:.4f}s".format(ntests, TIMING[-1]-TIMING[0]))
+    logger.write("\nsummary of tests\nran {0:d} tests "
+                 "in {1:.4f}s".format(ntests, TIMING[-1]-TIMING[0]))
 
     S = []
     npass, nfail, nftr, ndiff = 0, 0, 0, 0
@@ -130,18 +114,18 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True):
         nfail += my_results[FAILED]
         nftr += my_results[FAILED_TO_RUN]
         ndiff += my_results[DIFFED]
-        s = "[{0}]".format(" ".join(STR_RESULTS[i] for i in info["results"]))
+        s = "[{0}]".format(", ".join(STR_RESULTS[i] for i in info["results"]))
         S.append("    {0}: {1}".format(module, s))
 
-    logger.write("   {0: 3d} PASSED\n"
-                 "   {1: 3d} FAILED\n"
-                 "   {2: 3d} DIFFED\n"
-                 "   {3: 3d} FAILED TO RUN\nDETAILS".format(npass,
-                                                           nfail, ndiff, nftr))
-    logger.write("\n".join(S))
+    logger.write("   {0: 3d} passed\n"
+                 "   {1: 3d} failed\n"
+                 "   {2: 3d} diffed\n"
+                 "   {3: 3d} failed to run\n"
+                 "details".format(npass, nfail, ndiff, nftr))
+    logger.write("\n".join(S), transform=str)
 
     if tear_down:
-        logger.write("\nTEARING DOWN PASSED TESTS")
+        logger.write("\ntearing down passed tests")
         # tear down indivdual tests
         torn_down = 0
         for (module, info) in tests.items():
@@ -151,6 +135,8 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True):
                     torn_down += test.torn_down
 
         if torn_down == ntests:
+            logger.write("all tests passed, removing results directory", end=" ")
+            logger.write("(--keep-passed SUPPRESSES TEAR DOWN)", transform=str)
             shutil.rmtree(ROOT_DIR)
 
     logger.finish()
@@ -245,9 +231,10 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
         file_dir = info["file_dir"]
         for (i, test_cls) in enumerate(info["tests"]):
             test_instance = test_cls()
-            validated = test_instance.validate(file_dir, test_dir, module, logger)
+            test_instance.logger = logger
+            validated = test_instance.validate(file_dir, test_dir, module)
             if not validated:
-                logger.error("{0}: SKIPPING UNVALIDATED TEST".format(module))
+                logger.error("{0}: skipping unvalidated test".format(module))
                 continue
 
             disabled = getattr(test_instance, "disabled", False)
@@ -275,43 +262,18 @@ def run_tests(tests):
         for (i, the_test) in enumerate(info["filtered"]):
             test_repr = info["repr"][i]
             ti = time.time()
-            logger.write(fillwithdots(test_repr, "RUNNING"))
-            stat = the_test.setup(logger)
+            logger.write(fillwithdots(test_repr, "RUNNING"), transform=str)
+            stat = the_test.setup()
             if stat:
-                logger.error("{0}: FAILED TO SETUP".format(module))
+                logger.error("{0}: failed to setup".format(module))
                 results[module].append(self.stat)
                 continue
-            the_test.run(logger)
+            the_test.run()
             results[module].append(the_test.stat)
             dt = time.time() - ti
             line = fillwithdots(test_repr, "FINISHED")
             s = " [{1}] ({0:.1f}s)".format(dt, STR_RESULTS[the_test.stat])
-            logger.write(line + s)
-
-    return results
-
-
-def run_test(self):
-    results = {}
-    for (module, info) in tests.items():
-        results[module] = []
-        for (i, the_test) in enumerate(info["filtered"]):
-            test_repr = info["repr"][i]
-            ti = time.time()
-            logger.write(fillwithdots(test_repr, "RUNNING"))
-            stat = the_test.setup(logger)
-            if stat:
-                logger.error("{0}: FAILED TO SETUP".format(module))
-                results[module].append(self.stat)
-                continue
-            the_test.run(logger)
-            results[module].append(the_test.stat)
-            if the_test.stat == the_test.passed:
-                the_test.tear_down()
-            dt = time.time() - ti
-            line = fillwithdots(test_repr, "FINISHED")
-            s = " [{1}] ({0:.1f}s)".format(dt, STR_RESULTS[the_test.stat])
-            logger.write(line + s)
+            logger.write(line + s, transform=str)
 
     return results
 

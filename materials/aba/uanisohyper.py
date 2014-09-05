@@ -1,9 +1,8 @@
 import sys
 import numpy as np
-from materials.aba.abamat import AbaqusMaterial
-from utils.conlog import Error1, log_message, log_error, log_warning
-from utils.errors import ModelNotImportedError
 import utils.mmlabpack as mmlabpack
+from utils.errors import ModelNotImportedError
+from materials.aba.abamat import AbaqusMaterial
 try:
     import lib.uanisohyper as umat
 except ImportError:
@@ -20,6 +19,6 @@ class UAnisoHyper(AbaqusMaterial):
                           cmname, incmpflag, ihybflag, statev,
                           fieldv, fieldvinc):
         return umat.uanisohyper_inv(Ainv, zeta, nfibers, temp, noel, cmname,
-                                    incmpflag, ihybflag, statev, fieldv,
-                                    fieldvinc, self.params[:-4],
-                                    log_error, log_message, log_warning)
+                   incmpflag, ihybflag, statev, fieldv, fieldvinc,
+                   self.params[:-4], self.logger.error, self.logger.write,
+                   self.logger.warn)

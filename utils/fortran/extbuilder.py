@@ -13,8 +13,8 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
+from core.logger import ConsoleLogger as logger
 from matmodlab import FC, PKG_D, FFLAGS
-import utils.conlog as logger
 from utils.fortran.mml_i import LAPACK, LAPACK_OBJ
 
 

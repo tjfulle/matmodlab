@@ -6,10 +6,9 @@ import numpy as np
 import shutil
 import datetime
 
-from runtime import opts, set_runtime_opt
-import utils.conlog as conlog
+from core.logger import Logger
 from utils.mmltab import MMLTabularWriter
-from utils.logger import Logger
+from runtime import opts, set_runtime_opt
 
 IOPT = 0
 BIGNUM = 1.E+20
@@ -49,9 +48,9 @@ class Optimizer(object):
         if os.path.isdir(self.rootd):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
-        filepath = os.path.join(self.rootd, runid + ".log")
-        logger.add_file_handler(filepath)
-        logger.set_verbosity(verbosity)
+        logfile = os.path.join(self.rootd, runid + ".log")
+        logger.logfile = logfile
+        logger.verbosity = verbosity
 
         # check xinit
         self.names = []
@@ -259,12 +258,12 @@ class OptimizeVariable(object):
 
             if bounds[0] > bounds[1]:
                 errors += 1
-                conlog.error("{0}: upper bound < lower bound".format(name), r=0)
+                logger.error("{0}: upper bound < lower bound".format(name))
 
             if bounds[1] < initial_value < bounds[0]:
                 errors += 1
-                conlog.error("{0}: initial value not bracketed "
-                             "by bounds".format(name), r=0)
+                logger.error("{0}: initial value not bracketed "
+                             "by bounds".format(name))
             if errors:
                 raise UserInputError("stopping due to previous errors")
 

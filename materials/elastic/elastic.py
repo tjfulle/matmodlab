@@ -1,7 +1,6 @@
 import numpy as np
 
 from core.material import MaterialModel
-import utils.conlog as conlog
 from utils.errors import ModelNotImportedError
 try:
     import lib.elastic as elastic
@@ -18,13 +17,13 @@ class Elastic(MaterialModel):
         """
         if elastic is None:
             raise ModelNotImportedError("elastic")
-        elastic.elastic_check(self.params, conlog.error, conlog.write)
+        elastic.elastic_check(self.params, self.logger.error, self.logger.write)
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]
         self.use_constant_jacobian = True
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
-        stran, d, elec_field, user_field, stress, xtra, logger, **kwargs):
+        stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
 
         Parameters
@@ -51,5 +50,5 @@ class Elastic(MaterialModel):
 
         """
         elastic.elastic_update_state(dtime, self.params, d, stress,
-                                     logger.error, logger.write)
+                                     self.logger.error, self.logger.write)
         return stress, xtra, self.constant_jacobian
