@@ -7,6 +7,8 @@ import shutil
 import random
 import string
 import argparse
+import datetime
+import numpy as np
 import multiprocessing as mp
 
 from matmodlab import SPLASH
@@ -14,15 +16,18 @@ from core.logger import Logger
 from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 from utils.namespace import Namespace
 
-TESTRE = re.compile(r"(?:^|[\\b_\\.-])[Tt]est")
 
 TIMING = []
 WIDTH = 80
-
-ROOT_DIR = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
-if not os.path.isdir(ROOT_DIR):
-    os.makedirs(ROOT_DIR)
-logfile = os.path.join(ROOT_DIR, "testing.log")
+E_POST = ".post"
+F_POST = "graphics.html"
+TESTRE = re.compile(r"(?:^|[\\b_\\.-])[Tt]est")
+RES_MAP = {PASSED: "PASS", DIFFED: "DIFF", FAILED: "FAIL",
+           FAILED_TO_RUN: "FAILED TO RUN", NOT_RUN: "NOT RUN"}
+RES_D = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
+if not os.path.isdir(RES_D):
+    os.makedirs(RES_D)
+logfile = os.path.join(RES_D, "testing.log")
 logger = Logger(logfile=logfile, ignore_opts=1)
 
 
@@ -38,6 +43,8 @@ def main(argv=None):
         help="Number of simutaneous tests to run [default: ]")
     p.add_argument("--no-tear-down", action="store_true", default=False,
         help="Do not tear down passed tests on completion [default: ]")
+    p.add_argument("--html", action="store_true", default=False,
+        help="Write html summary of results (negates tear down) [default: ]")
     p.add_argument("sources", nargs="+")
 
     # parse out known arguments and reset sys.argv
@@ -46,16 +53,18 @@ def main(argv=None):
     # suppress logging from other products
     sys.argv.extend(["-v", "0"])
 
-    gather_and_run_tests(args.sources, args.k, args.K,
-                         tear_down=not args.no_tear_down, nprocs=args.j)
+    gather_and_run_tests(args.sources, args.k, args.K, nprocs=args.j,
+        tear_down=not args.no_tear_down, html_summary=args.html)
 
 
-def res_str(i):
-    return {PASSED: "PASS", DIFFED: "DIFF", FAILED: "FAIL",
-            FAILED_TO_RUN: "FAILED TO RUN", NOT_RUN: "NOT RUN"}.get(i, "UNKOWN")
+def result_str(i):
+    return RES_MAP.get(i, "UNKOWN")
 
 
-def test_sorter(test):
+def sort_by_status(test):
+    return test.status
+
+def sort_by_time(test):
     if not test.instance:
         return 3
     if "long" in test.instance.keywords:
@@ -64,7 +73,8 @@ def test_sorter(test):
         return 1
     return 2
 
-def gather_and_run_tests(sources, include, exclude, tear_down=True, nprocs=1):
+def gather_and_run_tests(sources, include, exclude, tear_down=True,
+                         html_summary=False, nprocs=1):
     """Gather and run all tests
 
     Parameters
@@ -79,22 +89,29 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True, nprocs=1):
     """
     logger.write(SPLASH)
 
+    if html_summary:
+        tear_down = False
+
     sources = [os.path.realpath(s) for s in sources]
 
     logger.write("summary of user input")
     s = "\n                ".join("{0}".format(x) for x in sources)
     kw = ", ".join("{0}".format(x) for x in include)
     KW = ", ".join("{0}".format(x) for x in exclude)
-    logger.write(  "  TEST SOURCES: {0}"
+    logger.write(  "  TEST OUTPUT DIRECTORY: {4}"
+                 "\n  TEST SOURCES: {0}"
                  "\n  KEYWORDS TO INCLUDE: {1}"
                  "\n  KEYWORDS TO EXCLUDE: {2}"
-                 "\n  NUMBER OF SIMULTANEOUS JOBS: {3}".format(s, kw, KW, nprocs),
+                 "\n  NUMBER OF SIMULTANEOUS JOBS: {3}"
+                 "\n  TEAR DOWN OF PASSED TESTS: {5}"
+                 "\n  CREATION OF HTML SUMMARY: {6}".format(
+                     s, kw, KW, nprocs, RES_D, tear_down, html_summary),
                  transform=str)
 
     # gather the tests
     TIMING.append(time.time())
     logger.write("\ngathering tests")
-    tests = gather_and_filter_tests(sources, ROOT_DIR, include, exclude)
+    tests = gather_and_filter_tests(sources, RES_D, include, exclude)
 
     # write information
     TIMING.append(time.time())
@@ -137,9 +154,12 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True, nprocs=1):
             raise SystemExit("KeyboardInterrupt intercepted")
 
         # when multiprocessing, the results from run_test are saved.  why?
+        print len(output)
+        print len(tests)
         for (i, test) in enumerate(tests):
-            test.status = output[i]
-            if test.instance: test.instance.status = output[i]
+            test.status, test.dtime = output[i]
+            if test.instance:
+                test.instance.status = output[i][0]
 
     logger.write("ALL TESTS COMPLETED")
 
@@ -163,7 +183,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True, nprocs=1):
     results_by_status = {}
     for test in tests:
         if test.status == NOT_RUN: continue
-        S = res_str(test.status)
+        S = result_str(test.status)
         s = "{0}: {1}".format(test.str_repr.split(".")[1], S)
         results_by_module.setdefault(test.module, []).append(s)
         results_by_status.setdefault(S, []).append(test.str_repr)
@@ -192,7 +212,11 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True, nprocs=1):
 
         if torn_down == ntests_to_run:
             logger.write("all tests passed, removing results directory")
-            shutil.rmtree(ROOT_DIR)
+            shutil.rmtree(RES_D)
+
+    if html_summary:
+        logger.write("\nWRITING HTML SUMMARY TO {0}".format(RES_D), transform=str)
+        write_html_summary(RES_D, tests)
 
     logger.finish()
 
@@ -278,7 +302,7 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
 
         # create directory to run the test
         d = os.path.basename(file_dir)
-        test_dir = os.path.join(root_dir, d)
+        test_dir = os.path.join(root_dir, d, module)
         if not os.path.isdir(test_dir):
             os.makedirs(test_dir)
 
@@ -321,7 +345,7 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
             # if we got to here, the test will be run, store the instance
             all_tests[-1].instance = the_test
 
-    return sorted(all_tests, key=test_sorter)
+    return sorted(all_tests, key=sort_by_time)
 
 
 def run_test(test):
@@ -338,22 +362,109 @@ def run_test(test):
 
     """
     if not test.instance:
-        return NOT_RUN
+        return NOT_RUN, np.nan
     ti = time.time()
     logger.write(fillwithdots(test.str_repr, "RUNNING"), transform=str)
     status = test.instance.setup()
     if status:
         logger.error("{0}: failed to setup".format(test.str_repr))
-        return test.status
+        return test.status, np.nan
     test.instance.run()
+    test.instance.post_hook()
+    dtime = time.time() - ti
     test.status = test.instance.status
-    dt = time.time() - ti
+    test.dtime = dtime
     line = fillwithdots(test.str_repr, "FINISHED")
-    s = " [{1}] ({0:.1f}s)".format(dt, res_str(test.status))
+    s = " [{1}] ({0:.1f}s)".format(dtime, result_str(test.status))
     logger.write(line + s, transform=str)
 
-    return test.status
+    return test.status, dtime
 
+
+def write_html_summary(root_d, tests):
+    """write summary of the results to an html file
+
+    """
+    # html header
+    html = []
+    html.append("<html>\n<head>\n<title>Test Results</title>\n</head>\n")
+    html.append("<body>\n<h1>Summary</h1>\n")
+
+    now = datetime.datetime.now()
+    html.append("<ul>\n")
+
+    # meta information for all tests
+    html.append("<li> Directory: {0} </li>\n".format(root_d))
+    html.append("<li> Date: {0} </li>\n".format(now.ctime()))
+    options = " ".join(arg for arg in sys.argv[1:])
+    html.append("<li> Options: {0} </li>\n".format(options))
+
+    # summary of statuses
+    groups = {}
+    for test in tests:
+        S = result_str(test.status)
+        groups.setdefault(S, []).append(1)
+    groups = ["{0} {1}".format(sum(v), k) for (k,v) in groups.items()]
+    html.append("<li> {0} </li>\n".format(", ".join(groups)))
+    html.append("</ul>\n")
+
+    # write out tests by test status
+    HF = "<h1>Tests that showed '{0}'</h1>\n"
+    results_by_status = {}
+    for test in tests:
+        S = result_str(test.status)
+        results_by_status.setdefault(S, []).append(test)
+
+    for (status, the_tests) in results_by_status.items():
+        html.append(HF.format(status))
+        for test in the_tests:
+            html_summary = test_html_summary(test, root_d)
+            if not html_summary:
+                continue
+            html.append(html_summary)
+    html.append("</body>")
+
+    filename = os.path.join(root_d, "summary.html")
+    with open(filename, "w") as fh:
+        fh.write("\n".join(html))
+
+    return
+
+def test_html_summary(test, root_d):
+    # get info from details
+    if not test.instance:
+        return "<ul> <li> {0} </li> </ul>".format(test.str_repr)
+
+    test_dir = test.instance.test_dir
+    status = result_str(test.status)
+    keywords = ", ".join(test.instance.keywords)
+    tcompletion = "{0:.2f}s".format(test.dtime)
+
+    # look for post processing link
+    html_link = os.path.join(test_dir, test.instance.runid + E_POST, F_POST)
+    if not os.path.isfile(html_link):
+        html_link = None
+
+    html = []
+    html.append("<ul>\n")
+    html.append("<li>{0}</li>".format(test.str_repr))
+    html.append("<ul>")
+
+    html.append("<li>Files: ")
+    files = [f for f in os.listdir(test_dir)
+             if os.path.isfile(os.path.join(test_dir, f))]
+    for f in files:
+        fpath = os.path.join(test_dir, f).replace(root_d, ".")
+        html.append("<a href='{0}' type='text/plain'>{1}</a> ".format(fpath, f))
+        continue
+    if html_link:
+        html.append("<li><a href='{0}'>Plots</a>".format(os.path.join(html_link)))
+    html.append("<li>Keywords: {0}".format(keywords))
+    html.append("<li>Status: {0}".format(test.status))
+    html.append("<li>Completion time: {0}".format(test.dtime))
+    html.append("</ul>")
+    html.append("</ul>\n")
+    return "\n".join(html)
 
 if __name__ == "__main__":
     main()

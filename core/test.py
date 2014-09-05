@@ -147,6 +147,9 @@ class TestBase(object):
                     remove(os.path.join(self.test_dir, f))
         self.torn_down = 1
 
+    def post_hook(self, *args, **kwargs):
+        pass
+
 def remove(f):
     if os.path.isdir(f):
         rm = shutil.rmtree
