@@ -8,6 +8,7 @@ PASSED = 0
 DIFFED = 1
 FAILED = 2
 FAILED_TO_RUN = -2
+NOT_RUN = -5
 
 class TestBase(object):
     _is_mml_test = True
@@ -15,23 +16,46 @@ class TestBase(object):
     diffed = DIFFED
     failed = FAILED
     failed_to_run = FAILED_TO_RUN
+    not_run = NOT_RUN
 
     @property
     def logger(self):
-        return getattr(self, "_logger", Logger())
+        return self._logger
+
     @logger.setter
-    def logger(self, value):
-        self._logger = value
+    def logger(self, new_logger):
+        try:
+            new_logger.write
+            new_logger.warn
+            new_logger.error
+        except AttributeError, TypeError:
+            raise TypeError("attempting to assign a non logger "
+                            "to the {0} Driver logger".format(self.kind))
+        self._logger = new_logger
 
-    def validate(self, src_dir, test_dir, module):
+    def init(self, src_dir, test_dir, module, logger):
+        """Initialize the test.
 
-        self.test_dir = test_dir
+        This is done in the parent class after any subclasses have been
+        initialized
+
+        """
         self.src_dir = src_dir
+        self.test_dir = test_dir
         self.module = module
+        self.logger = logger
+        self.initialized = True
         self.torn_down = 0
+        self.status = self.not_run
+        self.disabled = getattr(self, "disabled", False)
+
+    def validate(self):
+
+        initialized = getattr(self, "initialized", False)
+        if not initialized:
+            self.logger.raise_error("test suite must be initialized")
 
         errors = 0
-
         self.runid = getattr(self, "runid", None)
         if not self.runid:
             self.runid = "unkown_test"
@@ -83,7 +107,7 @@ class TestBase(object):
             self.logger.error("{0}: exodiff file not found".format(self.runid))
 
         self.setup_by_class = True
-        self.stat = self.failed_to_run
+        self.status = self.failed_to_run
 
         return errors
 
@@ -91,7 +115,7 @@ class TestBase(object):
         """The standard test
 
         """
-        self.stat = self.failed_to_run
+        self.status = self.failed_to_run
 
         if not getattr(self, "setup_by_class", False):
             self.logger.error("{0}: running standard test requires "
@@ -110,12 +134,12 @@ class TestBase(object):
             return
 
         exodiff_log = os.path.join(self.test_dir, self.runid + ".exodiff.log")
-        self.stat = exodiff.exodiff(self.exofile, self.base_exo, f=exodiff_log,
-                                    v=0, control_file=self.exodiff)
+        self.status = exodiff.exodiff(self.exofile, self.base_exo, f=exodiff_log,
+                                      v=0, control_file=self.exodiff)
         return
 
     def tear_down(self):
-        if self.stat != self.passed:
+        if self.status != self.passed:
             return
         for f in os.listdir(self.test_dir):
             if self.module in f or self.runid in f:

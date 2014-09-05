@@ -7,13 +7,15 @@ import shutil
 import random
 import string
 import argparse
+import multiprocessing as mp
+
 from matmodlab import SPLASH
 from core.logger import Logger
-from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN
+from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
+from utils.namespace import Namespace
 
 TESTRE = re.compile(r"(?:^|[\\b_\\.-])[Tt]est")
-STR_RESULTS = {PASSED: "PASS", DIFFED: "DIFF", FAILED: "FAIL",
-               FAILED_TO_RUN: "FAILED TO RUN"}
+
 TIMING = []
 WIDTH = 80
 
@@ -32,7 +34,9 @@ def main(argv=None):
         help="Keywords to include [default: ]")
     p.add_argument("-K", action="append", default=[],
         help="Keywords to exclude [default: ]")
-    p.add_argument("--keep-passed", action="store_true", default=False,
+    p.add_argument("-j", type=int, default=1,
+        help="Number of simutaneous tests to run [default: ]")
+    p.add_argument("--no-tear-down", action="store_true", default=False,
         help="Do not tear down passed tests on completion [default: ]")
     p.add_argument("sources", nargs="+")
 
@@ -43,10 +47,24 @@ def main(argv=None):
     sys.argv.extend(["-v", "0"])
 
     gather_and_run_tests(args.sources, args.k, args.K,
-                         tear_down=not args.keep_passed)
+                         tear_down=not args.no_tear_down, nprocs=args.j)
 
 
-def gather_and_run_tests(sources, include, exclude, tear_down=True):
+def res_str(i):
+    return {PASSED: "PASS", DIFFED: "DIFF", FAILED: "FAIL",
+            FAILED_TO_RUN: "FAILED TO RUN", NOT_RUN: "NOT RUN"}.get(i, "UNKOWN")
+
+
+def test_sorter(test):
+    if not test.instance:
+        return 3
+    if "long" in test.instance.keywords:
+        return 0
+    if "fast" in test.instance.keywords:
+        return 1
+    return 2
+
+def gather_and_run_tests(sources, include, exclude, tear_down=True, nprocs=1):
     """Gather and run all tests
 
     Parameters
@@ -63,80 +81,117 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True):
 
     sources = [os.path.realpath(s) for s in sources]
 
-    s = "\n".join("    {0}".format(x) for x in sources)
+    logger.write("summary of user input")
+    s = "\n                ".join("{0}".format(x) for x in sources)
     kw = ", ".join("{0}".format(x) for x in include)
     KW = ", ".join("{0}".format(x) for x in exclude)
-    logger.write("\nGATHERING TESTS FROM\n{0}"
-                 "\nKEYWORDS TO INCLUDE\n    {1}"
-                 "\nKEYWORDS TO EXCLUDE\n    {2}".format(s, kw, KW), transform=str)
+    logger.write(  "  TEST SOURCES: {0}"
+                 "\n  KEYWORDS TO INCLUDE: {1}"
+                 "\n  KEYWORDS TO EXCLUDE: {2}"
+                 "\n  NUMBER OF SIMULTANEOUS JOBS: {3}".format(s, kw, KW, nprocs),
+                 transform=str)
 
     # gather the tests
     TIMING.append(time.time())
+    logger.write("\ngathering tests")
     tests = gather_and_filter_tests(sources, ROOT_DIR, include, exclude)
 
     # write information
     TIMING.append(time.time())
-    ntests = sum(len(tests[m]["filtered"]) for m in tests)
+    ntests = len(tests)
+    ntests_to_run = len([t for t in tests if t.instance])
+    ndisabled = len([t for t in tests if t.disabled])
+    n_notinc = ntests - ntests_to_run - ndisabled
+
     logger.write("FOUND {0:d} TESTS IN {1:.2}s".format(
-        ntests, TIMING[-1]-TIMING[0]))
+        ntests, TIMING[-1]-TIMING[0]), transform=str)
+    for test in tests:
+        if test.instance: star = " +++"
+        elif test.disabled: star = "**"
+        else: star = "*"
+        logger.write("    {0}{1}".format(test.str_repr, star), transform=str)
+    logger.write("(+++) tests to be run ({0:d})".format(ntests_to_run))
+    if ndisabled:
+        logger.write(" (**) disabled tests ({0:d})".format(ndisabled))
+    if n_notinc:
+        logger.write("  (*) tests filtered out by keyword "
+                     "request ({0:d})".format(n_notinc))
+
+    nprocs = min(min(mp.cpu_count(), nprocs), len(tests))
 
     # run the tests
     logger.write("\nRUNNING TESTS")
-    results = run_tests(tests)
-    logger.write("ALL TESTS COMPLETED")
+    output = []
+    if nprocs == 1:
+        for test in tests:
+            output.append(run_test(test))
+    else:
+        pool = mp.Pool(processes=nprocs)
+        try:
+            p = pool.map_async(run_test, tests, callback=output.extend)
+            p.wait()
+            pool.close()
+            pool.join()
+        except KeyboardInterrupt:
+            logger.error("keyboard interrupt")
+            raise SystemExit("KeyboardInterrupt intercepted")
 
-    # collect results
-    for (module, info) in tests.items():
-        tests[module]["results"] = []
-        for (i, the_test) in enumerate(info["filtered"]):
-            tests[module]["results"].append(results[module][i])
+        # when multiprocessing, the results from run_test are saved.  why?
+        for (i, test) in enumerate(tests):
+            test.status = output[i]
+            if test.instance: test.instance.status = output[i]
+
+    logger.write("ALL TESTS COMPLETED")
 
     # write out some information
     TIMING.append(time.time())
-    logger.write("\nsummary of tests\nran {0:d} tests "
-                 "in {1:.4f}s".format(ntests, TIMING[-1]-TIMING[0]))
 
-    S = []
-    npass, nfail, nftr, ndiff = 0, 0, 0, 0
-    for (module, info) in tests.items():
+    # determine number of passed, failed, etc.
+    npass = len([test for test in tests if test.status == PASSED])
+    nfail = len([test for test in tests if test.status == FAILED])
+    nftr = len([test for test in tests if test.status == FAILED_TO_RUN])
+    ndiff = len([test for test in tests if test.status == DIFFED])
+    logger.write("\nsummary of completed tests\nran {0:d} tests "
+                 "in {1:.4f}s".format(ntests_to_run, TIMING[-1]-TIMING[0]))
+    logger.write("  {0: 3d} passed\n"
+                 "  {1: 3d} failed\n"
+                 "  {2: 3d} diffed\n"
+                 "  {3: 3d} failed to run".format(npass, nfail, ndiff, nftr))
 
-        if not info["filtered"]:
-            continue
+    # collect results for pretty logging
+    results_by_module = {}
+    results_by_status = {}
+    for test in tests:
+        if test.status == NOT_RUN: continue
+        S = res_str(test.status)
+        s = "{0}: {1}".format(test.str_repr.split(".")[1], S)
+        results_by_module.setdefault(test.module, []).append(s)
+        results_by_status.setdefault(S, []).append(test.str_repr)
 
-        my_results = dict([(I, 0) for I in STR_RESULTS])
-        for (i, test) in enumerate(info["filtered"]):
-            result = info["results"][i]
-            my_results[result] += 1
-            if result == PASSED and tear_down:
-                test.tear_down()
+    logger.write("\ndetail by test module")
+    for (module, statuses) in results_by_module.items():
+        logger.write("  " + module, transform=str)
+        s = "\n".join("    {0}".format(x) for x in statuses)
+        logger.write(s, transform=str)
 
-        npass += my_results[PASSED]
-        nfail += my_results[FAILED]
-        nftr += my_results[FAILED_TO_RUN]
-        ndiff += my_results[DIFFED]
-        s = "[{0}]".format(", ".join(STR_RESULTS[i] for i in info["results"]))
-        S.append("    {0}: {1}".format(module, s))
-
-    logger.write("   {0: 3d} passed\n"
-                 "   {1: 3d} failed\n"
-                 "   {2: 3d} diffed\n"
-                 "   {3: 3d} failed to run\n"
-                 "details".format(npass, nfail, ndiff, nftr))
-    logger.write("\n".join(S), transform=str)
+    logger.write("\ndetail by test status")
+    for (status, str_reprs) in results_by_status.items():
+        logger.write("  " + status)
+        s = "\n".join("    {0}".format(x) for x in str_reprs)
+        logger.write(s, transform=str)
 
     if tear_down:
-        logger.write("\ntearing down passed tests")
+        logger.write("\ntearing down passed tests", end=" ")
+        logger.write("(--no-tear-down SUPPRESSES TEAR DOWN)", transform=str)
         # tear down indivdual tests
         torn_down = 0
-        for (module, info) in tests.items():
-            for (i, test) in enumerate(info["filtered"]):
-                if info["results"][i] == PASSED:
-                    test.tear_down()
-                    torn_down += test.torn_down
+        for test in tests:
+            if test.status == PASSED:
+                test.instance.tear_down()
+                torn_down += test.instance.torn_down
 
-        if torn_down == ntests:
-            logger.write("all tests passed, removing results directory", end=" ")
-            logger.write("(--keep-passed SUPPRESSES TEAR DOWN)", transform=str)
+        if torn_down == ntests_to_run:
+            logger.write("all tests passed, removing results directory")
             shutil.rmtree(ROOT_DIR)
 
     logger.finish()
@@ -187,12 +242,15 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
 
     Returns
     -------
-    all_tests : dict
-        test = all_tests[M] contains test information for module M
-    u          test["file_dir"]: directory where test file resides
-               test["file_name"]: file name of test
-               test["all_tests"]: all tests in M
-               tests["filtered"]: the tests to run
+    all_tests : list of Namespace instances
+        each test is its own Namespace with the following attributes
+        test.file_dir : directory where test file resides
+        test.test_dir : directory where test will be run
+        test.file_name: file name of test
+        test.all_tests: all tests in M
+        test.instance : the test class instance - if it is to be run - else None
+        test.str_repr : string representation for the test
+        test.test_cls : uninstanteated test class
 
     """
     if not isinstance(sources, (list, tuple)):
@@ -212,70 +270,89 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
             test_files.extend([os.path.join(dirname, f) for f in files
                                if TESTRE.search(f) and f.endswith(".py")])
 
-    # load tests
-    all_tests = {}
+    all_tests = []
     for test_file in test_files:
+
+        # load the test file and extract tests from it
         module, file_dir, file_name, tests, reprs = load_test_file(test_file)
+
+        # create directory to run the test
         d = os.path.basename(file_dir)
         test_dir = os.path.join(root_dir, d)
         if not os.path.isdir(test_dir):
             os.makedirs(test_dir)
-        all_tests[module] = {"tests": tests, "repr": reprs,
-                             "test_dir": test_dir, "file_dir": file_dir,
-                             "file_name": file_name}
 
-    # validate and filter tests
-    for (module, info) in all_tests.items():
-        all_tests[module]["filtered"] = []
-        test_dir = info["test_dir"]
-        file_dir = info["file_dir"]
-        for (i, test_cls) in enumerate(info["tests"]):
-            test_instance = test_cls()
-            test_instance.logger = logger
-            validated = test_instance.validate(file_dir, test_dir, module)
+        for (i, test_cls) in enumerate(tests):
+            kwargs = {"str_repr": reprs[i],
+                      "test_dir": test_dir,
+                      "file_dir": file_dir,
+                      "file_name": file_name,
+                      "instance": None,
+                      "status": NOT_RUN,
+                      "module": module,
+                      "disabled": False,
+                      "test_cls": test_cls}
+
+            test_space = Namespace(**kwargs)
+            all_tests.append(test_space)
+
+            # validate and filter tests
+            # instantiate test and set defaults
+            # this is
+            the_test = test_cls()
+            the_test.init(file_dir, test_dir, module, logger)
+            validated = the_test.validate()
             if not validated:
                 logger.error("{0}: skipping unvalidated test".format(module))
                 continue
 
-            disabled = getattr(test_instance, "disabled", False)
-            if disabled:
+            if the_test.disabled:
+                all_tests[-1].disabled = True
                 continue
 
             # filter tests to be excluded
-            if any([kw in test_instance.keywords for kw in exclude]):
+            if any([kw in the_test.keywords for kw in exclude]):
                 continue
 
             # keep only tests wanted
-            if include and not any([kw in test_instance.keywords
-                                    for kw in include]):
+            if include and not any([kw in the_test.keywords for kw in include]):
                 continue
 
-            all_tests[module]["filtered"].append(test_instance)
+            # if we got to here, the test will be run, store the instance
+            all_tests[-1].instance = the_test
 
-    return all_tests
+    return sorted(all_tests, key=test_sorter)
 
 
-def run_tests(tests):
-    results = {}
-    for (module, info) in tests.items():
-        results[module] = []
-        for (i, the_test) in enumerate(info["filtered"]):
-            test_repr = info["repr"][i]
-            ti = time.time()
-            logger.write(fillwithdots(test_repr, "RUNNING"), transform=str)
-            stat = the_test.setup()
-            if stat:
-                logger.error("{0}: failed to setup".format(module))
-                results[module].append(self.stat)
-                continue
-            the_test.run()
-            results[module].append(the_test.stat)
-            dt = time.time() - ti
-            line = fillwithdots(test_repr, "FINISHED")
-            s = " [{1}] ({0:.1f}s)".format(dt, STR_RESULTS[the_test.stat])
-            logger.write(line + s, transform=str)
+def run_test(test):
+    """Run a single test
 
-    return results
+    Parameters
+    ----------
+    test : Namespace object
+        A Namespace object as described in gather_and_filter_tests
+
+    Notes
+    -----
+    Nothing is returned, the Namespace is modified with any information
+
+    """
+    if not test.instance:
+        return NOT_RUN
+    ti = time.time()
+    logger.write(fillwithdots(test.str_repr, "RUNNING"), transform=str)
+    status = test.instance.setup()
+    if status:
+        logger.error("{0}: failed to setup".format(test.str_repr))
+        return test.status
+    test.instance.run()
+    test.status = test.instance.status
+    dt = time.time() - ti
+    line = fillwithdots(test.str_repr, "FINISHED")
+    s = " [{1}] ({0:.1f}s)".format(dt, res_str(test.status))
+    logger.write(line + s, transform=str)
+
+    return test.status
 
 
 if __name__ == "__main__":

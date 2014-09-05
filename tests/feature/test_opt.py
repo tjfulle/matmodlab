@@ -11,10 +11,10 @@ class TestCobyla(TestBase):
         self.keywords = ["long", "cobyla", "optimization", "feature"]
     def setup(self,*args,**kwargs): pass
     def run(self):
-        self.stat = self.failed_to_run
+        self.status = self.failed_to_run
         try:
             runner("cobyla", d=self.test_dir, v=0)
-            self.stat = self.passed
+            self.status = self.passed
         except BaseException as e:
             self.logger.error("{0}: failed with the following "
                               "exception: {1}".format(self.runid, e.message))
@@ -25,10 +25,10 @@ class TestSimplex(TestBase):
         self.keywords = ["long", "simplex", "optimization", "feature"]
     def setup(self,*args,**kwargs): pass
     def run(self):
-        self.stat = self.failed_to_run
+        self.status = self.failed_to_run
         try:
             runner("simplex", d=self.test_dir, v=0)
-            self.stat = self.passed
+            self.status = self.passed
         except BaseException as e:
             self.logger.error("{0}: failed with the following "
                               "exception: {1}".format(self.runid, e.message))
@@ -40,10 +40,10 @@ class TestPowell(TestBase):
         self.keywords = ["long", "powell", "optimization", "feature"]
     def setup(self,*args,**kwargs): pass
     def run(self):
-        self.stat = self.failed_to_run
+        self.status = self.failed_to_run
         try:
             runner("powell", d=self.test_dir, v=0)
-            self.stat = self.passed
+            self.status = self.passed
         except BaseException as e:
             self.logger.error("{0}: failed with the following "
                               "exception: {1}".format(self.runid, e.message))

@@ -110,13 +110,20 @@ starting values:
                  self.descriptor, self.tabular)
                  for (i, x) in enumerate(self.data)]
         nprocs = min(min(mp.cpu_count(), self.nprocs), len(self.data))
+
+        output = []
         if nprocs == 1:
-            stats = [run_job(arg) for arg in args]
+            output.extend([run_job(arg) for arg in args])
         else:
             pool = mp.Pool(processes=nprocs)
-            stats = pool.map(run_job, args)
-            pool.close()
-            pool.join()
+            try:
+                p = pool.map_async(run_job, args, callback=output.extend)
+                p.wait()
+                pool.close()
+                pool.join()
+            except KeyboardInterrupt:
+                logger.error("keyboard interrupt")
+                raise SystemExit("KeyboardInterrupt intercepted")
 
         logger.write("\npermutation jobs complete")
         self.timing["end"] = time.time()

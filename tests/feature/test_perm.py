@@ -16,10 +16,10 @@ class TestZip(TestBase):
                          "permutation", "builtin", "feature"]
     def setup(self,*args,**kwargs): pass
     def run(self):
-        self.stat = self.failed_to_run
+        self.status = self.failed_to_run
         try:
             runner("zip", d=self.test_dir, v=0)
-            self.stat = self.passed
+            self.status = self.passed
         except BaseException as e:
             self.logger.error("{0}: failed with the following "
                               "exception: {1}".format(self.runid, e.message))
@@ -31,10 +31,10 @@ class TestCombi(TestBase):
                          "permutation", "builtin", "feature"]
     def setup(self,*args,**kwargs): pass
     def run(self):
-        self.stat = self.failed_to_run
+        self.status = self.failed_to_run
         try:
             runner("combination", d=self.test_dir, v=0, N=2)
-            self.stat = self.passed
+            self.status = self.passed
         except BaseException as e:
             self.logger.error("{0}: failed with the following "
                               "exception: {1}".format(self.runid, e.message))

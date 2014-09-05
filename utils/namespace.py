@@ -1,4 +1,7 @@
 class Namespace(object):
+    def __init__(self, **kwargs):
+        for (kw, val) in kwargs.items():
+            setattr(self, kw, val)
     def __repr__(self):
         string = ", ".join("{0}={1}".format(k, repr(v)) for (k, v) in
                            self.__dict__.items())
