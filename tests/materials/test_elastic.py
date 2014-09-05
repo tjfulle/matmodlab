@@ -2,22 +2,25 @@
 from matmodlab import *
 
 class TestElasticUnistrain(TestBase):
-    runid = "elastic_unistrain"
-    keywords = ["fast", "material", "elastic", "uniaxial_strain"]
-    def run_job(self, d):
-        elastic_unistrain(d=d, v=0)
+    def __init__(self):
+        self.runid = "elastic_unistrain"
+        self.keywords = ["fast", "material", "elastic", "uniaxial_strain"]
+    def run_job(self):
+        elastic_unistrain(d=self.test_dir, v=0)
 
 class TestElasticUnistrainStressc(TestBase):
-    runid = "elastic_unistrain_stressc"
-    keywords = ["fast", "material", "elastic", "uniaxial_strain", "stress"]
-    def run_job(self, d):
-        elastic_unistrain_stressc(d=d, v=0)
+    def __init__(self):
+        self.runid = "elastic_unistrain_stressc"
+        self.keywords = ["fast", "material", "elastic", "uniaxial_strain", "stress"]
+    def run_job(self):
+        elastic_unistrain_stressc(d=self.test_dir, v=0)
 
 class TestElasticUnistress(TestBase):
-    runid = "elastic_unistress"
-    keywords = ["fast", "material", "elastic", "uniaxial_strain"]
-    def run_job(self, d):
-        elastic_unistress(d=d, v=0)
+    def __init__(self):
+        self.runid = "elastic_unistress"
+        self.keywords = ["fast", "material", "elastic", "uniaxial_strain"]
+    def run_job(self):
+        elastic_unistress(d=self.test_dir, v=0)
 
 K = 9.980040E+09
 G = 3.750938E+09

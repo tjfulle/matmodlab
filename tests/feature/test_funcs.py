@@ -5,10 +5,11 @@ from matmodlab import *
 runid = gen_runid()
 
 class TestFunc(TestBase):
-    runid = runid
-    keywords = ["fast", "function", "feature", "elastic"]
-    def run_job(self, d=None):
-        runner(d=d, v=0)
+    def __init__(self):
+        self.runid = runid
+        self.keywords = ["fast", "function", "feature", "elastic"]
+    def run_job(self):
+        runner(d=self.test_dir, v=0)
         return
 
 @matmodlab

@@ -10,20 +10,35 @@ path = """
 """
 
 class TestZip(TestBase):
-    runid = "perm_zip"
-    keywords = ["long", "correlations", "zip", "permutation", "builtin", "feature"]
-    pass_if_ran = 1
-    def run_job(self, d):
-        runner("zip", d=d, v=0)
-        return
+    def __init__(self):
+        self.runid = "perm_zip"
+        self.keywords = ["long", "correlations", "zip",
+                         "permutation", "builtin", "feature"]
+    def setup(self,*args,**kwargs): pass
+    def run(self, logger):
+        self.stat = self.failed_to_run
+        try:
+            runner("zip", d=self.test_dir, v=0)
+            self.stat = self.passed
+        except BaseException as e:
+            logger.error("{0}: failed with the following "
+                         "exception: {1}".format(self.runid, e.message))
 
 class TestCombi(TestBase):
-    runid = "perm_combination"
-    keywords = ["long", "correlations", "combination", "permutation", "builtin", "feature"]
-    pass_if_ran = 1
-    def run_job(self, d):
-        runner("combination", d=d, v=0, N=2)
-        return
+    def __init__(self):
+        self.runid = "perm_combination"
+        self.keywords = ["long", "correlations", "combination",
+                         "permutation", "builtin", "feature"]
+    def setup(self,*args,**kwargs): pass
+    def run(self, logger):
+        self.stat = self.failed_to_run
+        try:
+            runner("combination", d=self.test_dir, v=0, N=2)
+            self.stat = self.passed
+        except BaseException as e:
+            logger.error("{0}: failed with the following "
+                         "exception: {1}".format(self.runid, e.message))
+
 
 def func(x, *args):
 

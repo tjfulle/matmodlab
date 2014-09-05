@@ -2,10 +2,11 @@
 from matmodlab import *
 
 class PathTest(TestBase):
-    runid = "path_cycle"
-    keywords = ["fast", "feature", "path"]
-    def run_job(self, d):
-        runner(d=d, v=0)
+    def __init__(self):
+        self.runid = "path_cycle"
+        self.keywords = ["fast", "feature", "path"]
+    def run_job(self):
+        runner(d=self.test_dir, v=0)
 
 @matmodlab
 def runner(d=None, v=1):

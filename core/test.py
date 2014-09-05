@@ -10,98 +10,108 @@ FAILED_TO_RUN = -2
 
 class TestBase(object):
     _is_mml_test = True
-    keywords = None
-    runid = None
-    exodiff = None
-    pass_if_ran = 0
+    passed = PASSED
+    diffed = DIFFED
+    failed = FAILED
+    failed_to_run = FAILED_TO_RUN
 
-    @classmethod
-    def validate(cls, module, logger):
+    def validate(self, src_dir, test_dir, module, logger):
+
+        self.test_dir = test_dir
+        self.src_dir = src_dir
+        self.module = module
+        self.src_dir
+
         errors = 0
-        if cls.runid is None:
+
+        self.runid = getattr(self, "runid", None)
+        if not self.runid:
+            self.runid = "unkown_test"
             errors += 1
-            line = "{0}: test missing runid class attribute".format(module)
-            logger.error(line)
-        if cls.keywords is None:
+            logger.error("{0}: MISSING RUNID ATTRIBUTE".format(self.runid))
+
+        self.keywords = getattr(self, "keywords", [])
+        if not self.keywords:
             errors += 1
-            line = "{0}: test missing keywords class attribute".format(module)
-            logger.error(line)
-        elif not isinstance(cls.keywords, (list, tuple)):
+            logger.error("{0}: MISSING KEYWORDS ATTRIBUTE".format(self.runid))
+
+        elif not isinstance(self.keywords, (list, tuple)):
             errors += 1
-            line = "{0}: expected keywords to be a list".format(module)
-            logger.error(line)
-        elif all(n not in cls.keywords for n in ("long", "fast")):
+            logger.error("{0}: EXPECTED KEYWORDS TO BE A LIST".format(self.runid))
+
+        if all(n not in self.keywords for n in ("long", "fast")):
             errors += 1
-            line = "{0}: expected long or fast keyword".format(module)
-            logger.error(line)
+            logger.error("{0}: EXPECTED LONG OR FAST KEYWORD".format(self.runid))
+
+        if not os.path.isdir(self.test_dir):
+            errors += 1
+            logger.error("{0}: {1} DIRECTORY DOES NOT "
+                         "EXIST".format(self.runid, self.test_dir))
 
         return not errors
 
-    def __init__(self):
-        pass
-
     def setup(self, *args, **kwargs):
-        pass
-
-    def run(self, d, logger):
-        """The standard test
+        """The standard setup
 
         """
         from matmodlab import TEST_D
-        d = d or os.getcwd()
+        logger = args[0]
 
-        def check_file_existence(f):
-            if os.path.isfile(f):
-                return 0
-            logger.error("{0}: file not found".format(f))
-            return 1
-
-        # Hijack console output
-        confile = os.path.join(d, self.runid + ".con")
-        #sys.stdout = sys.stderr = open(confile, "w")
-        try:
-            self.run_job(d=d)
-            self.stat = PASSED
-        except:
-            self.stat = FAILED_TO_RUN
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-
-        if self.stat == FAILED_TO_RUN:
-            return self.stat
-
-        if self.pass_if_ran:
-            return self.stat
-
-        # compare output to base exodus file
+        # Look for standard files
         errors = 0
-        exofile = os.path.join(d, self.runid + ".exo")
-        errors += check_file_existence(exofile)
-        exobase = os.path.join(d, self.runid + ".base_exo")
-        errors += check_file_existence(exobase)
+        self.exofile = os.path.join(self.test_dir, self.runid + ".exo")
 
-        if self.exodiff:
-            control_file = self.exodiff
-        control_file = os.path.join(TEST_D, "base.exdiff")
-        errors += check_file_existence(control_file)
+        self.base_exo = getattr(self, "base_exo",
+            os.path.join(self.src_dir, self.runid + ".base_exo"))
+        if not os.path.isfile(self.base_exo):
+            errors += 1
+            logger.error("{0}: base_exo FILE NOT FOUND".format(self.runid))
 
-        if errors:
-            self.stat = FAILED
-            logger.error("STOPPING TEST DUE TO PREVIOUS ERRORS")
-            return self.stat
+        self.exodiff = getattr(self, "exodiff",
+                               os.path.join(TEST_D, "base.exodiff"))
+        if not os.path.isfile(self.exodiff):
+            errors += 1
+            logger.error("{0}: exodiff FILE NOT FOUND".format(self.runid))
 
-        exlfile = os.path.join(d, self.runid + ".exodiff.log")
-        self.stat = exodiff.exodiff(exofile, exobase, f=exlfile, v=0,
-                                    control_file=control_file)
-        return self.stat
+        self.setup_by_class = True
+        self.stat = self.failed_to_run
 
-    def tear_down(self, module, d):
-        if self.stat != PASSED:
+        return errors
+
+    def run(self, logger):
+        """The standard test
+
+        """
+        self.stat = self.failed_to_run
+
+        if not getattr(self, "setup_by_class", False):
+            logger.error("{0}: RUNNING STANDARD TEST REQUIRES "
+                         "CALLING SUPER'S SETUP METHOD".format(self.runid))
             return
-        for f in os.listdir(d):
-            if module in f or self.runid in f:
+
+        try:
+            self.run_job()
+        except BaseException as e:
+            logger.error("{0}: FAILED WITH THE FOLLOWING "
+                         "EXCEPTION: {1}".format(self.runid, e.message))
+            return
+
+        if not os.path.isfile(self.exofile):
+            logger.error("{0}: FILE NOT FOUND".format(self.exofile))
+            return
+
+        exodiff_log = os.path.join(self.test_dir, self.runid + ".exodiff.log")
+        self.stat = exodiff.exodiff(self.exofile, self.base_exo, f=exodiff_log,
+                                    v=0, control_file=self.exodiff)
+        return
+
+    def tear_down(self):
+        if self.stat != self.passed:
+            return
+        for f in os.listdir(self.test_dir):
+            if self.module in f or self.runid in f:
                 if f.endswith((".log", ".exo", ".pyc", ".con", ".eval")):
-                    remove(os.path.join(d,f))
+                    remove(os.path.join(self.test_dir, f))
 
 def remove(f):
     if os.path.isdir(f):

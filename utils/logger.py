@@ -39,7 +39,8 @@ class Logger(object):
         if c: message = "*** ERROR: {0} ({1})\n"
         else: message = "*** ERROR: {0}\n"
         message = message.format(string, caller).upper()
-        self.eh.write(message)
+        if opts.verbosity:
+            self.eh.write(message)
         if self.fh: self.fh.write(message)
         if r:
             raise Exception(message)

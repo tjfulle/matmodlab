@@ -7,7 +7,6 @@ import random
 import string
 import argparse
 from matmodlab import SPLASH
-import utils.conlog as conlog
 from core.runtime import set_runtime_opt
 from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN
 
@@ -18,9 +17,9 @@ TIMING = []
 WIDTH = 80
 
 class Logger(object):
-    def __init__(self):
+    def __init__(self, d):
         self.ch = sys.__stdout__
-        self.fh = open("testing.log", "w")
+        self.fh = open(os.path.join(d, "testing.log"), "w")
     def write(self, string, end="\n"):
         self.ch.write(string + end)
         self.fh.write(string + end)
@@ -35,7 +34,10 @@ class Logger(object):
         self.fh.flush()
         self.fh.close()
 
-logger = Logger()
+root_dir = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
+if not os.path.isdir(root_dir):
+    os.makedirs(root_dir)
+logger = Logger(root_dir)
 
 
 def main(argv=None):
@@ -83,8 +85,7 @@ def gather_and_run_tests(sources, include, exclude):
 
     # gather the tests
     TIMING.append(time.time())
-    tests = gather_tests(sources, include, exclude)
-    validate_tests(tests)
+    tests = gather_and_filter_tests(sources, root_dir, include, exclude)
 
     # write information
     TIMING.append(time.time())
@@ -153,13 +154,15 @@ def load_test_file(test_file):
     return module, d, name, tests, reprs
 
 
-def gather_tests(sources, include, exclude):
+def gather_and_filter_tests(sources, root_dir, include, exclude):
     """Gather all tests
 
     Parameters
     ----------
     sources : list
         files or directories to scan for tests
+    root_dir : str
+        root directory for running tests
     include : list
         list of test keywords to include
     exclude : list
@@ -183,7 +186,7 @@ def gather_tests(sources, include, exclude):
     for source in sources:
         item = os.path.realpath(source)
         if not os.path.exists(item):
-            conlog.warn("{0}: no such file or directory".format(source))
+            logger.warn("{0}: no such file or directory".format(source))
             continue
         if os.path.isfile(item):
             test_files.append(item)
@@ -195,24 +198,41 @@ def gather_tests(sources, include, exclude):
     # load tests
     all_tests = {}
     for test_file in test_files:
-
         module, file_dir, file_name, tests, reprs = load_test_file(test_file)
+        d = file_dir.replace(os.getcwd() + os.path.sep, "")
+        test_dir = os.path.join(root_dir, d)
+        if not os.path.isdir(test_dir):
+            os.makedirs(test_dir)
+        all_tests[module] = {"tests": tests, "repr": reprs,
+                             "test_dir": test_dir, "file_dir": file_dir,
+                             "file_name": file_name}
 
-        all_tests[module] = {"all_tests": tests, "filtered": [], "repr": reprs,
-                             "file_dir": file_dir, "file_name": file_name}
+    # validate and filter tests
+    for (module, info) in all_tests.items():
+        all_tests[module]["filtered"] = []
+        test_dir = info["test_dir"]
+        file_dir = info["file_dir"]
+        for (i, test_cls) in enumerate(info["tests"]):
+            test_instance = test_cls()
+            validated = test_instance.validate(file_dir, test_dir, module, logger)
+            if not validated:
+                logger.error("{0}: SKIPPING UNVALIDATED TEST".format(module))
+                continue
 
-        # filter tests
-        for (i, test) in enumerate(tests):
+            disabled = getattr(test_instance, "disabled", False)
+            if disabled:
+                continue
 
             # filter tests to be excluded
-            if any([kw in test.keywords for kw in exclude]):
+            if any([kw in test_instance.keywords for kw in exclude]):
                 continue
 
             # keep only tests wanted
-            if include and not any([kw in test.keywords for kw in include]):
+            if include and not any([kw in test_instance.keywords
+                                    for kw in include]):
                 continue
 
-            all_tests[module]["filtered"].append(test)
+            all_tests[module]["filtered"].append(test_instance)
 
     return all_tests
 
@@ -222,32 +242,26 @@ def run_tests(tests):
     for (module, info) in tests.items():
         d = info["file_dir"]
         results[module] = []
-        for (i, test) in enumerate(info["filtered"]):
-            if test is None:
-                continue
+        for (i, the_test) in enumerate(info["filtered"]):
             test_repr = info["repr"][i]
-            the_test = test()
             ti = time.time()
             logger.write(fillwithdots(test_repr, "RUNNING"))
-            stat = the_test.run(d, logger)
-            results[module].append(stat)
-            if stat == PASSED:
-                the_test.tear_down(module, info["file_dir"])
+            stat = the_test.setup(logger)
+            if stat:
+                logger.error("{0}: FAILED TO SETUP".format(module))
+                results[module].append(self.stat)
+                continue
+            the_test.run(logger)
+            results[module].append(the_test.stat)
+            if the_test.stat == the_test.passed:
+                the_test.tear_down()
             dt = time.time() - ti
             line = fillwithdots(test_repr, "FINISHED")
-            s = " [{1}] ({0:.1f}s)".format(dt, STR_RESULTS[stat])
+            s = " [{1}] ({0:.1f}s)".format(dt, STR_RESULTS[the_test.stat])
             logger.write(line + s)
 
     return results
 
-
-def validate_tests(tests):
-    for (module, info) in tests.items():
-        for (i, test) in enumerate(info["filtered"]):
-            valid = test.validate(module, logger)
-            if not valid:
-                logger.warn("removing test from filtered tests")
-                tests[module]["filtered"][i] = None
 
 if __name__ == "__main__":
     main()

@@ -15,16 +15,18 @@ umat = "umat_neohooke"
 uhyper = "uhyper_neohooke"
 
 class TestUMat(TestBase):
-    runid = umat
-    keywords = ["fast", "abaqus", "umat", "neohooke", "feature"]
-    def run_job(self, d):
-        run_umat(d=d, v=0)
+    def __init__(self):
+        self.runid = umat
+        self.keywords = ["fast", "abaqus", "umat", "neohooke", "feature"]
+    def run_job(self):
+        run_umat(d=self.test_dir, v=0)
 
 class TestUHyper(TestBase):
-    runid = uhyper
-    keywords = ["fast", "abaqus", "uhyper", "neohooke", "feature"]
-    def run_job(self, d):
-        run_uhyper(d=d, v=0)
+    def __init__(self):
+        self.runid = uhyper
+        self.keywords = ["fast", "abaqus", "uhyper", "neohooke", "feature"]
+    def run_job(self):
+        run_uhyper(d=self.test_dir, v=0)
 
 @matmodlab
 def run_umat(d=None, v=1):

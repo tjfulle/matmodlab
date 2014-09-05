@@ -6,19 +6,47 @@ my_dir = get_my_directory()
 path_file = os.path.join(my_dir, "opt_path.dat")
 
 class TestCobyla(TestBase):
-    runid = "opt_cobyla"
-    keywords = ["long", "cobyla", "optimization", "feature"]
-    pass_if_ran = True
-    def run_job(self, d):
-        runner("cobyla", d=d, v=0)
+    def __init__(self):
+        self.runid = "opt_cobyla"
+        self.keywords = ["long", "cobyla", "optimization", "feature"]
+    def setup(self,*args,**kwargs): pass
+    def run(self, logger):
+        self.stat = self.failed_to_run
+        try:
+            runner("cobyla", d=self.test_dir, v=0)
+            self.stat = self.passed
+        except BaseException as e:
+            logger.error("{0}: failed with the following "
+                         "exception: {1}".format(self.runid, e.message))
 
 class TestSimplex(TestBase):
-    runid = "opt_simplex"
-    keywords = ["long", "cobyla", "optimization", "feature"]
-    pass_if_ran = True
-    def run_job(self, d):
-        runner("cobyla", d=d, v=0)
+    def __init__(self):
+        self.runid = "opt_simplex"
+        self.keywords = ["long", "simplex", "optimization", "feature"]
+    def setup(self,*args,**kwargs): pass
+    def run(self, logger):
+        self.stat = self.failed_to_run
+        try:
+            runner("simplex", d=self.test_dir, v=0)
+            self.stat = self.passed
+        except BaseException as e:
+            logger.error("{0}: failed with the following "
+                         "exception: {1}".format(self.runid, e.message))
 
+class TestPowell(TestBase):
+    def __init__(self):
+        self.disabled = True
+        self.runid = "opt_powell"
+        self.keywords = ["long", "powell", "optimization", "feature"]
+    def setup(self,*args,**kwargs): pass
+    def run(self, logger):
+        self.stat = self.failed_to_run
+        try:
+            runner("powell", d=self.test_dir, v=0)
+            self.stat = self.passed
+        except BaseException as e:
+            logger.error("{0}: failed with the following "
+                         "exception: {1}".format(self.runid, e.message))
 
 def func(x, *args):
 
