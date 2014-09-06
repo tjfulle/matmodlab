@@ -7,7 +7,7 @@ from core.logger import Logger
 from utils.variable import Variable
 from utils.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
 from utils.errors import FileNotFoundError, UserInputError
-from core.dparse import (parse_default_path, format_continuum_path,
+from utils.dparse import (parse_default_path, format_continuum_path,
     parse_function_path, parse_table_path)
 from core.runtime import opts
 from utils.constants import NSYMM, NTENS, I9
@@ -22,10 +22,6 @@ class PathDriver(object):
     @property
     def variables(self):
         return self._vars
-
-    @property
-    def plot_keys(self):
-        return [x for l in [v.keys for v in self.variables] for x in l]
 
     def register_variable(self, var_name, var_type, initial_value=None):
         self._vars.append(Variable(var_name, var_type, initial_value=initial_value))

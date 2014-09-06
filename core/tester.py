@@ -11,7 +11,7 @@ import datetime
 import numpy as np
 import multiprocessing as mp
 
-from matmodlab import SPLASH
+from core.product import SPLASH
 from core.logger import Logger
 from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 from utils.namespace import Namespace
@@ -143,7 +143,6 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     # run the tests
     logger.write("\nRUNNING TESTS")
     output = []
-    print nprocs
     if nprocs == 1:
         for test in tests:
             output.append(run_test(test))
@@ -159,8 +158,6 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
             raise SystemExit("KeyboardInterrupt intercepted")
 
         # when multiprocessing, the results from run_test are saved.  why?
-        print len(output)
-        print len(tests)
         for (i, test) in enumerate(tests):
             test.status, test.dtime = output[i]
             if test.instance:

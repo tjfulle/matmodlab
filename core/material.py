@@ -3,17 +3,17 @@ import sys
 
 import numpy as np
 
-from core.runtime import opts
-from core.logger import Logger, ConsoleLogger
 from utils.errors import *
-from utils.constants import DEFAULT_TEMP
+from core.runtime import opts
 from utils.misc import load_file
-from utils.fortran.mml_i import FIO
 import utils.mmlabpack as mmlabpack
-from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
+from utils.fortran.product import FIO
+from utils.constants import DEFAULT_TEMP
+from utils.constants import SET_AT_RUNTIME
 from utils.data_containers import Parameters
-from materials.aba.mml_i import ABAMATS
-from matmodlab import UMATS, PKG_D, MATLIB, MML_MFILE
+from core.logger import Logger, ConsoleLogger
+from core.product import MAT_LIB_DIRS, PKG_D, MATLIB, F_PRODUCT
+from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 
 try:
     from lib.visco import visco as ve
@@ -24,14 +24,23 @@ try:
 except ImportError:
     tm = None
 
-
 class MaterialModel(object):
     """The base material class
 
     """
-    param_defaults = None
+    def __init__(self):
+        raise Exception("materials must define own __init__")
 
-    def __init__(self, logger=None):
+    def assert_attr_exists(self, attr):
+        noattr = -31
+        if getattr(self, attr, noattr) == noattr:
+            raise Exception("material missing attribute: {0}".format(attr))
+
+    def init(self, logger=None):
+
+        for attr in ("name", "param_names"):
+            self.assert_attr_exists(attr)
+
         self._vars = []
         self.nvisco = 0
         self._viscoelastic = None
@@ -41,25 +50,19 @@ class MaterialModel(object):
         self.shear_modulus = None
         self.J0 = None
         self.nxtra = 0
-        self.xinit = np.zeros(self.nxtra)
+        self.initial_state = np.zeros(self.nxtra)
         self.xkeys = []
         self.initialized = True
         self.visco_params = None
         self.exp_params = None
-        self.constant_j = False
         self.itemp = DEFAULT_TEMP
-        if not hasattr(self, "param_names"):
-            raise AttributeError("{0}: param_names not defined".format(self.name))
+        self.param_defaults = getattr(self, "param_defaults", None)
+        self.constant_j = False
+        self.initial_stress = np.zeros(6)
+
         if logger is None:
             logger = Logger()
         self.logger = logger
-
-    @classmethod
-    def _parameter_names(self, n):
-        """Return the parameter names for the model
-
-        """
-        return [n.split(":")[0].upper() for n in self.param_names]
 
     @property
     def logger(self):
@@ -80,37 +83,45 @@ class MaterialModel(object):
     def initial_temp(self):
         return self.itemp
 
+    @initial_temp.setter
+    def initial_temp(self, value):
+        self.itemp = value
+
     def setup_new_material(self, parameters, depvar, initial_temp):
         """Set up the new material
 
         """
-        param_names = self._parameter_names(len(parameters))
-        nprops = len(param_names)
-        self.itemp = initial_temp
         self.logger.write("setting up {0} material".format(self.name))
+        self.initial_temp = initial_temp
 
-        if self.name in ABAMATS:
-            # parameters are given as an array
-            if not isinstance(parameters, (list, tuple, np.ndarray)):
-                raise UserInputError("abaqus parameters must be an array")
-            params = np.append(parameters, [0])
+        if self.parameter_names == SET_AT_RUNTIME:
+            if hasattr(self, "aba_model"):
+                self.parameter_names = len(parameters) + 1
+                params = np.append(parameters, [0])
+            else:
+                self.parameter_names = len(parameters)
+                params = np.array(parameters)
 
         else:
+            nprops = len(self.parameter_names)
             if self.param_defaults:
                 params = np.array(self.param_defaults)
             else:
                 params = np.zeros(nprops)
+
             if not isinstance(parameters, dict):
                 raise UserInputError("expected parameters to be a dict")
+
+            # populate the parameters array
             for (key, value) in parameters.items():
                 K = key.upper()
-                if K not in param_names:
+                if K not in self.parameter_names:
                     raise UserInputError("{0}: unrecognized parameter "
                                          "for model {1}".format(key, model))
-                params[param_names.index(K)] = value
+                params[self.parameter_names.index(K)] = value
 
-        self.iparams = Parameters(param_names, params)
-        self.params = Parameters(param_names, params)
+        self.iparams = Parameters(self.parameter_names, params)
+        self.params = Parameters(self.parameter_names, params)
         try:
             self.setup(self.params, depvar)
         except TypeError:
@@ -150,7 +161,7 @@ class MaterialModel(object):
             # Now, allocate storage
             self.nvisco = len(self.material_variables) - self.nxtra
             xinit = np.append(self.initial_state, np.zeros(self.nvisco))
-            self.adjust_initial_state(xinit)
+            self.initial_state = xinit
 
         if self._trs is not None:
             self.visco_params[0] = self._trs.data[1] # C1
@@ -168,7 +179,8 @@ class MaterialModel(object):
             comm = (self.logger.error, self.logger.write, self.logger.warn)
             ve.propcheck(self.visco_params, *comm)
 
-        self.register_variable("XTRA", VAR_ARRAY, keys=self.xkeys, ivals=self.xinit)
+        self.register_variable("XTRA", VAR_ARRAY, keys=self.xkeys,
+                               ivals=self.initial_state)
 
         self.set_constant_jacobian()
 
@@ -184,12 +196,6 @@ class MaterialModel(object):
     @property
     def variables(self):
         return self._vars
-
-    @property
-    def plot_keys(self):
-        print [x for l in [v.keys for v in self.variables] for x in l]
-        sys.exit()
-        return [x for l in [v.keys for v in self.variables] for x in l]
 
     def set_constant_jacobian(self):
         if not self.bulk_modulus:
@@ -228,7 +234,7 @@ class MaterialModel(object):
         if len(values) != len(keys):
             raise ValueError("len(values) != len(keys)")
         self.xkeys = keys
-        self.xinit = np.array(values)
+        self.initial_state = np.array(values)
 
     def get_initial_jacobian(self):
         """Get the initial Jacobian numerically
@@ -246,7 +252,7 @@ class MaterialModel(object):
         dtemp = 0.
         user_field = 0.
         return self.numerical_jacobian(time, dtime, temp, dtemp, F0, F, stran,
-            d, elec_field, user_field, stress, self.xinit, range(6))
+            d, elec_field, user_field, stress, self.initial_state, range(6))
 
     def numerical_jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
                            elec_field, user_field, stress, xtra, v):
@@ -317,15 +323,17 @@ class MaterialModel(object):
 
         return Jsub
 
-    def isparam(self, param_name):
-        return getattr(self.params, param_name.upper(), False)
-
     @property
     def parameter_names(self):
-        """Return the parameter names for the model
+        try: return [n.split(":")[0].upper() for n in self.param_names]
+        except TypeError: return self.param_names
+
+    @parameter_names.setter
+    def parameter_names(self, n):
+        """Set parameter names for models that set parameter names at run time
 
         """
-        return [n.split(":")[0].upper() for n in self.param_names]
+        self.param_names = ["PROP{0:02d}".format(i+1) for i in range(n)]
 
     @property
     def parameters(self):
@@ -390,51 +398,51 @@ class MaterialModel(object):
 
         return sig, xtra, stif
 
-    def initialize(self, stress, xtra, temp, user_field):
+    def initialize(self):
         """Call the material with initial state
 
         """
         N = self.nxtra
-        if xtra is None:
-            xtra = self.initial_state
-        if stress is None:
-            stress = np.zeros(6)
-
         if self.visco_params is not None:
             # initialize the visco variables
             x = xtra[N:]
             comm = (self.logger.error, self.logger.write, self.logger.warn)
             ve.viscoini(self.visco_params, x, *comm)
             xtra[N:] = x
+
         time = 0.
         dtime = 1.
         dtemp = 0.
+        temp = self.initial_temp
+        stress = self.initial_stress
+        xtra = self.initial_state
         F0 = np.eye(3).reshape(9,)
         F = np.eye(3).reshape(9,)
         stran = np.zeros(6)
         d = np.zeros(6)
         elec_field = np.zeros(3)
-        stress, xtra, stif = self.compute_updated_state(time, dtime, temp, dtemp,
-            F0, F, stran, d, elec_field, user_field, stress, xtra)
+        user_field = None
+        sigini, xinit, stif = self.compute_updated_state(time, dtime, temp,
+            dtemp, F0, F, stran, d, elec_field, user_field, stress, xtra)
 
-        self.set_initial_state(stress, xtra)
-
-    def set_initial_state(self, xtra, stress=None):
-        self.xinit = np.array(xtra)
-        self.sigini = np.zeros(6)
-        if stress is not None:
-            self.sigini[:] = np.array(stress)
-
-    def adjust_initial_state(self, *args, **kwargs):
-        self.xinit = np.array(args[0])
+        self.initial_state = xinit
+        self.initial_stress = sigini
 
     @property
     def initial_state(self):
         return self.xinit
 
+    @initial_state.setter
+    def initial_state(self, xtra):
+        self.xinit = np.array(xtra)
+
     @property
     def initial_stress(self):
         return self.sigini
+
+    @initial_stress.setter
+    def initial_stress(self, value):
+        self.sigini = np.array(value)
 
     @property
     def constant_jacobian(self):
@@ -455,123 +463,97 @@ def Material(model, parameters=None, depvar=None, constants=None,
     """Material model factory method
 
     """
-    # switch model, if requested
+    if parameters is None:
+        raise InputError("{0}: required parameters not given".format(model))
+
     if logger is None:
         logger = Logger()
 
+    # switch model, if requested
     if opts.switch:
         logger.warn("switching {0} for {1}".format(model, opts.switch))
         model = opts.switch
 
-    from core.builder import Builder
+    # determine which model
+    m = model.lower()
+    for (lib, libinfo) in MATERIALS.items():
+        if lib.lower() == m:
+            break
+    else:
+        raise MatModelNotFoundError(model)
+
+    # default temperature
     if initial_temp is None:
         initial_temp = DEFAULT_TEMP
 
-    m = model.lower()
-    if parameters is None:
-        raise InputError("{0}: required parameters not given".format(model))
+    # Check if model is already built (if applicable)
+    if libinfo.get("source_files"):
+        so_lib = os.path.join(PKG_D, lib + ".so")
+        if not os.path.isfile(so_lib):
+            import core.builder as bb
+            bb.Builder.build_umat(lib, libinfo["source_files"],
+                               verbosity=opts.verbosity)
+        if not os.path.isfile(so_lib):
+            raise ModelLibNotFoundError(lib)
 
-    if m in ABAMATS:
-        # Abaqus model
-        lib = m
+    # Instantiate the material
+    interface = load_file(libinfo["interface"])
+    mat_cls = getattr(interface, libinfo["class"])
+    material = mat_cls()
+    material.init(logger=logger)
 
-        # Check input
+    if material.parameter_names == SET_AT_RUNTIME:
+        # some models, like abaqus models, do not have the parameter names
+        # set. The user must provide the entire UI array - as an array.
+
+        # Check for number of constants
         if constants is None:
-            raise UserInputError("abaqus material expected keyword constants")
+            raise UserInputError("{0}: expected keyword constants".format(lib))
         constants = int(constants)
+
+        # Check parameters
+        if not isinstance(parameters, (list, tuple, np.ndarray)):
+            raise UserInputError("{0}: parameters must be an array".format(lib))
         if len(parameters) != constants:
             raise UserInputError("len(parameters) != constants")
         parameters = np.array([float(x) for x in parameters])
 
-        lib_info = ABAMATS[lib]
-
-        # Check if model is already built
-        so_lib = os.path.join(PKG_D, lib + ".so")
-        source_files = get_aba_sources(source_files, source_directory)
-        lib_info["source_files"].extend(source_files)
-        if not os.path.isfile(so_lib):
-            Builder.build_umat(lib, lib_info["source_files"],
-                               verbosity=opts.verbosity)
-        if not os.path.isfile(so_lib):
-            raise ModelLibNotFoundError(model)
-
-    else:
-        for lib in MATERIALS:
-            if lib.lower() == m:
-                break
-        else:
-            raise MatModelNotFoundError(model)
-
-        # Check that the material is built
-        lib_info = MATERIALS[lib]
-        if lib_info.get("source_files"):
-            so_lib = os.path.join(PKG_D, lib + ".so")
-            if not os.path.isfile(so_lib):
-                # try building it first
-                Builder.build_material(lib, lib_info)
-            if not os.path.isfile(so_lib):
-                raise ModelLibNotFoundError(model)
-
-    # Instantiate the material
-    interface = load_file(lib_info["interface"])
-    mat = getattr(interface, lib_info["class"])
-    material = mat(logger=logger)
+    # Do the actual setup
     material.setup_new_material(parameters, depvar, initial_temp)
+    material.initialize()
 
     return material
 
 
-def get_aba_sources(source_files, source_directory):
-    """Get the source files for the abaqus umat
+def find_materials():
+    """Find material models
+
+    Notes
+    -----
+    Looks for function product.material_libraries in directories specified in
+    environ["MMLMTLS"].
 
     """
-    if source_files:
-        if source_directory:
-            source_files = [os.path.join(source_directory, f)
-                            for f in source_files]
-        for (i, source_file) in enumerate(source_files):
-            if not os.path.isfile(source_file):
-                raise InputError("{0}: source file not "
-                                 "found".format(source_file))
-            source_files[i] = os.path.realpath(source_file)
-    else:
-        for ext in (".for", ".f", ".f90"):
-            source_file = os.path.join(os.getcwd(), "umat" + ext)
-            if os.path.isfile(source_file):
-                break
-            source_file = os.path.join(os.getcwd(), "umat" + ext.upper())
-            if os.path.isfile(source_file):
-                break
-        else:
-            raise InputError("umat.[f,for,f90] source file not found")
-        source_files = [source_file]
-
-    return source_files
-
-
-def find_materials():
-    from materials.builtin import BUILTIN
-    mat_libs = BUILTIN
+    mat_libs = {}
     errors = []
-    for d in UMATS:
-        f = os.path.join(d, MML_MFILE)
-        if not os.path.isfile(f):
-            ConsoleLogger.warn("{0} not found for {1}".format(MML_MFILE, d))
+    for d in MAT_LIB_DIRS:
+
+        if F_PRODUCT not in os.listdir(d):
             continue
-        info = load_file(info_file)
+
+        module = load_file(os.path.join(d, F_PRODUCT))
         try:
-            libs = info.material_libraries()
+            libs = module.material_libraries()
         except AttributeError:
             continue
 
         for lib in libs:
             if lib in mat_libs:
-                ConsoleLogger.error("{0}: duplicate material "
-                                    "library".format(lib))
+                ConsoleLogger.error("{0}: duplicate material library".format(lib))
                 errors.append(lib)
                 continue
             mat_libs.update({lib: libs[lib]})
-        del sys.modules[os.path.splitext(MML_MFILE)[0]]
+        del sys.modules[os.path.splitext(F_PRODUCT)[0]]
 
     if errors:
         raise DuplicateExtModule(", ".join(errors))
@@ -579,7 +561,7 @@ def find_materials():
     for lib in mat_libs:
         if not mat_libs[lib].get("source_files"):
             continue
-        I = [mat_libs[lib]["source_directory"]]
+        I = []
         for d in mat_libs[lib].get("include_dirs", []):
             if d and d not in I:
                 I.append(d)

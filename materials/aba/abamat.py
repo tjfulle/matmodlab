@@ -1,21 +1,7 @@
 import numpy as np
-
-import utils.mmlabpack as mmlabpack
-from utils.misc import who_is_calling
 from core.material import MaterialModel
-try:
-    import lib.umat as umat
-except ImportError:
-    umat = None
-
 
 class AbaqusMaterial(MaterialModel):
-    param_names = []
-
-    @classmethod
-    def _parameter_names(cls, n):
-        cls.param_names = ["PROP{0:02d}".format(i+1) for i in range(n+1)]
-        return cls.param_names
 
     def setup(self, props, depvar):
         self.check_import()

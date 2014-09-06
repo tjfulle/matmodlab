@@ -4,5 +4,5 @@ import sys
 d = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.dirname(d))
 from matmodlab import *
-from utils.exojac.exodump import main
+import viz.main
 sys.exit(main(argv=sys.argv[1:]))

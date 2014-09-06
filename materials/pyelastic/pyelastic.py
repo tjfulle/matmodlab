@@ -3,8 +3,11 @@ import numpy as np
 from core.material import MaterialModel
 
 class PyElastic(MaterialModel):
-    name = "pyelastic"
-    param_names = ["K", "G"]
+
+    def __init__(self):
+        self.name = "pyelastic"
+        self.param_names = ["K", "G"]
+
     def setup(self):
         """Set up the Elastic material
 

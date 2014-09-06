@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 import os
 import sys
-import random
 import argparse
-
-from _setup import *
+d = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.dirname(d))
 from matmodlab import *
-from clparse import parse_sim_argv
+from utils.clparse import parse_sim_argv
 
 def main(argv=None):
     args = parse_sim_argv(argv=argv, get_f=True)

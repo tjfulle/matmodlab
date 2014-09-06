@@ -6,18 +6,19 @@ from utils.data_containers import Parameters
 from utils.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6
 
 
-class Pyplastic(MaterialModel):
-    name = "pyplastic"
-    param_names = ["K",    # Linear elastic bulk modulus
-                   "G",    # Linear elastic shear modulus
-                   "A1",   # Intersection of the yield surface with the
-                           #   sqrt(J2) axis (pure shear).
-                           #       sqrt(J2) = r / sqrt(2); r = sqrt(2*J2)
-                           #       sqrt(J2) = q / sqrt(3); q = sqrt(3*J2)
-                   "A4"]   # Pressure dependence term.
-                           #   A4 = -d(sqrt(J2)) / d(I1)  # always positive
-    param_defaults = [0.0, 0.0, 1.0e99, 0.0]
-    constant_j = True
+class PyPlastic(MaterialModel):
+
+    def __init__(self):
+        self.name = "pyplastic"
+        self.param_names = ["K",    # Linear elastic bulk modulus
+                            "G",    # Linear elastic shear modulus
+                            "A1",   # Intersection of the yield surface with the
+                                    #   sqrt(J2) axis (pure shear).
+                                    #       sqrt(J2) = r / sqrt(2); r = sqrt(2*J2)
+                                    #       sqrt(J2) = q / sqrt(3); q = sqrt(3*J2)
+                           "A4"]   # Pressure dependence term.
+                                   #   A4 = -d(sqrt(J2)) / d(I1)  # always positive
+        self.param_defaults = [0.0, 0.0, 1.0e99, 0.0]
 
     def setup(self):
         """Set up the plastic material
@@ -78,7 +79,7 @@ class Pyplastic(MaterialModel):
 
         # Save the new parameters
         newparams = [K, G, A1, A4]
-        self.params = Parameters(self.param_names, newparams)
+        self.params = Parameters(self.parameter_names, newparams)
 
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]

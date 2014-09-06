@@ -3,6 +3,6 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$(dirname "$DIR")"
 UTIL="$ROOT/utils"
-PYFILE="$ROOT/core/testing.py"
+PYFILE="$ROOT/core/tester.py"
 export PYTHONPATH="$ROOT"
 /usr/bin/env python $PYFILE $*

@@ -4,14 +4,9 @@ This file is used only during the setup phase to build and install materials.
 
 """
 import os
-from matmodlab import MATLIB
+from core.product import MATLIB
 
 BUILTIN = {}
-
-# --- Ideal Gase
-d = os.path.join(MATLIB, "idealgas")
-BUILTIN["idealgas"]= {"interface": os.path.join(d, "idealgas.py"),
-                      "class": "IdealGas"}
 
 # --- Mooney Rivlin
 d = os.path.join(MATLIB, "MooneyRivlin")
@@ -55,3 +50,6 @@ BUILTIN["pyplastic"] = {"interface": os.path.join(d, "pyplastic.py"),
 d = os.path.join(MATLIB, "transisoelas")
 BUILTIN["transisoelas"] = {"interface": os.path.join(d, "transisoelas.py"),
                            "class": "TransIsoElas"}
+
+def material_libraries():
+    return BUILTIN

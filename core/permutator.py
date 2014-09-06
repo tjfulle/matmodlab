@@ -9,7 +9,6 @@ import numpy as np
 import multiprocessing as mp
 from itertools import izip, product
 
-from matmodlab import MML_ENV
 from core.logger import Logger
 from core.runtime import opts
 import utils.mmltab as mmltab

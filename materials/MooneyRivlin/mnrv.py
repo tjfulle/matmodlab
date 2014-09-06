@@ -4,27 +4,27 @@ import numpy as np
 from core.material import MaterialModel
 import utils.mmlabpack as mmlabpack
 from utils.errors import ModelNotImportedError
-try:
-    import lib.mnrv as mnrv
-except ImportError:
-    mnrv = None
+try: import lib.mnrv as mat
+except ImportError: mat = None
 
 
 class MooneyRivlin(MaterialModel):
     """Constitutive model class for the Mooney-Rivlin model
 
     """
-    name = "mnrv"
-    param_names = ["C10", "C01", "NU", "T0", "MC10", "MC01"]
+
+    def __init__(self):
+        self.name = "mnrv"
+        self.param_names = ["C10", "C01", "NU", "T0", "MC10", "MC01"]
 
     def setup(self):
         """Set up the domain Mooney-Rivlin materia
 
         """
-        if mnrv is None:
+        if mat is None:
             raise ModelNotImportedError("mnrv model not imported")
 
-        mnrv.mnrvcp(self.params, self.logger.error, self.logger.write)
+        mat.mnrvcp(self.params, self.logger.error, self.logger.write)
         smod = 2. * (self.params["C10"] + self.params["C01"])
         nu = self.params["NU"]
         bmod = 2. * smod * (1.+ nu) / 3. / (1 - 2. * nu)
@@ -33,8 +33,8 @@ class MooneyRivlin(MaterialModel):
         self.shear_modulus = smod
 
         # register extra variables
-        nxtra, keya, xinit = mnrv.mnrvxv(self.params, self.logger.error,
-                                         self.logger.write)
+        nxtra, keya, xinit = mat.mnrvxv(self.params, self.logger.error,
+                                        self.logger.write)
         self.register_xtra_variables(keya, xinit, mig=True)
 
         Rij = np.reshape(np.eye(3), (9,))
@@ -46,8 +46,8 @@ class MooneyRivlin(MaterialModel):
     def set_constant_jacobian(self):
         Vij = mmlabpack.asarray(np.eye(3), 6)
         T0 = 298. if not self.params["T0"] else self.params["T0"]
-        self.J0 = mnrv.mnrvjm(self.params, Vij, T0, self.xinit,
-                              self.logger.error, self.logger.write)
+        self.J0 = mat.mnrvjm(self.params, Vij, T0, self.xinit,
+                             self.logger.error, self.logger.write)
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):
@@ -65,10 +65,9 @@ class MooneyRivlin(MaterialModel):
         # temperature
         T = 298.
 
-        sig = mnrv.mnrvus(self.params, Rij, Vij, T, xtra,
-                          self.logger.error, self.logger.write)
-        ddsdde = mnrv.mnrvjm(self.params, Vij, T, xtra,
-                             self.logger.error, self.logger.write)
+        sig = mat.mnrvus(self.params, Rij, Vij, T, xtra,
+                         self.logger.error, self.logger.write)
+        ddsdde = mat.mnrvjm(self.params, Vij, T, xtra,
+                            self.logger.error, self.logger.write)
 
         return np.reshape(sig, (6,)), np.reshape(xtra, (self.nxtra,)), ddsdde
-

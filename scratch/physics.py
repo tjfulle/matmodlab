@@ -3,7 +3,7 @@ import sys
 import time
 import numpy as np
 
-from matmodlab import RESTART
+from core.product import RESTART
 from core.runtime import set_runtime_opt
 import utils.conlog as io
 from drivers.driver import create_driver

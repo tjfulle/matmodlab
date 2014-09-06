@@ -1,5 +1,8 @@
 #!/usr/bin/env python
+import os
 import sys
-import _setup
+d = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.dirname(d))
+from matmodlab import *
 from utils.exojac.exodiff import main
 sys.exit(main(argv=sys.argv[1:]))

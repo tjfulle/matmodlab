@@ -1,4 +1,4 @@
-from matmodlab import PKG_D
+from core.product import PKG_D
 from core.runtime import opts
 from utils.misc import who_is_calling
 

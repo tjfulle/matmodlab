@@ -5,12 +5,12 @@ import glob
 import shutil
 import argparse
 
-from matmodlab import ROOT_D, MML_IFILE
-from utils.misc import load_file, int2str
-from utils.fortran.extbuilder import FortranExtBuilder
-from utils.errors import DuplicateExtModule
 from core.material import MATERIALS
+from core.product import ROOT_D, F_PRODUCT
+from utils.misc import load_file, int2str
+from utils.errors import DuplicateExtModule
 from core.logger import ConsoleLogger as logger
+from utils.fortran.extbuilder import FortranExtBuilder
 
 
 class BuilderError(Exception):
@@ -67,10 +67,10 @@ class Builder(object):
         """
         fort_libs = {}
         for (dirname, dirs, files) in os.walk(ROOT_D):
-            if MML_IFILE not in files:
+            if F_PRODUCT not in files:
                 continue
             libs = {}
-            info = load_file(os.path.join(dirname, MML_IFILE))
+            info = load_file(os.path.join(dirname, F_PRODUCT))
             if hasattr(info, "fortran_libraries"):
                 libs.update(info.fortran_libraries())
 
@@ -81,7 +81,7 @@ class Builder(object):
                 if name in fort_libs:
                     raise DuplicateExtModule(name)
                 fort_libs.update({name: libs[name]})
-            del sys.modules[os.path.splitext(MML_IFILE)[0]]
+            del sys.modules[os.path.splitext(F_PRODUCT)[0]]
 
         if mats_to_fetch is not None:
             for name in MATERIALS:

@@ -88,7 +88,7 @@ class TestBase(object):
         """The standard setup
 
         """
-        from matmodlab import TEST_D
+        from core.product import TEST_D
 
         # Look for standard files
         errors = 0

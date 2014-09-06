@@ -1,20 +1,21 @@
-import sys
-import numpy as np
-from materials.aba.abamat import AbaqusMaterial
+from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
-import utils.mmlabpack as mmlabpack
-try:
-    import lib.uhyper as uhyper
-except ImportError:
-    uhyper = None
+from materials.aba.abamat import AbaqusMaterial
+try: import lib.uhyper as uhyper
+except ImportError: uhyper = None
 
 
 class UHyper(AbaqusMaterial):
     """Constitutive model class for the umat model"""
-    name = "uhyper"
+
+    def __init__(self):
+        self.name = "uhyper"
+        self.param_names = SET_AT_RUNTIME
+
     def check_import(self):
         if uhyper is None:
-            raise ModelNotImportedError("umat")
+            raise ModelNotImportedError("uhyper")
+
     def update_state_umat(self, stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,

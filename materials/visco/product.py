@@ -1,5 +1,5 @@
 import os
-from utils.fortran.mml_i import FIO
+from utils.fortran.product import FIO
 
 def fortran_libraries():
     _d = os.path.dirname(os.path.realpath(__file__))

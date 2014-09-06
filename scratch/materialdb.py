@@ -3,7 +3,7 @@ import sys
 import xml.dom.minidom as xdom
 from xml.parsers.expat import ExpatError
 
-from matmodlab import PKG_D
+from core.product import PKG_D
 from utils.misc import load_file
 from utils.fortran.info import FIO, SO_EXT
 from utils.errors import GenericError

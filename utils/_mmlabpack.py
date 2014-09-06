@@ -68,7 +68,7 @@ def asmat(a):
 
 def expm(a):
     """Compute the matrix exponential of a 3x3 matrix"""
-    return funcm(a, numpy.exp)
+    return scipy.linalg.expm(a)
 
 
 def powm(a, m):
@@ -78,12 +78,12 @@ def powm(a, m):
 
 def sqrtm(a):
     """Compute the square root of a 3x3 matrix"""
-    return funcm(a, numpy.sqrt)
+    return scipy.linalg.sqrtm(a)
 
 
 def logm(a):
     """Compute the matrix logarithm of a 3x3 matrix"""
-    return funcm(a, numpy.log)
+    return scipy.linalg.logm(a)
 
 
 def diag(a):

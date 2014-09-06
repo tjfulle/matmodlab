@@ -1,22 +1,23 @@
 import numpy as np
 
-from materials.material import Material
-from utils.errors import GenericError
-try:
-    import lib.plastic as plastic
-except ImportError:
-    plastic = None
+from materials.material import MaterialModel
+from utils.errors import ModelNotImportedError
+try: import lib.plastic as plastic
+except ImportError: plastic = None
 
-class Plastic(Material):
-    name = "plastic"
-    param_names = ["K", "G", "A1", "A4"]
-    constant_j = True
+class Plastic(MaterialModel):
+
+    def __init__(self):
+        self.name = "plastic"
+        self.param_names = ["K", "G", "A1", "A4"]
+        self.constant_j = True
+
     def setup(self):
         """Set up the Plastic material
 
         """
         if plastic is None:
-            raise Error1("plastic model not imported")
+            raise ModelNotImportedError("plastic model not imported")
         plastic.plastic_check(self.params, self.logger.error, self.logger.write)
         K, G, = self.params
         self.bulk_modulus = K

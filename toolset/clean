@@ -1,24 +1,8 @@
-#!/usr/bin/env python
-import os
-import sys
-import _setup
-from utils.misc import remove
-from utils.mmlio import cout
-from project import ROOT_D, PKG_D
-
-if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
-    sys.exit("clean: Recursively clean the matmodlab project\nusage: clean")
-exts = (".pyc", ".o", ".a", ".con", ".so")
-cout("cleaning matmodlab", end="... ")
-remove(os.path.join(PKG_D, "build"))
-for (dirname, dirs, files) in os.walk(ROOT_D):
-    d = os.path.basename(dirname)
-    if d == ".git":
-        del dirs[:]
-        continue
-    if d.startswith("TestResults."):
-        remove(dirname)
-        del dirs[:]
-        continue
-    [remove(os.path.join(dirname, f)) for f in files if f.endswith(exts)]
-cout("yes")
+#!/bin/bash
+# set up python environment
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT="$(dirname "$DIR")"
+find $ROOT \( -type d -name "build" -o -type d -name "*.eval" \) -exec rm -rf {} \+
+find $ROOT \( -name "*.pyc" -o -name "*.o" -o \
+              -name "*.con" -o -name "*.a" -o \
+              -name "*.so"  -o -name "*.log"  \) -exec rm -f {} \+

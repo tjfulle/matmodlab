@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-import os
-import sys
-import _setup
-from matmodlab import PKG_D
-from core.builder import main
-sys.exit(main(sys.argv[1:]))
+#!/bin/bash
+# set up python environment
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT="$(dirname "$DIR")"
+export PYTHONPATH="$ROOT"
+/usr/bin/env python "$ROOT/core/builder.py" $*

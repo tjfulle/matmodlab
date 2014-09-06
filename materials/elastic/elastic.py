@@ -2,22 +2,22 @@ import numpy as np
 
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
-try:
-    import lib.elastic as elastic
-except ImportError:
-    elastic = None
+try: import lib.elastic as mat
+except ImportError: mat=None
 
 class Elastic(MaterialModel):
-    name = "elastic"
-    param_names = ["K", "G"]
-    constant_j = True
+
+    def __init__(self):
+        self.name = "elastic"
+        self.param_names = ["K", "G"]
+
     def setup(self):
         """Set up the Elastic material
 
         """
-        if elastic is None:
+        if mat is None:
             raise ModelNotImportedError("elastic")
-        elastic.elastic_check(self.params, self.logger.error, self.logger.write)
+        mat.elastic_check(self.params, self.logger.error, self.logger.write)
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]
         self.use_constant_jacobian = True
@@ -49,6 +49,6 @@ class Elastic(MaterialModel):
             Updated extra variables
 
         """
-        elastic.elastic_update_state(dtime, self.params, d, stress,
-                                     self.logger.error, self.logger.write)
+        mat.elastic_update_state(dtime, self.params, d, stress,
+                                 self.logger.error, self.logger.write)
         return stress, xtra, self.constant_jacobian

@@ -14,9 +14,10 @@ from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
 from core.logger import ConsoleLogger as logger
-from matmodlab import FC, PKG_D, FFLAGS
-from utils.fortran.mml_i import LAPACK, LAPACK_OBJ
+from core.product import FC, PKG_D, FFLAGS
+from utils.fortran.product import LAPACK, LAPACK_OBJ
 
+FORT_COMPILER = FC
 
 class ExtModuleNotBuilt(Exception): pass
 class FortranNotFoundError(Exception): pass
@@ -27,6 +28,7 @@ class FortranExtBuilder(object):
     """
     def __init__(self, name, fc=None, verbosity=1):
         # find fortran compiler
+        global FORT_COMPILER
         if fc is None:
             fc = FC
         if not fc:
@@ -37,6 +39,7 @@ class FortranExtBuilder(object):
                                        "not found".format(fc))
 
         self.fc = fc
+        FORT_COMPILER = fc
         self.config = Configuration(name, parent_package="", top_path="",
                                     package_path=PKG_D)
         self.quiet = verbosity < 2
@@ -45,7 +48,6 @@ class FortranExtBuilder(object):
         self.exts_failed = []
         self.exts_to_build = []
         self.ext_modules_built = False
-        self._build_blas_lapack = False
 
     def add_extension(self, name, sources, **kwargs):
         """Add an extension module to build"""
@@ -54,7 +56,9 @@ class FortranExtBuilder(object):
         if lapack:
             if lapack == "lite":
                 if not os.path.isfile(LAPACK_OBJ):
-                    self._build_blas_lapack = True
+                    stat = build_blas_lapack()
+                    if stat != 0:
+                        logger.error("failed to build blas_lapack")
                 options["extra_objects"] = [LAPACK_OBJ]
                 options["extra_compile_args"] = ["-fPIC", "-shared"]
             else:
@@ -79,10 +83,6 @@ class FortranExtBuilder(object):
             # redirect stderr and stdout
             sys.stdout = open(os.devnull, "w")
             sys.stderr = open(os.devnull, "a")
-
-        if self._build_blas_lapack:
-            self.build_blas_lapack()
-            self._build_blas_lapack = False
 
         cwd = os.getcwd()
         os.chdir(PKG_D)
@@ -140,21 +140,22 @@ class FortranExtBuilder(object):
                     ["-fPIC", "-shared"])
                 return lapack
 
-    def build_blas_lapack(self):
-        """Build the blas_lapack-lite object
-
-        """
-        logger.write("Building blas_lapack-lite", end="... ")
-        cmd = [self.fc, "-fPIC", "-shared", "-O3", LAPACK, "-o" + LAPACK_OBJ]
-        build = subprocess.Popen(cmd, stdout=open(os.devnull, "a"),
-                                 stderr=subprocess.STDOUT)
-        build.wait()
-        if build.returncode == 0:
-            logger.write("done")
-        else:
-            logger.write("no")
-        return build.returncode
-
 
 def module_name(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
+
+
+def build_blas_lapack():
+    """Build the blas_lapack-lite object
+
+    """
+    logger.write("Building blas_lapack-lite", end="... ")
+    cmd = [FORT_COMPILER, "-fPIC", "-shared", "-O3", LAPACK, "-o" + LAPACK_OBJ]
+    build = subprocess.Popen(cmd, stdout=open(os.devnull, "a"),
+                             stderr=subprocess.STDOUT)
+    build.wait()
+    if build.returncode == 0:
+        logger.write("done")
+    else:
+        logger.write("no")
+    return build.returncode
