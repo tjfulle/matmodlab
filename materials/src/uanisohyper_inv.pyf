@@ -18,8 +18,8 @@ python module mml__user__routines
     end interface mml_user_interface
 end python module mml__user__routines
 
-python module uanisohyper ! in
-    interface  ! in :uanisohyper
+python module uanisohyper_inv ! in
+    interface  ! in :uanisohyper_inv
         subroutine uanisohyper_inv(ainv_arg,ua,zeta,nfibers,ninva,ui1,ui2,ui3,temp,noel,cmname,incmpflag,ihybflag,numstatev,statev,numfieldv,fieldv,fieldvinc,numprops,props) ! in :uanisohyper:uanisohyper.f90
             use mml__user__routines
             intent(callback) log_error
@@ -50,7 +50,7 @@ python module uanisohyper ! in
             real(kind=8) dimension(numprops),intent(in) :: props
         end subroutine uanisohyper_inv
     end interface
-end python module uanisohyper
+end python module uanisohyper_inv
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

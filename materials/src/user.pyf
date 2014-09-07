@@ -19,9 +19,9 @@ python module gmd__user__routines
     end interface gmd_user_interface
 end python module gmd__user__routines
 
-python module umat ! in
+python module user ! in
     interface  ! in :
-        subroutine umat(stress,statev,ddsdde,stran,dstran,time,dtime,temp,dtemp,nstatv,props,nprops,dfgrd0,dfgrd1)
+        subroutine user(stress,statev,ddsdde,stran,dstran,time,dtime,temp,dtemp,nstatv,props,nprops,dfgrd0,dfgrd1)
             use gmd__user__routines
             intent(callback) log_error
             external log_error
@@ -29,11 +29,11 @@ python module umat ! in
             external log_message
             intent(callback) log_warning
             external log_warning
-            real(kind=8) dimension(ntens),intent(inout),depend(ntens) :: stress
+            real(kind=8) dimension(6),intent(inout),depend(6) :: stress
             real(kind=8) dimension(nstatv),intent(inout),depend(nstatv) :: statev
-            real(kind=8) dimension(ntens,ntens),intent(inout),depend(ntens,ntens) :: ddsdde
-            real(kind=8) dimension(ntens),intent(in),depend(ntens) :: stran
-            real(kind=8) dimension(ntens),intent(in),depend(ntens) :: dstran
+            real(kind=8) dimension(6,6),intent(inout),depend(6,6) :: ddsdde
+            real(kind=8) dimension(6),intent(in),depend(6) :: stran
+            real(kind=8) dimension(6),intent(in),depend(6) :: dstran
             real(kind=8) dimension(2),intent(in) :: time
             real(kind=8) intent(in) :: dtime
             real(kind=8) intent(in) :: temp
@@ -43,9 +43,9 @@ python module umat ! in
             integer, optional,intent(inplace),check(len(props)>=nprops),depend(props) :: nprops=len(props)
             real(kind=8) dimension(3,3),intent(in) :: dfgrd0
             real(kind=8) dimension(3,3),intent(in) :: dfgrd1
-        end subroutine umat
+        end subroutine user
     end interface
-end python module umat
+end python module user
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/

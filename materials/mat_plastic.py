@@ -1,27 +1,30 @@
-import numpy as np
-
-from materials.material import MaterialModel
+import os
+from core.product import MATLIB
+from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
-try: import lib.plastic as plastic
-except ImportError: plastic = None
+try: import lib.plastic as mat
+except ImportError: mat = None
 
 class Plastic(MaterialModel):
 
     def __init__(self):
         self.name = "plastic"
         self.param_names = ["K", "G", "A1", "A4"]
+        d = os.path.join(MATLIB, "src")
+        f1 = os.path.join(d, "plastic.f90")
+        f2 = os.path.join(d, "plastic.pyf")
+        self.source_files = [f1, f2]
         self.constant_j = True
 
     def setup(self):
         """Set up the Plastic material
 
         """
-        if plastic is None:
-            raise ModelNotImportedError("plastic model not imported")
-        plastic.plastic_check(self.params, self.logger.error, self.logger.write)
-        K, G, = self.params
-        self.bulk_modulus = K
-        self.shear_modulus = G
+        if mat is None:
+            raise ModelNotImportedError("plastic")
+        mat.plastic_check(self.params, self.logger.error, self.logger.write)
+        self.bulk_modulus = self.params["K"]
+        self.shear_modulus = self.params["G"]
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):
@@ -50,6 +53,6 @@ class Plastic(MaterialModel):
             Updated extra variables
 
         """
-        plastic.plastic_update_state(dtime, self.params, d, stress,
-                                     self.logger.error, self.logger.write)
+        mat.plastic_update_state(dtime, self.params, d, stress,
+                                 self.logger.error, self.logger.write)
         return stress, xtra, self.constant_jacobian

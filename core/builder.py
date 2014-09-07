@@ -5,9 +5,10 @@ import glob
 import shutil
 import argparse
 
-from core.material import MATERIALS
-from core.product import ROOT_D, F_PRODUCT
+from utils.fortran.product import FIO
+from materials.product import ABA_MATS
 from utils.misc import load_file, int2str
+from core.product import ROOT_D, F_PRODUCT
 from utils.errors import DuplicateExtModule
 from core.logger import ConsoleLogger as logger
 from utils.fortran.extbuilder import FortranExtBuilder
@@ -35,15 +36,7 @@ class Builder(object):
         self._build_extension_modules()
 
     @staticmethod
-    def build_umat(name, source_files, verbosity=0):
-        fb = FortranExtBuilder(name, verbosity=verbosity)
-        logger.write("building {0}".format(name))
-        fb.add_extension(name, source_files, requires_lapack="lite")
-        fb.build_extension_modules()
-        pass
-
-    @staticmethod
-    def build_material(name, info=None, verbosity=0):
+    def build_material(name, source_files, verbosity=0, lapack=False):
         """Build a single material
 
         Parameters
@@ -54,10 +47,9 @@ class Builder(object):
         """
         fb = FortranExtBuilder(name, verbosity=verbosity)
         logger.write("building {0}".format(name))
-        if info is None:
-            info = MATERIALS[name]
-        fb.add_extension(name, info["source_files"],
-                         requires_lapack=info.get("requires_lapack"))
+        if name not in ABA_MATS:
+            source_files.append(FIO)
+        fb.add_extension(name, source_files, lapack=lapack)
         fb.build_extension_modules(verbosity=verbosity)
         return
 
@@ -84,20 +76,36 @@ class Builder(object):
             del sys.modules[os.path.splitext(F_PRODUCT)[0]]
 
         if mats_to_fetch is not None:
-            for name in MATERIALS:
+            # find materials and filter out those to build
+            from core.material import find_materials
+            for (name, info) in find_materials().items():
                 if name in fort_libs:
                     raise DuplicateExtModule(name)
                 if mats_to_fetch != "all" and name not in mats_to_fetch:
                     continue
-                if not MATERIALS[name].get("source_files"):
+                # meta information, such as source files, are stored as
+                # instance attributes of the material. Load it to get the
+                # info.
+                loaded = load_file(info.file)
+                material = getattr(loaded, info.class_name)()
+                if not hasattr(material, "source_files"):
+                    del sys.modules[info.module]
                     continue
-                fort_libs.update({name: MATERIALS[name]})
+                d = os.path.dirname(info.file)
+                source_files = material.source_files
+                if name not in ABA_MATS:
+                    source_files.append(FIO)
+                l = getattr(material, "lapack", None)
+                I = getattr(material, "include_dirs", [d])
+                fort_libs.update({name: {"source_files": source_files,
+                                         "lapack": l, "include_dirs": I}})
+                del sys.modules[info.module]
 
         for ext in fort_libs:
             s = fort_libs[ext]["source_files"]
             l = fort_libs[ext].get("lapack", False)
             I = fort_libs[ext].get("include_dirs", [])
-            self.fb.add_extension(ext, s, include_dirs=I, requires_lapack=l)
+            self.fb.add_extension(ext, s, include_dirs=I, lapack=l)
 
         return
 

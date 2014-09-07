@@ -1,10 +1,10 @@
-import sys
+import os
 import numpy as np
-
-from core.material import MaterialModel
+from core.product import MATLIB
 import utils.mmlabpack as mmlabpack
+from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
-try: import lib.mnrv as mat
+try: import lib.mooney_rivlin as mat
 except ImportError: mat = None
 
 
@@ -14,33 +14,25 @@ class MooneyRivlin(MaterialModel):
     """
 
     def __init__(self):
-        self.name = "mnrv"
+        self.name = "mooney_rivlin"
         self.param_names = ["C10", "C01", "NU", "T0", "MC10", "MC01"]
+        d = os.path.join(MATLIB, "src")
+        f1 = os.path.join(d, "mooney_rivlin.f90")
+        f2 = os.path.join(d, "mooney_rivlin.pyf")
+        self.source_files = [f1, f2]
+        self.lapack = "lite"
 
     def setup(self):
         """Set up the domain Mooney-Rivlin materia
 
         """
         if mat is None:
-            raise ModelNotImportedError("mnrv model not imported")
-
-        mat.mnrvcp(self.params, self.logger.error, self.logger.write)
+            raise ModelNotImportedError("mooney_rivlin")
         smod = 2. * (self.params["C10"] + self.params["C01"])
         nu = self.params["NU"]
         bmod = 2. * smod * (1.+ nu) / 3. / (1 - 2. * nu)
-
         self.bulk_modulus = bmod
         self.shear_modulus = smod
-
-        # register extra variables
-        nxtra, keya, xinit = mat.mnrvxv(self.params, self.logger.error,
-                                        self.logger.write)
-        self.register_xtra_variables(keya, xinit, mig=True)
-
-        Rij = np.reshape(np.eye(3), (9,))
-        Vij = mmlabpack.asarray(np.eye(3), 6)
-        T = 298.
-        v = np.arange(6, dtype=np.int)
         return
 
     def set_constant_jacobian(self):
@@ -54,20 +46,9 @@ class MooneyRivlin(MaterialModel):
         """ update the material state based on current state and stretch """
 
         Fij = np.reshape(F, (3, 3))
-
-        # left stretch
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
-
-        # rotation
         Rij = np.reshape(np.dot(mmlabpack.inv(Vij), Fij), (9,))
         Vij = mmlabpack.asarray(Vij, 6)
-
-        # temperature
-        T = 298.
-
-        sig = mat.mnrvus(self.params, Rij, Vij, T, xtra,
-                         self.logger.error, self.logger.write)
-        ddsdde = mat.mnrvjm(self.params, Vij, T, xtra,
-                            self.logger.error, self.logger.write)
+        sig, ddsdde = mat.mnrv_mat(self.params, Rij, Vij)
 
         return np.reshape(sig, (6,)), np.reshape(xtra, (self.nxtra,)), ddsdde

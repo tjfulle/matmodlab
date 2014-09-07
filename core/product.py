@@ -20,8 +20,6 @@ BLD_D = os.path.join(ROOT_D, "build")
 LIB_D = os.path.join(ROOT_D, "lib")
 EXO_D = os.path.join(UTL_D, "exojac")
 MATLIB = os.path.join(ROOT_D, "materials")
-ABA = os.path.join(MATLIB, "aba")
-USER = os.path.join(MATLIB, "user")
 
 # --- OUTPUT DATABASE FILE
 F_EVALDB = "mml-evaldb.xml"
@@ -31,7 +29,7 @@ F_PRODUCT = "product.py"
 PATH = os.getenv("PATH").split(os.pathsep)
 if TLS_D not in PATH:
     PATH.insert(0, TLS_D)
-MAT_LIB_DIRS = [MATLIB, ABA, USER]
+MAT_LIB_DIRS = [MATLIB]
 MMLMTLS = [d for d in os.getenv("MMLMTLS", "").split(os.pathsep) if d.split()]
 MAT_LIB_DIRS.extend(MMLMTLS)
 FFLAGS = [x for x in os.getenv("FFLAGS", "").split() if x.split()]

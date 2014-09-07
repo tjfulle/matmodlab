@@ -55,13 +55,11 @@ def parse_sim_argv(argv=None, get_f=False):
 
     if args.B:
         name = args.B.strip()
-        from core.builder import Builder
         verbosity = 3 if args.v > 1 else 0
         if os.path.isfile(os.path.join(PKG_D, "{0}.so".format(name))):
+            # removing is sufficient since the material class will attempt
+            # to build non-existent materials
             os.remove(os.path.join(PKG_D, "{0}.so".format(name)))
-        if name not in ABAMATS:
-            logger.warn("building model: {0}".format(name))
-            b = Builder.build_material(name, verbosity=verbosity)
 
     if get_f and not os.path.isfile(args.source):
         raise FileNotFoundError(args.source)

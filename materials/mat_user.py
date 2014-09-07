@@ -1,7 +1,7 @@
-import sys
-import numpy as np
+import os
+from core.product import MATLIB
+from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
-from materials.aba.abamat import AbaqusMaterial
 from utils.errors import ModelNotImportedError
 try: import lib.user as user
 except ImportError: user = None
@@ -11,6 +11,8 @@ class UserMat(AbaqusMaterial):
     def __init__(self):
         self.name = "user"
         self.param_names = SET_AT_RUNTIME
+        d = os.path.join(MATLIB, "src")
+        self.aux_files = [os.path.join(d, "user.pyf")]
 
     def check_import(self):
         if user is None:

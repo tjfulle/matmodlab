@@ -1,55 +1,18 @@
-"""All built in materials register there interface and source files here
-
-This file is used only during the setup phase to build and install materials.
-
-"""
 import os
+from utils.fortran.product import DGPADM_F
 from core.product import MATLIB
+D = os.path.join(MATLIB, "src")
 
-BUILTIN = {}
+# Auxiliary files
+ABA_UANISOHYPER_JAC_F90 = os.path.join(D, "uanisohyper_inv_jac.f90")
+ABA_UHYPER_JAC_F90 = os.path.join(D, "uhyper_jac.f90")
+ABA_TENSALG_F90 = os.path.join(D, "tensalg.f90")
+ABA_IO_F90 = os.path.join(D, "aba_io.f90")
 
-# --- Mooney Rivlin
-d = os.path.join(MATLIB, "MooneyRivlin")
-source_files = [os.path.join(d, f) for f in ("mnrv.f90", "mnrv.pyf")]
-BUILTIN["mnrv"] = {"source_files": source_files, "source_directory": d,
-                   "interface": os.path.join(d, "mnrv.py"),
-                   "lapack": "lite", "class": "MooneyRivlin"}
+# Signature files
+ABA_UANISOHYPER_PYF = os.path.join(D, "uanisohyper_inv.pyf")
+ABA_UHYPER_PYF = os.path.join(D, "uhyper.pyf")
+ABA_UMAT_PYF = os.path.join(D, "umat.pyf")
 
-# --- Plastic (non functional at the moment)
-d = os.path.join(MATLIB, "plastic")
-source_files = [os.path.join(d, f) for f in
-                ("plastic_interface.f90", "plastic.f90", "plastic.pyf")]
-BUILTIN["plastic"] = {"source_files": source_files, "source_directory": d,
-                      "interface": os.path.join(d, "plastic.py"),
-                      "class": "Plastic"}
-
-# --- Pure python elastic model
-d = os.path.join(MATLIB, "pyelastic")
-BUILTIN["pyelastic"] = {"interface": os.path.join(d, "pyelastic.py"),
-                        "class": "PyElastic"}
-
-# --- Elastic
-d = os.path.join(MATLIB, "elastic")
-source_files = [os.path.join(d, f) for f in
-                ("elastic_interface.f90", "elastic.f90", "elastic.pyf")]
-BUILTIN["elastic"] = {"source_files": source_files, "source_directory": d,
-                      "interface": os.path.join(d, "elastic.py"),
-                      "class": "Elastic"}
-
-# --- Pure python plastic model
-d = os.path.join(MATLIB, "vonmises")
-BUILTIN["vonmises"] = {"interface": os.path.join(d, "vonmises.py"),
-                       "class": "VonMises"}
-
-# --- Pure python plastic model
-d = os.path.join(MATLIB, "pyplastic")
-BUILTIN["pyplastic"] = {"interface": os.path.join(d, "pyplastic.py"),
-                        "class": "Pyplastic"}
-
-# --- Pure python transversely isotropic model
-d = os.path.join(MATLIB, "transisoelas")
-BUILTIN["transisoelas"] = {"interface": os.path.join(d, "transisoelas.py"),
-                           "class": "TransIsoElas"}
-
-def material_libraries():
-    return BUILTIN
+ABA_MATS = ["umat", "uhyper", "uanisohyper_inv"]
+USER_MAT = ["user"]

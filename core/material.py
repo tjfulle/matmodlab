@@ -1,10 +1,11 @@
 import os
+import re
 import sys
-
 import numpy as np
 
 from utils.errors import *
 from core.runtime import opts
+import utils.xpyclbr as xpyclbr
 from utils.misc import load_file
 import utils.mmlabpack as mmlabpack
 from utils.fortran.product import FIO
@@ -12,6 +13,7 @@ from utils.constants import DEFAULT_TEMP
 from utils.constants import SET_AT_RUNTIME
 from utils.data_containers import Parameters
 from core.logger import Logger, ConsoleLogger
+from materials.product import ABA_MATS, USER_MAT
 from core.product import MAT_LIB_DIRS, PKG_D, MATLIB, F_PRODUCT
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 
@@ -59,10 +61,7 @@ class MaterialModel(object):
         self.param_defaults = getattr(self, "param_defaults", None)
         self.constant_j = False
         self.initial_stress = np.zeros(6)
-
-        if logger is None:
-            logger = Logger()
-        self.logger = logger
+        self.logger = logger or Logger()
 
     @property
     def logger(self):
@@ -456,6 +455,62 @@ class MaterialModel(object):
     def num_xtra(self):
         return self.nxtra
 
+
+class AbaqusMaterial(MaterialModel):
+    def setup(self, props, depvar):
+        self.check_import()
+        if not depvar:
+            depvar = 1
+        statev = np.zeros(depvar)
+        xkeys = ["SDV{0}".format(i+1) for i in range(depvar)]
+        self.register_xtra_variables(xkeys, statev)
+
+        ddsdde = self.get_initial_jacobian()
+        mu = ddsdde[3, 3]
+        lam = ddsdde[0, 0] - 2. * mu
+
+        self.bulk_modulus = lam + 2. / 3. * mu
+        self.shear_modulus = mu
+
+    def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
+        stran, d, elec_field, user_field, stress, statev, **kwargs):
+        # abaqus defaults
+        cmname = "{0:8s}".format("umat")
+        dfgrd0 = np.reshape(F0, (3, 3), order="F")
+        dfgrd1 = np.reshape(F, (3, 3), order="F")
+        dstran = d * dtime
+        ddsdde = np.zeros((6, 6), order="F")
+        ddsddt = np.zeros(6, order="F")
+        drplde = np.zeros(6, order="F")
+        predef = np.zeros(1, order="F")
+        dpred = np.zeros(1, order="F")
+        coords = np.zeros(3, order="F")
+        drot = np.eye(3)
+        ndi = nshr = 3
+        sse = 0.
+        spd = 0.
+        scd = 0.
+        rpl = 0.
+        drpldt = 0.
+        celent = 0.
+        pnewdt = 0.
+        noel = 1
+        npt = 1
+        layer = 1
+        kspt = 1
+        kstep = 1
+        kinc = 1
+        time = np.array([time,time])
+        stress, statev, ddsdde = self.update_state_umat(
+            stress, statev, ddsdde, sse, spd, scd, rpl, ddsddt, drplde, drpldt,
+            stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
+            ndi, nshr, self.nxtra, self.params, coords, drot, pnewdt, celent,
+            dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc)
+        if np.any(np.isnan(stress)):
+            self.logger.error("umat stress contains nan's")
+        ddsdde[3:, 3:] *= 2.
+        return stress, statev, ddsdde
+
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
              source_files=None, source_directory=None, initial_temp=None,
@@ -466,8 +521,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
     if parameters is None:
         raise InputError("{0}: required parameters not given".format(model))
 
-    if logger is None:
-        logger = Logger()
+    logger = logger or Logger()
 
     # switch model, if requested
     if opts.switch:
@@ -476,30 +530,58 @@ def Material(model, parameters=None, depvar=None, constants=None,
 
     # determine which model
     m = model.lower()
-    for (lib, libinfo) in MATERIALS.items():
+    for (lib, libinfo) in find_materials().items():
         if lib.lower() == m:
             break
     else:
         raise MatModelNotFoundError(model)
 
+    errors = 0
+    source_files = source_files or []
+    if m in ABA_MATS + USER_MAT:
+        if not source_files:
+            raise InputError("{0}: requires source_files".format(model))
+        if source_directory is not None:
+            source_files = [os.path.join(source_directory, f)
+                            for f in source_files]
+        for f in source_files:
+            if not os.path.isfile(f):
+                errors += 1
+                ConsoleLogger.error("{0}: file not found".format(f))
+    if errors:
+        raise UserInputError("stopping due to previous errors")
+
     # default temperature
     if initial_temp is None:
         initial_temp = DEFAULT_TEMP
 
+    # import the material
+    module = load_file(libinfo.file)
+    mat_class = getattr(module, libinfo.class_name)
+    material = mat_class()
+
+    if m in ABA_MATS or m in USER_MAT:
+        material.source_files = material.aux_files
+
     # Check if model is already built (if applicable)
-    if libinfo.get("source_files"):
+    if hasattr(material, "source_files"):
         so_lib = os.path.join(PKG_D, lib + ".so")
         if not os.path.isfile(so_lib):
+            material.source_files.extend(source_files)
+            lapack = getattr(material, "lapack", None)
             import core.builder as bb
-            bb.Builder.build_umat(lib, libinfo["source_files"],
-                               verbosity=opts.verbosity)
+
+            bb.Builder.build_material(lib, material.source_files,
+                                      lapack=lapack,
+                                      verbosity=opts.verbosity)
         if not os.path.isfile(so_lib):
             raise ModelLibNotFoundError(lib)
+        # reload model
+        module = load_file(libinfo.file)
+        mat_class = getattr(module, libinfo.class_name)
+        material = mat_class()
 
-    # Instantiate the material
-    interface = load_file(libinfo["interface"])
-    mat_cls = getattr(interface, libinfo["class"])
-    material = mat_cls()
+    # initialize and set up material
     material.init(logger=logger)
 
     if material.parameter_names == SET_AT_RUNTIME:
@@ -534,40 +616,29 @@ def find_materials():
     environ["MMLMTLS"].
 
     """
-    mat_libs = {}
     errors = []
+    mat_libs = {}
+    rx = re.compile(r"(?:^|[\\b_\\.-])[Mm]at")
+    a = ["MaterialModel", "AbaqusMaterial"]
+    n = ["name"]
     for d in MAT_LIB_DIRS:
-
-        if F_PRODUCT not in os.listdir(d):
-            continue
-
-        module = load_file(os.path.join(d, F_PRODUCT))
-        try:
-            libs = module.material_libraries()
-        except AttributeError:
-            continue
-
-        for lib in libs:
-            if lib in mat_libs:
-                ConsoleLogger.error("{0}: duplicate material library".format(lib))
-                errors.append(lib)
+        files = [f for f in os.listdir(d) if rx.search(f) and f.endswith(".py")]
+        for f in files:
+            module = f[:-3]
+            try:
+                libs = xpyclbr.readmodule(module, [d], ancestors=a, reqattrs=n)
+            except AttributeError as e:
+                errors.append(e.message)
+                ConsoleLogger.error(e.message)
                 continue
-            mat_libs.update({lib: libs[lib]})
-        del sys.modules[os.path.splitext(F_PRODUCT)[0]]
+            for lib in libs:
+                if lib in mat_libs:
+                    ConsoleLogger.error("{0}: duplicate material".format(lib))
+                    errors.append(lib)
+                    continue
+                mat_libs.update({libs[lib].name: libs[lib]})
 
     if errors:
         raise DuplicateExtModule(", ".join(errors))
 
-    for lib in mat_libs:
-        if not mat_libs[lib].get("source_files"):
-            continue
-        I = []
-        for d in mat_libs[lib].get("include_dirs", []):
-            if d and d not in I:
-                I.append(d)
-        mat_libs[lib]["source_files"].append(FIO)
-        mat_libs[lib]["include_dirs"] = I
-
     return mat_libs
-
-MATERIALS = find_materials()
