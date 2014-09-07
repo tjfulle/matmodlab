@@ -8,7 +8,7 @@ import argparse
 from utils.fortran.product import FIO
 from materials.product import ABA_MATS
 from utils.misc import load_file, int2str
-from core.product import ROOT_D, F_PRODUCT
+from core.product import ROOT_D, F_PRODUCT, PKG_D
 from utils.errors import DuplicateExtModule
 from core.logger import ConsoleLogger as logger
 from utils.fortran.extbuilder import FortranExtBuilder
