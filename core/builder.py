@@ -118,6 +118,35 @@ class Builder(object):
             logger.write("*** warning: {0}: failed to build".format(ext))
 
 
+def build(wipe=False, wipe_and_build=False, mat_to_build=None,
+          build_utils=False, verbosity=1):
+
+    builder = Builder("matmodlab", verbosity=verbosity)
+
+    if wipe or wipe_and_build:
+        for f in glob.glob(os.path.join(PKG_D, "*.so")):
+            os.remove(f)
+        bld_d = os.path.join(PKG_D, "build")
+        if os.path.isdir(bld_d):
+            shutil.rmtree(bld_d)
+        if wipe:
+            return 0
+        build_utils = True
+
+    if build_utils and mat_to_build:
+        builder.build_all(mats_to_build=mat_to_build)
+
+    elif build_utils:
+        builder.build_utils()
+
+    elif mat_to_build:
+        builder.build_materials(mat_to_build)
+
+    else:
+        builder.build_all()
+
+    return 0
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
@@ -134,30 +163,8 @@ def main(argv=None):
        help="Build auxiliary support files only [default: all]")
     args = parser.parse_args(argv)
 
-    builder = Builder("matmodlab", verbosity=args.v)
-    if args.w or args.W:
-        for f in glob.glob(os.path.join(PKG_D, "*.so")):
-            os.remove(f)
-        bld_d = os.path.join(PKG_D, "build")
-        if os.path.isdir(bld_d):
-            shutil.rmtree(bld_d)
-        if args.W:
-            return 0
-        args.u = True
-
-    if args.u and args.m:
-        builder.build_all(mats_to_build=args.m)
-
-    elif args.u:
-        builder.build_utils()
-
-    elif args.m:
-        builder.build_materials(args.m)
-
-    else:
-        builder.build_all()
-
-    return 0
+    return build(wipe=args.W, wipe_and_build=args.w, mat_to_build=args.m,
+                 build_utils=args.u, verbosity=args.v)
 
 if __name__ == "__main__":
     main()
