@@ -1,16 +1,25 @@
 #!/usr/bin/env xpython
 # -*- python -*-
+# basic testing of post processing functionality
 from matmodlab import *
 
 runid = gen_runid()
+d = get_my_directory()
 
-class TestFunc(TestBase):
+class TestOverlay(TestBase):
     def __init__(self):
         self.runid = runid
-        self.keywords = ["fast", "function", "feature", "elastic"]
+        self.keywords = ["long", "overlay", "feature", "function"]
+        self.base_exo = os.path.join(d, "test_funcs.base_exo")
     def run_job(self):
         runner(d=self.test_dir, v=0)
         return
+    def post_hook(self):
+        try:
+            self._create_overlays()
+            self._no_teardown = False
+        except:
+            self.status = self.failed
 
 @matmodlab
 def runner(d=None, v=1):
