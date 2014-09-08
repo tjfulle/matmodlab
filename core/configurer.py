@@ -1,3 +1,22 @@
+"""matmodlab configuration reader/editor.
+
+matmodlib uses a configuration file ($MATMODLABRC or ~/.matmodlabrc) to set
+user definable configurations. Currently supported configurable variables are:
+
+    materials
+    tests
+
+The format of the file is:
+
+[variable]
+value_1
+value_2
+...
+
+which is similar to - but not compatible with - standard unix configuraton
+files.
+
+"""
 import os
 import re
 import sys
@@ -30,10 +49,12 @@ class Options:
         self.user_tests = [os.path.expanduser(f) for f in l]
 
 
-def cfgparse(filename=None):
+def cfgparse(filename=None, disp=0):
     filename = filename or RCFILE
     a = _cfgparse(filename)
     config = Options(a)
+    if disp == 2:
+        return config.user_mats
     return config
 
 
@@ -84,7 +105,8 @@ def cfgswitch_and_warn():
 
     """
     mtls_d = os.getenv("MMLMTLS")
-    kw = {"transform": str}
+    if not mtls_d:
+        return
     logger.write("=" * 82)
     logger.write("**** WARNING " * 6 + "****")
     logger.write("**** WARNING " * 6 + "****")
@@ -93,7 +115,7 @@ def cfgswitch_and_warn():
    IN ~/.matmodlabrc.  THE LOCATION OF THIS FILE IS ALSO CONFIGURABLE BY THE
    MATMODLABRC ENVIRONMENT VARIABLE.  REMOVE MMLMTLS FROM YOUR ENVIRONMENT
    TO AVOID THIS WARNING IN THE FUTURE
-""", **kw)
+""", transform=str)
     logger.write("**** WARNING " * 6 + "****")
     logger.write("**** WARNING " * 6 + "****")
     logger.write("=" * 82)

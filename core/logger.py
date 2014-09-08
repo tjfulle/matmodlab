@@ -56,9 +56,14 @@ class Logger(object):
         self.write(message, beg=beg, end=end)
 
     def write(self, message, beg="", end="\n", log_to_eh=0, write_to_console=1,
-              transform=None):
-        if transform is None: transform = upper
-        message = "{0}{1}{2}".format(beg, transform(message), end)
+              transform=None, report_who=False, who=None):
+        transform = transform or upper
+        # look for paths in the message and do not transform therm
+        if report_who:
+            who = who_is_calling()
+        if who:
+            beg = "{0}{1}: ".format(beg, who)
+        message = "{0}{1}{2}".format(beg, transform_str(message, transform), end)
         v = opts.verbosity if not self.ignore_opts else 1
         if write_to_console and v:
             # write to console
@@ -70,11 +75,13 @@ class Logger(object):
         # always write to file
         self.fh.write(message)
 
-    def warn(self, message, limit=False, warnings=[0]):
+    def warn(self, message, limit=False, warnings=[0], report_who=False):
+        if report_who:
+            who = who_is_calling()
         message = "*** WARNING: {0}".format(message)
         if limit and warnings[0] > opts.Wlimit:
             return
-        self.write(message, log_to_eh=1)
+        self.write(message, log_to_eh=1, who=who)
         warnings[0] += 1
 
     def raise_error(self, message, raise_error=1, report_caller=1, caller=None,
@@ -86,12 +93,13 @@ class Logger(object):
         else:
             conmsg = "*** ERROR: {0}\n"
         transform = kwargs.pop("transform", str)
-        conmsg = conmsg.format(transform(message), caller)
+        conmsg = conmsg.format(transform_str(message, transform), caller)
         self.write(message, log_to_eh=1, transform=str, **kwargs)
         if raise_error > 0:
             raise Exception(conmsg)
         elif raise_error == 0:
             return
+        self.write("stopping")
         sys.exit(1)
 
     def error(self, message, raise_error=0, report_caller=0, **kwargs):
@@ -109,6 +117,11 @@ class Logger(object):
         self.fh.flush()
         self.fh.close()
         self.fh = open(os.devnull, "w")
+
+
+def transform_str(s, transform):
+    return " ".join(x if os.path.sep in x else transform(x) for x in s.split(" "))
+
 
 
 ConsoleLogger = Logger(no_fh=1)

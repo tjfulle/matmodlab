@@ -6,10 +6,11 @@ import numpy as np
 from core.runtime import opts
 from core.logger import Logger
 from utils.exomgr import ExodusII
-from utils.variable import Variable, VAR_SCALAR
-from utils.data_containers import DataContainer
 from core.driver import PathDriver
+from core.product import MAT_LIB_DIRS
 from core.material import MaterialModel
+from utils.data_containers import DataContainer
+from utils.variable import Variable, VAR_SCALAR
 
 class MaterialPointSimulator(object):
     def __init__(self, runid, driver, material, termination_time=None,
@@ -89,18 +90,24 @@ class MaterialPointSimulator(object):
 	return self._vars
 
     def write_summary(self):
+        s = "\n   ".join("{0}".format(x) for x in MAT_LIB_DIRS)
         summary = """
-simulation summary
+SIMULATION SUMMARY
 ---------- -------
-runid: {0}
-driver: {1}
-  number of legs: {2}
-material: {3}
-  number of props: {4}
-  number of sdv's: {5}
+MATERIAL SEARCH DIRECTORIES:
+   {6}
+MATERIAL INTERFACE FILE:
+   {7}
+RUNID: {0}
+DRIVER: {1}
+  NUMBER OF LEGS: {2}
+MATERIAL: {3}
+  NUMBER OF PROPS: {4}
+    NUMBER OF SDV: {5}
 """.format(self.runid, self.driver.kind, self.driver.num_leg,
-           self.material.name, self.material.num_prop, self.material.num_xtra)
-        self.logger.write(summary)
+           self.material.name, self.material.num_prop, self.material.num_xtra,
+           s, self.material.file)
+        self.logger.write(summary, transform=str)
 
     def setup_io(self):
 

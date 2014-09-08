@@ -38,7 +38,7 @@ class MaterialModel(object):
         if getattr(self, attr, noattr) == noattr:
             raise Exception("material missing attribute: {0}".format(attr))
 
-    def init(self, logger=None):
+    def init(self, logger=None, file=None):
 
         for attr in ("name", "param_names"):
             self.assert_attr_exists(attr)
@@ -62,6 +62,7 @@ class MaterialModel(object):
         self.constant_j = False
         self.initial_stress = np.zeros(6)
         self.logger = logger or Logger()
+        self._file = file
 
     @property
     def logger(self):
@@ -77,6 +78,14 @@ class MaterialModel(object):
             raise TypeError("attempting to assign a non logger "
                             "to the {0} material logger".format(self.name))
         self._logger = new_logger
+
+    @property
+    def file(self):
+        return self._file
+
+    @file.setter
+    def file(self, value):
+        self._file = value
 
     @property
     def initial_temp(self):
@@ -582,7 +591,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         material = mat_class()
 
     # initialize and set up material
-    material.init(logger=logger)
+    material.init(logger=logger, file=libinfo.file)
 
     if material.parameter_names == SET_AT_RUNTIME:
         # some models, like abaqus models, do not have the parameter names
@@ -621,8 +630,24 @@ def find_materials():
     rx = re.compile(r"(?:^|[\\b_\\.-])[Mm]at")
     a = ["MaterialModel", "AbaqusMaterial"]
     n = ["name"]
-    for d in MAT_LIB_DIRS:
-        files = [f for f in os.listdir(d) if rx.search(f) and f.endswith(".py")]
+    # gather and verify all files
+    for item in MAT_LIB_DIRS:
+        if os.path.isfile(item):
+            d, files = os.path.split(os.path.realpath(item))
+            files = [files]
+        elif os.path.isdir(item):
+            d = item
+            files = [f for f in os.listdir(item) if rx.search(f)]
+        else:
+            ConsoleLogger.warn("{0} no such directory or file, skipping".format(d),
+                               report_who=1, beg="*** WARNING: ")
+            continue
+        files = [f for f in files if f.endswith(".py")]
+
+        if not files:
+            ConsoleLogger.write("{0}: no mat files found".format(d),
+                                report_who=1, beg="*** WARNING: ")
+
         for f in files:
             module = f[:-3]
             try:
