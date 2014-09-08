@@ -5,7 +5,7 @@ from utils.misc import who_is_calling
 from core.runtime import opts
 
 
-upper = string.upper
+std_transform = string.upper
 
 class Logger(object):
     def __init__(self, logfile=None, verbosity=1, no_fh=0, ignore_opts=0):
@@ -57,7 +57,7 @@ class Logger(object):
 
     def write(self, message, beg="", end="\n", log_to_eh=0, write_to_console=1,
               transform=None, report_who=False, who=None):
-        transform = transform or upper
+        transform = transform or std_transform
         # look for paths in the message and do not transform therm
         if report_who:
             who = who_is_calling()
@@ -75,9 +75,8 @@ class Logger(object):
         # always write to file
         self.fh.write(message)
 
-    def warn(self, message, limit=False, warnings=[0], report_who=False):
-        if report_who:
-            who = who_is_calling()
+    def warn(self, message, limit=False, warnings=[0], report_who=None):
+        who = None if not report_who else who_is_calling()
         message = "*** WARNING: {0}".format(message)
         if limit and warnings[0] > opts.Wlimit:
             return

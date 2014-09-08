@@ -2,6 +2,17 @@
 # set up python environment
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$(dirname "$DIR")"
-UTIL="$ROOT/utils"
 export PYTHONPATH="$ROOT"
+
+while getopts "h" OPTION
+do
+     case $OPTION in
+         h)
+	    # run typically operates directly on a python file - which calls
+	    # clparse through matmodlab.py, here we call clparse directly
+	     /usr/bin/env python $ROOT/utils/clparse.py -h
+             exit 1
+             ;;
+     esac
+done
 /usr/bin/env python $*

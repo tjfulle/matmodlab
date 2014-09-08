@@ -52,7 +52,7 @@ class FortranExtBuilder(object):
     def add_extension(self, name, sources, **kwargs):
         """Add an extension module to build"""
         options = {}
-        lapack = kwargs.get("requires_lapack")
+        lapack = kwargs.get("lapack")
         if lapack:
             if lapack == "lite":
                 if not os.path.isfile(LAPACK_OBJ):

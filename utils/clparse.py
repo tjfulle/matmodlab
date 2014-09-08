@@ -15,16 +15,16 @@ def parse_sim_argv(argv=None, get_f=False):
        help="Debug mode [default: %(default)s]")
     parser.add_argument("--sqa", default=False, action="store_true",
        help="SQA mode [default: %(default)s]")
-    parser.add_argument("--switch", metavar="MAT",
+    parser.add_argument("--switch", metavar="MATERIAL",
        help="Switch material in input with MATERIAL [default: %(default)s]")
-    parser.add_argument("--mimic", metavar="MAT",
-       help=("Set parameters of input material to mimic MAT "
+    parser.add_argument("--mimic", metavar="MATERIAL",
+       help=("Set parameters of input material to mimic MATERIAL "
              "(not supported by all models) [default: %(default)s]"))
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument("-B", metavar="material",
-        help="Build material model[s] before running [default: %(default)s]")
+    parser.add_argument("-B", metavar="MATERIAL",
+        help="Build MATERIAL before running [default: %(default)s]")
     parser.add_argument("-V", default=False, action="store_true",
-        help="Launch visualization on completion [default: %(default)s]")
+        help="Launch results viewer on completion [default: %(default)s]")
     parser.add_argument("-j", type=int, default=1,
         help="Number of simultaneous jobs [default: %(default)s]")
     parser.add_argument("-W", choices=["std", "all", "error"], default="std",

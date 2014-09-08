@@ -53,19 +53,12 @@ case $COMMAND in
 	;;
     "help")
 	COMMAND="$1"
-	set -- "--help"
+	set -- "-h"
+	PROG="$DIR/mml-$COMMAND"
 	if [ -z "$COMMAND" ];
 	then
 	    usage
 	    exit
-	fi
-	if [ "$COMMAND" ==  run ];
-        then
-	    # run typically operates directly on a python file - which calls
-	    # clparse through matmodlab.py, here we call clparse directly
-	    PROG="/usr/bin/env python $ROOT/utils/clparse.py"
-	else
-	    PROG="$DIR/mml-$COMMAND"
 	fi
 	;;
     *)
