@@ -242,7 +242,7 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, logger, interp=False
     return max(status)
 
 
-def rms_error(t1, d1, t2, d2):
+def rms_error(t1, d1, t2, d2, disp=1):
     """Compute the RMS and normalized RMS error
 
     """
@@ -252,7 +252,9 @@ def rms_error(t1, d1, t2, d2):
         rms = interp_rms_error(t1, d1, t2, d2)
     dnom = np.amax(np.abs(d1))
     if dnom < 1.e-12: dnom = 1.
-    return rms, rms / dnom
+    if disp:
+        return rms, rms / dnom
+    return rms / dnom
 
 
 def interp_rms_error(t1, d1, t2, d2):

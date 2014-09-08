@@ -3,14 +3,16 @@ import sys
 import shutil
 from core.logger import Logger
 from utils.exojac import exodiff
-from utils.misc import fillwithdots
 from core.product import TEST_CONS_WIDTH
+from utils.misc import fillwithdots, remove
 
 PASSED = 0
 DIFFED = 1
 FAILED = 2
 FAILED_TO_RUN = -2
 NOT_RUN = -5
+DIFFTOL = 1.E-06
+FAILTOL = 1.E-04
 
 class TestBase(object):
     _is_mml_test = True
@@ -244,12 +246,3 @@ class TestBase(object):
         fh.close()
 
         return
-
-
-def remove(f):
-    if os.path.isdir(f):
-        rm = shutil.rmtree
-    else:
-        rm = os.remove
-    try: rm(f)
-    except OSError: pass

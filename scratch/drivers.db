@@ -1,4 +1,0 @@
-<Drivers>
-  <Driver type="solid" filepath="solid_d.py" class="SolidDriver"/>
-  <Driver type="eos" filepath="eos_d.py" class="EOSDriver"/>
-</Drivers>

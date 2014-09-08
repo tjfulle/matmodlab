@@ -78,6 +78,8 @@ def matmodlab(func):
             from utils.quotes import write_random_quote
             write_random_quote()
 
+        return out
+
     return decorated_func
 
 
