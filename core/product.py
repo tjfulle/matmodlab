@@ -1,6 +1,9 @@
 import os
 import sys
+import ConfigParser
 from distutils.spawn import find_executable as which
+from core.configurer import cfgswitch_and_warn, cfgparse
+
 
 # ------------------------------------------------ PROJECT WIDE CONSTANTS --- #
 __version__ = (2, 0, 0)
@@ -30,8 +33,15 @@ PATH = os.getenv("PATH").split(os.pathsep)
 if TLS_D not in PATH:
     PATH.insert(0, TLS_D)
 MAT_LIB_DIRS = [MATLIB]
-MMLMTLS = [d for d in os.getenv("MMLMTLS", "").split(os.pathsep) if d.split()]
-MAT_LIB_DIRS.extend(MMLMTLS)
+TEST_DIRS = [TEST_D]
+
+# --- APPLY USER CONFIGURATIONS
+if os.getenv("MMLMTLS"):
+    cfgswitch_and_warn()
+cfg = cfgparse()
+MAT_LIB_DIRS.extend(cfg.user_mats)
+TEST_DIRS.extend(cfg.user_tests)
+
 FFLAGS = [x for x in os.getenv("FFLAGS", "").split() if x.split()]
 FC = which(os.getenv("FC", "gfortran"))
 

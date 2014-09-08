@@ -8,7 +8,7 @@ def parse_sim_argv(argv=None, get_f=False):
     from core.product import PKG_D
     if argv is None:
         argv = sys.argv[1:]
-    parser = argparse.ArgumentParser(prog="mmd")
+    parser = argparse.ArgumentParser(prog="mml-run")
     parser.add_argument("-v", default=1, type=int,
        help="Verbosity [default: %(default)s]")
     parser.add_argument("--dbg", default=False, action="store_true",
@@ -65,3 +65,6 @@ def parse_sim_argv(argv=None, get_f=False):
         raise FileNotFoundError(args.source)
 
     return args
+
+if __name__ == "__main__":
+    sys.exit(parse_sim_argv(get_f=True))

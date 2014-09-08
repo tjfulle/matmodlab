@@ -1,0 +1,8 @@
+#!/bin/bash
+# set up python environment
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT="$(dirname "$DIR")"
+find $ROOT \( -type d -name "build" -o -type d -name "*.eval" \) -exec rm -rf {} \+
+find $ROOT \( -name "*.pyc" -o -name "*.o" -o \
+              -name "*.con" -o -name "*.a" -o \
+              -name "*.so"  -o -name "*.log"  \) -exec rm -f {} \+

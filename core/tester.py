@@ -11,10 +11,10 @@ import datetime
 import numpy as np
 import multiprocessing as mp
 
-from core.product import SPLASH
 from core.logger import Logger
-from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 from utils.namespace import Namespace
+from core.product import SPLASH, TEST_DIRS
+from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 
 
 TIMING = []
@@ -45,7 +45,7 @@ def main(argv=None):
         help="Do not tear down passed tests on completion [default: ]")
     p.add_argument("--html", action="store_true", default=False,
         help="Write html summary of results (negates tear down) [default: ]")
-    p.add_argument("sources", nargs="+")
+    p.add_argument("sources", nargs="*")
 
     # parse out known arguments and reset sys.argv
     args, sys.argv[1:] = p.parse_known_args(argv)
@@ -53,6 +53,9 @@ def main(argv=None):
     # suppress logging from other products
     sys.argv.extend(["-v", "0"])
 
+    sources = args.sources
+    if not sources:
+        sources.extend(TEST_DIRS)
     gather_and_run_tests(args.sources, args.k, args.K, nprocs=args.j,
         tear_down=not args.no_tear_down, html_summary=args.html)
 

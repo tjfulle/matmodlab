@@ -1,8 +1,1 @@
-#!/bin/bash
-# set up python environment
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOT="$(dirname "$DIR")"
-UTIL="$ROOT/utils"
-PYFILE="$ROOT/core/tester.py"
-export PYTHONPATH="$ROOT"
-/usr/bin/env python $PYFILE $*
+mml-test

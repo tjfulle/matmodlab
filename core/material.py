@@ -11,10 +11,10 @@ import utils.mmlabpack as mmlabpack
 from utils.fortran.product import FIO
 from utils.constants import DEFAULT_TEMP
 from utils.constants import SET_AT_RUNTIME
+from core.product import MAT_LIB_DIRS, PKG_D
 from utils.data_containers import Parameters
 from core.logger import Logger, ConsoleLogger
 from materials.product import ABA_MATS, USER_MAT
-from core.product import MAT_LIB_DIRS, PKG_D, MATLIB, F_PRODUCT
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 
 try:

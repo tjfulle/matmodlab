@@ -1,0 +1,6 @@
+#!/bin/bash
+# set up python environment
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT="$(dirname "$DIR")"
+export PYTHONPATH="$ROOT"
+/usr/bin/env python "$ROOT/core/configurer.py" $*
