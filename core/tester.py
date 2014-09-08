@@ -12,13 +12,13 @@ import numpy as np
 import multiprocessing as mp
 
 from core.logger import Logger
+from utils.misc import fillwithdots
 from utils.namespace import Namespace
-from core.product import SPLASH, TEST_DIRS
+from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH
 from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 
 
 TIMING = []
-WIDTH = 80
 E_POST = ".post"
 F_POST = "graphics.html"
 TESTRE = re.compile(r"(?:^|[\\b_\\.-])[Tt]est")
@@ -218,6 +218,9 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
         if torn_down == ntests_to_run:
             logger.write("all tests passed, removing results directory")
             shutil.rmtree(RES_D)
+        else:
+            logger.write("failed to tear down all tests, writing html summary")
+            html_summary = True
 
     if html_summary:
         logger.write("\nWRITING HTML SUMMARY TO {0}".format(RES_D), transform=str)
@@ -226,11 +229,6 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     logger.finish()
 
     return
-
-
-def fillwithdots(a, b):
-    dots = "." * (WIDTH - len(a) - len(b))
-    return "{0}{1}{2}".format(a, dots, b)
 
 
 def isclass(item):
@@ -329,7 +327,7 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
             # instantiate test and set defaults
             # this is
             the_test = test_cls()
-            the_test.init(file_dir, test_dir, module, logger)
+            the_test.init(file_dir, test_dir, module, reprs[i], logger)
             validated = the_test.validate()
             if not validated:
                 logger.error("{0}: skipping unvalidated test".format(module))
@@ -369,7 +367,8 @@ def run_test(test):
     if not test.instance:
         return NOT_RUN, np.nan
     ti = time.time()
-    logger.write(fillwithdots(test.str_repr, "RUNNING"), transform=str)
+    logger.write(fillwithdots(test.str_repr, "RUNNING", TEST_CONS_WIDTH),
+                 transform=str)
     status = test.instance.setup()
     if status:
         logger.error("{0}: failed to setup".format(test.str_repr))
@@ -379,7 +378,7 @@ def run_test(test):
     dtime = time.time() - ti
     test.status = test.instance.status
     test.dtime = dtime
-    line = fillwithdots(test.str_repr, "FINISHED")
+    line = fillwithdots(test.str_repr, "FINISHED", TEST_CONS_WIDTH)
     s = " [{1}] ({0:.1f}s)".format(dtime, result_str(test.status))
     logger.write(line + s, transform=str)
 
@@ -446,7 +445,7 @@ def test_html_summary(test, root_d):
     tcompletion = "{0:.2f}s".format(test.dtime)
 
     # look for post processing link
-    html_link = os.path.join(test_dir, test.instance.runid + E_POST, F_POST)
+    html_link = os.path.join(test_dir, "png", "graphics.html")
     if not os.path.isfile(html_link):
         html_link = None
 
@@ -470,6 +469,7 @@ def test_html_summary(test, root_d):
     html.append("</ul>")
     html.append("</ul>\n")
     return "\n".join(html)
+
 
 if __name__ == "__main__":
     main()

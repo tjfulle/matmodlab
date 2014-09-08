@@ -288,7 +288,7 @@ class ContinuumDriver(PathDriver):
                                  time_step=dt)
 
                 elem_data.update(stress=sig, strain=eps, defgrad=f, symm_l=d,
-                                 eqstrain=eqeps, vstrain=eqeps, dstress=epsv,
+                                 eqstrain=eqeps, vstrain=epsv, dstress=dstress,
                                  smises=smises, xtra=xtra, temp=temp[2],
                                  pressure=pres)
 

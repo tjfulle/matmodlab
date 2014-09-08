@@ -41,6 +41,7 @@ if os.getenv("MMLMTLS"):
 cfg = cfgparse()
 MAT_LIB_DIRS.extend(cfg.user_mats)
 TEST_DIRS.extend(cfg.user_tests)
+TEST_CONS_WIDTH = 80
 
 FFLAGS = [x for x in os.getenv("FFLAGS", "").split() if x.split()]
 FC = which(os.getenv("FC", "gfortran"))

@@ -3,6 +3,8 @@ import sys
 import shutil
 from core.logger import Logger
 from utils.exojac import exodiff
+from utils.misc import fillwithdots
+from core.product import TEST_CONS_WIDTH
 
 PASSED = 0
 DIFFED = 1
@@ -33,7 +35,7 @@ class TestBase(object):
                             "to the {0} Driver logger".format(self.kind))
         self._logger = new_logger
 
-    def init(self, src_dir, test_dir, module, logger):
+    def init(self, src_dir, test_dir, module, str_repr, logger):
         """Initialize the test.
 
         This is done in the parent class after any subclasses have been
@@ -48,6 +50,10 @@ class TestBase(object):
         self.torn_down = 0
         self.status = self.not_run
         self.disabled = getattr(self, "disabled", False)
+        self.gen_overlay = getattr(self, "gen_overlay", False)
+        self.gen_overlay_if_fail = getattr(self, "gen_overlay_if_fail", False)
+        self._no_teardown = False
+        self.str_repr = str_repr
 
     def validate(self):
 
@@ -60,27 +66,28 @@ class TestBase(object):
         if not self.runid:
             self.runid = "unkown_test"
             errors += 1
-            self.logger.error("{0}: missing runid attribute".format(self.runid))
+            self.logger.error("{0}: missing runid attribute".format(self.str_repr))
 
         self.keywords = getattr(self, "keywords", [])
         if not self.keywords:
             errors += 1
-            self.logger.error("{0}: missing keywords attribute".format(self.runid))
+            self.logger.error("{0}: missing keywords "
+                              "attribute".format(self.str_repr))
 
         elif not isinstance(self.keywords, (list, tuple)):
             errors += 1
             self.logger.error("{0}: expected keywords to be a "
-                              "list".format(self.runid))
+                              "list".format(self.str_repr))
 
         if all(n not in self.keywords for n in ("long", "fast")):
             errors += 1
             self.logger.error("{0}: expected long or fast "
-                              "keyword".format(self.runid))
+                              "keyword".format(self.str_repr))
 
         if not os.path.isdir(self.test_dir):
             errors += 1
             self.logger.error("{0}: {1} directory does not "
-                              "exist".format(self.runid, self.test_dir))
+                              "exist".format(self.str_repr, self.test_dir))
 
         return not errors
 
@@ -98,13 +105,13 @@ class TestBase(object):
             os.path.join(self.src_dir, self.runid + ".base_exo"))
         if not os.path.isfile(self.base_exo):
             errors += 1
-            self.logger.error("{0}: base_exo file not found".format(self.runid))
+            self.logger.error("{0}: base_exo file not found".format(self.str_repr))
 
         self.exodiff = getattr(self, "exodiff",
                                os.path.join(TEST_D, "base.exodiff"))
         if not os.path.isfile(self.exodiff):
             errors += 1
-            self.logger.error("{0}: exodiff file not found".format(self.runid))
+            self.logger.error("{0}: exodiff file not found".format(self.str_repr))
 
         self.setup_by_class = True
         self.status = self.failed_to_run
@@ -119,14 +126,14 @@ class TestBase(object):
 
         if not getattr(self, "setup_by_class", False):
             self.logger.error("{0}: running standard test requires "
-                              "calling super's setup method".format(self.runid))
+                              "calling super's setup method".format(self.str_repr))
             return
 
         try:
             self.run_job()
         except BaseException as e:
             self.logger.error("{0}: failed with the following "
-                              "exception: {1}".format(self.runid, e.message))
+                              "exception: {1}".format(self.str_repr, e.message))
             return
 
         if not os.path.isfile(self.exofile):
@@ -139,6 +146,8 @@ class TestBase(object):
         return
 
     def tear_down(self):
+        if self._no_teardown:
+            return
         if self.status != self.passed:
             return
         for f in os.listdir(self.test_dir):
@@ -148,7 +157,94 @@ class TestBase(object):
         self.torn_down = 1
 
     def post_hook(self, *args, **kwargs):
+        if (self.gen_overlay or
+            (self.gen_overlay_if_fail and self.status==self.failed)):
+            self._create_overlays()
         pass
+
+    def _create_overlays(self):
+        """Create overlays of variables common to sim file and baseline
+
+        """
+        if not self.setup_by_class:
+            self.logger.warn("overlays only created for tests setup by class")
+            return
+
+        import time
+        import matplotlib.pyplot as plt
+        from utils.exojac.exodump import read_vars_from_exofile
+
+        # we created plots for a reason -> so don't tear down results!
+        self._no_teardown = True
+
+        # Make output directory for plots
+        destd = os.path.join(self.test_dir, "png")
+        try: shutil.rmtree(destd)
+        except OSError: pass
+        os.makedirs(destd)
+
+        # get the data
+        head1, data1 = read_vars_from_exofile(self.exofile)
+        head2, data2 = read_vars_from_exofile(self.base_exo)
+
+        # TIME is always first column
+        time1, data1 = data1[:, 0], data1[:, 1:]
+        time2, data2 = data2[:, 0], data2[:, 1:]
+        head1 = head1[1:]
+        head2 = dict([(v, i) for (i, v) in enumerate(head2[1:])])
+
+        ti = time.time()
+
+        label1 = self.runid
+        label2 = self.runid + "_base"
+
+        aspect_ratio = 4. / 3.
+        plots = []
+        msg = fillwithdots(self.str_repr, "POST PROCESSING", TEST_CONS_WIDTH)
+        self.logger.write(msg, transform=str)
+        for (col, yvar) in enumerate(head1):
+            name = yvar + ".png"
+            filename = os.path.join(destd, name)
+            y1 = data1[:, col]
+            plt.clf()
+            plt.cla()
+            plt.xlabel("TIME")
+            plt.ylabel(yvar)
+
+            col2 = head2.get(yvar)
+            if col2 is None:
+                continue
+            y2 = data2[:, col2]
+            plt.plot(time2, y2, ls="-", lw=4, c="orange", label=label2)
+            plt.plot(time1, y1, ls="-", lw=2, c="green", label=label1)
+            plt.legend(loc="best")
+            plt.gcf().set_size_inches(aspect_ratio * 5, 5.)
+            plt.savefig(filename, dpi=100)
+            plots.append(filename)
+        dtime = time.time() - ti
+        msg = fillwithdots(self.str_repr,
+                           "POST PROCESSING COMPLETE",
+                           TEST_CONS_WIDTH)
+        msg +=  " ({0:.0f}s)".format(dtime)
+        self.logger.write(msg, transform=str)
+
+        # write an html summary
+        fh = open(os.path.join(destd, "graphics.html"), "w")
+        fh.write("<html>\n<head>\n<title>{0}</title>\n</head>\n"
+                   "<body>\n<table>\n<tr>\n".format(self.str_repr))
+        for i, plot in enumerate(plots):
+            name = os.path.basename(plot)
+            if i % 3 == 0 and i != 0:
+                fh.write("</tr>\n<tr>\n")
+            width = str(int(aspect_ratio * 300))
+            height = str(int(300))
+            fh.write("<td>{0}<a href='{1}'><img src='{1}' width='{2}' "
+                     "height='{3}'></a></td>\n".format(name, plot, width, height))
+        fh.write("</tr>\n</table>\n</body>\n</html>")
+        fh.close()
+
+        return
+
 
 def remove(f):
     if os.path.isdir(f):

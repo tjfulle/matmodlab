@@ -123,3 +123,10 @@ def remove(path):
     try: os.remove(path)
     except OSError: shutil.rmtree(path)
     return
+
+
+def fillwithdots(a, b, width):
+    dots = "." * (width - len(a) - len(b))
+    return "{0}{1}{2}".format(a, dots, b)
+
+

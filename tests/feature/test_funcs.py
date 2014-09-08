@@ -8,6 +8,7 @@ class TestFunc(TestBase):
     def __init__(self):
         self.runid = runid
         self.keywords = ["fast", "function", "feature", "elastic"]
+        self.gen_overlay = True
     def run_job(self):
         runner(d=self.test_dir, v=0)
         return
