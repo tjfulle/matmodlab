@@ -47,6 +47,8 @@ case $COMMAND in
 	;;
     "config")
 	;;
+    "run")
+	;;
     "test")
 	;;
     "view")
