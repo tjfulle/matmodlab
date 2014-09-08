@@ -26,8 +26,8 @@ class PyPlastic(MaterialModel):
         """
         # Check inputs
         if opts.mimic == 'elastic':
-            print("model '{0}' mimicing '{1}'".
-                  format(self.name, self.params.modelname))
+            logger.write("model '{0}' mimicing '{1}'".format(
+                self.name, self.params.modelname))
             K = self.params["K"]
             G = self.params["G"]
             A1 = 1.0e99
@@ -53,27 +53,25 @@ class PyPlastic(MaterialModel):
         errors = 0
         if K <= 0.0:
             errors += 1
-            self.logger.error("Bulk modulus K must be positive", raise_error=0)
+            self.logger.error("Bulk modulus K must be positive")
         if G <= 0.0:
             errors += 1
-            self.logger.error("Shear modulus G must be positive", raise_error=0)
+            self.logger.error("Shear modulus G must be positive")
         nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
         if nu > 0.5:
             errors += 1
-            self.logger.error("Poisson's ratio > .5", raise_error=0)
+            self.logger.error("Poisson's ratio > .5")
         if nu < -1.0:
             errors += 1
-            self.logger.error("Poisson's ratio < -1.", raise_error=0)
+            self.logger.error("Poisson's ratio < -1.")
         if nu < 0.0:
-            errors += 1
-            self.logger.write("#---- WARNING: negative Poisson's ratio",
-                              raise_error=0)
+            self.logger.write("#---- WARNING: negative Poisson's ratio")
         if A1 <= 0.0:
             errors += 1
-            self.logger.error("A1 must be positive nonzero", raise_error=0)
+            self.logger.error("A1 must be positive nonzero")
         if A4 <= 0.0:
             errors += 1
-            self.logger.error("A4 must be positive nonzero", raise_error=0)
+            self.logger.error("A4 must be positive nonzero")
         if errors:
             self.logger.error("stopping due to previous errors")
 
@@ -163,7 +161,6 @@ class PyPlastic(MaterialModel):
         xtra[idx('ROOTJ2')] = self.rootj2(stress)
         xtra[idx('YROOTJ2')] = A1 - A4 * self.i1(stress)
 
-        print("sig yz {0:.20e}".format((stress-sigsave)[4]))
         return stress, xtra, self.constant_jacobian
 
     def dot_with_elastic_stiffness(self, A):

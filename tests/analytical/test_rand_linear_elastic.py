@@ -8,11 +8,10 @@ from core.test import PASSED, DIFFED, FAILED, DIFFTOL, FAILTOL
 
 RUNID = "rand_linear_elastic"
 
-class TestFunc(TestBase):
+class TestRandomLinearElastic(TestBase):
     def __init__(self):
         self.runid = RUNID
-        self.keywords = ["fast", "random", "material", "elastic"]
-        self.runids = []
+        self.keywords = ["fast", "random", "material", "elastic", "analytic"]
 
     def setup(self, *args, **kwargs):
         pass
