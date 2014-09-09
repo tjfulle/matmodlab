@@ -1,0 +1,4 @@
+TIME             STRAIN_XX STRAIN_YY STRAIN_ZZ STRAIN_XY STRAIN_XZ STRAIN_YZ    STRESS_XX    STRESS_YY    STRESS_ZZ STRESS_XY STRESS_XZ STRESS_YZ    SIGE       Y
+ 0.0                   0.0       0.0       0.0       0.0       0.0       0.0          0.0          0.0          0.0       0.0       0.0       0.0     0.0  70.0E6
+ 1.0  8.527272727272727E-4       0.0       0.0       0.0       0.0       0.0  144375000.0   74375000.0   74375000.0       0.0       0.0       0.0  70.0E6  70.0E6
+ 2.0  1.705454545454545E-3       0.0       0.0       0.0       0.0       0.0  246750000.0  169750000.0  169750000.0       0.0       0.0       0.0  73.5E6  73.5E6
