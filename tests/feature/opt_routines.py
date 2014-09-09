@@ -53,7 +53,7 @@ def opt_sig_v_time(exof):
     vars_to_get = ("STRESS_XX", "STRESS_YY", "STRESS_ZZ")
 
     # read in baseline data
-    aux = os.path.join(D, "opt_baseline.dat")
+    aux = os.path.join(D, "opt.base_dat")
     auxhead = open(aux).readline().split()
     auxdat = np.loadtxt(aux, skiprows=1)
     I = np.array([auxhead.index(var) for var in vars_to_get], dtype=np.int)

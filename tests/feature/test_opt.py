@@ -3,12 +3,12 @@ from matmodlab import *
 import opt_routines as my_opt
 
 my_dir = get_my_directory()
-path_file = os.path.join(my_dir, "opt_path.dat")
+path_file = os.path.join(my_dir, "opt.base_dat")
 
 class TestCobyla(TestBase):
     def __init__(self):
         self.runid = "opt_cobyla"
-        self.keywords = ["long", "cobyla", "optimization", "feature"]
+        self.keywords = ["long", "cobyla", "optimization", "opt", "feature"]
     def setup(self,*args,**kwargs): pass
     def run(self):
         self.status = self.failed_to_run
@@ -22,7 +22,7 @@ class TestCobyla(TestBase):
 class TestSimplex(TestBase):
     def __init__(self):
         self.runid = "opt_simplex"
-        self.keywords = ["long", "simplex", "optimization", "feature"]
+        self.keywords = ["long", "simplex", "optimization", "opt", "feature"]
     def setup(self,*args,**kwargs): pass
     def run(self):
         self.status = self.failed_to_run
@@ -37,7 +37,7 @@ class TestPowell(TestBase):
     def __init__(self):
         self.disabled = True
         self.runid = "opt_powell"
-        self.keywords = ["long", "powell", "optimization", "feature"]
+        self.keywords = ["long", "powell", "optimization", "opt", "feature"]
     def setup(self,*args,**kwargs): pass
     def run(self):
         self.status = self.failed_to_run
