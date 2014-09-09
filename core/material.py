@@ -6,9 +6,9 @@ import numpy as np
 from utils.errors import *
 from core.runtime import opts
 import utils.xpyclbr as xpyclbr
-from utils.misc import load_file
 import utils.mmlabpack as mmlabpack
 from utils.fortran.product import FIO
+from utils.misc import load_file, remove
 from utils.constants import DEFAULT_TEMP
 from utils.constants import SET_AT_RUNTIME
 from core.product import MAT_LIB_DIRS, PKG_D
@@ -540,7 +540,8 @@ class AbaqusMaterial(MaterialModel):
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
              source_files=None, source_directory=None, initial_temp=None,
-             expansion=None, trs=None, viscoelastic=None, logger=None, kappa=0):
+             expansion=None, trs=None, viscoelastic=None, logger=None, kappa=0,
+             rebuild=0):
     """Material model factory method
 
     """
@@ -592,7 +593,10 @@ def Material(model, parameters=None, depvar=None, constants=None,
     # Check if model is already built (if applicable)
     if hasattr(material, "source_files"):
         so_lib = os.path.join(PKG_D, lib + ".so")
+        if rebuild or opts.rebuild_material:
+            remove(so_lib)
         if not os.path.isfile(so_lib):
+            logger.write("{0}: rebuilding material library".format(material.name))
             material.source_files.extend(source_files)
             lapack = getattr(material, "lapack", None)
             import core.builder as bb

@@ -12,8 +12,8 @@ import numpy as np
 import multiprocessing as mp
 
 from core.logger import Logger
-from utils.misc import fillwithdots
 from utils.namespace import Namespace
+from utils.misc import fillwithdots, remove
 from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH
 from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 
@@ -307,8 +307,6 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
         # create directory to run the test
         d = os.path.basename(file_dir)
         test_dir = os.path.join(root_dir, d, module)
-        if not os.path.isdir(test_dir):
-            os.makedirs(test_dir)
 
         for (i, test_cls) in enumerate(tests):
             kwargs = {"str_repr": reprs[i],
@@ -329,10 +327,6 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
             # this is
             the_test = test_cls()
             the_test.init(file_dir, test_dir, module, reprs[i], logger)
-            validated = the_test.validate()
-            if not validated:
-                logger.error("{0}: skipping unvalidated test".format(module))
-                continue
 
             if the_test.disabled:
                 all_tests[-1].disabled = True
@@ -344,6 +338,12 @@ def gather_and_filter_tests(sources, root_dir, include, exclude):
 
             # keep only tests wanted
             if include and not any([kw in the_test.keywords for kw in include]):
+                continue
+
+            validated = the_test.validate()
+            if not validated:
+                remove(test_dir)
+                logger.error("{0}: skipping unvalidated test".format(module))
                 continue
 
             # if we got to here, the test will be run, store the instance
@@ -443,6 +443,10 @@ def test_html_summary(test, root_d):
         return "<ul> <li> {0} </li> </ul>".format(test.str_repr)
 
     test_dir = test.instance.test_dir
+
+    if not os.path.isdir(test_dir):
+        return "<ul> <li> {0} </li> </ul>".format(test.str_repr)
+
     status = result_str(test.status)
     keywords = ", ".join(test.instance.keywords)
     tcompletion = "{0:.2f}s".format(test.dtime)

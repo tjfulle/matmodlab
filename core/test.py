@@ -57,6 +57,7 @@ class TestBase(object):
         self._no_teardown = False
         self.str_repr = str_repr
         self.interp = getattr(self, "interpolate_diff", False)
+        self.validated = False
 
     def validate(self):
 
@@ -87,10 +88,10 @@ class TestBase(object):
             self.logger.error("{0}: expected long or fast "
                               "keyword".format(self.str_repr))
 
-        if not os.path.isdir(self.test_dir):
-            errors += 1
-            self.logger.error("{0}: {1} directory does not "
-                              "exist".format(self.str_repr, self.test_dir))
+        if os.path.isdir(self.test_dir):
+            remove(self.test_dir)
+        os.makedirs(self.test_dir)
+        self.validated = not errors
 
         return not errors
 

@@ -19,17 +19,17 @@ class TestUMat(TestBase):
         self.runid = umat
         self.keywords = ["fast", "abaqus", "umat", "neohooke", "feature"]
     def run_job(self):
-        run_umat(d=self.test_dir, v=0)
+        run_umat(d=self.test_dir, v=0, test=1)
 
 class TestUHyper(TestBase):
     def __init__(self):
         self.runid = uhyper
         self.keywords = ["fast", "abaqus", "uhyper", "neohooke", "feature"]
     def run_job(self):
-        run_uhyper(d=self.test_dir, v=0)
+        run_uhyper(d=self.test_dir, v=0, test=1)
 
 @matmodlab
-def run_umat(d=None, v=1):
+def run_umat(d=None, v=1, test=0):
     d = d or os.getcwd()
     runid = umat
     logfile = os.path.join(d, runid + ".log")
@@ -39,14 +39,14 @@ def run_umat(d=None, v=1):
                     termination_time=1.8*pi, logger=logger)
     constants = [E, Nu]
     material = Material("umat", parameters=constants, constants=2,
-                        source_files=["neohooke.f90"],
+                        source_files=["neohooke.f90"], rebuild=test,
                         source_directory="{0}/materials/abaumats".format(ROOT_D),
                         logger=logger)
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
 @matmodlab
-def run_uhyper(d=None, v=1):
+def run_uhyper(d=None, v=1, test=0):
     d = d or os.getcwd()
     runid = uhyper
     logfile = os.path.join(d, runid + ".log")
@@ -56,7 +56,7 @@ def run_uhyper(d=None, v=1):
                     termination_time=1.8*pi, logger=logger)
     constants = [C10, D1]
     material = Material("uhyper", parameters=constants, constants=2,
-                        source_files=["uhyper.f90"],
+                        source_files=["uhyper.f90"], rebuild=test,
                         source_directory="{0}/materials/abaumats".format(ROOT_D),
                         logger=logger)
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
