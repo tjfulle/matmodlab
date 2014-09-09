@@ -17,10 +17,21 @@ class TestJ2Plasticity1(TestBase):
     def __init__(self):
         self.runid = RUNID + "1"
         self.keywords = ["fast", "material", "vonmises", "analytic", "material"]
-        self.base_res = os.path.join(my_dir, "j2_plasticity_analytic1.base_arr")
+        self.base_res = os.path.join(my_dir, "j2_plast.base_arr")
         self.interpolate_diff = True
     def run_job(self):
         runner1(d=self.test_dir, v=0, runid=self.runid)
+
+class TestJ2PlasticityIsotropicHardening(TestBase):
+    def __init__(self):
+        self.runid = RUNID + "_iso_hard"
+        self.keywords = ["fast", "material", "vonmises", "analytic", "material",
+                         "hardening"]
+        self.base_res = os.path.join(my_dir, "j2_plast_iso_hard.base_arr")
+        self.interpolate_diff = True
+        self.gen_overlay_if_fail = True
+    def run_job(self):
+        iso_hard_runner(d=self.test_dir, v=0, runid=self.runid)
 
 class TestRandomJ2Plasticity1(TestBase):
     def __init__(self):
@@ -269,16 +280,59 @@ def runner1(d=None, v=1, runid=None):
     SIGLY2 = ((2 * G + 3 * LAM) * EPSY2 -YF ) / 3.0 # final lateral stress
 
     path = """
-    0 0 222222 0         0 0 0 0 0
-    1 1 222222 {EPSY}    0 0 0 0 0
-    2 1 222222 {TWOEPSY} 0 0 0 0 0
-    """.format(EPSY=EPSY, TWOEPSY=2.*EPSY)
+    0 0 222222 0       0 0 0 0 0
+    1 1 222222 {EPSY}  0 0 0 0 0
+    2 1 222222 {EPSY2} 0 0 0 0 0
+    """.format(EPSY=EPSY, EPSY2=EPSY2)
 
     # set up the driver
     driver = Driver("Continuum", path=path, step_multiplier=200, logger=logger)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": YF, "H": H, "BETA": 0}
+    material = Material("vonmises", parameters=parameters, logger=logger)
+
+    # set up and run the model
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps.run()
+
+@matmodlab
+def iso_hard_runner(d=None, v=1, runid=None):
+
+    d = d or os.getcwd()
+    runid = runid or RUNID + "_iso_hard"
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
+
+    E   =   0.1100000E+12
+    NU  =   0.3400000
+    LAM =   0.87220149253731343283582089552238805970149253731343E+11
+    G   =   0.41044776119402985074626865671641791044776119402985E+11
+    K   =   0.11458333333333333333333333333333333333333333333333E+12
+    USM =   0.16930970149253731343283582089552238805970149253731E+12
+    Y   =   70.0E+6
+    HFAC = 1.0 / 10.0
+    H = 3.0 * HFAC / (1.0 - HFAC) * G
+    YF = Y * (1.0 + HFAC)
+    EPSY = Y / (2.0 * G)
+    SIGAY = (2.0 * G + LAM) * EPSY
+    SIGLY = LAM * EPSY
+    EPSY2 = 2.0 * Y / (2.0 * G)
+    SIGAY2 = ((2 * G + 3 * LAM) * EPSY2 -YF ) / 3.0 + YF
+    SIGLY2 = ((2 * G + 3 * LAM) * EPSY2 -YF ) / 3.0
+    BETA = 0
+
+    path = """
+    0 0 222222 0       0 0 0 0 0
+    1 1 222222 {EPSY}  0 0 0 0 0
+    2 1 222222 {EPSY2} 0 0 0 0 0
+    """.format(EPSY=EPSY, EPSY2=EPSY2)
+
+    # set up the driver
+    driver = Driver("Continuum", path=path, step_multiplier=200, logger=logger)
+
+    # set up the material
+    parameters = {"K": K, "G": G, "Y0": YF, "H": H, "BETA": BETA}
     material = Material("vonmises", parameters=parameters, logger=logger)
 
     # set up and run the model
@@ -423,4 +477,4 @@ def rotation_matrix(a, theta):
     return part1 + part2 + part3
 
 if __name__ == "__main__":
-    a = runner1()
+    a = iso_hard_runner()

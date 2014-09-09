@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import argparse
+import linecache
 import numpy as np
 
 from exoread import ExodusIIReader
@@ -106,6 +107,13 @@ def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
 
     return 0
 
+def load_data(filepath, variables=None, step=1, h=1,
+              elem_blk=1, elem_num=1, t=0):
+    if filepath.endswith((".exo", ".base_exo", ".e")):
+        return read_vars_from_exofile(filepath, variables=variables, step=step,
+                                      h=h, elem_blk=elem_blk, elem_num=elem_num,
+                                      t=t)
+    return loadascii(filepath)
 
 def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
                            elem_blk=1, elem_num=1, t=0):
@@ -224,6 +232,43 @@ def expand_var_names(master, slave):
         matches.extend(vt)
     return matches
 
+
+def loadascii(filepath):
+    head = loadhead(filepath)
+    data = loadtxt(filepath, skiprows=1)
+    return head, data
+
+
+def loadhead(filepath, comments="#"):
+    """Get the file header
+
+    """
+    line = " ".join(x.strip() for x in linecache.getline(filepath, 1).split())
+    if line.startswith(comments):
+        line = line[1:]
+    return line.split()
+
+
+def loadtxt(f, skiprows=0, comments="#"):
+    """Load text from output files
+
+    """
+    lines = []
+    for (iline, line) in enumerate(open(f, "r").readlines()[skiprows:]):
+        try:
+            line = [float(x) for x in line.split(comments, 1)[0].split()]
+        except ValueError:
+            break
+        if not lines:
+            ncols = len(line)
+        if len(line) < ncols:
+            break
+        if len(line) > ncols:
+            sys.stderr("*** exodump.loadtxt: error: {0}: inconsistent data in "
+                       "row {1}".format(os.path.basename(f), iline))
+            raise SystemExit(2)
+        lines.append(line)
+    return np.array(lines)
 
 if __name__ == '__main__':
     sys.exit(main())

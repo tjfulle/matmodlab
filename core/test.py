@@ -176,7 +176,7 @@ class TestBase(object):
 
         import time
         import matplotlib.pyplot as plt
-        from utils.exojac.exodump import read_vars_from_exofile
+        from utils.exojac.exodump import load_data
 
         # we created plots for a reason -> so don't tear down results!
         self._no_teardown = True
@@ -188,8 +188,8 @@ class TestBase(object):
         os.makedirs(destd)
 
         # get the data
-        head1, data1 = read_vars_from_exofile(self.exofile)
-        head2, data2 = read_vars_from_exofile(self.base_res)
+        head1, data1 = load_data(self.exofile)
+        head2, data2 = load_data(self.base_res)
 
         # TIME is always first column
         time1, data1 = data1[:, 0], data1[:, 1:]
