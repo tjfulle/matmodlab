@@ -18,13 +18,13 @@ from materials.product import ABA_MATS, USER_MAT
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 
 try:
-    from lib.visco import visco as ve
+    from lib.visco import visco as visco
 except ImportError:
-    ve = None
+    visco = None
 try:
-    from lib.thermomech import thermomech as tm
+    from lib.expansion import expansion as xpansion
 except ImportError:
-    tm = None
+    xpansion = None
 
 class MaterialModel(object):
     """The base material class
@@ -38,16 +38,16 @@ class MaterialModel(object):
         if getattr(self, attr, noattr) == noattr:
             raise Exception("material missing attribute: {0}".format(attr))
 
-    def init(self, logger=None, file=None):
+    def init(self, logger=None, file=None, kappa=0):
 
         for attr in ("name", "param_names"):
             self.assert_attr_exists(attr)
 
         self._vars = []
         self.nvisco = 0
-        self._viscoelastic = None
-        self._trs = None
-        self._expansion = None
+        self.visco_model = None
+        self.trs_model = None
+        self.expansion_model = None
         self.bulk_modulus = None
         self.shear_modulus = None
         self.J0 = None
@@ -63,6 +63,7 @@ class MaterialModel(object):
         self.initial_stress = np.zeros(6)
         self.logger = logger or Logger()
         self._file = file
+        self._kappa = kappa
 
     @property
     def logger(self):
@@ -94,6 +95,14 @@ class MaterialModel(object):
     @initial_temp.setter
     def initial_temp(self, value):
         self.itemp = value
+
+    @property
+    def kappa(self):
+        return self._kappa
+
+    @kappa.setter
+    def kappa(self, value):
+        self._kappa = value
 
     def setup_new_material(self, parameters, depvar, initial_temp):
         """Set up the new material
@@ -135,57 +144,58 @@ class MaterialModel(object):
         except TypeError:
             self.setup()
 
-        if self._viscoelastic is not None:
-            if ve is None:
-                self.logger.error("attempting visco analysis but "
-                                  "visco.so not imported")
+        if self.visco_model is not None:
+            if visco is None:
+                self.logger.raise_error("attempting visco analysis but "
+                                        "lib/visco.so not imported")
 
             # setup viscoelastic params
             self.visco_params = np.zeros(24)
             # starting location of G and T Prony terms
             self.viscopoint = (4, 14)
-            n = self._viscoelastic.nprony
+            n = self.visco_model.nprony
             I, J = self.viscopoint
-            self.visco_params[I:I+n] = self._viscoelastic.data[:, 0]
-            self.visco_params[J:J+n] = self._viscoelastic.data[:, 1]
+            self.visco_params[I:I+n] = self.visco_model.data[:, 0]
+            self.visco_params[J:J+n] = self.visco_model.data[:, 1]
             # Ginf
-            self.visco_params[3] = self._viscoelastic.Ginf
+            self.visco_params[3] = self.visco_model.Ginf
 
-            # allocate storage for shift factors
-            for i in range(2):
-                self.register_variable("SHIFT_{0}".format(i+1), VAR_SCALAR)
+            # Allocate storage for visco data
+            visco_keys = []
 
+            # Shift factors
+            visco_keys.extend(["SHIFT_{0}".format(i+1) for i in range(2)])
+
+            # Instantaneous deviatoric PK2
             m = {0: "XX", 1: "YY", 2: "ZZ", 3: "XY", 4: "YZ", 5: "XZ"}
-            # register material variables
-            for i in range(6):
-                self.register_variable("TE_{0}".format(m[i]), VAR_SCALAR)
+            visco_keys.extend(["TE_{0}".format(m[i]) for i in range(6)])
 
-            # visco elastic model supports up to 10 Prony series terms,
+            # Visco elastic model supports up to 10 Prony series terms,
             # allocate storage for stress corresponding to each
-            for l in range(10):
+            nprony = 10
+            for l in range(nprony):
                 for i in range(6):
-                    self.register_variable("H{0}_{1}".format(l+1, m[i]), VAR_SCALAR)
+                    visco_keys.append("H{0}_{1}".format(l+1, m[i]))
 
-            # Now, allocate storage
-            self.nvisco = len(self.material_variables) - self.nxtra
-            xinit = np.append(self.initial_state, np.zeros(self.nvisco))
-            self.initial_state = xinit
+            self.nvisco = len(visco_keys)
+            visco_idata = np.zeros(self.nvisco)
+            self.augment_xtra(visco_keys, visco_idata)
 
-        if self._trs is not None:
-            self.visco_params[0] = self._trs.data[1] # C1
-            self.visco_params[1] = self._trs.data[2] # C2
-            self.visco_params[2] = self._trs.temp_ref # REF TEMP
+        if self.trs_model is not None:
+            self.visco_params[0] = self.trs_model.data[1] # C1
+            self.visco_params[1] = self.trs_model.data[2] # C2
+            self.visco_params[2] = self.trs_model.temp_ref # REF TEMP
 
-        if self._expansion is not None:
-            if tm is None:
-                self.logger.error("attempting thermal analysis but "
-                                  "thermomech.so not imported")
+        if self.expansion_model is not None:
+            if xpansion is None:
+                self.logger.error("attempting thermal expansion but "
+                                  "lib/expansion.so not imported")
 
-            self.exp_params = self._expansion.data
+            self.exp_params = self.expansion_model.data
 
         if self.visco_params is not None:
             comm = (self.logger.error, self.logger.write, self.logger.warn)
-            ve.propcheck(self.visco_params, *comm)
+            visco.propcheck(self.visco_params, *comm)
 
         self.register_variable("XTRA", VAR_ARRAY, keys=self.xkeys,
                                ivals=self.initial_state)
@@ -243,6 +253,13 @@ class MaterialModel(object):
             raise ValueError("len(values) != len(keys)")
         self.xkeys = keys
         self.initial_state = np.array(values)
+
+    def augment_xtra(self, keys, values):
+        # increase xkeys and initial state -> but not nxtra
+        self.xkeys.extend(keys)
+        if len(values) != len(keys):
+            raise ValueError("len(values) != len(keys)")
+        self.initial_state = np.append(self.initial_state, np.array(values))
 
     def get_initial_jacobian(self):
         """Get the initial Jacobian numerically
@@ -377,22 +394,22 @@ class MaterialModel(object):
 
         if self.exp_params is not None:
             # thermal expansion: get mechanical deformation
-            Fm = tm.mechdef(self.exp_params, temp, dtemp, F.reshape(3,3), *comm)
+            Fm = xpansion.mechdef(self.exp_params, temp, dtemp,
+                                  F.reshape(3,3), *comm)
             Fm = Fm.reshape(9,)
             Em = mmlabpack.update_strain(self._kappa, Fm)
 
         rho = 1.
         energy = 1.
         sig, xtra[:N], stif = self.update_state(time, dtime, temp, dtemp,
-            energy, rho, F0, F, stran, d, elec_field, user_field, sig,
+            energy, rho, F0, Fm, Em, d, elec_field, user_field, sig,
             xtra[:N], last=last, mode=0)
 
         if self.visco_params is not None:
             # get visco correction
             X = xtra[N:]
-            I, J = self.viscopoint
-            sig = ve.viscorelax(dtime, time, temp, dtemp, self.visco_params,
-                                F.reshape(3,3), X, sig, *comm)
+            sig = visco.viscorelax(dtime, time, temp, dtemp, self.visco_params,
+                                   F.reshape(3,3), X, sig, *comm)
             xtra[N:] = X[:]
 
         if v is not None:
@@ -411,11 +428,12 @@ class MaterialModel(object):
 
         """
         N = self.nxtra
+        xtra = self.initial_state
         if self.visco_params is not None:
             # initialize the visco variables
             x = xtra[N:]
             comm = (self.logger.error, self.logger.write, self.logger.warn)
-            ve.viscoini(self.visco_params, x, *comm)
+            visco.viscoini(self.visco_params, x, *comm)
             xtra[N:] = x
 
         time = 0.
@@ -423,7 +441,6 @@ class MaterialModel(object):
         dtemp = 0.
         temp = self.initial_temp
         stress = self.initial_stress
-        xtra = self.initial_state
         F0 = np.eye(3).reshape(9,)
         F = np.eye(3).reshape(9,)
         stran = np.zeros(6)
@@ -523,7 +540,7 @@ class AbaqusMaterial(MaterialModel):
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
              source_files=None, source_directory=None, initial_temp=None,
-             logger=None):
+             expansion=None, trs=None, viscoelastic=None, logger=None, kappa=0):
     """Material model factory method
 
     """
@@ -591,7 +608,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         material = mat_class()
 
     # initialize and set up material
-    material.init(logger=logger, file=libinfo.file)
+    material.init(logger=logger, file=libinfo.file, kappa=kappa)
 
     if material.parameter_names == SET_AT_RUNTIME:
         # some models, like abaqus models, do not have the parameter names
@@ -608,6 +625,28 @@ def Material(model, parameters=None, depvar=None, constants=None,
         if len(parameters) != constants:
             raise UserInputError("len(parameters) != constants")
         parameters = np.array([float(x) for x in parameters])
+
+    # optional add-on models
+    if viscoelastic is not None:
+        from materials.addon_viscoelastic import Viscoelastic
+        if len(viscoelastic) != 2:
+            raise UserInputError("expected viscoelastic model to be "
+                                 "specified as (time type, data)")
+        material.visco_model = Viscoelastic(*viscoelastic)
+
+    if trs is not None:
+        from materials.addon_trs import TRS
+        if len(trs) != 2:
+            raise UserInputError("expected trs model to be "
+                                 "specified as (defnintion, data)")
+        material.trs_model = TRS(*trs)
+
+    if expansion is not None:
+        from materials.addon_expansion import Expansion
+        if len(expansion) != 2:
+            raise UserInputError("expected expansion model to be "
+                                 "specified as (expansion type, data)")
+        material.expansion_model = Expansion(*expansion)
 
     # Do the actual setup
     material.setup_new_material(parameters, depvar, initial_temp)

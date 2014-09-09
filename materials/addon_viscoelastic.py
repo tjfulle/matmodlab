@@ -4,6 +4,7 @@ from utils.errors import GenericError
 class Viscoelastic(object):
     def __init__(self, time, data):
         self.time = time.upper()
+        data = np.array(data)
         if self.time == "PRONY":
             # check data
             if data.shape[1] != 2:

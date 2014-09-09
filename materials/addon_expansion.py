@@ -1,6 +1,8 @@
+import numpy as np
 from utils.errors import UserInputError
 class Expansion(object):
     def __init__(self, exp_type, data):
+        data = np.array(data)
         self._type = exp_type.upper()
         if self._type == "ISOTROPIC":
             if len(data) != 1:

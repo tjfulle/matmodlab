@@ -73,6 +73,7 @@ class MaterialPointSimulator(object):
 
         self.setup_io()
         self.write_summary()
+        pass
 
     def register_variable(self, var_name, var_type):
         self._vars.append(Variable(var_name, var_type))

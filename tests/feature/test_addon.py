@@ -1,0 +1,59 @@
+#!/usr/bin/env mmd
+
+from matmodlab import *
+
+RUNID = "visco_neohooke"
+
+TEMP0 = 75
+TEMPF = 95
+TIMEF = 50
+PATH = """
+0          1 2227 0 0 0 {TEMP0}
+1         50 2447 1 0 0 {TEMP0}
+{TIMEF} 1000 1117 0 0 0 {TEMPF}""".format(TIMEF=TIMEF, TEMP0=TEMP0, TEMPF=TEMPF)
+
+E = 500
+Nu = .45
+
+@matmodlab
+def runner_visco(d=None, runid=None, v=1):
+    d = d or os.getcwd()
+    runid = RUNID
+
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
+
+    driver = Driver("Continuum", path=PATH, logger=logger, estar=.1)
+
+    constants = [E, Nu]
+    expansion = ("isotropic", [1.E-5])
+    viscoelastic = ("prony", np.array([[.35, 600.], [.15, 20.], [.25, 30.],
+                                     [.05, 40.], [.05, 50.], [.15, 60.]]))
+    trs = ("wlf", [75, 35, 50])
+    material = Material("umat", parameters=constants, constants=2,
+                        source_files=["neohooke.f90"], initial_temp=75,
+                        source_directory=os.path.join(MATLIB, "abaumats"),
+                        expansion=expansion, viscoelastic=viscoelastic, trs=trs)
+    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
+    mps.run()
+
+@matmodlab
+def runner_novisco(d=None, runid=None, v=1):
+    d = d or os.getcwd()
+    runid = "no" + RUNID
+
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
+
+    driver = Driver("Continuum", path=PATH, logger=logger, estar=.1)
+
+    constants = [E, Nu]
+    material = Material("umat", parameters=constants, constants=2,
+                        source_files=["neohooke.f90"], initial_temp=75,
+                        source_directory=os.path.join(MATLIB, "abaumats"))
+    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
+    mps.run()
+
+
+if __name__ == "__main__":
+    runner_visco()

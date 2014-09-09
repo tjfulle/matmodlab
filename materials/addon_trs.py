@@ -4,6 +4,7 @@ from utils.errors import UserInputError
 class TRS(object):
     def __init__(self, defn, data):
         self.defn = defn.upper()
+        data = np.array(data)
         if self.defn == "WLF":
             # check data
             if data.shape[0] != 3:

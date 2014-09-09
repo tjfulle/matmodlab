@@ -1,5 +1,5 @@
 import os
-from utils.fortran.product import DGPADM_F
+from utils.fortran.product import DGPADM_F, FIO
 from core.product import MATLIB
 D = os.path.join(MATLIB, "src")
 
@@ -16,3 +16,17 @@ ABA_UMAT_PYF = os.path.join(D, "umat.pyf")
 
 ABA_MATS = ["umat", "uhyper", "uanisohyper_inv"]
 USER_MAT = ["user"]
+
+
+def fortran_libraries():
+    libs = {}
+
+    visco_f90 = os.path.join(D, "visco.f90")
+    visco_pyf = os.path.join(D, "visco.pyf")
+    libs["visco"] = {"source_files": [visco_f90, visco_pyf, FIO]}
+
+    expansion_f90 = os.path.join(D, "expansion.f90")
+    expansion_pyf = os.path.join(D, "expansion.pyf")
+    libs["expansion"] = {"source_files": [expansion_f90, expansion_pyf, FIO]}
+
+    return libs

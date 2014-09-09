@@ -105,7 +105,8 @@ class Logger(object):
         caller = None
         if report_caller:
             caller = who_is_calling()
-        self.raise_error(message, raise_error=raise_error, caller=caller, **kwargs)
+        self.raise_error(message.rstrip(), raise_error=raise_error,
+                         caller=caller, **kwargs)
 
     def debug(self, message):
         self.write(message, write_to_console=0)
