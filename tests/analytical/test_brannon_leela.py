@@ -5,12 +5,6 @@
  damage component of constitutive models for rocks, ceramics, and other
  rock-like media", published on 25 September 2009
 
- This file generates the analytical solution for example #2 in that paper.
-
- The material parameters are set as:
-   Yield in shear  = 165 MPa
-   shear modulus   = 79 GPa
-   poisson's ratio = 1/3  (not technically needed for simulation)
 """
 from matmodlab import *
 from utils.exojac.exodiff import rms_error
@@ -30,9 +24,16 @@ class TestBrannonLeelavanichkul2(TestBase):
         return self.status
 
 
-
 def run_ex2(d=None, v=1, runid=None, test=0):
+    """This function generates the analytical solution for example #2 in the
+    paper.
 
+    The material parameters are set as:
+      Yield in shear  = 165 MPa
+      shear modulus   = 79 GPa
+      poisson's ratio = 1/3  (not technically needed for simulation)
+
+    """
     runid = runid or RUNID + "_2"
     d = d or os.getcwd()
     logfile = os.path.join(d, runid + ".log")
