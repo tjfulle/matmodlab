@@ -25,6 +25,14 @@ def gen_rand_elast_params():
 
     return nu, E, K, G, LAM
 
+def const_elast_params():
+    K = 9.980040E+09
+    G = 3.750938E+09
+    LAM = K - 2.0 / 3.0 * G
+    E   = 9.0 * K * G / (3.0 * K + G)
+    NU  = (3.0 * K - 2.0 * G) / (2.0 * (3.0 * K + G))
+    return NU, E, K, G, LAM
+
 def gen_analytical_response(LAM, G):
     N = 100
     strain_fac = 0.01
