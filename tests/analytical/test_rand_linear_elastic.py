@@ -80,7 +80,7 @@ def runner(d=None, runid=None, v=1, test=0):
         nrms = max(nrms, rms_error(T, X, t, x, disp=0))
         if nrms < DIFFTOL:
             continue
-        elif nrms < ftol:
+        elif nrms < FAILTOL:
             return DIFFED
         else:
             return FAILED

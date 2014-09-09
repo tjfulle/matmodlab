@@ -101,12 +101,13 @@ MATERIAL INTERFACE FILE:
 RUNID: {0}
 DRIVER: {1}
   NUMBER OF LEGS: {2}
+  TOTAL NUMBER OF STEPS: {8}
 MATERIAL: {3}
   NUMBER OF PROPS: {4}
     NUMBER OF SDV: {5}
 """.format(self.runid, self.driver.kind, self.driver.num_leg,
            self.material.name, self.material.num_prop, self.material.num_xtra,
-           s, self.material.file)
+           s, self.material.file, self.driver.num_steps)
         self.logger.write(summary, transform=str)
 
     def setup_io(self):

@@ -118,6 +118,10 @@ class ContinuumDriver(PathDriver):
     def num_leg(self):
         return len(self.path)
 
+    @property
+    def num_steps(self):
+        return int(sum([x[1] for x in self.path]))
+
     def run(self, glob_data, elem_data, material, out_db,
             termination_time=None):
         """Process the deformation path

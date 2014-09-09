@@ -46,24 +46,23 @@ class VonMises(MaterialModel):
             errors = 0
             if K <= 0.0:
                 errors += 1
-                self.logger.error("Bulk modulus K must be positive", raise_error=0)
+                self.logger.error("Bulk modulus K must be positive")
             if G <= 0.0:
                 errors += 1
-                self.logger.error("Shear modulus G must be positive", raise_error=0)
+                self.logger.error("Shear modulus G must be positive")
             nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
             if nu > 0.5:
                 errors += 1
-                self.logger.error("Poisson's ratio > .5", raise_error=0)
+                self.logger.error("Poisson's ratio > .5")
             if nu < -1.0:
                 errors += 1
-                self.logger.error("Poisson's ratio < -1.", raise_error=0)
+                self.logger.error("Poisson's ratio < -1.")
             if nu < 0.0:
-                errors += 1
-                self.logger.warn("negative Poisson's ratio", raise_error=0)
+                self.logger.warn("negative Poisson's ratio")
             if Y0 == 0.0:
                 Y0 = 1.0e99
             if errors:
-                self.logger.error("stopping due to previous errors")
+                self.logger.raise_error("stopping due to previous errors")
 
         newparams = [K, G, Y0, H, BETA]
         newnames = ["K", "G", "Y0", "H", "BETA"]
