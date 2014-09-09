@@ -71,16 +71,6 @@ class TestRandomJ2Plasticity1(TestBase):
                 return self.status
         return self.status
 
-    def tear_down(self):
-        if self.status != self.passed:
-            return
-        for f in os.listdir(self.test_dir):
-            for I in range(10):
-                runid = self.runid + "_{0}".format(I+1)
-                if self.module in f or runid in f:
-                    if f.endswith((".log", ".exo", ".pyc", ".con", ".eval")):
-                        remove(os.path.join(self.test_dir, f))
-        self.torn_down = 1
 
 class TestRandomJ2Plasticity2(TestBase):
     def __init__(self):
@@ -98,16 +88,6 @@ class TestRandomJ2Plasticity2(TestBase):
                 return self.status
         return self.status
 
-    def tear_down(self):
-        if self.status != self.passed:
-            return
-        for f in os.listdir(self.test_dir):
-            for I in range(10):
-                runid = self.runid + "_{0}".format(I+1)
-                if self.module in f or runid in f:
-                    if f.endswith((".log", ".exo", ".pyc", ".con", ".eval")):
-                        remove(os.path.join(self.test_dir, f))
-        self.torn_down = 1
 
 @matmodlab
 def rand_runner1(d=None, runid=None, v=1, test=0):

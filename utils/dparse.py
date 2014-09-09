@@ -72,18 +72,16 @@ def format_termination_time(leg_num, termination_time, final_time):
     try:
         termination_time = float(termination_time)
     except ValueError:
-        raise ValueError("Path: expected float for termination time of "
-                         "leg {0} got {1}".format(leg_num, termination_time))
+        raise UserInputError("Path: expected float for termination time of "
+                             "leg {0} got {1}".format(leg_num, termination_time))
 
     if termination_time < 0.:
-        raise ValueError("Path: expected positive termination time leg {0} "
-                         "got {1}".format(leg_num, termination_time))
-        return
+        raise UserInputError("Path: expected positive termination time leg {0} "
+                             "got {1}".format(leg_num, termination_time))
 
     if termination_time < final_time:
-        raise ValueError("Path: expected time to increase monotonically in "
-                         "leg {0}".format(leg_num))
-        return
+        raise UserInputError("Path: expected time to increase monotonically in "
+                             "leg {0}".format(leg_num))
 
     return termination_time
 

@@ -61,7 +61,7 @@ def main(argv=None):
 
 
 def result_str(i):
-    return RES_MAP.get(i, "UNKOWN")
+    return RES_MAP.get(i, "UNKNOWN")
 
 
 def sort_by_status(test):
@@ -160,7 +160,8 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
             logger.error("keyboard interrupt")
             raise SystemExit("KeyboardInterrupt intercepted")
 
-        # when multiprocessing, the results from run_test are saved.  why?
+        # when multiprocessing, the results from run_test are not saved to the
+        # class instance. why?
         for (i, test) in enumerate(tests):
             test.status, test.dtime = output[i]
             if test.instance:
@@ -372,10 +373,12 @@ def run_test(test):
     status = test.instance.setup()
     if status:
         logger.error("{0}: failed to setup".format(test.str_repr))
-        return test.status, np.nan
-    test.instance.run()
-    test.instance.post_hook()
-    dtime = time.time() - ti
+        dtime = np.nan
+    else:
+        test.instance.run()
+        test.instance.post_hook()
+        dtime = time.time() - ti
+
     test.status = test.instance.status
     test.dtime = dtime
     line = fillwithdots(test.str_repr, "FINISHED", TEST_CONS_WIDTH)

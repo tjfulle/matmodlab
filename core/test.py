@@ -154,10 +154,7 @@ class TestBase(object):
             return
         if self.status != self.passed:
             return
-        for f in os.listdir(self.test_dir):
-            if self.module in f or self.runid in f:
-                if f.endswith((".log", ".exo", ".pyc", ".con", ".eval")):
-                    remove(os.path.join(self.test_dir, f))
+        remove(self.test_dir)
         self.torn_down = 1
 
     def post_hook(self, *args, **kwargs):
