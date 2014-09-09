@@ -6,14 +6,27 @@ from utils.misc import remove
 from utils.exojac.exodiff import rms_error
 from core.test import PASSED, DIFFED, FAILED, DIFFTOL, FAILTOL
 
-RUNID = "rand_lin_druck_prag"
+RUNID = "linear_drucker_prager"
 I6 = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+my_dir = get_my_directory()
+
+
+class TestSphericalLinearDruckerPrager(TestBase):
+    def __init__(self):
+        self.runid = RUNID + "_spherical"
+        self.keywords = ["fast", "druckerprager", "material",
+                         "spherical", "analytic"]
+        self.interpolate_diff = True
+        self.base_res = os.path.join(my_dir, "lin_druck_prag_spher.base_dat")
+        self.gen_overlay_if_fail = True
+    def run_job(self):
+        spherical_runner(d=self.test_dir, v=0, runid=self.runid)
 
 
 class TestRandomLinearDruckerPrager(TestBase):
     def __init__(self):
-        self.runid = RUNID
-        self.keywords = ["fast", "druckerprager", "material",
+        self.runid = RUNID + "_rand"
+        self.keywords = ["long", "druckerprager", "material",
                          "random", "analytic"]
 
     def setup(self, *args, **kwargs):
@@ -22,7 +35,7 @@ class TestRandomLinearDruckerPrager(TestBase):
     def run(self):
         for n in range(10):
             runid = RUNID + "_{0}".format(n+1)
-            self.status = runner(d=self.test_dir, v=0, runid=runid, test=1)
+            self.status = rand_runner(d=self.test_dir, v=0, runid=runid, test=1)
             if self.status == FAILED:
                 return self.status
         return self.status
@@ -39,7 +52,7 @@ class TestRandomLinearDruckerPrager(TestBase):
         self.torn_down = 1
 
 @matmodlab
-def runner(d=None, runid=None, v=1, test=0):
+def rand_runner(d=None, runid=None, v=1, test=0):
 
     d = d or os.getcwd()
     runid = RUNID or runid
@@ -100,6 +113,55 @@ def runner(d=None, runid=None, v=1, test=0):
         else:
             return FAILED
     return PASSED
+
+
+@matmodlab
+def spherical_runner(d=None, v=1, runid=None):
+
+    d = d or os.getcwd()
+    runid = runid or RUNID + "_spherical"
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
+
+    # Elastic modulii
+    LAM = 1.0e9
+    MU = 1.0e8
+    K = LAM + 2.0 / 3.0 * MU
+
+
+    # Intersects
+    FAC = 1.0e6
+    RINT = 1.0 * FAC
+    ZINT = sqrt(2.0) * FAC
+
+    # Shear strain
+    ES = RINT / (2.0 * sqrt(2.0) * MU)
+
+    # Spherical (volumetric) strain
+    RNUM = 3.0 * K ** 2 * (RINT / ZINT) ** 2
+    DNOM = 3.0 * K * (RINT / ZINT) ** 2 + 2.0 * MU
+    TREPS = ZINT / (sqrt(3.0) * K - sqrt(3.0) * RNUM / DNOM)
+    EV = TREPS / 3.0
+
+    ##### Stress State
+    MAX_SHEAR_STRESS = 2.0 * MU * ES
+    MAX_HYDRO_STRESS = ZINT / sqrt(3.0)
+
+    path = """
+    0 0 222222     0    0    0    0    0    0
+    1 1 111111     0    0    0 {ES}    0    0
+    2 1 111111  {EV} {EV} {EV}    0    0    0""".format(EV=EV, ES=ES)
+
+    # set up the driver
+    driver = Driver("Continuum", path=path, step_multiplier=100, logger=logger)
+
+    # set up the material
+    parameters = {"K": K, "G": MU, "A1": RINT/sqrt(2.0), "A4": RINT/sqrt(6.0)/ZINT}
+    material = Material("pyplastic", parameters=parameters, logger=logger)
+
+    # set up and run the model
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps.run()
 
 
 def gen_elastic_params():
@@ -165,5 +227,4 @@ def unit(A):
     return A / mag(A)
 
 if __name__ == "__main__":
-    a = runner(test=1)
-    print a
+    a = spherical_runner()
