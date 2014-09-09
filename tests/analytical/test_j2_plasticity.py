@@ -9,10 +9,20 @@ from core.test import PASSED, DIFFED, FAILED
 FAILTOL = 1.E-02
 DIFFTOL = 5.E-03
 
-# --- THIS FILE IS ONLY ANALYTIC FOR ONE LOADING LEG
+my_dir = get_my_directory()
+
 RUNID = "j2_plasticity"
 
-class TestRandomJ2Plasticity(TestBase):
+class TestJ2Plasticity1(TestBase):
+    def __init__(self):
+        self.runid = RUNID + "1"
+        self.keywords = ["fast", "material", "vonmises", "analytic", "material"]
+        self.base_res = os.path.join(my_dir, "j2_plasticity_analytic1.base_arr")
+        self.interpolate_diff = True
+    def run_job(self):
+        runner1(d=self.test_dir, v=0, runid=self.runid)
+
+class TestRandomJ2Plasticity1(TestBase):
     def __init__(self):
         self.runid = "rand_" + RUNID
         self.keywords = ["fast", "random", "material", "vonmises", "analytic"]
@@ -23,7 +33,7 @@ class TestRandomJ2Plasticity(TestBase):
     def run(self):
         for I in range(10):
             runid = self.runid + "_{0}".format(I+1)
-            self.status = rand_runner(d=self.test_dir, v=0, runid=runid, test=1)
+            self.status = rand_runner1(d=self.test_dir, v=0, runid=runid, test=1)
             if self.status == FAILED:
                 return self.status
         return self.status
@@ -39,11 +49,10 @@ class TestRandomJ2Plasticity(TestBase):
                         remove(os.path.join(self.test_dir, f))
         self.torn_down = 1
 
-
 class TestRandomJ2Plasticity2(TestBase):
     def __init__(self):
         self.runid = "rand_" + RUNID + "2"
-        self.keywords = ["fast", "random", "material", "vonmises", "analytic"]
+        self.keywords = ["long", "random", "material", "vonmises", "analytic"]
 
     def setup(self, *args, **kwargs):
         pass
@@ -68,7 +77,7 @@ class TestRandomJ2Plasticity2(TestBase):
         self.torn_down = 1
 
 @matmodlab
-def rand_runner(d=None, runid=None, v=1, test=0):
+def rand_runner1(d=None, runid=None, v=1, test=0):
 
     d = d or os.getcwd()
     runid = runid or "rand_" + RUNID
@@ -77,7 +86,7 @@ def rand_runner(d=None, runid=None, v=1, test=0):
 
     # Set up the path and random material constants
     nu, E, K, G, LAM = gen_params()
-    analytic_response, Y0 = gen_random_analytic_solution(nu, E, K, G, LAM)
+    analytic_response, Y0 = analytic_response1(nu, E, K, G, LAM)
 
     # generate the path (must be a string")
     path = []
@@ -93,7 +102,7 @@ def rand_runner(d=None, runid=None, v=1, test=0):
     material = Material("vonmises", parameters=parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
     if not test: return
@@ -203,7 +212,7 @@ def rand_runner2(d=None, runid=None, v=1, test=0):
     material = Material("vonmises", parameters=parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
     test  =1
@@ -229,6 +238,54 @@ def rand_runner2(d=None, runid=None, v=1, test=0):
             return FAILED
     return PASSED
 
+@matmodlab
+def runner1(d=None, v=1, runid=None):
+
+    d = d or os.getcwd()
+    runid = runid or RUNID + "1"
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
+
+    E   =   0.1100000E+12
+    NU  =   0.3400000
+    LAM =   0.87220149253731343283582089552238805970149253731343E+11
+    G   =   0.41044776119402985074626865671641791044776119402985E+11
+    K   =   0.11458333333333333333333333333333333333333333333333E+12
+    USM =   0.16930970149253731343283582089552238805970149253731E+12
+    Y   =   70.0E+6
+
+    ##### Hardening
+    # We want the final yield surface to be at SIGE=Y*(1 + HFAC) at final strain.
+    HFAC = 0.0 # !!!NO HARDENING!!!
+    H = 3.0 * HFAC / (1.0 - HFAC) * G
+    YF = Y * (1.0 + HFAC)
+
+    EPSY = Y / (2.0 * G) #  axial strain at yield
+    SIGAY = (2.0 * G + LAM) * EPSY #  axial stress at yield
+    SIGLY = LAM * EPSY #  lateral stress at yield
+
+    EPSY2 = 2.0 * Y / (2.0 * G) #  final axial strain
+    SIGAY2 = ((2 * G + 3 * LAM) * EPSY2 -YF ) / 3.0 + YF # final axial stress
+    SIGLY2 = ((2 * G + 3 * LAM) * EPSY2 -YF ) / 3.0 # final lateral stress
+
+    path = """
+    0 0 222222 0         0 0 0 0 0
+    1 1 222222 {EPSY}    0 0 0 0 0
+    2 1 222222 {TWOEPSY} 0 0 0 0 0
+    """.format(EPSY=EPSY, TWOEPSY=2.*EPSY)
+
+    # set up the driver
+    driver = Driver("Continuum", path=path, step_multiplier=200, logger=logger)
+
+    # set up the material
+    parameters = {"K": K, "G": G, "Y0": YF, "H": H, "BETA": 0}
+    material = Material("vonmises", parameters=parameters, logger=logger)
+
+    # set up and run the model
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps.run()
+
+
 def gen_params():
     # poisson_ratio and young's modulus
     nu = random.uniform(-1.0 + 1.0e-5, 0.5 - 1.0e-5)
@@ -252,7 +309,7 @@ def comp_rootj2(sig11, sig22, sig33, sig12, sig23, sig13):
     return np.sqrt(rootj2 / 6.0)
 
 
-def get_stress(e11, e22, e33, e12, e23, e13, LAM, G, rootj2lim):
+def get_stress1(e11, e22, e33, e12, e23, e13, LAM, G, rootj2lim):
     YIELDING = False
     #standard hooke's law
     sig11 = (2.0 * G + LAM) * e11 + LAM * (e22 + e33)
@@ -284,7 +341,7 @@ def get_stress(e11, e22, e33, e12, e23, e13, LAM, G, rootj2lim):
     return (sig11, sig22, sig33, sig12, sig23, sig13), YIELDING
 
 
-def gen_random_analytic_solution(nu, E, K, G, LAM):
+def analytic_response1(nu, E, K, G, LAM):
     N = 500
     epsrand = lambda: random.uniform(-0.1, 0.1)
     eps1 = epsrand()
@@ -297,16 +354,15 @@ def gen_random_analytic_solution(nu, E, K, G, LAM):
 
     counter = 0
     rootj2lim = 0.0
-    args_1 = (eps1, eps2, eps3, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
-    args_2 = (eps1/4.0, eps2/4.0, eps3/4.0, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
-    while (not get_stress(*args_1)[1] or get_stress(*args_2)[1]):
+    args_1 = [eps1, eps2, eps3, 0.0, 0.0, 0.0, LAM, G, rootj2lim]
+    args_2 = [eps1/4.0, eps2/4.0, eps3/4.0, 0.0, 0.0, 0.0, LAM, G, rootj2lim]
+    while (not get_stress1(*args_1)[1] or get_stress1(*args_2)[1]):
         rootj2lim = max(1.0, 10 ** random.uniform(0.0, 12.0))
         counter += 1
         if counter > 100:
-            print("break")
             break
-        args_1 = (eps1, eps2, eps3, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
-        args_2 = (eps1/4.0, eps2/4.0, eps3/4.0, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
+        args_1[-1] = rootj2lim
+        args_2[-1] = rootj2lim
         continue
 
     analytic_solution = []
@@ -315,13 +371,13 @@ def gen_random_analytic_solution(nu, E, K, G, LAM):
         e1 = expanded[1][idx]
         e2 = expanded[2][idx]
         e3 = expanded[3][idx]
-        sig, YIELDING = get_stress(e1, e2, e3, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
+        sig, YIELDING = get_stress1(e1, e2, e3, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
         sig11, sig22, sig33, sig12, sig23, sig13 = sig
         analytic_solution.append([t, e1, e2, e3, sig11, sig22, sig33])
 
     Y0 = np.sqrt(3) * rootj2lim
 
-    return np.array(analytic_solution), rootj2lim
+    return np.array(analytic_solution), Y0
 
 
 def get_stress2(K, G, Y, e0, e1, t):
@@ -367,4 +423,4 @@ def rotation_matrix(a, theta):
     return part1 + part2 + part3
 
 if __name__ == "__main__":
-    a = rand_runner2()
+    a = runner1()

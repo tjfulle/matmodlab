@@ -10,7 +10,7 @@ class TestOverlay(TestBase):
     def __init__(self):
         self.runid = runid
         self.keywords = ["long", "overlay", "feature", "function"]
-        self.base_exo = os.path.join(d, "test_funcs.base_exo")
+        self.base_res = os.path.join(d, "test_funcs.base_exo")
     def run_job(self):
         runner(d=self.test_dir, v=0)
         return

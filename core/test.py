@@ -56,6 +56,7 @@ class TestBase(object):
         self.gen_overlay_if_fail = getattr(self, "gen_overlay_if_fail", False)
         self._no_teardown = False
         self.str_repr = str_repr
+        self.interp = getattr(self, "interpolate_diff", False)
 
     def validate(self):
 
@@ -103,11 +104,11 @@ class TestBase(object):
         errors = 0
         self.exofile = os.path.join(self.test_dir, self.runid + ".exo")
 
-        self.base_exo = getattr(self, "base_exo",
+        self.base_res = getattr(self, "base_res",
             os.path.join(self.src_dir, self.runid + ".base_exo"))
-        if not os.path.isfile(self.base_exo):
+        if not os.path.isfile(self.base_res):
             errors += 1
-            self.logger.error("{0}: base_exo file not found".format(self.str_repr))
+            self.logger.error("{0}: base_res file not found".format(self.str_repr))
 
         self.exodiff = getattr(self, "exodiff",
                                os.path.join(TEST_D, "base.exodiff"))
@@ -143,8 +144,9 @@ class TestBase(object):
             return
 
         exodiff_log = os.path.join(self.test_dir, self.runid + ".exodiff.log")
-        self.status = exodiff.exodiff(self.exofile, self.base_exo, f=exodiff_log,
-                                      v=0, control_file=self.exodiff)
+        self.status = exodiff.exodiff(self.exofile, self.base_res, f=exodiff_log,
+                                      v=0, control_file=self.exodiff,
+                                      interp=self.interp)
         return
 
     def tear_down(self):
@@ -187,7 +189,7 @@ class TestBase(object):
 
         # get the data
         head1, data1 = read_vars_from_exofile(self.exofile)
-        head2, data2 = read_vars_from_exofile(self.base_exo)
+        head2, data2 = read_vars_from_exofile(self.base_res)
 
         # TIME is always first column
         time1, data1 = data1[:, 0], data1[:, 1:]
