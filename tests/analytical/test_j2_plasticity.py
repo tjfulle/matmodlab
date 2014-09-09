@@ -14,7 +14,7 @@ RUNID = "j2_plasticity"
 
 class TestRandomJ2Plasticity(TestBase):
     def __init__(self):
-        self.runid = RUNID
+        self.runid = "rand_" + RUNID
         self.keywords = ["fast", "random", "material", "vonmises", "analytic"]
 
     def setup(self, *args, **kwargs):
@@ -22,7 +22,7 @@ class TestRandomJ2Plasticity(TestBase):
 
     def run(self):
         for I in range(10):
-            runid = RUNID + "_{0}".format(I+1)
+            runid = self.runid + "_{0}".format(I+1)
             self.status = rand_runner(d=self.test_dir, v=0, runid=runid, test=1)
             if self.status == FAILED:
                 return self.status
@@ -33,7 +33,35 @@ class TestRandomJ2Plasticity(TestBase):
             return
         for f in os.listdir(self.test_dir):
             for I in range(10):
-                runid = RUNID + "_{0}".format(I+1)
+                runid = self.runid + "_{0}".format(I+1)
+                if self.module in f or runid in f:
+                    if f.endswith((".log", ".exo", ".pyc", ".con", ".eval")):
+                        remove(os.path.join(self.test_dir, f))
+        self.torn_down = 1
+
+
+class TestRandomJ2Plasticity2(TestBase):
+    def __init__(self):
+        self.runid = "rand_" + RUNID + "2"
+        self.keywords = ["fast", "random", "material", "vonmises", "analytic"]
+
+    def setup(self, *args, **kwargs):
+        pass
+
+    def run(self):
+        for I in range(10):
+            runid = self.runid + "_{0}".format(I+1)
+            self.status = rand_runner2(d=self.test_dir, v=0, runid=runid, test=1)
+            if self.status == FAILED:
+                return self.status
+        return self.status
+
+    def tear_down(self):
+        if self.status != self.passed:
+            return
+        for f in os.listdir(self.test_dir):
+            for I in range(10):
+                runid = self.runid + "_{0}".format(I+1)
                 if self.module in f or runid in f:
                     if f.endswith((".log", ".exo", ".pyc", ".con", ".eval")):
                         remove(os.path.join(self.test_dir, f))
@@ -43,7 +71,7 @@ class TestRandomJ2Plasticity(TestBase):
 def rand_runner(d=None, runid=None, v=1, test=0):
 
     d = d or os.getcwd()
-    runid = "rand_" + (RUNID or runid)
+    runid = runid or "rand_" + RUNID
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
 
@@ -65,7 +93,6 @@ def rand_runner(d=None, runid=None, v=1, test=0):
     material = Material("vonmises", parameters=parameters, logger=logger)
 
     # set up and run the model
-    runid = "random_j2_plasticity"
     mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
@@ -95,7 +122,7 @@ def rand_runner(d=None, runid=None, v=1, test=0):
 def rand_runner2(d=None, runid=None, v=1, test=0):
 
     d = d or os.getcwd()
-    runid = "rand_" + (RUNID or runid) + "2"
+    runid = runid or "rand_" + RUNID + "2"
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
 
@@ -154,7 +181,7 @@ def rand_runner2(d=None, runid=None, v=1, test=0):
     path = "\n".join(p)
 
     # analytic solution
-    analytic_solution = []
+    analytic_response = []
     for t in np.linspace(0, 2, 1000+1):
         if 0.0 <= t <= 1.0:
             fac = t
@@ -163,9 +190,9 @@ def rand_runner2(d=None, runid=None, v=1, test=0):
             fac = t - 1.0
             cur_strain = (1.0 - fac) * e1 + fac * (e1 + e2)
         tmp = get_stress2(K, G, Y0, e1, e2, t)
-        analytic_solution.append([t, cur_strain[0], cur_strain[1], cur_strain[2],
+        analytic_response.append([t, cur_strain[0], cur_strain[1], cur_strain[2],
                                   tmp[0], tmp[1], tmp[2]])
-    analytic_solution = np.array(analytic_solution)
+    analytic_response = np.array(analytic_response)
 
     # set up the driver
     driver = Driver("Continuum", path=path, logger=logger,
@@ -179,6 +206,7 @@ def rand_runner2(d=None, runid=None, v=1, test=0):
     mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
+    test  =1
     if not test: return
 
     # check output with analytic
@@ -340,4 +368,3 @@ def rotation_matrix(a, theta):
 
 if __name__ == "__main__":
     a = rand_runner2()
-    print a
