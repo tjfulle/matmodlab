@@ -134,7 +134,7 @@ class MaterialModel(object):
                 K = key.upper()
                 if K not in self.parameter_names:
                     raise UserInputError("{0}: unrecognized parameter "
-                                         "for model {1}".format(key, model))
+                                         "for model {1}".format(key, self.name))
                 params[self.parameter_names.index(K)] = value
 
         self.iparams = Parameters(self.parameter_names, params)
