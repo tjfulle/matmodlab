@@ -262,7 +262,7 @@ class ContinuumDriver(PathDriver):
                     # One or more stresses prescribed
                     # get just the prescribed stress components
                     d = sig2d(material, time, dt, tempn, dtemp,
-                              f0, f, eps, depsdt, sig, xtra, ef, ufield,
+                              kappa, f0, f, eps, depsdt, sig, xtra, ef, ufield,
                               v, sigspec[2], self.proportional, self.logger)
 
                 # compute the current deformation gradient and strain from
@@ -273,8 +273,8 @@ class ContinuumDriver(PathDriver):
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
                 sig, xtra = material.compute_updated_state(time, dt, tempn,
-                    dtemp, f0, f, eps, d, ef, ufield, sig, xtra, last=True,
-                    disp=1)
+                    dtemp, kappa, f0, f, eps, d, ef, ufield, sig, xtra,
+                    last=True, disp=1)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)

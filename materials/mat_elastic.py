@@ -9,7 +9,7 @@ class Elastic(MaterialModel):
 
     def __init__(self):
         self.name = "elastic"
-        self.param_names = ["K", "G"]
+        self.param_names = ["K:BMOD", "G:SMOD:MU"]
         d = os.path.join(MATLIB, "src")
         f1 = os.path.join(d, "elastic.f90")
         f2 = os.path.join(d, "elastic.pyf")

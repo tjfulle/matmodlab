@@ -38,7 +38,7 @@ class MaterialModel(object):
         if getattr(self, attr, noattr) == noattr:
             raise Exception("material missing attribute: {0}".format(attr))
 
-    def init(self, logger=None, file=None, kappa=0):
+    def init(self, logger=None, file=None):
 
         for attr in ("name", "param_names"):
             self.assert_attr_exists(attr)
@@ -63,7 +63,7 @@ class MaterialModel(object):
         self.initial_stress = np.zeros(6)
         self.logger = logger or Logger()
         self._file = file
-        self._kappa = kappa
+        self._param_name_map = {}
 
     @property
     def logger(self):
@@ -96,14 +96,6 @@ class MaterialModel(object):
     def initial_temp(self, value):
         self.itemp = value
 
-    @property
-    def kappa(self):
-        return self._kappa
-
-    @kappa.setter
-    def kappa(self, value):
-        self._kappa = value
-
     def setup_new_material(self, parameters, depvar, initial_temp):
         """Set up the new material
 
@@ -132,10 +124,11 @@ class MaterialModel(object):
             # populate the parameters array
             for (key, value) in parameters.items():
                 K = key.upper()
-                if K not in self.parameter_names:
+                idx = self.parameter_name_map(key)
+                if idx is None:
                     raise UserInputError("{0}: unrecognized parameter "
                                          "for model {1}".format(key, self.name))
-                params[self.parameter_names.index(K)] = value
+                params[idx] = value
 
         self.iparams = Parameters(self.parameter_names, params)
         self.params = Parameters(self.parameter_names, params)
@@ -152,9 +145,8 @@ class MaterialModel(object):
             # setup viscoelastic params
             self.visco_params = np.zeros(24)
             # starting location of G and T Prony terms
-            self.viscopoint = (4, 14)
             n = self.visco_model.nprony
-            I, J = self.viscopoint
+            I, J = (4, 14)
             self.visco_params[I:I+n] = self.visco_model.data[:, 0]
             self.visco_params[J:J+n] = self.visco_model.data[:, 1]
             # Ginf
@@ -276,10 +268,12 @@ class MaterialModel(object):
         temp = self.initial_temp
         dtemp = 0.
         user_field = 0.
-        return self.numerical_jacobian(time, dtime, temp, dtemp, F0, F, stran,
-            d, elec_field, user_field, stress, self.initial_state, range(6))
+        kappa = 0
+        v = range(6)
+        return self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0, F,
+            stran, d, elec_field, user_field, stress, self.initial_state, v)
 
-    def numerical_jacobian(self, time, dtime, temp, dtemp, F0, F, stran, d,
+    def numerical_jacobian(self, time, dtime, temp, dtemp, kappa, F0, F, stran, d,
                            elec_field, user_field, stress, xtra, v):
         """Numerically compute material Jacobian by a centered difference scheme.
 
@@ -330,7 +324,7 @@ class MaterialModel(object):
             sigp = stress.copy()
             xtrap = xtra.copy()
             sigp, xtrap, stif = self.compute_updated_state(time, dtime, temp,
-                dtemp, F0, Fp, Ep, Dp, elec_field, user_field, sigp, xtrap)
+                dtemp, kappa, F0, Fp, Ep, Dp, elec_field, user_field, sigp, xtrap)
 
             # perturb backward
             Dm = d.copy()
@@ -339,7 +333,7 @@ class MaterialModel(object):
             sigm = stress.copy()
             xtram = xtra.copy()
             sigm, xtram, stif = self.compute_updated_state(time, dtime, temp,
-                dtemp, F0, Fm, Em, Dm, elec_field, user_field, sigm, xtram)
+                dtemp, kappa, F0, Fm, Em, Dm, elec_field, user_field, sigm, xtram)
 
             # compute component of jacobian
             Jsub[i, :] = (sigp[v] - sigm[v]) / deps
@@ -360,6 +354,14 @@ class MaterialModel(object):
         """
         self.param_names = ["PROP{0:02d}".format(i+1) for i in range(n)]
 
+    def parameter_name_map(self, name, default=None):
+        """Maps name to the index in the UI array"""
+        if name.upper() not in self._param_name_map:
+            m = dict([(n.upper(), i) for (i, na) in enumerate(self.param_names)
+                      for n in na.split(":")])
+            self._param_name_map.update(m)
+        return self._param_name_map.get(name.upper(), default)
+
     @property
     def parameters(self):
         return self.params
@@ -374,8 +376,9 @@ class MaterialModel(object):
     def update_state(self, *args, **kwargs):
         raise NotImplementedError
 
-    def compute_updated_state(self, time, dtime, temp, dtemp, F0, F, stran, d,
-            elec_field, user_field, stress, statev, disp=0, v=None, last=False):
+    def compute_updated_state(self, time, dtime, temp, dtemp, kappa, F0, F,
+            stran, d, elec_field, user_field, stress, statev,
+            disp=0, v=None, last=False):
         """Update the material state
 
         """
@@ -397,7 +400,7 @@ class MaterialModel(object):
             Fm = xpansion.mechdef(self.exp_params, temp, dtemp,
                                   F.reshape(3,3), *comm)
             Fm = Fm.reshape(9,)
-            Em = mmlabpack.update_strain(self._kappa, Fm)
+            Em = mmlabpack.update_strain(kappa, Fm)
 
         rho = 1.
         energy = 1.
@@ -447,8 +450,9 @@ class MaterialModel(object):
         d = np.zeros(6)
         elec_field = np.zeros(3)
         user_field = None
+        kappa = 0
         sigini, xinit, stif = self.compute_updated_state(time, dtime, temp,
-            dtemp, F0, F, stran, d, elec_field, user_field, stress, xtra)
+            dtemp, kappa, F0, F, stran, d, elec_field, user_field, stress, xtra)
 
         self.initial_state = xinit
         self.initial_stress = sigini
@@ -540,7 +544,7 @@ class AbaqusMaterial(MaterialModel):
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
              source_files=None, source_directory=None, initial_temp=None,
-             expansion=None, trs=None, viscoelastic=None, logger=None, kappa=0,
+             expansion=None, trs=None, viscoelastic=None, logger=None,
              rebuild=0):
     """Material model factory method
 
@@ -556,7 +560,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         model = opts.switch
 
     # determine which model
-    m = model.lower()
+    m = "_".join(model.split()).lower()
     for (lib, libinfo) in find_materials().items():
         if lib.lower() == m:
             break
@@ -593,8 +597,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
     # Check if model is already built (if applicable)
     if hasattr(material, "source_files"):
         so_lib = os.path.join(PKG_D, lib + ".so")
-        if rebuild or opts.rebuild_material:
-            remove(so_lib)
+        if rebuild: remove(so_lib)
         if not os.path.isfile(so_lib):
             logger.write("{0}: rebuilding material library".format(material.name))
             material.source_files.extend(source_files)
@@ -612,7 +615,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         material = mat_class()
 
     # initialize and set up material
-    material.init(logger=logger, file=libinfo.file, kappa=kappa)
+    material.init(logger=logger, file=libinfo.file)
 
     if material.parameter_names == SET_AT_RUNTIME:
         # some models, like abaqus models, do not have the parameter names

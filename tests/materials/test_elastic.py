@@ -47,7 +47,7 @@ def elastic_unistrain(d=None, v=1):
                     logger=logger)
 
     # set up the material
-    parameters = {"K":K, "G":G}
+    parameters = {"BMOD":K, "MU":G}
     material = Material("elastic", parameters=parameters, logger=logger)
 
     # set up and run the model

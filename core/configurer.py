@@ -82,6 +82,10 @@ def _cfgparse(filename):
 
 
 def cfgwrite(filename, dict):
+    logger.write("writing the following options to {0}:".format(filename))
+    for (k, v) in dict.items():
+        logger.write("  {0}: {1}".format(k, ", ".join(v)), transform=str)
+
     a = _cfgparse(filename)
     for (k, v) in dict.items():
         if not isinstance(v, (list, tuple)):

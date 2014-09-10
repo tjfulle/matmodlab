@@ -13,6 +13,7 @@ class UMat(AbaqusMaterial):
         self.name = "umat"
         self.param_names = SET_AT_RUNTIME
         self.aux_files = [ABA_IO_F90, ABA_UMAT_PYF]
+        self.lapack = "lite"
         self.aba_model = True
 
     def check_import(self):

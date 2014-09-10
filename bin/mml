@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # set up python environment
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$(dirname "$DIR")"
-export PYTHONPATH=$ROOT
+export PYTHONPATH="$ROOT"
 
 usage()
 {
@@ -20,25 +20,6 @@ The mml commands are:
 See 'mml help <command>' to read about a specific subcommand.
 
 EOF
-}
-
-SUBCOMMANDS="build clean config run test view"
-contains() {
-  for word in $1; do
-    [[ "$word" = "$2" ]] && return 0
-  done
-  return 1
-}
-
-getprog_no() {
-    if contains "$SUBCOMMANDS" "$1";
-    then
-	PROG=$DIR/mml-$COMMAND
-    else
-	echo \'"$1"\': unknown subcommand
-	usage
-	exit 1
-    fi
 }
 
 getprog() {

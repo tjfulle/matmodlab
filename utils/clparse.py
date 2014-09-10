@@ -21,10 +21,8 @@ def parse_sim_argv(argv=None, get_f=False):
        help=("Set parameters of input material to mimic MATERIAL "
              "(not supported by all models) [default: %(default)s]"))
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument("--build-mat", metavar="MATERIAL",
-        help="Build MATERIAL before running [default: %(default)s]")
-    parser.add_argument("-B", action="store_true", default=False,
-        help="Wipe and rebuild material before running [default: %(default)s]")
+    parser.add_argument("-B", metavar="MATERIAL",
+        help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
     parser.add_argument("-V", default=False, action="store_true",
         help="Launch results viewer on completion [default: %(default)s]")
     parser.add_argument("-j", type=int, default=1,
@@ -55,16 +53,13 @@ def parse_sim_argv(argv=None, get_f=False):
     if args.V:
         set_runtime_opt("viz_on_completion", True)
 
-    if args.build_mat:
-        name = args.build_mat.strip()
+    if args.B:
+        name = args.B.strip()
         verbosity = 3 if args.v > 1 else 0
         if os.path.isfile(os.path.join(PKG_D, "{0}.so".format(name))):
             # removing is sufficient since the material class will attempt
             # to build non-existent materials
             os.remove(os.path.join(PKG_D, "{0}.so".format(name)))
-
-    if args.B:
-        set_runtime_opt("rebuild_material", True)
 
     if get_f and not os.path.isfile(args.source):
         raise FileNotFoundError(args.source)

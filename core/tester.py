@@ -63,7 +63,6 @@ def main(argv=None):
 def result_str(i):
     return RES_MAP.get(i, "UNKNOWN")
 
-
 def sort_by_status(test):
     return test.status
 
@@ -75,6 +74,14 @@ def sort_by_time(test):
     if "fast" in test.instance.keywords:
         return 1
     return 2
+
+def sort_by_run_stat(test):
+    if test.instance:
+        # test will run
+        return 3
+    if test.disabled:
+        return 2
+    return 1
 
 def gather_and_run_tests(sources, include, exclude, tear_down=True,
                          html_summary=False, nprocs=1):
@@ -122,20 +129,22 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     ntests_to_run = len([t for t in tests if t.instance])
     ndisabled = len([t for t in tests if t.disabled])
     n_notinc = ntests - ntests_to_run - ndisabled
+    n1, n2, n3 = False, False, False
 
     logger.write("FOUND {0:d} TESTS IN {1:.2}s".format(
         ntests, TIMING[-1]-TIMING[0]), transform=str)
-    for test in tests:
-        if test.instance: star = " +++"
-        elif test.disabled: star = "**"
-        else: star = "*"
-        logger.write("    {0}{1}".format(test.str_repr, star), transform=str)
-    logger.write("(+++) tests to be run ({0:d})".format(ntests_to_run))
-    if ndisabled:
-        logger.write(" (**) disabled tests ({0:d})".format(ndisabled))
-    if n_notinc:
-        logger.write("  (*) tests filtered out by keyword "
-                     "request ({0:d})".format(n_notinc))
+    for test in sorted(tests, key=sort_by_run_stat):
+        if test.instance and not n1:
+            n1 = True
+            logger.write("  tests to be run ({0:d})".format(ntests_to_run))
+        elif test.disabled and not n2:
+            n2 = True
+            logger.write("  disabled tests ({0:d})".format(ndisabled))
+        elif not n3:
+            n3 = True
+            logger.write("  tests filtered out by keyword "
+                         "request ({0:d})".format(n_notinc))
+        logger.write("    {0}".format(test.str_repr), transform=str)
 
     if not ntests_to_run:
         logger.write("nothing to do")
@@ -217,10 +226,10 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
                 torn_down += test.instance.torn_down
 
         if torn_down == ntests_to_run:
-            logger.write("all tests passed, removing results directory")
+            logger.write("all tests passed, removing entire results directory")
             shutil.rmtree(RES_D)
         else:
-            logger.write("failed to tear down all tests, writing html summary")
+            logger.write("failed to tear down all tests, generating html summary")
             html_summary = True
 
     if html_summary:

@@ -35,11 +35,13 @@ class MooneyRivlin(MaterialModel):
         self.shear_modulus = smod
         return
 
-    def set_constant_jacobian(self):
-        Vij = mmlabpack.asarray(np.eye(3), 6)
-        T0 = 298. if not self.params["T0"] else self.params["T0"]
-        self.J0 = mat.mnrvjm(self.params, Vij, T0, self.xinit,
-                             self.logger.error, self.logger.write)
+    #    def set_constant_jacobian(self):
+        #     Vij = mmlabpack.asarray(np.eye(3), 6)
+        #     T0 = 298. if not self.params["T0"] else self.params["T0"]
+        #     Rij = np.eye(3)
+        #     comm = (self.logger.error, self.logger.write)
+        #     _, ddsdde = mat.mnrv_mat(self.params, Rij, Vij, *comm)
+        #     return ddsdde
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):
@@ -49,6 +51,7 @@ class MooneyRivlin(MaterialModel):
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
         Rij = np.reshape(np.dot(mmlabpack.inv(Vij), Fij), (9,))
         Vij = mmlabpack.asarray(Vij, 6)
-        sig, ddsdde = mat.mnrv_mat(self.params, Rij, Vij)
+        comm = (self.logger.error, self.logger.write)
+        sig, ddsdde = mat.mnrv_mat(self.params, Rij, Vij, *comm)
 
         return np.reshape(sig, (6,)), np.reshape(xtra, (self.nxtra,)), ddsdde
