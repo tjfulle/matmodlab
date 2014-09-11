@@ -411,8 +411,9 @@ class MaterialModel(object):
         if self.visco_params is not None:
             # get visco correction
             X = xtra[N:]
-            sig = visco.viscorelax(dtime, time, temp, dtemp, self.visco_params,
-                                   F.reshape(3,3), X, sig, *comm)
+            cfac = np.zeros(2)
+            sig, cfac = visco.viscorelax(dtime, time, temp, dtemp,
+                             self.visco_params, F.reshape(3,3), X, sig, *comm)
             xtra[N:] = X[:]
 
         if v is not None:

@@ -20,7 +20,7 @@ end python module mml__user__routines
 python module visco ! in
     interface  ! in :visco
         module visco ! in :visco:visco.f90
-            subroutine viscorelax(dtime,time,tempold,dtemp,nprop,props,f,nstatev,statev,sigo,sig) ! in :visco:visco.f90:visco
+            subroutine viscorelax(dtime,time,tempold,dtemp,nprop,props,f,nstatev,statev,sigo,sig,cfac) ! in :visco:visco.f90:visco
                 use mml__user__routines
                 intent(callback) log_message
                 external log_message
@@ -39,6 +39,7 @@ python module visco ! in
                 real(8) dimension(nstatev),intent(inout) :: statev
                 real(8) dimension((6)),intent(in) :: sigo
                 real(8) dimension((6)),intent(out) :: sig
+                real(8) dimension((2)),intent(out) :: cfac
             end subroutine viscorelax
             subroutine viscoini(nprop,props,nstatev,statev) ! in :visco:visco.f90:visco
                 use mml__user__routines
