@@ -51,7 +51,7 @@ class MooneyRivlin(MaterialModel):
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
         Rij = np.reshape(np.dot(mmlabpack.inv(Vij), Fij), (9,))
         Vij = mmlabpack.asarray(Vij, 6)
-        comm = (self.logger.error, self.logger.write)
+        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
         sig, ddsdde = mat.mnrv_mat(self.params, Rij, Vij, *comm)
 
         return np.reshape(sig, (6,)), np.reshape(xtra, (self.nxtra,)), ddsdde

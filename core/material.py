@@ -541,6 +541,18 @@ class AbaqusMaterial(MaterialModel):
         ddsdde[3:, 3:] *= 2.
         return stress, statev, ddsdde
 
+    def set_constant_jacobian(self):
+        time, dtime = 0, 0
+        temp, dtemp = self.initial_temp, 0.
+        kappa = 0
+        F0, F = np.eye(3), np.eye(3)
+        stran, d, elec_field = np.zeros(6), np.zeros(6), np.zeros(3)
+        user_field = 0
+        self.J0 = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
+                       F0, F, stran, d, elec_field, user_field,
+                       self.initial_stress, self.initial_state, disp=2)
+        return
+
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
              source_files=None, source_directory=None, initial_temp=None,

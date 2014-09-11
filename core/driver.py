@@ -158,6 +158,8 @@ class ContinuumDriver(PathDriver):
 
         # compute the initial jacobian
         J0 = material.constant_jacobian
+        if J0 is None:
+            self.logger.raise_error("J0 has not been initialized")
 
         # v array is an array of integers that contains the rows and columns of
         # the slice needed in the jacobian subroutine.

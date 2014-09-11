@@ -22,7 +22,8 @@ class Plastic(MaterialModel):
         """
         if mat is None:
             raise ModelNotImportedError("plastic")
-        mat.plastic_check(self.params, self.logger.error, self.logger.write)
+        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
+        mat.plastic_check(self.params, *comm)
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]
 
@@ -53,6 +54,6 @@ class Plastic(MaterialModel):
             Updated extra variables
 
         """
-        mat.plastic_update_state(dtime, self.params, d, stress,
-                                 self.logger.error, self.logger.write)
+        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
+        mat.plastic_update_state(dtime, self.params, d, stress, *comm)
         return stress, xtra, self.constant_jacobian

@@ -6,15 +6,14 @@ python module mml__user__routines
             intent(callback) log_message
             character*(*) :: message
         end subroutine log_message
+        subroutine log_warning(message)
+            intent(callback) log_warning
+            character*(*) :: message
+        end subroutine log_warning
         subroutine log_error(message)
             intent(callback) log_error
             character*(*) :: message
         end subroutine log_error
-        subroutine log_warning(message)
-            intent(callback) log_warning
-            character*(*) :: message
-            real intent(callback) :: log_warning
-        end subroutine log_warning
     end interface mml_user_interface
 end python module mml__user__routines
 
@@ -22,13 +21,13 @@ python module visco ! in
     interface  ! in :visco
         module visco ! in :visco:visco.f90
             subroutine viscorelax(dtime,time,tempold,dtemp,nprop,props,f,nstatev,statev,sigo,sig) ! in :visco:visco.f90:visco
-            use mml__user__routines
-            intent(callback) log_error
-            external log_error
-            intent(callback) log_message
-            external log_message
-            intent(callback) log_warning
-            external log_warning
+                use mml__user__routines
+                intent(callback) log_message
+                external log_message
+                intent(callback) log_warning
+                external log_warning
+                intent(callback) log_error
+                external log_error
                 real(8) intent(in) :: dtime
                 real(8) intent(in) :: time
                 real(8) intent(in) :: tempold
@@ -42,26 +41,26 @@ python module visco ! in
                 real(8) dimension((6)),intent(out) :: sig
             end subroutine viscorelax
             subroutine viscoini(nprop,props,nstatev,statev) ! in :visco:visco.f90:visco
-            use mml__user__routines
-            intent(callback) log_error
-            external log_error
-            intent(callback) log_message
-            external log_message
-            intent(callback) log_warning
-            external log_warning
+                use mml__user__routines
+                intent(callback) log_message
+                external log_message
+                intent(callback) log_warning
+                external log_warning
+                intent(callback) log_error
+                external log_error
                 integer, optional,intent(in),check(len(props)>=nprop),depend(props) :: nprop=len(props)
                 real(8) dimension(nprop),intent(in) :: props
                 integer, optional,intent(in),check(len(statev)>=nstatev),depend(statev) :: nstatev=len(statev)
                 real(8) dimension(nstatev),intent(inout) :: statev
             end subroutine viscoini
             subroutine propcheck(nprop,props) ! in :visco:visco.f90:visco
-            use mml__user__routines
-            intent(callback) log_error
-            external log_error
-            intent(callback) log_message
-            external log_message
-            intent(callback) log_warning
-            external log_warning
+                use mml__user__routines
+                intent(callback) log_message
+                external log_message
+                intent(callback) log_warning
+                external log_warning
+                intent(callback) log_error
+                external log_error
                 integer, optional,intent(in),check(len(props)>=nprop),depend(props) :: nprop=len(props)
                 real(8) dimension(nprop),intent(inout) :: props
             end subroutine propcheck

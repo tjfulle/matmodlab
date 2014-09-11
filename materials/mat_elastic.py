@@ -22,7 +22,8 @@ class Elastic(MaterialModel):
         """
         if mat is None:
             raise ModelNotImportedError("elastic")
-        mat.elastic_check(self.params, self.logger.error, self.logger.write)
+        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
+        mat.elastic_check(self.params, *comm)
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]
 
@@ -53,6 +54,6 @@ class Elastic(MaterialModel):
             Updated extra variables
 
         """
-        mat.elastic_update_state(dtime, self.params, d, stress,
-                                 self.logger.error, self.logger.write)
+        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
+        mat.elastic_update_state(dtime, self.params, d, stress, *comm)
         return stress, xtra, self.constant_jacobian

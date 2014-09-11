@@ -159,7 +159,7 @@ CONTAINS
   ! ************************************************************************* !
 
   SUBROUTINE VISCORELAX(DTIME, TIME, TEMPOLD, DTEMP, NPROP, PROPS, F, &
-       NSTATEV, STATEV, SIGO, SIG)
+       NSTATEV, STATEV, SIGO, SIG, CFAC)
     ! ----------------------------------------------------------------------- !
     ! VISCOELASTIC RELAXATION. THIS ROUTINE COMPUTES THE DEVIATORIC PART OF
     ! THE CAUCHY STRESS AT THE END OF THE CURRENT TIME STEP.
@@ -202,7 +202,7 @@ CONTAINS
     REAL(KIND=DP), INTENT(IN) :: DTIME, TIME, TEMPOLD, DTEMP, PROPS(NPROP)
     REAL(KIND=DP), INTENT(IN) :: SIGO(NTENS), F(3,3)
     REAL(KIND=DP), INTENT(OUT) :: SIG(NTENS)
-    REAL(KIND=DP), INTENT(INOUT) :: STATEV(NSTATEV)
+    REAL(KIND=DP), INTENT(INOUT) :: STATEV(NSTATEV), CFAC(2)
     INTEGER :: J, K, L
     LOGICAL :: RELAX
     REAL(KIND=DP) :: PK2ODEV(NTENS), PK2O(NTENS), C(NTENS)
@@ -213,6 +213,8 @@ CONTAINS
     REAL(KIND=DP) :: REALV(1)
     CHARACTER*8 :: CHARV(1)
     ! ----------------------------------------------------------------------- !
+
+    CFAC = ZERO
 
     IF (NSTATEV /= NSDV) THEN
        JNKSTR = "VISCORELAX: EXPECTED NSTATEV=%I GOT %I"
@@ -260,6 +262,7 @@ CONTAINS
                         + PROPS(IPGOO+K) * (S - E) * STATEV(2+L) &
                         + PROPS(IPGOO+K) * (ONE - S) * PK2ODEV(L)
        END DO
+       CFAC(1) = CFAC(1) + (ONE - S) * PROPS(IPGOO+K)
     END DO
 
     ! COMPUTE DECAYING DEVIATORIC STRESS

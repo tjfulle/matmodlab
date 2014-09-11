@@ -24,8 +24,8 @@ class UserMat(AbaqusMaterial):
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc):
         """update the material state"""
+        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
         user.user_mat(stress, statev, ddsdde,
             stran, dstran, time, dtime, temp, dtemp,
-            nxtra, params, dfgrd0, dfgrd1, self.logger.error,
-            self.logger.write, self.logger.warn)
+            nxtra, params, dfgrd0, dfgrd1, *comm)
         return stress, statev, ddsdde

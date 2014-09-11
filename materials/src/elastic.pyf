@@ -5,36 +5,41 @@ python module mml__user__routines
         subroutine log_message(message)
             intent(callback) log_message
             character*(*) :: message
-            real intent(callback) :: report_and_raise_error
         end subroutine log_message
+        subroutine log_warning(message)
+            intent(callback) log_warning
+            character*(*) :: message
+        end subroutine log_warning
         subroutine log_error(message)
             intent(callback) log_error
             character*(*) :: message
-            real intent(callback) :: log_message
         end subroutine log_error
     end interface mml_user_interface
 end python module mml__user__routines
-
 
 python module elastic ! in
 interface  ! in :elastic
    subroutine elastic_check(ui)
      use elastic, only: pchk
      use mml__user__routines
-     intent(callback) log_error
-     external log_error
      intent(callback) log_message
      external log_message
+     intent(callback) log_warning
+     external log_warning
+     intent(callback) log_error
+     external log_error
      integer, parameter :: nui=2
      real(kind=8) dimension(nui),intent(inout) :: ui
    end subroutine elastic_check
    subroutine elastic_update_state(dt,ui,d,stress)
      use elastic, only: pcalc
      use mml__user__routines
-     intent(callback) log_error
-     external log_error
      intent(callback) log_message
      external log_message
+     intent(callback) log_warning
+     external log_warning
+     intent(callback) log_error
+     external log_error
      integer, parameter :: nui=2
      real(kind=8) intent(in) :: dt
      real(kind=8) dimension(nui),intent(in) :: ui

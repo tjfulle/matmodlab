@@ -27,7 +27,11 @@ getprog() {
     if [ -f $it ]; then
 	PROG="$it"
     else
-	echo \'"$1"\': unknown subcommand
+	if test -z "$1"; then
+            echo "*** error: mml:" required command not found
+	else
+	    echo "*** error: mml:" receieved unrecognized command \'"$1"\'
+	fi
 	usage
 	exit 1
     fi
@@ -51,7 +55,7 @@ done
 # positional parameters
 COMMAND="$1"
 shift
-if [ $COMMAND == "help" ];
+if [ "$COMMAND" == "help" ];
 then
     COMMAND="$1"
     set -- "-h"

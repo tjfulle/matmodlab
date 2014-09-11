@@ -30,6 +30,6 @@ class UMat(AbaqusMaterial):
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params[:-1], coords, drot, pnewdt, celent, dfgrd0,
-            dfgrd1, noel, npt, layer, kspt, kstep, kinc, self.logger.error,
-            self.logger.write, self.logger.warn)
+            dfgrd1, noel, npt, layer, kspt, kstep, kinc, self.logger.write,
+            self.logger.warn, self.logger.raise_error)
         return stress, statev, ddsdde

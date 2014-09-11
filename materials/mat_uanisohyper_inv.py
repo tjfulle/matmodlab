@@ -23,7 +23,7 @@ class UAnisoHyper(AbaqusMaterial):
     def update_state_umat(self, Ainv, zeta, nfibers, temp, noel,
                           cmname, incmpflag, ihybflag, statev,
                           fieldv, fieldvinc):
+        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
         return mat.uanisohyper_inv(Ainv, zeta, nfibers, temp, noel, cmname,
                    incmpflag, ihybflag, statev, fieldv, fieldvinc,
-                   self.params[:-4], self.logger.error, self.logger.write,
-                   self.logger.warn)
+                   self.params[:-4], *comm)
