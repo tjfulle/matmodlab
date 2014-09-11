@@ -38,6 +38,13 @@ from core.optimizer import Optimizer, OptimizeVariable
 from core.functions import Function
 from core.logger import Logger
 from core.test import TestBase
+RAND = np.random.RandomState()
+
+
+def genrand():
+    return RAND.random_sample()
+
+randreal = genrand()
 
 # --- DECORATOR FOR SIMULATION
 already_splashed = False

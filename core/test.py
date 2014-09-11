@@ -88,12 +88,14 @@ class TestBase(object):
             self.logger.error("{0}: expected long or fast "
                               "keyword".format(self.str_repr))
 
-        if os.path.isdir(self.test_dir):
-            remove(self.test_dir)
-        os.makedirs(self.test_dir)
         self.validated = not errors
 
-        return not errors
+        if self.validated:
+            if os.path.isdir(self.test_dir):
+                remove(self.test_dir)
+            os.makedirs(self.test_dir)
+
+        return self.validated
 
     def setup(self, *args, **kwargs):
         """The standard setup
@@ -111,8 +113,13 @@ class TestBase(object):
             errors += 1
             self.logger.error("{0}: base_res file not found".format(self.str_repr))
 
-        self.exodiff = getattr(self, "exodiff",
-                               os.path.join(TEST_D, "base.exodiff"))
+        self.exodiff = getattr(self, "exodiff", None)
+        if self.exodiff is None:
+            f = "base.exodiff"
+            if os.path.isfile(os.path.join(self.src_dir, f)):
+                self.exodiff = os.path.join(self.src_dir, f)
+            else:
+                self.exodiff = os.path.join(TEST_D, f)
         if not os.path.isfile(self.exodiff):
             errors += 1
             self.logger.error("{0}: exodiff file not found".format(self.str_repr))

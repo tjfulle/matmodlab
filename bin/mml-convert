@@ -48,20 +48,25 @@ def path_repl(item):
     item = item.lower()
     d = {"ndumps": "num_io_dumps", "ratfac": "rate_multiplier",
          "nfac": "step_multiplier", "format": "path_input",
-         "type": ""}
+         "type": "", "ampl": "amplitude"}
     return d.get(item, item)
 
 
 def is_default_val(key, val):
     small = 1.E-12
+    key = key.lower().strip()
+    try: val = val.lower().strip()
+    except AttributeError: pass
     eq = lambda x, y: abs(float(x) - y) < small
     if re.search(r"[a-z]star", key) and eq(val, 1.):
         return True
-    if key.lower().strip() == "kappa" and eq(val, 0.):
+    if key.strip() == "kappa" and eq(val, 0.):
         return True
-    if "multiplier" in key.lower() and eq(val, 1.):
+    if "multiplier" in key and eq(val, 1.):
         return True
-    if "num_io" in key.lower() and val == "all":
+    if "num_io" in key and "all" in val:
+        return True
+    if "ampl" in key and eq(val, 1.):
         return True
     return False
 
@@ -112,11 +117,42 @@ def fix_mat_model(model):
     return {"mnrv": "mooney rivlin"}.get(model.lower(), model.lower())
 
 
+def convert_rxml_input(f, disp=1):
+    filedir, filename = os.path.split(f)
+    fileroot = os.path.splitext(filename)[0]
+    runid = fileroot.replace("-", "_")
+
+    lines = open(f).read()
+
+    # start processing file
+    doc = xdom.parseString(lines)
+
+    # get the root
+    root = doc.getElementsByTagName("rtest")[0]
+
+    # get the keywords
+    keywords = root.getElementsByTagName("keywords")[0]
+    keywords = [str(s).strip() for s in keywords.firstChild.data.split()]
+
+    name = "".join(x[0].upper() + x[1:].lower() for x in runid.split("_"))
+    inp = """
+class Test{0}(TestBase):
+    def __init__(self):
+        self.runid = runid
+        self.keywords = {1}
+    def run_job(self):
+        runner(d=self.test_dir, v=0)
+""".format(name, keywords)
+    return inp
+
+
 def convert_xml_input(files):
 
     for f in files:
         filedir, filename = os.path.split(f)
-        runid = os.path.splitext(filename)[0]
+        fileroot = os.path.splitext(filename)[0]
+        runid = fileroot.replace("-", "_")
+
         lines = open(f).read()
 
         # preprocess all lines
@@ -144,12 +180,20 @@ def convert_xml_input(files):
         mat_el = root.getElementsByTagName("Material")[0]
         mat_mod = fix_mat_model(mat_el.getAttribute("model"))
         params = format_mat_params(mat_el)
+
+        ft = os.path.join(filedir, fileroot + ".rxml")
+        if os.path.isfile(ft):
+            test_inp = convert_rxml_input(ft, disp=0)
+        else:
+            test_inp = ""
+
         inp = '''#!/usr/bin/env mmd
 from matmodlab import *
 
+runid = "{0}"
+{5}
 @matmodlab
 def runner(d=None, v=1):
-    runid = "{0}"
     d = d or os.getcwd()
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
@@ -172,9 +216,14 @@ def runner(d=None, v=1):
 
 if __name__ == "__main__":
     sys.exit(runner())
-'''.format(runid, path, dspec, params, mat_mod)#, subbed_vars=vars_to_sub)
+'''.format(runid, path, dspec, params, mat_mod, test_inp)#, subbed_vars=vars_to_sub)
 
-        with open(os.path.join(filedir, runid + ".py"), "w") as fh:
+        if test_inp:
+            pyf = os.path.join(filedir, "test_" + runid + ".py")
+        else:
+            pyf = os.path.join(filedir, runid + ".py")
+
+        with open(pyf, "w") as fh:
             fh.write(inp)
 
 
