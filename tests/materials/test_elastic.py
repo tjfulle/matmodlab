@@ -4,21 +4,24 @@ from matmodlab import *
 class TestElasticUnistrain(TestBase):
     def __init__(self):
         self.runid = "elastic_unistrain"
-        self.keywords = ["fast", "material", "elastic", "uniaxial_strain"]
+        self.keywords = ["fast", "material", "elastic", "uniaxial_strain",
+                         "builtin"]
     def run_job(self):
         elastic_unistrain(d=self.test_dir, v=0)
 
 class TestElasticUnistrainStressc(TestBase):
     def __init__(self):
         self.runid = "elastic_unistrain_stressc"
-        self.keywords = ["fast", "material", "elastic", "uniaxial_strain", "stress"]
+        self.keywords = ["fast", "material", "elastic", "uniaxial_strain", "stress",
+                         "builtin"]
     def run_job(self):
         elastic_unistrain_stressc(d=self.test_dir, v=0)
 
 class TestElasticUnistress(TestBase):
     def __init__(self):
         self.runid = "elastic_unistress"
-        self.keywords = ["fast", "material", "elastic", "uniaxial_strain"]
+        self.keywords = ["fast", "material", "elastic", "uniaxial_strain",
+                         "builtin"]
     def run_job(self):
         elastic_unistress(d=self.test_dir, v=0)
 

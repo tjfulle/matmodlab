@@ -61,6 +61,8 @@ def load_file(filepath, disp=0):
         # Since we may exit via an exception, close fp explicitly.
         if fp:
             fp.close()
+    if disp:
+        return loaded, module
     return loaded
 
 
@@ -128,5 +130,3 @@ def remove(path):
 def fillwithdots(a, b, width):
     dots = "." * (width - len(a) - len(b))
     return "{0}{1}{2}".format(a, dots, b)
-
-

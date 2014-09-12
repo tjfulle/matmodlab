@@ -13,7 +13,7 @@ class TestSphericalLinearDruckerPrager(TestBase):
     def __init__(self):
         self.runid = RUNID + "_spherical"
         self.keywords = ["fast", "druckerprager", "material",
-                         "spherical", "analytic"]
+                         "spherical", "analytic", "builtin"]
         self.interpolate_diff = True
         self.base_res = os.path.join(my_dir, "lin_druck_prag_spher.base_dat")
         self.gen_overlay_if_fail = True
@@ -25,12 +25,13 @@ class TestRandomLinearDruckerPrager(TestBase):
     def __init__(self):
         self.runid = RUNID + "_rand"
         self.keywords = ["long", "druckerprager", "material",
-                         "random", "analytic"]
+                         "random", "analytic", "builtin"]
 
     def setup(self, *args, **kwargs):
         pass
 
     def run(self):
+        self.make_test_dir()
         for n in range(10):
             runid = RUNID + "_{0}".format(n+1)
             self.status = rand_runner(d=self.test_dir, v=0, runid=runid, test=1)

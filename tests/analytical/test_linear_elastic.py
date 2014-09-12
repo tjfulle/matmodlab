@@ -11,12 +11,14 @@ RUNID = "linear_elastic"
 class TestRandomLinearElastic(TestBase):
     def __init__(self):
         self.runid = "rand_" + RUNID
-        self.keywords = ["fast", "random", "material", "elastic", "analytic"]
+        self.keywords = ["fast", "random", "material", "elastic", "analytic",
+                         "builtin"]
 
     def setup(self, *args, **kwargs):
         pass
 
     def run(self):
+        self.make_test_dir()
         for I in range(10):
             runid = self.runid + "_{0}".format(I+1)
             self.status = runner(d=self.test_dir, v=0, runid=runid, test=1)

@@ -37,15 +37,14 @@ class TestBase(object):
                             "to the {0} Driver logger".format(self.kind))
         self._logger = new_logger
 
-    def init(self, src_dir, test_dir, module, str_repr, logger):
+    def init(self, root_test_dir, test_file_dir, module, str_repr, logger, **opts):
         """Initialize the test.
 
         This is done in the parent class after any subclasses have been
         initialized
 
         """
-        self.src_dir = src_dir
-        self.test_dir = test_dir
+        self.test_file_dir = test_file_dir
         self.module = module
         self.logger = logger
         self.initialized = True
@@ -58,6 +57,15 @@ class TestBase(object):
         self.str_repr = str_repr
         self.interp = getattr(self, "interpolate_diff", False)
         self.validated = False
+        self.force_overlay = opts.get("overlay", False)
+
+        d = os.path.basename(test_file_dir)
+        sub_dir = getattr(self, "test_dir_base", d)
+        self.test_dir = os.path.join(root_test_dir, sub_dir, module)
+
+        self.exofile = None
+        self.setup_by_class = False
+        self.status = self.not_run
 
     def validate(self):
 
@@ -83,41 +91,44 @@ class TestBase(object):
             self.logger.error("{0}: expected keywords to be a "
                               "list".format(self.str_repr))
 
-        if all(n not in self.keywords for n in ("long", "fast")):
+        if all(n not in self.keywords for n in ("long", "fast", "medium")):
             errors += 1
-            self.logger.error("{0}: expected long or fast "
+            self.logger.error("{0}: expected long, fast, or medium "
                               "keyword".format(self.str_repr))
 
         self.validated = not errors
 
-        if self.validated:
-            if os.path.isdir(self.test_dir):
-                remove(self.test_dir)
-            os.makedirs(self.test_dir)
-
         return self.validated
+
+    def make_test_dir(self):
+        """create test directory to run tests"""
+        if os.path.isdir(self.test_dir):
+            remove(self.test_dir)
+        os.makedirs(self.test_dir)
 
     def setup(self, *args, **kwargs):
         """The standard setup
 
         """
         from core.product import TEST_D
+        noattr = -31
 
         # Look for standard files
         errors = 0
         self.exofile = os.path.join(self.test_dir, self.runid + ".exo")
 
-        self.base_res = getattr(self, "base_res",
-            os.path.join(self.src_dir, self.runid + ".base_exo"))
+        if getattr(self, "base_res", noattr) == noattr:
+            self.base_res = os.path.join(self.test_file_dir,
+                                         self.runid + ".base_exo")
         if not os.path.isfile(self.base_res):
             errors += 1
+            print self.base_res
             self.logger.error("{0}: base_res file not found".format(self.str_repr))
 
-        self.exodiff = getattr(self, "exodiff", None)
-        if self.exodiff is None:
+        if getattr(self, "exodiff", noattr) == noattr:
             f = "base.exodiff"
-            if os.path.isfile(os.path.join(self.src_dir, f)):
-                self.exodiff = os.path.join(self.src_dir, f)
+            if os.path.isfile(os.path.join(self.test_file_dir, f)):
+                self.exodiff = os.path.join(self.test_file_dir, f)
             else:
                 self.exodiff = os.path.join(TEST_D, f)
         if not os.path.isfile(self.exodiff):
@@ -129,10 +140,14 @@ class TestBase(object):
 
         return errors
 
+    def pre_hook(self, *args, **kwargs):
+        pass
+
     def run(self):
         """The standard test
 
         """
+        self.make_test_dir()
         self.status = self.failed_to_run
 
         if not getattr(self, "setup_by_class", False):
@@ -157,17 +172,28 @@ class TestBase(object):
                                       interp=self.interp)
         return
 
-    def tear_down(self):
+    def tear_down(self, force=0):
+
+        if force:
+            remove(self.test_dir)
+            self.torn_down = 1
+            return
+
         if self._no_teardown:
             return
+
         if self.status != self.passed:
             return
+
         remove(self.test_dir)
         self.torn_down = 1
 
     def post_hook(self, *args, **kwargs):
-        if (self.gen_overlay or
-            (self.gen_overlay_if_fail and self.status==self.failed)):
+        if self.force_overlay:
+            self._create_overlays()
+        elif self.gen_overlay:
+            self._create_overlays()
+        elif self.gen_overlay_if_fail and self.status==self.failed:
             self._create_overlays()
         pass
 
@@ -175,7 +201,7 @@ class TestBase(object):
         """Create overlays of variables common to sim file and baseline
 
         """
-        if not self.setup_by_class:
+        if not all([self.exofile, self.base_res]):
             self.logger.warn("overlays only created for tests setup by class")
             return
 

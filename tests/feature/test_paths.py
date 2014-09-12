@@ -4,7 +4,7 @@ from matmodlab import *
 class PathTest(TestBase):
     def __init__(self):
         self.runid = "path_cycle"
-        self.keywords = ["fast", "feature", "path"]
+        self.keywords = ["fast", "feature", "path", "builtin"]
     def run_job(self):
         runner(d=self.test_dir, v=0)
 

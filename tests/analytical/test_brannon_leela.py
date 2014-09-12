@@ -17,9 +17,10 @@ FAILTOL = 1.E-02
 class TestBrannonLeelavanichkul2(TestBase):
     def __init__(self):
         self.runid = RUNID + "_2"
-        self.keywords = ["fast", "material", "multi_stage", "analytic"]
+        self.keywords = ["fast", "material", "multi_stage", "analytic", "builtin"]
     def setup(self, *args, **kwargs): pass
     def run(self):
+        self.make_test_dir()
         self.status = run_ex2(d=self.test_dir, v=0, runid=self.runid, test=1)
         return self.status
 
@@ -146,4 +147,3 @@ def get_stress_2(t):
 
 if __name__ == "__main__":
     print run_ex2(test=1)
-

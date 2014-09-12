@@ -20,7 +20,8 @@ VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
 class TestJ2Plasticity1(TestBase):
     def __init__(self):
         self.runid = RUNID + "1"
-        self.keywords = ["fast", "material", "vonmises", "analytic", "material"]
+        self.keywords = ["fast", "material", "vonmises", "analytic", "material",
+                         "builtin"]
         self.base_res = os.path.join(my_dir, "j2_plast.base_dat")
         self.interpolate_diff = True
     def run_job(self):
@@ -30,7 +31,7 @@ class TestJ2PlasticityIsotropicHardening(TestBase):
     def __init__(self):
         self.runid = RUNID + "_iso_hard"
         self.keywords = ["fast", "material", "vonmises", "analytic", "material",
-                         "hardening"]
+                         "hardening", "builtin"]
         self.base_res = os.path.join(my_dir, "j2_plast_iso_hard.base_dat")
         self.interpolate_diff = True
         self.gen_overlay_if_fail = True
@@ -41,7 +42,7 @@ class TestJ2PlasticityKinematicHardening(TestBase):
     def __init__(self):
         self.runid = RUNID + "_kin_hard"
         self.keywords = ["fast", "material", "vonmises", "analytic", "material",
-                         "hardening"]
+                         "hardening", "builtin"]
         self.base_res = os.path.join(my_dir, "j2_plast_kin_hard.base_dat")
         self.interpolate_diff = True
         self.gen_overlay_if_fail = True
@@ -52,7 +53,7 @@ class TestJ2PlasticityMixedHardening(TestBase):
     def __init__(self):
         self.runid = RUNID + "_mix_hard"
         self.keywords = ["fast", "material", "vonmises", "analytic", "material",
-                         "hardening"]
+                         "hardening", "builtin"]
         self.base_res = os.path.join(my_dir, "j2_plast_mix_hard.base_dat")
         self.interpolate_diff = True
         self.gen_overlay_if_fail = True
@@ -62,12 +63,14 @@ class TestJ2PlasticityMixedHardening(TestBase):
 class TestRandomJ2Plasticity1(TestBase):
     def __init__(self):
         self.runid = "rand_" + RUNID
-        self.keywords = ["long", "random", "material", "vonmises", "analytic"]
+        self.keywords = ["long", "random", "material", "vonmises", "analytic",
+                         "builtin"]
 
     def setup(self, *args, **kwargs):
         pass
 
     def run(self):
+        self.make_test_dir()
         for I in range(10):
             runid = self.runid + "_{0}".format(I+1)
             self.status = rand_runner1(d=self.test_dir, v=0, runid=runid, test=1)
@@ -79,12 +82,14 @@ class TestRandomJ2Plasticity1(TestBase):
 class TestRandomJ2Plasticity2(TestBase):
     def __init__(self):
         self.runid = "rand_" + RUNID + "2"
-        self.keywords = ["long", "random", "material", "vonmises", "analytic"]
+        self.keywords = ["long", "random", "material", "vonmises", "analytic",
+                         "builtin"]
 
     def setup(self, *args, **kwargs):
         pass
 
     def run(self):
+        self.make_test_dir()
         for I in range(10):
             runid = self.runid + "_{0}".format(I+1)
             self.status = rand_runner2(d=self.test_dir, v=0, runid=runid, test=1)

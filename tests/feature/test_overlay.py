@@ -9,17 +9,27 @@ d = get_my_directory()
 class TestOverlay(TestBase):
     def __init__(self):
         self.runid = runid
-        self.keywords = ["long", "overlay", "feature", "function"]
+        self.keywords = ["long", "overlay", "feature", "function", "builtin"]
         self.base_res = os.path.join(d, "test_funcs.base_exo")
-    def run_job(self):
-        runner(d=self.test_dir, v=0)
-        return
-    def post_hook(self):
+    def run(self):
+        self.make_test_dir()
+        self.status = self.failed_to_run
+        try:
+            runner(d=self.test_dir, v=0)
+        except BaseException as e:
+            self.status = self.failed
+            self.logger.error("{0}: failed with the following "
+                              "exception: {1}".format(self.runid, e.message))
+            return
         try:
             self._create_overlays()
             self._no_teardown = False
-        except:
+            self.status = self.passed
+        except BaseException as e:
             self.status = self.failed
+            self.logger.error("{0}: failed with the following "
+                              "exception: {1}".format(self.runid, e.message))
+        return
 
 @matmodlab
 def runner(d=None, v=1):

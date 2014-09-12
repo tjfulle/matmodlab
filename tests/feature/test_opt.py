@@ -8,9 +8,11 @@ path_file = os.path.join(my_dir, "opt.base_dat")
 class TestCobyla(TestBase):
     def __init__(self):
         self.runid = "opt_cobyla"
-        self.keywords = ["long", "cobyla", "optimization", "opt", "feature"]
+        self.keywords = ["long", "cobyla", "optimization", "opt", "feature",
+                         "builtin"]
     def setup(self,*args,**kwargs): pass
     def run(self):
+        self.make_test_dir()
         self.status = self.failed_to_run
         try:
             runner("cobyla", d=self.test_dir, v=0)
@@ -22,9 +24,11 @@ class TestCobyla(TestBase):
 class TestSimplex(TestBase):
     def __init__(self):
         self.runid = "opt_simplex"
-        self.keywords = ["long", "simplex", "optimization", "opt", "feature"]
+        self.keywords = ["long", "simplex", "optimization", "opt", "feature",
+                         "builtin"]
     def setup(self,*args,**kwargs): pass
     def run(self):
+        self.make_test_dir()
         self.status = self.failed_to_run
         try:
             runner("simplex", d=self.test_dir, v=0)
@@ -37,9 +41,11 @@ class TestPowell(TestBase):
     def __init__(self):
         self.disabled = True
         self.runid = "opt_powell"
-        self.keywords = ["long", "powell", "optimization", "opt", "feature"]
+        self.keywords = ["long", "powell", "optimization", "opt", "feature",
+                         "builtin"]
     def setup(self,*args,**kwargs): pass
     def run(self):
+        self.make_test_dir()
         self.status = self.failed_to_run
         try:
             runner("powell", d=self.test_dir, v=0)

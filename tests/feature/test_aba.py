@@ -17,14 +17,15 @@ uhyper = "uhyper_neohooke"
 class TestUMat(TestBase):
     def __init__(self):
         self.runid = umat
-        self.keywords = ["fast", "abaqus", "umat", "neohooke", "feature"]
+        self.keywords = ["fast", "abaqus", "umat", "neohooke", "feature", "builtin"]
     def run_job(self):
         run_umat(d=self.test_dir, v=0, test=1)
 
 class TestUHyper(TestBase):
     def __init__(self):
         self.runid = uhyper
-        self.keywords = ["fast", "abaqus", "uhyper", "neohooke", "feature"]
+        self.keywords = ["fast", "abaqus", "uhyper", "neohooke", "feature",
+                         "builtin"]
     def run_job(self):
         run_uhyper(d=self.test_dir, v=0, test=1)
 

@@ -317,13 +317,13 @@ def read_diff_file(filepath, logger):
     variables = []
     for var in exdiff.getElementsByTagName("Variable"):
         name = var.getAttribute("name")
-        vftol = exdiff.getAttribute("ftol")
+        vftol = var.getAttribute("ftol")
         if vftol: vftol = float(vftol)
         else: vftol = ftol
-        vdtol = exdiff.getAttribute("dtol")
+        vdtol = var.getAttribute("dtol")
         if vdtol: vdtol = float(vdtol)
         else: vdtol = dtol
-        vfloor = exdiff.getAttribute("floor")
+        vfloor = var.getAttribute("floor")
         if vfloor: vfloor = float(vfloor)
         else: vfloor = floor
         variables.append((name, vdtol, vftol, floor))

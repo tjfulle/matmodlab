@@ -13,9 +13,10 @@ class TestZip(TestBase):
     def __init__(self):
         self.runid = "perm_zip"
         self.keywords = ["long", "correlations", "zip",
-                         "permutation", "builtin", "feature"]
+                         "permutation", "builtin", "feature", "builtin"]
     def setup(self,*args,**kwargs): pass
     def run(self):
+        self.make_test_dir()
         self.status = self.failed_to_run
         try:
             runner("zip", d=self.test_dir, v=0)
@@ -28,9 +29,10 @@ class TestCombi(TestBase):
     def __init__(self):
         self.runid = "perm_combination"
         self.keywords = ["long", "correlations", "combination",
-                         "permutation", "builtin", "feature"]
+                         "permutation", "builtin", "feature", "builtin"]
     def setup(self,*args,**kwargs): pass
     def run(self):
+        self.make_test_dir()
         self.status = self.failed_to_run
         try:
             runner("combination", d=self.test_dir, v=0, N=2)

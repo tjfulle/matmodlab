@@ -6,7 +6,7 @@ RUNID = "umat_thermoelastic"
 class TestUmatThermoelastic(TestBase):
     def __init__(self):
         self.runid = RUNID
-        self.keywords = ["fast", "material", "thermoelastic", "umat"]
+        self.keywords = ["fast", "material", "thermoelastic", "umat", "builtin"]
     def run_job(self):
         runner(d=self.test_dir, runid=self.runid, v=0, test=1)
 

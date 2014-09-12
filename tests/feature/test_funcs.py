@@ -7,7 +7,7 @@ runid = gen_runid()
 class TestFunc(TestBase):
     def __init__(self):
         self.runid = runid
-        self.keywords = ["fast", "function", "feature", "elastic"]
+        self.keywords = ["fast", "function", "feature", "elastic", "builtin"]
     def run_job(self):
         runner(d=self.test_dir, v=0)
         return
