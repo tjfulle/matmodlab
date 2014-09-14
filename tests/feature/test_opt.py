@@ -10,9 +10,13 @@ class TestCobyla(TestBase):
         self.runid = "opt_cobyla"
         self.keywords = ["long", "cobyla", "optimization", "opt", "feature",
                          "builtin"]
-    def setup(self,*args,**kwargs): pass
-    def run(self):
+
+    def setup(self, *args, **kwargs):
         self.make_test_dir()
+        logfile = os.path.join(self.test_dir, self.runid + ".log")
+        self.logger = Logger(logfile=logfile)
+
+    def run(self):
         self.status = self.failed_to_run
         try:
             runner("cobyla", d=self.test_dir, v=0)
@@ -26,9 +30,13 @@ class TestSimplex(TestBase):
         self.runid = "opt_simplex"
         self.keywords = ["long", "simplex", "optimization", "opt", "feature",
                          "builtin"]
-    def setup(self,*args,**kwargs): pass
-    def run(self):
+
+    def setup(self, *args, **kwargs):
         self.make_test_dir()
+        logfile = os.path.join(self.test_dir, self.runid + ".log")
+        self.logger = Logger(logfile=logfile)
+
+    def run(self):
         self.status = self.failed_to_run
         try:
             runner("simplex", d=self.test_dir, v=0)
@@ -43,9 +51,13 @@ class TestPowell(TestBase):
         self.runid = "opt_powell"
         self.keywords = ["long", "powell", "optimization", "opt", "feature",
                          "builtin"]
-    def setup(self,*args,**kwargs): pass
-    def run(self):
+
+    def setup(self, *args, **kwargs):
         self.make_test_dir()
+        logfile = os.path.join(self.test_dir, self.runid + ".log")
+        self.logger = Logger(logfile=logfile)
+
+    def run(self):
         self.status = self.failed_to_run
         try:
             runner("powell", d=self.test_dir, v=0)

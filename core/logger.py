@@ -8,13 +8,14 @@ from core.runtime import opts
 std_transform = string.upper
 
 class Logger(object):
-    def __init__(self, logfile=None, verbosity=1, no_fh=0, ignore_opts=0):
+    def __init__(self, logfile=None, verbosity=1, no_fh=0, ignore_opts=0,
+                 mode="w"):
         self.ch = sys.stdout
         self.eh = sys.stderr
         self.no_fh = no_fh
         self._fh = open(os.devnull, "a")
         self.verbosity = verbosity
-        self.logfile = logfile
+        self.assign_logfile(logfile, mode=mode)
         self.ignore_opts = ignore_opts
 
     @property
@@ -31,11 +32,10 @@ class Logger(object):
     def logfile(self):
         return self._logfile
 
-    @logfile.setter
-    def logfile(self, filepath):
+    def assign_logfile(self, filepath, mode="w"):
         self._logfile = filepath
         if filepath is not None:
-            self.fh = open(filepath, "w")
+            self.fh = open(filepath, mode=mode)
 
     @property
     def fh(self):
@@ -91,9 +91,9 @@ class Logger(object):
             conmsg = "*** ERROR: {0} ({1})\n"
         else:
             conmsg = "*** ERROR: {0}\n"
-        transform = kwargs.pop("transform", str)
+        transform = kwargs.pop("transform", std_transform)
         conmsg = conmsg.format(transform_str(message, transform), caller)
-        self.write(message, log_to_eh=1, transform=str, **kwargs)
+        self.write(conmsg, log_to_eh=1, transform=str, **kwargs)
         if raise_error > 0:
             raise Exception(conmsg)
         elif raise_error == 0:
@@ -116,7 +116,9 @@ class Logger(object):
         self.ch.flush()
         self.fh.flush()
         self.fh.close()
-        self.fh = open(os.devnull, "w")
+
+    def close(self):
+        self.finish()
 
 
 def transform_str(s, transform):

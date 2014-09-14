@@ -66,11 +66,10 @@ class TestRandomJ2Plasticity1(TestBase):
         self.keywords = ["long", "random", "material", "vonmises", "analytic",
                          "builtin"]
 
-    def setup(self, *args, **kwargs):
-        pass
+    def setup(self,*args,**kwargs):
+        self.make_test_dir()
 
     def run(self):
-        self.make_test_dir()
         for I in range(10):
             runid = self.runid + "_{0}".format(I+1)
             self.status = rand_runner1(d=self.test_dir, v=0, runid=runid, test=1)
@@ -85,11 +84,10 @@ class TestRandomJ2Plasticity2(TestBase):
         self.keywords = ["long", "random", "material", "vonmises", "analytic",
                          "builtin"]
 
-    def setup(self, *args, **kwargs):
-        pass
+    def setup(self,*args,**kwargs):
+        self.make_test_dir()
 
     def run(self):
-        self.make_test_dir()
         for I in range(10):
             runid = self.runid + "_{0}".format(I+1)
             self.status = rand_runner2(d=self.test_dir, v=0, runid=runid, test=1)

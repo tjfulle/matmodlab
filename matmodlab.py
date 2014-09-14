@@ -37,7 +37,7 @@ from core.permutator import Permutator, PermutateVariable
 from core.optimizer import Optimizer, OptimizeVariable
 from core.functions import Function
 from core.logger import Logger
-from core.test import TestBase
+from core.test import TestBase, TestError as TestError
 RAND = np.random.RandomState()
 
 

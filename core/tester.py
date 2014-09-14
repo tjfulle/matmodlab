@@ -15,7 +15,9 @@ from core.logger import Logger
 from utils.namespace import Namespace
 from utils.misc import fillwithdots, remove, load_file
 from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH
-from core.test import TestBase, PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
+from core.test import PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
+from core.test import TestBase, TestError as TestError
+
 
 
 TIMING = []
@@ -73,12 +75,14 @@ def sort_by_status(test):
 
 def sort_by_time(test):
     if not test.instance:
-        return 3
+        return 4
     if "long" in test.instance.keywords:
         return 0
-    if "fast" in test.instance.keywords:
+    if "medium" in test.instance.keywords:
         return 1
-    return 2
+    if "fast" in test.instance.keywords:
+        return 2
+    return 3
 
 def sort_by_run_stat(test):
     if test.instance:
@@ -189,6 +193,10 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
 
     # transfer info back to the actual test. this is done because the changed
     # state of the test is not persistent with multiprocessing
+    if len(p) != ntests:
+        logger.error("an error during testing is preventing proper diagnostics")
+        p = [(-12, np.nan)] * ntests
+
     for i, (status, dtime) in enumerate(p):
         tests[TTR][i].status = status
         tests[TTR][i].dtime = dtime
@@ -196,28 +204,37 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
             tests[TTR][i].instance.status = status
 
 
-    logger.write("ALL TESTS COMPLETED")
-
     # write out some information
     TIMING.append(time.time())
+    dtf = TIMING[-1] - TIMING[0]
+    logger.write(fillwithdots("ALL TESTS COMPLETED",
+                              "({0:.4f}s)".format(dtf),
+                              TEST_CONS_WIDTH),
+                 transform=str)
 
     # determine number of passed, failed, etc.
     npass = len([test for test in tests[TTR] if test.status == PASSED])
     nfail = len([test for test in tests[TTR] if test.status == FAILED])
     nftr = len([test for test in tests[TTR] if test.status == FAILED_TO_RUN])
     ndiff = len([test for test in tests[TTR] if test.status == DIFFED])
+    nnr = len([test for test in tests[TTR] if test.status == NOT_RUN])
+    nunkn = ntests - npass - nfail - nftr - ndiff
     logger.write("\nsummary of completed tests\nran {0:d} tests "
                  "in {1:.4f}s".format(ntests_to_run, TIMING[-1]-TIMING[0]))
-    logger.write("  {0: 3d} passed\n"
-                 "  {1: 3d} failed\n"
-                 "  {2: 3d} diffed\n"
-                 "  {3: 3d} failed to run".format(npass, nfail, ndiff, nftr))
+    logger.write(
+        "  {0: 3d} passed\n"
+        "  {1: 3d} failed\n"
+        "  {2: 3d} diffed\n"
+        "  {3: 3d} failed to run\n"
+        "  {4: 3d} not run\n"
+        "  {5: 3d} unknown".format(npass, nfail, ndiff, nftr, nnr, nunkn))
 
     # collect results for pretty logging
     results_by_module = {}
     results_by_status = {}
     for test in tests[TTR]:
-        if test.status == NOT_RUN: continue
+        if test.status == NOT_RUN:
+            continue
         S = result_str(test.status)
         s = "{0}: {1}".format(test.str_repr.split(".")[1], S)
         results_by_module.setdefault(test.module, []).append(s)
@@ -308,7 +325,6 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
         test.all_tests: all tests in M
         test.instance : the test class instance - if it is to be run - else None
         test.str_repr : string representation for the test
-        test.test_cls : uninstanteated test class
 
     """
     all_tests = {INI: [], TTR: []}
@@ -345,8 +361,7 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
                       "instance": None,
                       "status": NOT_RUN,
                       "module": module,
-                      "disabled": False,
-                      "test_cls": test_cls}
+                      "disabled": False}
 
             test_space = Namespace(**kwargs)
             all_tests[TTR].append(test_space)
@@ -355,8 +370,16 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
             # instantiate test and set defaults
             # this is
             the_test = test_cls()
-            the_test.init(root_dir, file_dir, module, reprs[i], logger, **opts)
-            all_tests[TTR][-1].test_dir = the_test.test_dir
+            try:
+                the_test.init_and_check(root_dir, file_dir, module,
+                                        reprs[i], **opts)
+            except TestError as e:
+                logger.error("THE FOLLOWING ERRORS WERE ENCOUNTERED WHILE "
+                             "INITIALIZING TEST {0}".format(reprs[i]),
+                             transform=str)
+                logger.write(e.args[0])
+                logger.error("skipping test")
+                continue
 
             if the_test.disabled:
                 all_tests[TTR][-1].disabled = True
@@ -370,13 +393,11 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
             if include and not all([kw in the_test.keywords for kw in include]):
                 continue
 
-            validated = the_test.validate()
-            if not validated:
-                logger.error("{0}: skipping unvalidated test".format(module))
-                continue
-
             # if we got to here, the test will be run, store the instance
             all_tests[TTR][-1].instance = the_test
+            all_tests[TTR][-1].test_dir = the_test.test_dir
+
+    all_tests[TTR] = sorted(all_tests[TTR], key=sort_by_time)
 
     return all_tests
 
@@ -394,24 +415,28 @@ def run_test(test):
     Nothing is returned, the Namespace is modified with any information
 
     """
+    W = TEST_CONS_WIDTH
     if not test.instance:
         return NOT_RUN, np.nan
 
     ti = time.time()
-    logger.write(fillwithdots(test.str_repr, "RUNNING", TEST_CONS_WIDTH),
+    logger.write(fillwithdots(test.str_repr, "RUNNING", W),
                  transform=str)
-    status = test.instance.setup()
-    if status:
-        logger.error("{0}: failed to setup".format(test.str_repr))
+    try:
+        test.instance.setup()
+    except TestError as e:
+        logger.error("{0}: failed to setup with the following "
+                     "errors".format(test.str_repr))
+        logger.write(e.args[0])
         dtime = np.nan
     else:
         test.instance.run()
-        test.instance.post_hook()
+        logger.write(fillwithdots(test.str_repr, "POST HOOK", W), transform=str)
         dtime = time.time() - ti
 
     status = test.instance.status
     dtime = dtime
-    line = fillwithdots(test.str_repr, "FINISHED", TEST_CONS_WIDTH)
+    line = fillwithdots(test.str_repr, "FINISHED", W)
     s = " [{1}] ({0:.1f}s)".format(dtime, result_str(status))
     logger.write(line + s, transform=str)
 

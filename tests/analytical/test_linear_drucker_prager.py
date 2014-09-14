@@ -28,10 +28,9 @@ class TestRandomLinearDruckerPrager(TestBase):
                          "random", "analytic", "builtin"]
 
     def setup(self, *args, **kwargs):
-        pass
+        self.make_test_dir()
 
     def run(self):
-        self.make_test_dir()
         for n in range(10):
             runid = RUNID + "_{0}".format(n+1)
             self.status = rand_runner(d=self.test_dir, v=0, runid=runid, test=1)

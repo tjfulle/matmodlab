@@ -11,8 +11,8 @@ class TestOverlay(TestBase):
         self.runid = runid
         self.keywords = ["long", "overlay", "feature", "function", "builtin"]
         self.base_res = os.path.join(d, "test_funcs.base_exo")
+
     def run(self):
-        self.make_test_dir()
         self.status = self.failed_to_run
         try:
             runner(d=self.test_dir, v=0)

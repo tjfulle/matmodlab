@@ -14,32 +14,36 @@ class TestZip(TestBase):
         self.runid = "perm_zip"
         self.keywords = ["long", "correlations", "zip",
                          "permutation", "builtin", "feature", "builtin"]
-    def setup(self,*args,**kwargs): pass
-    def run(self):
+
+    def setup(self,*args,**kwargs):
         self.make_test_dir()
+
+    def run(self):
         self.status = self.failed_to_run
         try:
             runner("zip", d=self.test_dir, v=0)
             self.status = self.passed
         except BaseException as e:
-            self.logger.error("{0}: failed with the following "
-                              "exception: {1}".format(self.runid, e.message))
+            raise TestError("{0}: failed with the following "
+                            "exception: {1}".format(self.runid, e.args[0]))
 
 class TestCombi(TestBase):
     def __init__(self):
         self.runid = "perm_combination"
         self.keywords = ["long", "correlations", "combination",
                          "permutation", "builtin", "feature", "builtin"]
-    def setup(self,*args,**kwargs): pass
-    def run(self):
+
+    def setup(self,*args,**kwargs):
         self.make_test_dir()
+
+    def run(self):
         self.status = self.failed_to_run
         try:
             runner("combination", d=self.test_dir, v=0, N=2)
             self.status = self.passed
         except BaseException as e:
-            self.logger.error("{0}: failed with the following "
-                              "exception: {1}".format(self.runid, e.message))
+            raise TestError("{0}: failed with the following "
+                            "exception: {1}".format(self.runid, e.args[0]))
 
 
 def func(x, *args):
