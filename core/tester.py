@@ -1,12 +1,9 @@
 import os
 import re
 import sys
-import imp
 import time
-import shutil
-import random
-import string
 import argparse
+import textwrap
 import datetime
 import numpy as np
 import multiprocessing as mp
@@ -31,7 +28,7 @@ if not os.path.isdir(ROOT_RES_D):
     os.makedirs(ROOT_RES_D)
 logfile = os.path.join(ROOT_RES_D, "testing.log")
 logger = Logger(logfile=logfile, ignore_opts=1)
-INI, RUN, BAD, SKIP, DISABLED = range(5)
+INI, SKIP, DISABLED, BAD, RUN = range(5)
 
 
 def main(argv=None):
@@ -42,6 +39,9 @@ def main(argv=None):
         help="Keywords to include [default: ]")
     p.add_argument("-K", action="append", default=[],
         help="Keywords to exclude [default: ]")
+    p.add_argument("-X", action="store_true", default=False,
+        help=("Do not stop on test initialization failure (tests that fail "
+              "to initialize will be skipped) [default: %(default)s]"))
     p.add_argument("-j", type=int, default=1,
         help="Number of simutaneous tests to run [default: ]")
     p.add_argument("--no-tear-down", action="store_true", default=False,
@@ -51,6 +51,10 @@ def main(argv=None):
     p.add_argument("--overlay", action="store_true", default=False,
         help=("Create overlays of failed tests with baseline (negates tear "
               "down) [default: ]"))
+    p.add_argument("-E", action="store_true", default=False,
+        help="Do not use matmodlabrc configuration file [default: False]")
+    p.add_argument("-l", action="store_true", default=False,
+        help="List tests and exit [default: False]")
     p.add_argument("sources", nargs="*")
 
     # parse out known arguments and reset sys.argv
@@ -64,20 +68,18 @@ def main(argv=None):
         sources.extend(TEST_DIRS)
     gather_and_run_tests(args.sources, args.k, args.K, nprocs=args.j,
         tear_down=not args.no_tear_down, html_summary=args.html,
-        overlay=args.overlay)
+        overlay=args.overlay, stop_on_bad=not args.X, list_and_stop=args.l)
 
 
 def result_str(i):
     return RES_MAP.get(i, "UNKNOWN")
 
-def sort_by_status(test):
-    return test.status
-
 def sort_by_time(test):
     return {"long": 0, "medium": 1, "fast": 2}.get(test.speed, 3)
 
 def gather_and_run_tests(sources, include, exclude, tear_down=True,
-                         html_summary=False, nprocs=1, overlay=False):
+                         html_summary=False, nprocs=1, overlay=False,
+                         stop_on_bad=True, list_and_stop=False):
     """Gather and run all tests
 
     Parameters
@@ -118,7 +120,6 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
 
     # gather the tests
     TIMING.append(time.time())
-    logger.write("\ngathering tests")
     opts = {"overlay": overlay}
     tests = gather_and_filter_tests(sources, ROOT_RES_D, include, exclude, **opts)
 
@@ -141,13 +142,12 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     logger.write("FOUND {0:d} TESTS IN {1:.2}s".format(
         ntests, TIMING[-1]-TIMING[0]), transform=str)
 
-    for (key, info) in tests.items():
+    for key in sorted(tests):
         if key == INI:
             continue
-
+        info = tests[key]
         if not info:
             continue
-
         if key == RUN:
             logger.write("  tests to be run ({0:d})".format(len(info)))
             string = "\n".join("    {0}".format(test.name) for test in info)
@@ -163,9 +163,15 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
                              "request ({0:d})".format(nskip))
         logger.write(string, transform=str)
 
+    if list_and_stop:
+        return
+
     if not ntests_to_run:
         logger.write("nothing to do")
         return
+
+    if logger.errors and stop_on_bad:
+        logger.error("stopping due to previous errors", beg="", raise_error=True)
 
     nprocs = min(min(mp.cpu_count(), nprocs), ntests_to_run)
 
@@ -199,10 +205,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     # write out some information
     TIMING.append(time.time())
     dtf = TIMING[-1] - TIMING[0]
-    logger.write(fillwithdots("ALL TESTS COMPLETED",
-                              "({0:.4f}s)".format(dtf),
-                              TEST_CONS_WIDTH),
-                 transform=str)
+    logger.write("ALL TESTS COMPLETED ({0:.4f}s)".format(dtf), transform=str)
 
     # determine number of passed, failed, etc.
     npass = len([test for test in tests[RUN] if test.status == PASSED])
@@ -256,7 +259,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
 
         if torn_down == ntests_to_run:
             logger.write("all tests passed, removing entire results directory")
-            shutil.rmtree(ROOT_RES_D)
+            remove(ROOT_RES_D)
         else:
             logger.write("failed to tear down all tests, generating html summary")
             html_summary = True
@@ -269,30 +272,6 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     logger.finish()
 
     return
-
-
-def isclass(item):
-    return type(item) == type(object)
-
-
-def load_test_file(test_file):
-    d, name = os.path.split(test_file)
-    module = os.path.splitext(name)[0]
-    if module in sys.modules:
-        module = module + "".join(random.sample(string.ascii_letters, 4))
-    if d not in sys.path:
-        sys.path.insert(0, d)
-    loaded = imp.load_source(module, test_file)
-
-    tests = []
-    reprs = []
-    for item in dir(loaded):
-        attr = getattr(loaded, item)
-        if not isclass(attr): continue
-        if issubclass(attr, TestBase) and attr != TestBase:
-            tests.append(attr)
-            reprs.append(re.sub(r"[<\'>]|(class)", " ", repr(attr)).strip())
-    return module, d, name, tests, reprs
 
 
 def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
@@ -309,19 +288,16 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
 
     Returns
     -------
-    all_tests : list of Namespace instances
-        each test is its own Namespace with the following attributes
-        test.file_dir : directory where test file resides
-        test.test_dir : directory where test will be run
-        test.file_name: file name of test
-        test.all_tests: all tests in M
-        test.instance : the test class instance - if it is to be run - else None
-        test.name : string representation for the test
+    tests : dict of tests
 
     """
+    logger.write("\ngathering tests")
+
     rx = re.compile(r"(?:^|[\\b_\\.-])[Tt]est")
     a = ["TestBase"]
-    all_tests = {INI: [], RUN: {}}
+
+    hold = {}
+    tests = {BAD: [], SKIP: [], DISABLED: [], RUN: [], INI: []}
 
     if not isinstance(sources, (list, tuple)):
         sources = [sources]
@@ -356,37 +332,30 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
         for f in files:
             module = f[:-3]
             if module == "test_init":
-                all_tests[INI].append(os.path.join(d, f))
+                tests[INI].append(os.path.join(d, f))
 
             try:
-                tests = xpyclbr.readmodule(module, [d], ancestors=a)
+                module_tests = xpyclbr.readmodule(module, [d], ancestors=a)
             except AttributeError as e:
-                errors.append(e.args[0])
                 logger.error(e.args[0])
                 continue
 
-            for test in tests:
-                if test in all_tests[RUN]:
+            for test in module_tests:
+                if test in hold:
                     logger.error("{0}: duplicate test".format(test))
-                    errors.append(test)
                     continue
-                all_tests[RUN].update({test: tests[test]})
-    tests = {BAD: [], SKIP: [], DISABLED: [], RUN: []}
-    tests[INI] = all_tests[INI]
+                hold.update({test: module_tests[test]})
 
-    for (test, info) in all_tests[RUN].items():
-
+    for (test, info) in hold.items():
         # instantiate and filter tests
         module = sys.modules.get(info.module, load_file(info.file))
         try:
             the_test = getattr(module, test)(root_dir, **opts)
         except TestError as e:
-            name = "{0}.{1}".format(info.module, info.file)
-            logger.error("THE FOLLOWING ERRORS WERE ENCOUNTERED WHILE "
-                         "INITIALIZING TEST {0}".format(name),
+            name = "{0}.{1}".format(info.module, test)
+            logger.error("THE FOLLOWING ERRORS WERE ENCOUNTERED WHILE INITIALIZING "
+                         "TEST {0}:\n{1}".format(name, e.args[0]),
                          transform=str)
-            logger.write(e.args[0])
-            logger.error("skipping test")
             tests[BAD].append(name)
             continue
 
@@ -433,9 +402,8 @@ def run_test(test):
     try:
         test.setup()
     except TestError as e:
-        logger.error("{0}: failed to setup with the following "
-                     "errors".format(test.name))
-        logger.write(e.args[0])
+        logger.error("{0}: FAILED TO SETUP WITH THE FOLLOWING "
+                     "ERROR:\n{1}".format(test.name, e.args[0]), transform=str)
         dtime = np.nan
     else:
         try:
@@ -445,11 +413,9 @@ def run_test(test):
         except TestError as e:
             dtime = np.nan
             status = FAILED
-        except BaseException as e:
-            dtime = np.nan
-            status = FAILED
-            logger.error("{0}: failed with the following "
-                         "exception: {1}".format(test.name, e.args[0]))
+            logger.error("{0}: FAILED TO RUN WITH THE FOLLOWING "
+                         "EXCEPTION:\n{1}".format(test.name, e.args[0]),
+                         transform=str)
 
     line = fillwithdots(test.name, "FINISHED", W)
     s = " [{1}] ({0:.1f}s)".format(dtime, result_str(status))

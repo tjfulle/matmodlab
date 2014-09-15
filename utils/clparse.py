@@ -27,6 +27,8 @@ def parse_sim_argv(argv=None, get_f=False):
         help="Launch results viewer on completion [default: %(default)s]")
     parser.add_argument("-j", type=int, default=1,
         help="Number of simultaneous jobs [default: %(default)s]")
+    parser.add_argument("-E", action="store_true", default=False,
+        help="Do not use matmodlabrc configuration file [default: False]")
     parser.add_argument("-W", choices=["std", "all", "error"], default="std",
         help="Warning level [default: %(default)s]")
     if get_f:

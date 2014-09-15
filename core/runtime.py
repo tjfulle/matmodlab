@@ -17,6 +17,9 @@ opts.nprocs = 1
 opts.viz_on_completion = False
 opts.raise_e = False
 
+# do not use environment
+opts.E = False
+
 def set_runtime_opt(opt, val):
     setattr(opts, opt, val)
     if opts.debug:

@@ -17,6 +17,7 @@ class Logger(object):
         self.verbosity = verbosity
         self.assign_logfile(logfile, mode=mode)
         self.ignore_opts = ignore_opts
+        self.errors = 0
 
     @property
     def verbosity(self):
@@ -87,23 +88,24 @@ class Logger(object):
                     **kwargs):
         if caller is None:
             caller = who_is_calling()
+        beg = kwargs.get("beg", "*** ERROR: ")
         if report_caller:
-            conmsg = "*** ERROR: {0} ({1})\n"
+            conmsg = "{2}{0} ({1})\n"
         else:
-            conmsg = "*** ERROR: {0}\n"
+            conmsg = "{2}{0}\n"
         transform = kwargs.pop("transform", std_transform)
-        conmsg = conmsg.format(transform_str(message, transform), caller)
+        conmsg = conmsg.format(transform_str(message, transform), caller, beg)
         self.write(conmsg, log_to_eh=1, transform=str, **kwargs)
         if raise_error > 0:
-            raise Exception(conmsg)
-        elif raise_error == 0:
-            return
-        self.write("stopping")
-        sys.exit(1)
+            if opts.raise_e:
+                raise Exception(conmsg)
+            else:
+                sys.exit(1)
 
     def error(self, message, raise_error=0, report_caller=0, **kwargs):
+        self.errors += 1
         caller = None
-        if report_caller:
+        if report_caller or raise_error:
             caller = who_is_calling()
         self.raise_error(message.rstrip(), raise_error=raise_error,
                          caller=caller, **kwargs)

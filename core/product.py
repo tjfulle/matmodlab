@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 import ConfigParser
 from distutils.spawn import find_executable as which
 from core.configurer import cfgswitch_and_warn, cfgparse
@@ -28,20 +29,24 @@ MATLIB = os.path.join(ROOT_D, "materials")
 F_EVALDB = "mml-evaldb.xml"
 F_PRODUCT = "product.py"
 
-# --- ENVIRONMENT VARIABLES
-PATH = os.getenv("PATH").split(os.pathsep)
-if TLS_D not in PATH:
-    PATH.insert(0, TLS_D)
+# --- MATERIAL AND TEST SEARCH DIRECTORIES
 MAT_LIB_DIRS = [MATLIB]
 TEST_DIRS = [os.path.join(dd, d) for (dd, dirs, f) in os.walk(TEST_D)
                                  for d in dirs]
 
 # --- APPLY USER CONFIGURATIONS
-if os.getenv("MMLMTLS"):
-    cfgswitch_and_warn()
-cfg = cfgparse()
-MAT_LIB_DIRS.extend(cfg.user_mats)
-TEST_DIRS.extend(cfg.user_tests)
+p = argparse.ArgumentParser(add_help=False)
+p.add_argument("-E", action="store_true", default=False,
+    help="Do not use matmodlabrc configuration file [default: False]")
+_a, sys.argv[1:] = p.parse_known_args()
+if not _a.E:
+    if os.getenv("MMLMTLS"):
+        cfgswitch_and_warn()
+    cfg = cfgparse()
+    MAT_LIB_DIRS.extend(cfg.user_mats)
+    TEST_DIRS.extend(cfg.user_tests)
+
+# OTHER CONSTANTS
 TEST_CONS_WIDTH = 80
 
 FFLAGS = [x for x in os.getenv("FFLAGS", "").split() if x.split()]

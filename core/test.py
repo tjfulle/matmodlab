@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import traceback
 import numpy as np
 from utils.exojac import exodiff
 from core.logger import ConsoleLogger
@@ -19,7 +20,7 @@ NOATTR = -31
 
 
 def reqa(it, attr):
-    return "{0}: required attribute '{1}' not defined".format(it, attr)
+    return "    {0}: required attribute '{1}' not defined".format(it, attr)
 
 
 class TestError(Exception):
@@ -95,7 +96,7 @@ class TestBase(object):
         try:
             return self._keywords
         except AttributeError:
-            raise TestError(reqa("runid", self.name))
+            raise TestError(reqa(self.name, "keywords"))
 
     @keywords.setter
     def keywords(self, keywords):
@@ -106,7 +107,7 @@ class TestBase(object):
         try:
             return self._runid
         except AttributeError:
-            raise TestError(reqa("runid", self.name))
+            raise TestError(reqa(self.name, "runid"))
 
     @runid.setter
     def runid(self, runid):
@@ -185,8 +186,10 @@ class TestBase(object):
         try:
             self.run_job()
         except BaseException as e:
-            raise TestError("{0}: failed with the following "
-                            "exception: {1}".format(self.name, e.args[0]))
+            tb = sys.exc_info()[2]
+            tb_list = traceback.extract_tb(tb)
+            tb_str = " ".join(traceback.format_list(tb_list)) + "\n" + e.args[0]
+            raise TestError(tb_str)
 
         if not os.path.isfile(self.exofile):
             raise TestError("{0}: file not found".format(self.exofile))
