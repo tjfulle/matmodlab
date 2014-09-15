@@ -54,7 +54,8 @@ def load_file(filepath, disp=0):
     module = os.path.splitext(fname)[0]
     fp, pathname, description = imp.find_module(module, [path])
     if module in sys.modules:
-        del sys.modules[module]
+        return sys.modules[module]
+
     try:
         loaded = imp.load_module(module, fp, pathname, description)
     finally:
@@ -63,6 +64,7 @@ def load_file(filepath, disp=0):
             fp.close()
     if disp:
         return loaded, module
+
     return loaded
 
 

@@ -157,7 +157,6 @@ MATERIAL: {3}
         else:
             self.logger.error("calculations did not complete", r=0)
         self.exo_db.finish()
-        self.logger.finish()
 
         if opts.viz_on_completion:
             self.visualize_results()

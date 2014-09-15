@@ -1,10 +1,11 @@
 import os
 import sys
 import shutil
-from core.logger import ConsoleLogger
+import numpy as np
 from utils.exojac import exodiff
-from core.product import TEST_CONS_WIDTH
+from core.logger import ConsoleLogger
 from utils.misc import fillwithdots, remove
+from core.product import TEST_CONS_WIDTH, TEST_D
 
 PASSED = 0
 DIFFED = 1
@@ -17,76 +18,144 @@ FAILTOL = 1.E-04
 NOATTR = -31
 
 
+def reqa(it, attr):
+    return "{0}: required attribute '{1}' not defined".format(it, attr)
+
+
 class TestError(Exception):
     pass
 
 
+class PostInit(type):
+    """metaclass which overrides the "__call__" function"""
+    def __call__(cls, *args, **kwargs):
+        """Called when you call Class() """
+        d = args[0]
+        obj = type.__call__(cls)
+        obj.post_init(*args, **kwargs)
+        return obj
+
 class TestBase(object):
-    _is_mml_test = True
+    __metaclass__ = PostInit
     passed = PASSED
     diffed = DIFFED
     failed = FAILED
     failed_to_run = FAILED_TO_RUN
     not_run = NOT_RUN
 
-    def init_and_check(self, root_dir, test_file_dir, module, str_repr, **opts):
+    def post_init(self, *args, **kwargs):
         """Initialize the test.
 
         This is done in the parent class after any subclasses have been
         initialized
 
         """
-        self.test_file_dir = test_file_dir
+        root_dir = args[0]
+
+        module = self.__module__
+        self.name = '{0}.{1}'.format(module, self.__class__.__name__)
+        self.file = os.path.realpath(sys.modules[module].__file__)
+        self.d = os.path.dirname(self.file)
+        speeds = ("fast", "medium", "long")
+        speed = [x for x in speeds if x in self.keywords]
+        if not speed:
+            raise TestError("{0}: must define one of {1} "
+                            "keyword".format(self.name, ", ".join(speeds)))
+        elif len(speed) > 1:
+            raise TestError("{0}: must define only one of {1} "
+                            "keyword".format(self.name, ", ".join(speeds)))
+        self.speed = speed[0]
+
         self.module = module
-        self.initialized = True
         self.torn_down = 0
         self.status = self.not_run
         self.disabled = getattr(self, "disabled", False)
         self.gen_overlay = getattr(self, "gen_overlay", False)
         self.gen_overlay_if_fail = getattr(self, "gen_overlay_if_fail", False)
         self._no_teardown = False
-        self.str_repr = str_repr
         self.interp = getattr(self, "interpolate_diff", False)
-        self.validated = False
-        self.force_overlay = opts.get("overlay", False)
+        self.force_overlay = kwargs.get("overlay", False)
+        self.dtime = np.nan
+        self.ready = False
 
         self.exofile = None
-        self.setup_by_class = False
         self.status = self.not_run
 
-        # check requirements
-        errors = []
-        self.runid = getattr(self, "runid", "UNKNOWN")
-        if self.runid == "UNKOWN":
-            errors.append("{0}: missing runid attribute".format(self.str_repr))
-
-        self.keywords = getattr(self, "keywords", [])
-        if not self.keywords:
-            errors.append("{0}: missing keywords attribute".format(self.str_repr))
-
-        elif not isinstance(self.keywords, (list, tuple)):
-            errors.append("{0}: expected keywords to be a "
-                          "list".format(self.str_repr))
-
         if all(n not in self.keywords for n in ("long", "fast", "medium")):
-            errors.append("{0}: expected long, fast, or medium "
-                          "keyword".format(self.str_repr))
+            raise TestError("{0}: expected long, fast, or medium "
+                            "keyword".format(self.name))
 
-        self.validated = not errors
-
-        d = os.path.basename(self.test_file_dir)
+        d = os.path.basename(self.d)
         sub_dir = getattr(self, "test_dir_base", d)
-        self.test_dir = os.path.join(root_dir, sub_dir, self.runid)
+        self.test_dir = os.path.join(root_dir, sub_dir, self.name)
 
-        if errors:
-            raise TestError("\n"+"\n".join("   {0}".format(x) for x in errors))
+
+    @property
+    def keywords(self):
+        try:
+            return self._keywords
+        except AttributeError:
+            raise TestError(reqa("runid", self.name))
+
+    @keywords.setter
+    def keywords(self, keywords):
+        self._keywords = keywords
+
+    @property
+    def runid(self):
+        try:
+            return self._runid
+        except AttributeError:
+            raise TestError(reqa("runid", self.name))
+
+    @runid.setter
+    def runid(self, runid):
+        self._runid = runid
+
+    @property
+    def base_res(self):
+        try:
+            return self._base_res
+        except AttributeError:
+            return None
+
+    @base_res.setter
+    def base_res(self, base_res):
+        if not os.path.isfile(base_res):
+            raise TestError("{0}: base_res file not found".format(self.name))
+        self._base_res = base_res
+
+    @property
+    def exodiff(self):
+        try:
+            return self._exodiff
+        except AttributeError:
+            f = "base.exodiff"
+            if os.path.isfile(os.path.join(self.d, f)):
+                self.exodiff = os.path.join(self.d, f)
+            else:
+                self.exodiff = os.path.join(TEST_D, f)
+        return self.exodiff
+
+    @exodiff.setter
+    def exodiff(self, exodiff):
+        if not os.path.isfile(exodiff):
+            raise TestError("{0}: exodiff file not found".format(self.name))
+        self._exodiff = exodiff
+
+    @property
+    def dtime(self):
+        return self._dtime
+    @dtime.setter
+    def dtime(self, value):
+        self._dtime = value
 
     def make_test_dir(self):
         """create test directory to run tests"""
         if os.path.isdir(self.test_dir):
             remove(self.test_dir)
         os.makedirs(self.test_dir)
-        if getattr(self, "base_res", NOATTR) != NOATTR:
+        if self.base_res:
             dest = os.path.join(self.test_dir, os.path.basename(self.base_res))
             os.symlink(self.base_res, dest)
 
@@ -94,35 +163,14 @@ class TestBase(object):
         """The standard setup
 
         """
-        from core.product import TEST_D
-
-        # Look for standard files
-        errors = []
-        self.exofile = os.path.join(self.test_dir, self.runid + ".exo")
-
-        if getattr(self, "base_res", NOATTR) == NOATTR:
-            self.base_res = os.path.join(self.test_file_dir,
-                                         self.runid + ".base_exo")
-        if not os.path.isfile(self.base_res):
-            errors.append("{0}: base_res file not found".format(self.str_repr))
-
-        if getattr(self, "exodiff", NOATTR) == NOATTR:
-            f = "base.exodiff"
-            if os.path.isfile(os.path.join(self.test_file_dir, f)):
-                self.exodiff = os.path.join(self.test_file_dir, f)
-            else:
-                self.exodiff = os.path.join(TEST_D, f)
-        if not os.path.isfile(self.exodiff):
-            errors.append("{0}: exodiff file not found".format(self.str_repr))
-
-        self.setup_by_class = True
+        self.make_test_dir()
         self.status = self.failed_to_run
 
-        if errors:
-            raise TestError("\n"+"\n".join("   {0}".format(x) for x in errors))
-
-        self.make_test_dir()
-        return 0
+        # standard files
+        self.exofile = os.path.join(self.test_dir, self.runid + ".exo")
+        if not self.base_res:
+            self.base_res = os.path.join(self.d, self.runid + ".base_exo")
+        self.ready = True
 
     def pre_hook(self, *args, **kwargs):
         pass
@@ -131,17 +179,14 @@ class TestBase(object):
         """The standard test
 
         """
-        self.status = self.failed_to_run
-
-        if not getattr(self, "setup_by_class", False):
-            raise TestError("{0}: running standard test requires "
-                            "calling super's setup method".format(self.str_repr))
+        if not self.ready:
+            raise TestError("{0}: test must be setup first".format(self.name))
 
         try:
             self.run_job()
         except BaseException as e:
             raise TestError("{0}: failed with the following "
-                            "exception: {1}".format(self.str_repr, e.args[0]))
+                            "exception: {1}".format(self.name, e.args[0]))
 
         if not os.path.isfile(self.exofile):
             raise TestError("{0}: file not found".format(self.exofile))
@@ -215,7 +260,7 @@ class TestBase(object):
 
         aspect_ratio = 4. / 3.
         plots = []
-        msg = fillwithdots(self.str_repr, "POST PROCESSING", TEST_CONS_WIDTH)
+        msg = fillwithdots(self.name, "POST PROCESSING", TEST_CONS_WIDTH)
         for (col, yvar) in enumerate(head1):
             name = yvar + ".png"
             filename = os.path.join(destd, name)
@@ -236,15 +281,16 @@ class TestBase(object):
             plt.savefig(filename, dpi=100)
             plots.append(filename)
         dtime = time.time() - ti
-        msg = fillwithdots(self.str_repr,
+        msg = fillwithdots(self.name,
                            "POST PROCESSING COMPLETE",
                            TEST_CONS_WIDTH)
         msg +=  " ({0:.0f}s)".format(dtime)
+        self.dtime = dtime
 
         # write an html summary
         fh = open(os.path.join(destd, "graphics.html"), "w")
         fh.write("<html>\n<head>\n<title>{0}</title>\n</head>\n"
-                   "<body>\n<table>\n<tr>\n".format(self.str_repr))
+                   "<body>\n<table>\n<tr>\n".format(self.name))
         for i, plot in enumerate(plots):
             name = os.path.basename(plot)
             if i % 3 == 0 and i != 0:

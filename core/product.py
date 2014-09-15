@@ -33,7 +33,8 @@ PATH = os.getenv("PATH").split(os.pathsep)
 if TLS_D not in PATH:
     PATH.insert(0, TLS_D)
 MAT_LIB_DIRS = [MATLIB]
-TEST_DIRS = [TEST_D]
+TEST_DIRS = [os.path.join(dd, d) for (dd, dirs, f) in os.walk(TEST_D)
+                                 for d in dirs]
 
 # --- APPLY USER CONFIGURATIONS
 if os.getenv("MMLMTLS"):

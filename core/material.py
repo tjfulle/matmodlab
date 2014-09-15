@@ -712,8 +712,8 @@ def find_materials():
             try:
                 libs = xpyclbr.readmodule(module, [d], ancestors=a, reqattrs=n)
             except AttributeError as e:
-                errors.append(e.message)
-                ConsoleLogger.error(e.message)
+                errors.append(e.args[0])
+                ConsoleLogger.error(e.args[0])
                 continue
             for lib in libs:
                 if lib in mat_libs:
