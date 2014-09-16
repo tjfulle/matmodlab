@@ -133,15 +133,15 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
 
     # write information
     TIMING.append(time.time())
-    ntests = len(tests.values())
+    ntests = sum([len(info) for (k, info) in tests.items()])
     ntests_to_run = len(tests[RUN])
     ndisabled = len(tests[DISABLED])
     nskip = len(tests[SKIP])
     nbad = len(tests[BAD])
 
+    # inform how many tests were found, which will be run, etc.
     logger.write("FOUND {0:d} TESTS IN {1:.2}s".format(
         ntests, TIMING[-1]-TIMING[0]), transform=str)
-
     for key in sorted(tests):
         if key == INI:
             continue
@@ -177,15 +177,12 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
 
     # run the tests
     logger.write("\nRUNNING TESTS")
-    out = []
     if nprocs == 1:
-        for test in tests[RUN]:
-            out.append(run_test(test))
+        out = [run_test(test) for test in tests[RUN]]
     else:
         pool = mp.Pool(processes=nprocs)
         try:
-            p = pool.map_async(run_test, tests[RUN], callback=out.extend)
-            p.wait()
+            out = pool.map(run_test, tests[RUN])
             pool.close()
             pool.join()
         except KeyboardInterrupt:
@@ -397,8 +394,7 @@ def run_test(test):
     W = TEST_CONS_WIDTH
 
     ti = time.time()
-    logger.write(fillwithdots(test.name, "RUNNING", W),
-                 transform=str)
+    logger.write(fillwithdots(test.name, "RUNNING", W), transform=str)
     try:
         test.setup()
     except TestError as e:
@@ -413,9 +409,8 @@ def run_test(test):
         except TestError as e:
             dtime = np.nan
             status = FAILED
-            logger.error("{0}: FAILED TO RUN WITH THE FOLLOWING "
-                         "EXCEPTION:\n{1}".format(test.name, e.args[0]),
-                         transform=str)
+            logger.error("{0}: FAILED TO RUN WITH THE FOLLOWING EXCEPTION:\n"
+                         "{1}".format(test.name, e.args[0]), transform=str)
 
     line = fillwithdots(test.name, "FINISHED", W)
     s = " [{1}] ({0:.1f}s)".format(dtime, result_str(status))

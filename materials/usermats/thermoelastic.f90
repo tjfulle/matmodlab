@@ -1,4 +1,4 @@
-subroutine user(stress, statev, ddsdde, stran, dstran, time, dtime, temp, &
+subroutine user_mat(stress, statev, ddsdde, stran, dstran, time, dtime, temp, &
      dtemp, nstatv, props, nprops, dfgrd0, dfgrd1)
 
   implicit none
@@ -95,4 +95,4 @@ subroutine user(stress, statev, ddsdde, stran, dstran, time, dtime, temp, &
      statev(k1 + 6) = etherm(k1)
   end do
   return
-end subroutine user
+end subroutine user_mat

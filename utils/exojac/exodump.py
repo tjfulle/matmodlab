@@ -21,11 +21,8 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument("source")
     parser.add_argument("-o",
         help="Output file name [default: basename(source).out]")
-    parser.add_argument("--variables", action="append",
-        help="Variables to dump [default: ALL]")
     parser.add_argument("--list", default=False, action="store_true",
         help="List variable names and exit")
     parser.add_argument("--ffmt",
@@ -38,6 +35,9 @@ def main(argv=None):
         help="Block number [default: %(default)s]")
     parser.add_argument("--element", default=1, type=int,
         help="Element number [default: %(default)s]")
+    parser.add_argument("source")
+    parser.add_argument("variables", nargs="*", default=["ALL"],
+        help="Variables to dump [default: ALL]")
     args = parser.parse_args(argv)
     return exodump(args.source, outfile=args.o,
                    variables=args.variables, listvars=args.list,
@@ -46,7 +46,7 @@ def main(argv=None):
 
 
 def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
-            ffmt=None, ofmt="ascii", elem_blk=1, elem_num=1):
+            ffmt=None, ofmt="ascii", elem_blk=1, elem_num=1, time=True):
     """Read the exodus file in filepath and dump the contents to a columnar data
     file
 
@@ -84,7 +84,7 @@ def exodump(filepath, outfile=None, variables=None, listvars=False, step=1,
     # read the data
     header, data = read_vars_from_exofile(filepath, variables=variables,
                                           step=step, elem_blk=elem_blk,
-                                          elem_num=elem_num)
+                                          elem_num=elem_num, t=time)
     if listvars:
         print("\n".join(header))
         return 0

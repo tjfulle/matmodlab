@@ -246,8 +246,11 @@ def run_job(args):
         logger.write("finished job {0}".format(job_num))
         stat = 0
     except BaseException as e:
-        logger.error("JOB {0} FAILED WITH EXCEPTION:\n   "
-                     "{1}".format(job_num, e.message), transform=str)
+        message = " ".join("{0}".format(_) for _ in e.args)
+        if hasattr(e, "filename"):
+            message = e.filename + ": " + message[1:]
+        logger.error("\nrun {0} failed with the following exception:\n"
+                     "   {1}".format(job_num, message))
         stat = 1
         resp = [np.nan for _ in range(len(descriptor))]
 

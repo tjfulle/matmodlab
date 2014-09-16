@@ -2,10 +2,12 @@ import os
 import sys
 import argparse
 
+already_wiped = False
 def parse_sim_argv(argv=None, get_f=False):
     from core.runtime import set_runtime_opt
     from utils.errors import FileNotFoundError
     from core.product import PKG_D
+    global already_wiped
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser(prog="mml-run")
@@ -55,13 +57,14 @@ def parse_sim_argv(argv=None, get_f=False):
     if args.V:
         set_runtime_opt("viz_on_completion", True)
 
-    if args.B:
+    if args.B and not already_wiped:
         name = args.B.strip()
         verbosity = 3 if args.v > 1 else 0
         if os.path.isfile(os.path.join(PKG_D, "{0}.so".format(name))):
             # removing is sufficient since the material class will attempt
             # to build non-existent materials
             os.remove(os.path.join(PKG_D, "{0}.so".format(name)))
+        already_wiped = True
 
     if get_f and not os.path.isfile(args.source):
         raise FileNotFoundError(args.source)

@@ -12,3 +12,5 @@ TOOR3 = 1.0 / ROOT3
 ROOT23 = ROOT2 / ROOT3
 
 SET_AT_RUNTIME = -5
+
+ENGW = np.array([1,1,1,.5,.5,.5], dtype=np.float64)

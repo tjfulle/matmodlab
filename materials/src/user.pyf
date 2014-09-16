@@ -19,7 +19,7 @@ end python module mml__user__routines
 
 python module user ! in
     interface  ! in :
-        subroutine user(stress,statev,ddsdde,stran,dstran,time,dtime,temp,dtemp,nstatv,props,nprops,dfgrd0,dfgrd1)
+        subroutine user_mat(stress,statev,ddsdde,stran,dstran,time,dtime,temp,dtemp,nstatv,props,nprops,dfgrd0,dfgrd1)
                 use mml__user__routines
                 intent(callback) log_message
                 external log_message
@@ -41,7 +41,7 @@ python module user ! in
             integer, optional,intent(inplace),check(len(props)>=nprops),depend(props) :: nprops=len(props)
             real(kind=8) dimension(3,3),intent(in) :: dfgrd0
             real(kind=8) dimension(3,3),intent(in) :: dfgrd1
-        end subroutine user
+        end subroutine user_mat
     end interface
 end python module user
 

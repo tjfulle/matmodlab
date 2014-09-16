@@ -34,7 +34,7 @@ def timed_raw_input(message, timeout=10, default=None):
         return default
 
 
-def load_file(filepath, disp=0):
+def load_file(filepath, disp=0, reload=False):
     """Load a python module by filepath
 
     Parameters
@@ -52,10 +52,9 @@ def load_file(filepath, disp=0):
         raise IOError("{0}: no such file".format(filepath))
     path, fname = os.path.split(filepath)
     module = os.path.splitext(fname)[0]
-    fp, pathname, description = imp.find_module(module, [path])
-    if module in sys.modules:
+    if module in sys.modules and not reload:
         return sys.modules[module]
-
+    fp, pathname, description = imp.find_module(module, [path])
     try:
         loaded = imp.load_module(module, fp, pathname, description)
     finally:
@@ -64,7 +63,6 @@ def load_file(filepath, disp=0):
             fp.close()
     if disp:
         return loaded, module
-
     return loaded
 
 

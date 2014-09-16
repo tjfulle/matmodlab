@@ -151,7 +151,9 @@ def _newton(material, t, dt, temp, dtemp, kappa, f0, farg, stran, darg,
         if opts.sqa:
             evals = np.linalg.eigvalsh(Jsub)
             if np.any(evals < 0.):
-                logger.warn("negative value encountered in material Jacobian")
+                negevals = evals[np.where(evals < 0.)]
+                logger.warn("negative eigen value[s] encountered in material "
+                            "Jacobian: {0} ({1:.2f})".format(negevals, t))
         try:
             d[v] -= np.linalg.solve(Jsub, sigerr) / dt
 

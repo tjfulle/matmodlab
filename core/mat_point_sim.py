@@ -9,8 +9,10 @@ from utils.exomgr import ExodusII
 from core.driver import PathDriver
 from core.product import MAT_LIB_DIRS
 from core.material import MaterialModel
+from utils.errors import UserInputError
 from utils.data_containers import DataContainer
 from utils.variable import Variable, VAR_SCALAR
+from utils.constants import DEFAULT_TEMP
 
 class MaterialPointSimulator(object):
     def __init__(self, runid, driver, material, termination_time=None,
@@ -66,6 +68,11 @@ class MaterialPointSimulator(object):
                 self.elem_vars.extend(d.keys)
                 elem_data.append((d.name, d.keys, d.initial_value))
         self.elem_data = DataContainer(elem_data)
+
+        # synchronize temperatures
+        if abs(self.driver.initial_temp - self.material.initial_temp) > 1.e-12:
+            raise UserInputError("inconsistent initial temperatures in "
+                                 "driver and material")
 
         # set up timing
         self.timing = {}
@@ -142,7 +149,7 @@ MATERIAL: {3}
 
         """
         self.logger.write("starting calculations...")
-	retcode = self.driver.run(self.glob_data, self.elem_data,
+        retcode = self.driver.run(self.glob_data, self.elem_data,
                                   self.material, self.exo_db,
                                   termination_time=self.termination_time)
         self.finish()
@@ -163,11 +170,12 @@ MATERIAL: {3}
 
         return
 
-    def dump(self, variables=None, paths=None, format="ascii", step=1, ffmt=".18f"):
+    def dump(self, variables=None, paths=None, format="ascii", step=1,
+             time=True, ffmt=".18f"):
         from utils.exojac.exodump import exodump
         if variables:
             exodump(self.exo_file, step=step, ffmt=ffmt,
-                    variables=variables, ofmt=format)
+                    variables=variables, ofmt=format, time=time)
         if paths:
             self.driver.extract_paths(self.exo_file, paths)
 

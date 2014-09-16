@@ -17,10 +17,7 @@ class TestCobyla(TestBase):
 
     def run(self):
         self.status = self.failed_to_run
-        try:
-            xopt = runner("cobyla", d=self.test_dir, v=0)
-        except BaseException as e:
-            raise TestError(e.args[0])
+        xopt = runner("cobyla", d=self.test_dir, v=0)
 
         # check error
         err = (xopt - xact) / xact * 100
@@ -39,10 +36,7 @@ class TestSimplex(TestBase):
 
     def run(self):
         self.status = self.failed_to_run
-        try:
-            xopt = runner("simplex", d=self.test_dir, v=0)
-        except BaseException as e:
-            raise TestError(e.args[0])
+        xopt = runner("simplex", d=self.test_dir, v=0)
 
         # check error
         err = (xopt - xact) / xact * 100
@@ -61,10 +55,7 @@ class TestPowell(TestBase):
 
     def run(self):
         self.status = self.failed_to_run
-        try:
-            xopt = runner("powell", d=self.test_dir, v=0)
-        except BaseException as e:
-            raise TestError(e.args[0])
+        xopt = runner("powell", d=self.test_dir, v=0)
 
         # check error
         err = (xopt - xact) / xact * 100

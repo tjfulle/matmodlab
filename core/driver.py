@@ -34,7 +34,7 @@ class ContinuumDriver(PathDriver):
                  num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1.,
                  efstar=1., dstar=1., proportional=False, termination_time=None,
                  functions=None, cfmt=None, tfmt="time", num_steps=None,
-                 cols=None, lineskip=0, logger=None):
+                 cols=None, skiprows=0, logger=None):
 
         if logger is None:
             logger = Logger()
@@ -70,7 +70,7 @@ class ContinuumDriver(PathDriver):
                 raise UserInputError("expected keyword cols")
             if not isinstance(cols, (list, tuple)):
                 raise UserInputError("expected cols to be a list")
-            path = parse_table_path(path, tfmt, cols, cfmt, lineskip)
+            path = parse_table_path(path, tfmt, cols, cfmt, skiprows)
         else:
             raise UserInputError("{0}: path_input not "
                                  "recognized".format(path_input))
@@ -113,6 +113,10 @@ class ContinuumDriver(PathDriver):
     @property
     def initial_temp(self):
         return self.itemp
+
+    @initial_temp.setter
+    def initial_temp(self, value):
+        self.itemp = value
 
     @property
     def num_leg(self):

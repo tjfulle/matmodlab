@@ -230,8 +230,11 @@ def run_job(xcall, *args):
         logger.write("done (error={0:.4e})".format(err))
         stat = 0
     except BaseException as e:
+        message = " ".join("{0}".format(_) for _ in e.args)
+        if hasattr(e, "filename"):
+            message = e.filename + ": " + message[1:]
         logger.error("\nrun {0} failed with the following exception:\n"
-                     "   {1}".format(IOPT, e.args[0]))
+                     "   {1}".format(IOPT, message))
         stat = 1
         err = np.nan
 

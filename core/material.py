@@ -9,13 +9,13 @@ import utils.xpyclbr as xpyclbr
 import utils.mmlabpack as mmlabpack
 from utils.fortran.product import FIO
 from utils.misc import load_file, remove
-from utils.constants import DEFAULT_TEMP
-from utils.constants import SET_AT_RUNTIME
 from core.product import MAT_LIB_DIRS, PKG_D
 from utils.data_containers import Parameters
 from core.logger import Logger, ConsoleLogger
 from materials.product import ABA_MATS, USER_MAT
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
+from utils.constants import DEFAULT_TEMP, SET_AT_RUNTIME, ENGW
+np.set_printoptions(precision=2)
 
 try:
     from lib.visco import visco as visco
@@ -30,6 +30,7 @@ class MaterialModel(object):
     """The base material class
 
     """
+    W = np.ones(6)
     def __init__(self):
         raise Exception("materials must define own __init__")
 
@@ -270,8 +271,9 @@ class MaterialModel(object):
         user_field = 0.
         kappa = 0
         v = range(6)
-        return self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0, F,
+        c = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0, F,
             stran, d, elec_field, user_field, stress, self.initial_state, v)
+        return c
 
     def numerical_jacobian(self, time, dtime, temp, dtemp, kappa, F0, F, stran, d,
                            elec_field, user_field, stress, xtra, v):
@@ -321,22 +323,26 @@ class MaterialModel(object):
             Dp = d.copy()
             Dp[v[i]] = d[v[i]] + (deps / dtime) / 2.
             Fp, Ep = mmlabpack.update_deformation(dtime, 0., F, Dp)
+            Dp *= self.W
+            Ep *= self.W
             sigp = stress.copy()
             xtrap = xtra.copy()
-            sigp, xtrap, stif = self.compute_updated_state(time, dtime, temp,
-                dtemp, kappa, F0, Fp, Ep, Dp, elec_field, user_field, sigp, xtrap)
+            sigp = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
+                      F0, Fp, Ep, Dp, elec_field, user_field, sigp, xtrap, disp=3)
 
             # perturb backward
             Dm = d.copy()
             Dm[v[i]] = d[v[i]] - (deps / dtime) / 2.
             Fm, Em = mmlabpack.update_deformation(dtime, 0., F, Dm)
+            Dm *= self.W
+            Em *= self.W
             sigm = stress.copy()
             xtram = xtra.copy()
-            sigm, xtram, stif = self.compute_updated_state(time, dtime, temp,
-                dtemp, kappa, F0, Fm, Em, Dm, elec_field, user_field, sigm, xtram)
+            sigm = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
+                      F0, Fm, Em, Dm, elec_field, user_field, sigm, xtram, disp=3)
 
             # compute component of jacobian
-            Jsub[i, :] = (sigp[v] - sigm[v]) / deps
+            Jsub[i, :] = (sigp[v] - sigm[v]) / deps / self.W
 
             continue
 
@@ -404,7 +410,7 @@ class MaterialModel(object):
 
         rho = 1.
         energy = 1.
-        sig, xtra[:N], stif = self.update_state(time, dtime, temp, dtemp,
+        sig, xtra[:N], ddsdde = self.update_state(time, dtime, temp, dtemp,
             energy, rho, F0, Fm, Em, d, elec_field, user_field, sig,
             xtra[:N], last=last, mode=0)
 
@@ -416,16 +422,28 @@ class MaterialModel(object):
                              self.visco_params, F.reshape(3,3), X, sig, *comm)
             xtra[N:] = X[:]
 
+        if disp == 3:
+            return sig
+
         if v is not None:
-            stif = stif[[[i] for i in v], v]
+            ddsdde = ddsdde[[[i] for i in v], v]
+
+        if last and opts.sqa:
+            w = v if v is not None else range(6)
+            c = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0,
+                        Fm, Em, d, elec_field, user_field, stress, xtra[:N], w)
+            err = np.amax(np.abs(ddsdde - c)) / np.amax(ddsdde)
+            if err > 5.E-03: # .5 percent error
+                self.logger.warn("error in material stiffness: "
+                                 "{0:.4E} ({1:.2f})".format(err, time), limit=False)
 
         if disp == 2:
-            return stif
+            return ddsdde
 
         elif disp == 1:
             return sig, xtra
 
-        return sig, xtra, stif
+        return sig, xtra, ddsdde
 
     def initialize(self):
         """Call the material with initial state
@@ -452,7 +470,7 @@ class MaterialModel(object):
         elec_field = np.zeros(3)
         user_field = None
         kappa = 0
-        sigini, xinit, stif = self.compute_updated_state(time, dtime, temp,
+        sigini, xinit, ddsdde = self.compute_updated_state(time, dtime, temp,
             dtemp, kappa, F0, F, stran, d, elec_field, user_field, stress, xtra)
 
         self.initial_state = xinit
@@ -488,6 +506,7 @@ class MaterialModel(object):
 
 
 class AbaqusMaterial(MaterialModel):
+    W = np.array([1., 1., 1., 2., 2., 2.])
     def setup(self, props, depvar):
         self.check_import()
         if not depvar:
@@ -518,20 +537,12 @@ class AbaqusMaterial(MaterialModel):
         coords = np.zeros(3, order="F")
         drot = np.eye(3)
         ndi = nshr = 3
-        sse = 0.
-        spd = 0.
-        scd = 0.
-        rpl = 0.
-        drpldt = 0.
-        celent = 0.
-        pnewdt = 0.
-        noel = 1
-        npt = 1
-        layer = 1
-        kspt = 1
-        kstep = 1
-        kinc = 1
+        sse = spd = scd = rpl = drpldt = celent = pnewdt = 0.
+        noel = npt = layer = kspt = kstep = kinc = 1
         time = np.array([time,time])
+        # abaqus ordering
+        stress = stress[[0,1,2,3,5,4]]
+        dstran = dstran[[0,1,2,3,5,4]]
         stress, statev, ddsdde = self.update_state_umat(
             stress, statev, ddsdde, sse, spd, scd, rpl, ddsddt, drplde, drpldt,
             stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
@@ -539,7 +550,7 @@ class AbaqusMaterial(MaterialModel):
             dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc)
         if np.any(np.isnan(stress)):
             self.logger.error("umat stress contains nan's")
-        ddsdde[3:, 3:] *= 2.
+        stress = stress[[0,1,2,3,5,4]]
         return stress, statev, ddsdde
 
     def set_constant_jacobian(self):
@@ -553,6 +564,19 @@ class AbaqusMaterial(MaterialModel):
                        F0, F, stran, d, elec_field, user_field,
                        self.initial_stress, self.initial_state, disp=2)
         return
+
+    def get_initial_jacobian(self):
+        """Get the initial Jacobian"""
+        time, dtime = 0, 0
+        temp, dtemp = self.initial_temp, 0.
+        kappa = 0
+        F0, F = np.eye(3), np.eye(3)
+        stran, d, elec_field = np.zeros(6), np.zeros(6), np.zeros(3)
+        user_field = 0
+        ddsdde = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
+                       F0, F, stran, d, elec_field, user_field,
+                       self.initial_stress, self.initial_state, disp=2)
+        return ddsdde
 
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
@@ -616,14 +640,13 @@ def Material(model, parameters=None, depvar=None, constants=None,
             material.source_files.extend(source_files)
             lapack = getattr(material, "lapack", None)
             import core.builder as bb
-
             bb.Builder.build_material(lib, material.source_files,
                                       lapack=lapack,
                                       verbosity=opts.verbosity)
         if not os.path.isfile(so_lib):
             raise ModelLibNotFoundError(lib)
         # reload model
-        module = load_file(libinfo.file)
+        module = load_file(libinfo.file, reload=True)
         mat_class = getattr(module, libinfo.class_name)
         material = mat_class()
 
