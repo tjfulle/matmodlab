@@ -50,7 +50,7 @@ class Permutator(object):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
         logfile = os.path.join(self.rootd, runid + ".log")
-        logger.logfile = logfile
+        logger.assign_logfile(logfile)
         logger.verbosity = verbosity
 
         # check method

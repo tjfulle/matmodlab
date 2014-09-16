@@ -31,8 +31,13 @@ F_PRODUCT = "product.py"
 
 # --- MATERIAL AND TEST SEARCH DIRECTORIES
 MAT_LIB_DIRS = [MATLIB]
-TEST_DIRS = [os.path.join(dd, d) for (dd, dirs, f) in os.walk(TEST_D)
-                                 for d in dirs]
+TEST_DIRS = []
+for (dirname, dirs, files) in os.walk(TEST_D):
+    if dirname.endswith(".eval"):
+        del dirs[:]
+        continue
+    TEST_DIRS.extend([os.path.join(dirname, d) for d in dirs
+                      if not d.endswith(".eval")])
 
 # --- APPLY USER CONFIGURATIONS
 p = argparse.ArgumentParser(add_help=False)

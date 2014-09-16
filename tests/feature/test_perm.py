@@ -24,8 +24,7 @@ class TestZip(TestBase):
             runner("zip", d=self.test_dir, v=0)
             self.status = self.passed
         except BaseException as e:
-            raise TestError("{0}: failed with the following "
-                            "exception: {1}".format(self.runid, e.args[0]))
+            raise TestError(e.args[0])
 
 class TestCombi(TestBase):
     def __init__(self):
@@ -42,8 +41,7 @@ class TestCombi(TestBase):
             runner("combination", d=self.test_dir, v=0, N=2)
             self.status = self.passed
         except BaseException as e:
-            raise TestError("{0}: failed with the following "
-                            "exception: {1}".format(self.runid, e.args[0]))
+            raise TestError(e.args[0])
 
 
 def func(x, *args):

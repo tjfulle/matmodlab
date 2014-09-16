@@ -7,6 +7,7 @@ import os
 import sys
 import numpy as np
 D = os.path.dirname(os.path.realpath(__file__))
+CCHAR = "#"
 
 from utils.exojac import ExodusIIFile
 
@@ -16,13 +17,12 @@ def opt_pres_v_evol(exof):
                    "STRESS_XX", "STRESS_YY", "STRESS_ZZ")
 
     # read in baseline data
-    aux = os.path.join(D, "opt_baseline.dat")
-    auxhead = open(aux).readline().split()
-    auxdat = np.loadtxt(aux, skiprows=1)
-    I = [auxhead.index(var) for var in vars_to_get]
+    aux = os.path.join(D, "opt.base_dat")
+    auxhead, auxdat = loadtxt(aux)
+    I = [auxhead[var] for var in vars_to_get]
     baseevol = auxdat[:, I[0]] + auxdat[:, I[1]] + auxdat[:, I[2]]
     basepress = (auxdat[:, I[3]] + auxdat[:, I[4]] + auxdat[:, I[5]]) / 3.
-    basetime = auxdat[:, auxhead.index("TIME")]
+    basetime = auxdat[:, auxhead["TIME"]]
 
     # read in output data
     exof = ExodusIIFile(exof)
@@ -54,11 +54,10 @@ def opt_sig_v_time(exof):
 
     # read in baseline data
     aux = os.path.join(D, "opt.base_dat")
-    auxhead = open(aux).readline().split()
-    auxdat = np.loadtxt(aux, skiprows=1)
-    I = np.array([auxhead.index(var) for var in vars_to_get], dtype=np.int)
+    auxhead, auxdat = loadtxt(aux)
+    I = np.array([auxhead[var] for var in vars_to_get], dtype=np.int)
     basesig = auxdat[:, I]
-    basetime = auxdat[:, auxhead.index("TIME")]
+    basetime = auxdat[:, auxhead["TIME"]]
 
     # read in output data
     exof = ExodusIIFile(exof)
@@ -81,3 +80,10 @@ def opt_sig_v_time(exof):
         continue
 
     return error
+
+
+def loadtxt(filename):
+    head = open(filename).readline().strip(CCHAR).split()
+    head = dict([(a, i) for (i, a) in enumerate(head)])
+    data = np.loadtxt(filename, skiprows=1)
+    return head, data

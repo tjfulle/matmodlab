@@ -4,6 +4,7 @@ import opt_routines as my_opt
 
 my_dir = get_my_directory()
 path_file = os.path.join(my_dir, "opt.base_dat")
+xact = np.array([135e9, 53e9])
 
 class TestCobyla(TestBase):
     def __init__(self):
@@ -13,17 +14,19 @@ class TestCobyla(TestBase):
 
     def setup(self, *args, **kwargs):
         self.make_test_dir()
-        logfile = os.path.join(self.test_dir, self.runid + ".log")
-        self.logger = Logger(logfile=logfile)
 
     def run(self):
         self.status = self.failed_to_run
         try:
-            runner("cobyla", d=self.test_dir, v=0)
-            self.status = self.passed
+            xopt = runner("cobyla", d=self.test_dir, v=0)
         except BaseException as e:
-            self.logger.error("{0}: failed with the following "
-                              "exception: {1}".format(self.runid, e.message))
+            raise TestError(e.args[0])
+
+        # check error
+        err = (xopt - xact) / xact * 100
+        err = np.sqrt(np.sum(err ** 2))
+        if err < 1.85:
+            self.status = self.passed
 
 class TestSimplex(TestBase):
     def __init__(self):
@@ -33,38 +36,41 @@ class TestSimplex(TestBase):
 
     def setup(self, *args, **kwargs):
         self.make_test_dir()
-        logfile = os.path.join(self.test_dir, self.runid + ".log")
-        self.logger = Logger(logfile=logfile)
 
     def run(self):
         self.status = self.failed_to_run
         try:
-            runner("simplex", d=self.test_dir, v=0)
-            self.status = self.passed
+            xopt = runner("simplex", d=self.test_dir, v=0)
         except BaseException as e:
-            self.logger.error("{0}: failed with the following "
-                              "exception: {1}".format(self.runid, e.message))
+            raise TestError(e.args[0])
+
+        # check error
+        err = (xopt - xact) / xact * 100
+        err = np.sqrt(np.sum(err ** 2))
+        if err < .002:
+            self.status = self.passed
 
 class TestPowell(TestBase):
     def __init__(self):
-        self.disabled = True
         self.runid = "opt_powell"
         self.keywords = ["long", "powell", "optimization", "opt", "feature",
                          "builtin"]
 
     def setup(self, *args, **kwargs):
         self.make_test_dir()
-        logfile = os.path.join(self.test_dir, self.runid + ".log")
-        self.logger = Logger(logfile=logfile)
 
     def run(self):
         self.status = self.failed_to_run
         try:
-            runner("powell", d=self.test_dir, v=0)
-            self.status = self.passed
+            xopt = runner("powell", d=self.test_dir, v=0)
         except BaseException as e:
-            self.logger.error("{0}: failed with the following "
-                              "exception: {1}".format(self.runid, e.message))
+            raise TestError(e.args[0])
+
+        # check error
+        err = (xopt - xact) / xact * 100
+        err = np.sqrt(np.sum(err ** 2))
+        if err < .0002:
+            self.status = self.passed
 
 def func(x, *args):
 
@@ -86,6 +92,7 @@ def func(x, *args):
     mps.run()
 
     error = my_opt.opt_sig_v_time(mps.exodus_file)
+    #error = my_opt.opt_pres_v_evol(mps.exodus_file)
     return error
 
 @matmodlab
@@ -111,7 +118,10 @@ def runner(method, d=None, v=1):
                           maxiter=25, tolerance=1.e-4, verbosity=v,
                           funcargs=[runid])
     optimizer.run()
-    return
+    xopt = optimizer.xopt
+    return xopt
 
 if __name__ == "__main__":
+    runner("cobyla")
     runner("simplex")
+    runner("powell")

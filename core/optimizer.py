@@ -49,7 +49,7 @@ class Optimizer(object):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
         logfile = os.path.join(self.rootd, runid + ".log")
-        logger.logfile = logfile
+        logger.assign_logfile(logfile)
         logger.verbosity = verbosity
 
         # check xinit
@@ -160,7 +160,7 @@ response descriptors:
 
         self.finish()
 
-        return 0
+        return
 
     def finish(self):
         """ finish up the optimization job """
@@ -229,8 +229,9 @@ def run_job(xcall, *args):
         err = func(x, *funcargs)
         logger.write("done (error={0:.4e})".format(err))
         stat = 0
-    except:
-        logger.write("failed")
+    except BaseException as e:
+        logger.error("\nrun {0} failed with the following exception:\n"
+                     "   {1}".format(IOPT, e.args[0]))
         stat = 1
         err = np.nan
 
