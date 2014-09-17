@@ -4,8 +4,7 @@ from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
 from materials.product import (ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
                                ABA_UHYPER_PYF, ABA_UHYPER_JAC_F90)
-try: import lib.uhyper as mat
-except ImportError: mat = None
+mat = None
 
 
 class UHyper(AbaqusMaterial):
@@ -19,8 +18,11 @@ class UHyper(AbaqusMaterial):
         self.lapack = "lite"
         self.aba_model = True
 
-    def check_import(self):
-        if mat is None:
+    def import_model(self):
+        global mat
+        try:
+            import lib.uhyper as mat
+        except ImportError:
             raise ModelNotImportedError("uhyper")
 
     def update_state_umat(self, stress, statev, ddsdde,

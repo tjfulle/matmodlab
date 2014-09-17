@@ -508,7 +508,7 @@ class MaterialModel(object):
 class AbaqusMaterial(MaterialModel):
     W = np.array([1., 1., 1., 2., 2., 2.])
     def setup(self, props, depvar):
-        self.check_import()
+        self.import_model()
         if not depvar:
             depvar = 1
         statev = np.zeros(depvar)
@@ -646,6 +646,8 @@ def Material(model, parameters=None, depvar=None, constants=None,
         if not os.path.isfile(so_lib):
             raise ModelLibNotFoundError(lib)
         # reload model
+        if libinfo.module in sys.modules:
+            del sys.modules[libinfo.module]
         module = load_file(libinfo.file, reload=True)
         mat_class = getattr(module, libinfo.class_name)
         material = mat_class()

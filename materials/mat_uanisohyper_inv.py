@@ -3,8 +3,7 @@ from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
 from materials.product import (ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
                                ABA_UANISOHYPER_PYF, ABA_UANISOHYPER_JAC_F90)
-try: import lib.uanisohyper_inv as mat
-except ImportError: mat = None
+mat = None
 
 
 class UAnisoHyper(AbaqusMaterial):
@@ -16,8 +15,11 @@ class UAnisoHyper(AbaqusMaterial):
                           ABA_UANISOHYPER_PYF, ABA_UANISOHYPER_JAC_F90]
         self.aba_model = True
 
-    def check_import(self):
-        if mat is None:
+    def import_model(self):
+        global mat
+        try:
+            import lib.uanisohyper_inv as mat
+        except ImportError:
             raise ModelNotImportedError("uanisohyper_inv")
 
     def update_state_umat(self, Ainv, zeta, nfibers, temp, noel,

@@ -52,7 +52,9 @@ def load_file(filepath, disp=0, reload=False):
         raise IOError("{0}: no such file".format(filepath))
     path, fname = os.path.split(filepath)
     module = os.path.splitext(fname)[0]
-    if module in sys.modules and not reload:
+    if reload and module in sys.modules:
+        del sys.modules[module]
+    if module in sys.modules:
         return sys.modules[module]
     fp, pathname, description = imp.find_module(module, [path])
     try:
