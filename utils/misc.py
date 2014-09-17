@@ -1,10 +1,10 @@
 import os
 import imp
 import sys
-from select import select
 import shutil
 import inspect
-
+import importlib
+from select import select
 
 def whoami():
     """ return name of calling function """
@@ -33,6 +33,11 @@ def timed_raw_input(message, timeout=10, default=None):
     else:
         return default
 
+def _modname(rootd, filename):
+    s = os.path.sep
+    m = os.path.splitext(filename)[0]
+    return ".".join(m.replace(rootd+s, "").split(s))
+
 
 def load_file(filepath, disp=0, reload=False):
     """Load a python module by filepath
@@ -48,21 +53,33 @@ def load_file(filepath, disp=0, reload=False):
         import python module
 
     """
+    from core.product import ROOT_D
     if not os.path.isfile(filepath):
         raise IOError("{0}: no such file".format(filepath))
-    path, fname = os.path.split(filepath)
-    module = os.path.splitext(fname)[0]
-    if reload and module in sys.modules:
-        del sys.modules[module]
-    if module in sys.modules:
-        return sys.modules[module]
-    fp, pathname, description = imp.find_module(module, [path])
-    try:
-        loaded = imp.load_module(module, fp, pathname, description)
-    finally:
-        # Since we may exit via an exception, close fp explicitly.
-        if fp:
-            fp.close()
+
+    if ROOT_D in filepath:
+        # import module from project directly
+        module = _modname(ROOT_D, filepath)
+        if reload and module in sys.modules:
+            del sys.modules[module]
+        if module in sys.modules:
+            return sys.modules[module]
+        loaded = importlib.import_module(module)
+
+    else:
+        path, fname = os.path.split(filepath)
+        module = os.path.splitext(fname)[0]
+        if reload and module in sys.modules:
+            del sys.modules[module]
+        if module in sys.modules:
+            return sys.modules[module]
+        fp, pathname, description = imp.find_module(module, [path])
+        try:
+            loaded = imp.load_module(module, fp, pathname, description)
+        finally:
+            # Since we may exit via an exception, close fp explicitly.
+            if fp:
+                fp.close()
     if disp:
         return loaded, module
     return loaded

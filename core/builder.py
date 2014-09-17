@@ -4,6 +4,7 @@ import sys
 import glob
 import shutil
 import argparse
+import importlib
 
 from utils.fortran.product import FIO
 from materials.product import ABA_MATS
@@ -58,6 +59,7 @@ class Builder(object):
 
         """
         fort_libs = {}
+        module = os.path.splitext(F_PRODUCT)[0]
         for (dirname, dirs, files) in os.walk(ROOT_D):
             if F_PRODUCT not in files:
                 continue
@@ -73,7 +75,6 @@ class Builder(object):
                 if name in fort_libs:
                     raise DuplicateExtModule(name)
                 fort_libs.update({name: libs[name]})
-            del sys.modules[os.path.splitext(F_PRODUCT)[0]]
 
         if mats_to_fetch is not None:
             # find materials and filter out those to build
@@ -89,7 +90,6 @@ class Builder(object):
                 loaded = load_file(info.file)
                 material = getattr(loaded, info.class_name)()
                 if not hasattr(material, "source_files"):
-                    del sys.modules[info.module]
                     continue
                 d = os.path.dirname(info.file)
                 source_files = material.source_files
@@ -99,7 +99,6 @@ class Builder(object):
                 I = getattr(material, "include_dirs", [d])
                 fort_libs.update({name: {"source_files": source_files,
                                          "lapack": l, "include_dirs": I}})
-                del sys.modules[info.module]
 
         for ext in fort_libs:
             s = fort_libs[ext]["source_files"]
