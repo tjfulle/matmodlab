@@ -30,11 +30,10 @@ class UHyper(AbaqusMaterial):
             dfgrd1, noel, npt, layer, kspt, kstep, kinc):
         """update the material state"""
         comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
-        ddsdde = np.zeros((2,6,6), order="F")
+        ddsdde = np.zeros((6,6), order="F")
         mat.umat(stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc, *comm)
-        ddsdde = ddsdde[0,:,:] + ddsdde[1,:,:]
         return stress, statev, ddsdde

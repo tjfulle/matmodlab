@@ -29,7 +29,7 @@ python module uhyper ! in
             external log_error
             real(kind=8) dimension(ntens),intent(inout),depend(ntens) :: stress
             real(kind=8) dimension(nstatv),intent(inout),depend(nstatv) :: statev
-            real(kind=8) dimension(2,ntens,ntens),intent(inout),depend(ntens,ntens) :: ddsdde
+            real(kind=8) dimension(ntens,ntens),intent(inout),depend(ntens,ntens) :: ddsdde
             real(kind=8) intent(in) :: sse
             real(kind=8) intent(in) :: spd
             real(kind=8) intent(in) :: scd
