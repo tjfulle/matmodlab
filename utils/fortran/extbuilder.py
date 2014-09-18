@@ -13,8 +13,9 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
-from core.logger import ConsoleLogger as logger
+from utils.misc import remove, stdout_redirected, merged_stderr_stdout
 from core.product import FC, PKG_D, FFLAGS
+from core.logger import ConsoleLogger as logger
 from utils.fortran.product import LAPACK, LAPACK_OBJ
 
 FORT_COMPILER = FC
@@ -40,14 +41,14 @@ class FortranExtBuilder(object):
 
         self.fc = fc
         FORT_COMPILER = fc
-        self.config = Configuration(name, parent_package="", top_path="",
-                                    package_path=PKG_D)
+        self.name = name
         self.quiet = verbosity < 2
         self.silent = verbosity < 1
         self.exts_built = []
         self.exts_failed = []
         self.exts_to_build = []
         self.ext_modules_built = False
+        self._build_blas_lapack = False
 
     def add_extension(self, name, sources, **kwargs):
         """Add an extension module to build"""
@@ -55,10 +56,7 @@ class FortranExtBuilder(object):
         lapack = kwargs.get("lapack")
         if lapack:
             if lapack == "lite":
-                if not os.path.isfile(LAPACK_OBJ):
-                    stat = build_blas_lapack()
-                    if stat != 0:
-                        logger.error("failed to build blas_lapack")
+                self._build_blas_lapack = True
                 options["extra_objects"] = [LAPACK_OBJ]
                 options["extra_compile_args"] = ["-fPIC", "-shared"]
             else:
@@ -71,18 +69,32 @@ class FortranExtBuilder(object):
         idirs = kwargs.get("include_dirs")
         if idirs:
             options["include_dirs"] = idirs
-        self.config.add_extension(name, sources=sources, **options)
-        self.exts_to_build.append(name)
+
+        self.exts_to_build.append((name, sources, options))
         return
 
     def build_extension_modules(self, verbosity=1):
         """Build all extension modules in config"""
         if not self.exts_to_build:
             return
-        if self.quiet:
-            # redirect stderr and stdout
-            sys.stdout = open(os.devnull, "w")
-            sys.stderr = open(os.devnull, "a")
+
+        to_build = [x[0] for x in self.exts_to_build]
+        if self._build_blas_lapack and not os.path.isfile(LAPACK_OBJ):
+            to_build.insert(0, "blas_lapack-lite")
+        self.logmes("THE FOLLOWING FORTRAN EXTENSION MODULES WILL BE BUILT:\n"
+                    "    {0}".format(",".join(to_build)), transform=str)
+
+        if self._build_blas_lapack:
+            if not os.path.isfile(LAPACK_OBJ):
+                stat = build_blas_lapack()
+                if stat != 0:
+                    logger.error("failed to build blas_lapack, dependent "
+                                 "libraries will not be importable")
+
+        config = Configuration(self.name, parent_package="", top_path="",
+                               package_path=PKG_D)
+        for (name, sources, options) in self.exts_to_build:
+            config.add_extension(name, sources=sources, **options)
 
         cwd = os.getcwd()
         os.chdir(PKG_D)
@@ -102,19 +114,21 @@ class FortranExtBuilder(object):
         sys.argv.extend("build_ext -i".split())
 
         # build the extension modules with distutils setup
-        self.logmes("Building extension module[s]", end="... ")
-        setup(**self.config.todict())
+        self.logmes("building extension module[s]", end="... ")
+        f = os.path.join(PKG_D, "build.log") if self.quiet else sys.stdout
+        with stdout_redirected(to=f), merged_stderr_stdout():
+            setup(**config.todict())
         self.logmes("done")
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
         sys.argv = hold
 
         # move files
         self.logmes("Staging extension module[s]", end="... ")
-        d = self.config.package_dir[self.config.name]
+        d = config.package_dir[config.name]
         for mod in glob.glob(d + "/*.so"):
             self.exts_built.append(module_name(mod))
-        self.exts_failed = [n for n in self.exts_to_build
-                            if n not in self.exts_built]
+        self.exts_failed = [n[0] for n in self.exts_to_build
+                            if n[0] not in self.exts_built]
         self.ext_modules_built = True
         self.exts_to_build = []
         self.logmes("done")
@@ -124,10 +138,10 @@ class FortranExtBuilder(object):
         os.chdir(cwd)
         return
 
-    def logmes(self, message, end="\n"):
+    def logmes(self, message, end="\n", transform=None):
         """Write message to stdout """
         if not self.silent:
-            logger.write(message, end=end)
+            logger.write(message, end=end, transform=transform)
 
     @staticmethod
     def _find_lapack():
@@ -149,7 +163,7 @@ def build_blas_lapack():
     """Build the blas_lapack-lite object
 
     """
-    logger.write("Building blas_lapack-lite", end="... ")
+    logger.write("BUILDING blas_lapack-lite", end="... ", transform=str)
     cmd = [FORT_COMPILER, "-fPIC", "-shared", "-O3", LAPACK, "-o" + LAPACK_OBJ]
     build = subprocess.Popen(cmd, stdout=open(os.devnull, "a"),
                              stderr=subprocess.STDOUT)

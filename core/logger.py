@@ -103,11 +103,9 @@ class Logger(object):
             else:
                 sys.exit(1)
 
-    def error(self, message, raise_error=0, report_caller=0, **kwargs):
+    def error(self, message, raise_error=0, **kwargs):
         self.errors += 1
-        caller = None
-        if report_caller or raise_error:
-            caller = who_is_calling()
+        caller = who_is_calling()
         self.raise_error(message.rstrip(), raise_error=raise_error,
                          caller=caller, **kwargs)
 

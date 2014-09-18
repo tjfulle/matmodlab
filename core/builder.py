@@ -8,7 +8,7 @@ import importlib
 
 from utils.fortran.product import FIO
 from materials.product import ABA_MATS
-from utils.misc import load_file, int2str
+from utils.misc import load_file, remove
 from core.product import ROOT_D, F_PRODUCT, PKG_D
 from utils.errors import DuplicateExtModule
 from core.logger import ConsoleLogger as logger
@@ -77,6 +77,7 @@ class Builder(object):
                 fort_libs.update({name: libs[name]})
 
         if mats_to_fetch is not None:
+            mats_fetched = []
             # find materials and filter out those to build
             from core.material import find_materials
             for (name, info) in find_materials().items():
@@ -84,6 +85,7 @@ class Builder(object):
                     raise DuplicateExtModule(name)
                 if mats_to_fetch != "all" and name not in mats_to_fetch:
                     continue
+                mats_fetched.append(name)
                 # meta information, such as source files, are stored as
                 # instance attributes of the material. Load it to get the
                 # info.
@@ -99,7 +101,12 @@ class Builder(object):
                 I = getattr(material, "include_dirs", [d])
                 fort_libs.update({name: {"source_files": source_files,
                                          "lapack": l, "include_dirs": I}})
-
+        if mats_to_fetch != "all":
+            for mat in mats_to_fetch:
+                if mat not in mats_fetched:
+                    logger.error("{0}: material not found".format(mat))
+            if logger.errors:
+                logger.raise_error("stopping due to previous errors")
         for ext in fort_libs:
             s = fort_libs[ext]["source_files"]
             l = fort_libs[ext].get("lapack", False)
@@ -114,35 +121,41 @@ class Builder(object):
         """
         self.fb.build_extension_modules()
         for ext in self.fb.exts_failed:
-            logger.write("*** warning: {0}: failed to build".format(ext))
+            logger.warn("{0}: failed to build".format(ext))
 
 
-def build(wipe=False, wipe_and_build=False, mat_to_build=None,
-          build_utils=False, verbosity=1):
+def wipe_built_libs():
+    for f in glob.glob(os.path.join(PKG_D, "*.so")):
+        remove(f)
+    for f in glob.glob(os.path.join(PKG_D, "*.o")):
+        remove(f)
+    for f in glob.glob(os.path.join(PKG_D, "*.pyc")):
+        remove(f)
+    bld_d = os.path.join(PKG_D, "build")
+    remove(bld_d)
+
+
+def build(what_to_build, wipe_and_build=False, verbosity=1):
 
     builder = Builder("matmodlab", verbosity=verbosity)
 
-    if wipe or wipe_and_build:
-        for f in glob.glob(os.path.join(PKG_D, "*.so")):
-            os.remove(f)
-        bld_d = os.path.join(PKG_D, "build")
-        if os.path.isdir(bld_d):
-            shutil.rmtree(bld_d)
-        if wipe:
-            return 0
-        build_utils = True
+    if wipe_and_build:
+        wipe_built_libs()
 
-    if build_utils and mat_to_build:
-        builder.build_all(mats_to_build=mat_to_build)
+    what, more = what_to_build[:2]
+    recognized = ("utils", "all", "material")
+    if what not in recognized:
+        raise SystemExit("builder.build: expected what_to_build[0] to be one "
+                         "of {0}, got {1}".format(", ".join(recognized), what))
 
-    elif build_utils:
+    if what == "utils":
         builder.build_utils()
 
-    elif mat_to_build:
-        builder.build_materials(mat_to_build)
-
-    else:
+    elif what == "all":
         builder.build_all()
+
+    elif what == "material":
+        builder.build_materials(more)
 
     return 0
 
@@ -162,8 +175,19 @@ def main(argv=None):
        help="Build auxiliary support files only [default: all]")
     args = parser.parse_args(argv)
 
-    return build(wipe=args.W, wipe_and_build=args.w, mat_to_build=args.m,
-                 build_utils=args.u, verbosity=args.v)
+    if args.W:
+        sys.exit(wipe_built_libs())
+
+    if args.u and args.m:
+        sys.exit("***error: mml build: -m and -u are mutually exclusive options")
+
+    what_to_build = ["all", None]
+    if args.u:
+        what_to_build[0] = "utils"
+    elif args.m:
+        what_to_build = ("material", args.m)
+
+    return build(what_to_build, wipe_and_build=args.w, verbosity=args.v)
 
 if __name__ == "__main__":
     main()
