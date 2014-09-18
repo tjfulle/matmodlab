@@ -60,7 +60,6 @@ class MaterialModel(object):
         self.exp_params = None
         self.itemp = DEFAULT_TEMP
         self.param_defaults = getattr(self, "param_defaults", None)
-        self.constant_j = False
         self.initial_stress = np.zeros(6)
         self.logger = logger or Logger()
         self._file = file
@@ -309,9 +308,6 @@ class MaterialModel(object):
         Tim Fuller, Sandial National Laboratories, tjfulle@sandia.gov
 
         """
-        if self.constant_j:
-            return self.constant_jacobian
-
         # local variables
         nv = len(v)
         deps =  np.sqrt(np.finfo(np.float64).eps)
@@ -342,7 +338,7 @@ class MaterialModel(object):
                       F0, Fm, Em, Dm, elec_field, user_field, sigm, xtram, disp=3)
 
             # compute component of jacobian
-            Jsub[i, :] = (sigp[v] - sigm[v]) / deps / self.W
+            Jsub[i, :] = (sigp[v] - sigm[v]) / deps / self.W[v]
 
             continue
 
@@ -388,10 +384,7 @@ class MaterialModel(object):
         """Update the material state
 
         """
-        if disp == 2 and self.constant_j:
-            # only jacobian requested
-            return self.constant_jacobian
-
+        V = v if v is not None else range(6)
         N = self.nxtra
         comm = (self.logger.error, self.logger.write, self.logger.warn)
 
@@ -416,7 +409,7 @@ class MaterialModel(object):
 
         if self.visco_params is not None:
             # get visco correction
-            X = xtra[N:]
+            X = np.array(xtra[N:], order="F")
             cfac = np.zeros(2)
             sig, cfac = visco.viscorelax(dtime, time, temp, dtemp,
                              self.visco_params, F.reshape(3,3), X, sig, *comm)
@@ -425,13 +418,18 @@ class MaterialModel(object):
         if disp == 3:
             return sig
 
-        if v is not None:
+        if ddsdde is None or self.visco_params is not None:
+            ddsdde = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0,
+                        Fm, Em, d, elec_field, user_field, stress, xtra, V)
+
+        if v is not None and len(v) != ddsdde.shape[0]:
+            # if the numerical Jacobian was called, ddsdde is already the
+            # sub-Jacobian
             ddsdde = ddsdde[[[i] for i in v], v]
 
         if last and opts.sqa:
-            w = v if v is not None else range(6)
             c = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0,
-                        Fm, Em, d, elec_field, user_field, stress, xtra[:N], w)
+                        Fm, Em, d, elec_field, user_field, stress, xtra, V)
             err = np.amax(np.abs(ddsdde - c)) / np.amax(ddsdde)
             if err > 5.E-03: # .5 percent error
                 self.logger.warn("error in material stiffness: "

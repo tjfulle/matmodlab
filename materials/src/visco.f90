@@ -220,6 +220,9 @@ CONTAINS
        JNKSTR = "VISCORELAX: EXPECTED NSTATEV=%I GOT %I"
        INTV(1) = NSDV
        INTV(2) = NSTATEV
+       print*,nsdv
+       print*,nstatev
+       print*,statev
        CALL VISCOERR(-3, JNKSTR, INTV, REALV, CHARV)
     END IF
     IF (NPROP /= NUI) THEN

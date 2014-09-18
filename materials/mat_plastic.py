@@ -14,7 +14,6 @@ class Plastic(MaterialModel):
         f1 = os.path.join(d, "plastic.f90")
         f2 = os.path.join(d, "plastic.pyf")
         self.source_files = [f1, f2]
-        self.constant_j = True
 
     def setup(self):
         """Set up the Plastic material

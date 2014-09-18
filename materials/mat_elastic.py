@@ -14,7 +14,6 @@ class Elastic(MaterialModel):
         f1 = os.path.join(d, "elastic.f90")
         f2 = os.path.join(d, "elastic.pyf")
         self.source_files = [f1, f2]
-        self.constant_j = True
 
     def setup(self):
         """Set up the Elastic material
