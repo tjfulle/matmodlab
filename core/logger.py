@@ -64,6 +64,7 @@ class Logger(object):
             who = who_is_calling()
         if who:
             beg = "{0}{1}: ".format(beg, who)
+        message = message.rstrip()
         message = "{0}{1}{2}".format(beg, transform_str(message, transform), end)
         v = opts.verbosity if not self.ignore_opts else 1
         if write_to_console and v:

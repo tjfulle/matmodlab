@@ -26,10 +26,11 @@ def runner_visco(d=None, runid=None, v=1):
     driver = Driver("Continuum", path=PATH, logger=logger, estar=.1)
 
     constants = [E, Nu]
-    expansion = ("isotropic", [1.E-5])
-    viscoelastic = ("prony", np.array([[.35, 600.], [.15, 20.], [.25, 30.],
-                                     [.05, 40.], [.05, 50.], [.15, 60.]]))
-    trs = ("wlf", [75, 35, 50])
+    expansion = Expansion("isotropic", [1.E-5])
+    viscoelastic = Viscoelastic("prony",
+                                np.array([[.35, 600.], [.15, 20.], [.25, 30.],
+                                          [.05, 40.], [.05, 50.], [.15, 60.]]))
+    trs = TRS("wlf", [75, 35, 50])
     material = Material("umat", parameters=constants, constants=2,
                         source_files=["neohooke.f90"], initial_temp=75,
                         source_directory=os.path.join(MATLIB, "abaumats"),

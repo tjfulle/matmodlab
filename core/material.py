@@ -96,7 +96,8 @@ class MaterialModel(object):
     def initial_temp(self, value):
         self.itemp = value
 
-    def setup_new_material(self, parameters, depvar, initial_temp):
+    def setup_new_material(self, parameters, depvar, initial_temp, trs=None,
+                           expansion=None, viscoelastic=None):
         """Set up the new material
 
         """
@@ -137,10 +138,11 @@ class MaterialModel(object):
         except TypeError:
             self.setup()
 
-        if self.visco_model is not None:
+        if viscoelastic is not None:
             if visco is None:
                 self.logger.raise_error("attempting visco analysis but "
                                         "lib/visco.so not imported")
+            self.visco_model = viscoelastic
 
             # setup viscoelastic params
             self.visco_params = np.zeros(24)
@@ -173,16 +175,17 @@ class MaterialModel(object):
             visco_idata = np.zeros(self.nvisco)
             self.augment_xtra(visco_keys, visco_idata)
 
-        if self.trs_model is not None:
+        if trs is not None:
+            self.trs_model = trs
             self.visco_params[0] = self.trs_model.data[1] # C1
             self.visco_params[1] = self.trs_model.data[2] # C2
             self.visco_params[2] = self.trs_model.temp_ref # REF TEMP
 
-        if self.expansion_model is not None:
+        if expansion is not None:
             if xpansion is None:
                 self.logger.error("attempting thermal expansion but "
                                   "lib/expansion.so not imported")
-
+            self.expansion_model = expansion
             self.exp_params = self.expansion_model.data
 
         if self.visco_params is not None:
@@ -419,6 +422,13 @@ class MaterialModel(object):
             return sig
 
         if ddsdde is None or self.visco_params is not None:
+            # material models without an analytic jacobian send the Jacobian
+            # back as None so that it is found numerically here. Likewise, we
+            # find the numerical jacobian for visco materials - otherwise we
+            # would have to convert the the stiffness to that corresponding to
+            # the Truesdell rate, pull it back to the reference frame, apply
+            # the visco correction, push it forward, and convert to Jaummann
+            # rate. It's not as trivial as it sounds...
             ddsdde = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0,
                         Fm, Em, d, elec_field, user_field, stress, xtra, V)
 
@@ -428,6 +438,7 @@ class MaterialModel(object):
             ddsdde = ddsdde[[[i] for i in v], v]
 
         if last and opts.sqa:
+            # check how close stiffness returned from material is to the numeric
             c = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0,
                         Fm, Em, d, elec_field, user_field, stress, xtra, V)
             err = np.amax(np.abs(ddsdde - c)) / np.amax(ddsdde)
@@ -669,30 +680,9 @@ def Material(model, parameters=None, depvar=None, constants=None,
             raise UserInputError("len(parameters) != constants")
         parameters = np.array([float(x) for x in parameters])
 
-    # optional add-on models
-    if viscoelastic is not None:
-        from materials.addon_viscoelastic import Viscoelastic
-        if len(viscoelastic) != 2:
-            raise UserInputError("expected viscoelastic model to be "
-                                 "specified as (time type, data)")
-        material.visco_model = Viscoelastic(*viscoelastic)
-
-    if trs is not None:
-        from materials.addon_trs import TRS
-        if len(trs) != 2:
-            raise UserInputError("expected trs model to be "
-                                 "specified as (defnintion, data)")
-        material.trs_model = TRS(*trs)
-
-    if expansion is not None:
-        from materials.addon_expansion import Expansion
-        if len(expansion) != 2:
-            raise UserInputError("expected expansion model to be "
-                                 "specified as (expansion type, data)")
-        material.expansion_model = Expansion(*expansion)
-
     # Do the actual setup
-    material.setup_new_material(parameters, depvar, initial_temp)
+    material.setup_new_material(parameters, depvar, initial_temp, trs=trs,
+                                expansion=expansion, viscoelastic=viscoelastic)
     material.initialize()
 
     return material
