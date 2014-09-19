@@ -30,11 +30,18 @@ logfile = os.path.join(ROOT_RES_D, "testing.log")
 logger = Logger(logfile=logfile, ignore_opts=1)
 INI, SKIP, DISABLED, BAD, RUN = range(5)
 
+prog = "mml test"
+desc = """\
+{0}: run the matmodlab tests.  By default, tests are found in MML_ROOT/tests
+and any other directories and/or files found in the tests group of the
+MATMODLABRC file (if any).
+""".format(prog)
+
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(prog=prog, description=desc)
     p.add_argument("-k", action="append", default=[],
         help="Keywords to include [default: ]")
     p.add_argument("-K", action="append", default=[],
@@ -55,7 +62,9 @@ def main(argv=None):
         help="Do not use matmodlabrc configuration file [default: False]")
     p.add_argument("-l", action="store_true", default=False,
         help="List tests and exit [default: False]")
-    p.add_argument("sources", nargs="*")
+    p.add_argument("sources", nargs="*",
+        help=("[Optional] directores and/or files to find matmodlab tests.  "
+              "The default directories will not be searched."))
 
     # parse out known arguments and reset sys.argv
     args, sys.argv[1:] = p.parse_known_args(argv)
@@ -397,6 +406,7 @@ def run_test(test):
 
     ti = time.time()
     logger.write(fillwithdots(test.name, "RUNNING", W), transform=str)
+    status = FAILED_TO_RUN
     try:
         test.setup()
     except TestError as e:

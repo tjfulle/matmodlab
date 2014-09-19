@@ -6,12 +6,10 @@ additional building. Many of the material models, however, are written in
 Fortran and require a seperate compile step. The compiling step is handled
 dynamically at the time of material instantiation.
 
-
 # System Requirements
 
 *matmodlab* has been built and tested extensively on several versions of linux
 and the Apple Mac OSX 10.8 operating systems.
-
 
 ## Required Software
 
@@ -23,12 +21,11 @@ and the Apple Mac OSX 10.8 operating systems.
 
 - [Scipy 0.13](http://www.scipy.org) or newer
 
-*matmodlab* is developed and tested using both the [Anaconda](http://continuum.io) and [Enthought](http://www.enthought.com) Python distributions.
+*matmodlab* is developed and tested using both the [Anaconda](http://continuum.io) and [Enthought](http://www.enthought.com) Python distributions.  We recommend using one of the two, instead of building and installing Numpy and Scipy manually.
 
 ## Optional Software
 
   - Fortran compiler
-
 
 # Installation
 
@@ -38,28 +35,31 @@ and the Apple Mac OSX 10.8 operating systems.
 
   - (Optional) Build the fortran utilities. While *matmodlab* is written in
     python, many core linear algebra utilities and several built in material
-    models have been implemented in python. To build them run
+    models have been implemented in fortran. To build them run
 
-	$ mml build
+	mml build
 
 ## Executables
 
-The user interface is provided by the `matmodlab/bin/mml` executable script
+The user interface is provided by the `matmodlab/bin/mml` executable script.  See
+
+    mml help
+
+for a list of the *matmodlab* commands.
 
 ## Testing the Installation
 
 To test *matmodlab* after installation, execute
 
-	$ mml test -k fast
+	mml test -k fast
 
-which will run the "fast" tests found in *matmodlab/tests*
+which will run the "fast" tests found in `matmodlab/tests`
 
 To run the full test suite execute
 
-	$ mml test [-jN]
+	mml test [-jN]
 
-Please note that running all of the tests takes several minutes.
-
+Please note that running all of the tests takes some time.
 
 # Troubleshooting
 

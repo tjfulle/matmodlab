@@ -1,18 +1,19 @@
 #!/bin/bash
-# set up python environment
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOT="$(dirname "$DIR")"
-export PYTHONPATH="$ROOT"
-PYTHON=$(which python)
+if [ -z "$MML_ROOT" ];  then
+    echo >&2 "*** error: mml-run: MML_ROOT environment variable not set"
+    echo >&2 "this script should be called through matmodlab/bin/mml"
+    echo >&2 "and not directly"
+    exit 1
+fi
 while getopts "h" OPTION
 do
      case $OPTION in
          h)
 	    # run typically operates directly on a python file - which calls
 	    # clparse through matmodlab.py, here we call clparse directly
-	     $PYTHON $ROOT/utils/clparse.py -h
+	     $MML_PY_EXE $MML_ROOT/utils/clparse.py -h
              exit 0
              ;;
      esac
 done
-$PYTHON "$@"
+$MML_PY_EXE "$@"

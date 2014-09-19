@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# set up python environment
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOT="$(dirname "$DIR")"
-export PYTHONPATH="$ROOT"
-PYFILE="$ROOT/core/tester.py"
-PYTHON=$(which python)
-$PYTHON $PYFILE "$@"
+if [ -z "$MML_ROOT" ];  then
+    echo >&2 "*** ERROR: $0: MML_ROOT ENVIRONMENT VARIABLE NOT SET"
+    echo >&2 "THIS SCRIPT SHOULD BE CALLED THROUGH matmodlab/bin/mml"
+    echo >&2 "AND NOT DIRECTLY"
+    exit 1
+fi
+PYFILE="$MML_ROOT/core/tester.py"
+$MML_PY_EXE $PYFILE "$@"

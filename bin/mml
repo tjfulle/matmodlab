@@ -21,18 +21,21 @@ EOF
 }
 
 getprog() {
-    local it="$MML_ROOT/bin/mml-$1"
-    if [ -f $it ]; then
-	PROG="$it"
+    local x=$(trim "$1")
+    local f="$MML_ROOT/bin/mml-$x"
+    if [ -f $f ]; then
+	echo -n "$f"
+	exit 0
     else
-	if test -z "$1"; then
-            echo "*** error: mml:" required command not found
-	else
-	    echo "*** error: mml:" receieved unrecognized command \'"$1"\'
+	if [ ! -z "$x" ]; then
+	    echo -n "error: mml: $x: unrecognized command"
 	fi
-	usage
 	exit 1
     fi
+}
+
+trim() {
+    echo -n $(echo "$1" | sed "s/\(^ *\| *\$\)//g")
 }
 
 resolvelinks() {
@@ -79,13 +82,13 @@ resolvelinks() {
         fi
 
         # Now resolve the symbolic link "$f"
-        f_resolved=`readlink -n "$out$f" 2>/dev/null`
+        f_resolved=$(readlink -n "$out$f" 2>/dev/null)
         status=$?
         # status 127 means readlink could not be found.
         if [ $status -eq 127 ]; then
             # We don't have "readlink", try a stupid "ls" hack instead.
             # This will fail if we have filenames like "a -> b".
-            fls=`ls -l "$out$f" 2>/dev/null`
+            fls=$(ls -l "$out$f" 2>/dev/null)
             status=$?
             f_resolved=${fls##*-> }
 
@@ -106,23 +109,23 @@ resolvelinks() {
     done
 
     # Return $out
-    echo "$out"
+    echo -n "$out"
 }
 
 # If MML_ROOT is not given, find it out from $0
 if [ -z "$MML_ROOT" ];  then
     # Get the path to $0 (this shell script) with all symbolic links
     # resolved
-    THIS_DIR=`resolvelinks "$0"` || THIS_DIR="$0"
+    d=$(resolvelinks "$0") || d="$0"
 
     # Get the directory component
-    THIS_DIR="${THIS_DIR%/*}"
-    THIS_DIR=`cd "$THIS_DIR" && pwd -P`
-    MML_ROOT="$(dirname "$THIS_DIR")"
+    d="${d%/*}"
+    d=$(cd "$d" && pwd -P)
+    MML_ROOT="$(dirname "$d")"
 fi
 
 # Make MML_ROOT absolute
-MML_ROOT=`cd "$MML_ROOT" && pwd -P`
+MML_ROOT=$(cd "$MML_ROOT" && pwd -P)
 if [ $? -ne 0 ]; then
     echo >&2 "$0: cannot determine MML_ROOT directory"
     exit 1
@@ -131,7 +134,7 @@ fi
 export MML_ROOT
 export PATH="$MML_ROOT/bin:$PATH"
 export PYTHONPATH="$MML_ROOT:$PYTHONPATH"
-export PYTHONEXEC=$(which python)
+export MML_PY_EXE=$(which python)
 
 # option parsing - for now, only -h is supported
 while getopts "h" OPTION
@@ -150,18 +153,27 @@ do
 done
 
 # positional parameters
-COMMAND="$1"
+cmd=$(trim "$1")
 shift
-if [ "$COMMAND" == "help" ];
+if [ "$cmd" == "help" ];
 then
-    COMMAND="$1"
-    if [ "$COMMAND" == "" ];
+    cmd=$(trim "$1")
+    if [ "$cmd" == "" ];
     then
         usage
         exit 0
     fi
     set -- "-h"
 fi
-getprog "$COMMAND"
 
-$PROG "$@"
+X=$(getprog "$cmd")
+if [ $? -ne 0 ]; then
+    if [ ! -z "$X" ];
+    then
+	echo "mml: '$cmd' is not a mml command.  See 'mml -h'."
+    else
+	usage
+    fi
+    exit 1
+fi
+$X "$@"

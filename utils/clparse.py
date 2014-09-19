@@ -6,11 +6,15 @@ already_wiped = False
 def parse_sim_argv(argv=None, get_f=False):
     from core.runtime import set_runtime_opt
     from utils.errors import FileNotFoundError
-    from core.product import PKG_D
+    from core.product import PKG_D, ROOT_D
     global already_wiped
+    prog = "mml run"
+    desc = """{0}: run a matmodlab simulation script in the matmodlab
+    environment. Simulation scripts can be run directly by the python
+    interpreter if {1} is on your PYTHONPATH.""".format(prog, ROOT_D)
     if argv is None:
         argv = sys.argv[1:]
-    parser = argparse.ArgumentParser(prog="mml-run")
+    parser = argparse.ArgumentParser(prog=prog, description=desc)
     parser.add_argument("-v", default=1, type=int,
        help="Verbosity [default: %(default)s]")
     parser.add_argument("--dbg", default=False, action="store_true",

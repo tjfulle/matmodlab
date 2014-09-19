@@ -162,7 +162,8 @@ def build(what_to_build, wipe_and_build=False, verbosity=1):
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
-    parser = argparse.ArgumentParser(prog="mmd")
+    parser = argparse.ArgumentParser(prog="mml build",
+                description="%(prog)s: build fortran utilities and materials.")
     parser.add_argument("-v", default=1, type=int,
        help="Verbosity [default: %(default)s]")
     parser.add_argument("-w", action="store_true", default=False,

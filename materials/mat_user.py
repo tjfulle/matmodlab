@@ -3,8 +3,7 @@ from core.product import MATLIB
 from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
-try: import lib.user as user
-except ImportError: user = None
+user = None
 
 class UserMat(AbaqusMaterial):
     """Constitutive model class for the user model"""
@@ -14,8 +13,11 @@ class UserMat(AbaqusMaterial):
         d = os.path.join(MATLIB, "src")
         self.aux_files = [os.path.join(d, "user.pyf")]
 
-    def check_import(self):
-        if user is None:
+    def import_model(self):
+        global user
+        try:
+            import lib.user as user
+        except ImportError:
             raise ModelNotImportedError("user")
 
     def update_state_umat(self, stress, statev, ddsdde,

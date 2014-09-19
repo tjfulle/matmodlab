@@ -28,16 +28,27 @@ RCFILE = os.getenv("MATMODLABRC") or os.path.expanduser("~/.matmodlabrc")
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
-    p = argparse.ArgumentParser(prog="mml-config")
-    p.add_argument("option",
-        help="matmodlab configuration, specified as option.value")
+    p = argparse.ArgumentParser(prog="mml config",
+                                description="%(prog)s: Set matmodlab options")
+    p.add_argument("--add", nargs=2, metavar=("name", "value"),
+        help="name and value of option to add to configuration")
+    p.add_argument("--del", dest="delete", nargs=2, metavar=("name", "value"),
+        help="name and value of option to remove from configuration")
+    p.add_argument("--switch", action="store_true", default=False,
+        help="switch from old MMLMTLS environment variable to new config file")
     args = p.parse_args(argv)
-    try:
-        key, val = args.option.split(".")
-    except ValueError:
-        p.error("expected options to be of form key.value")
-    opts = {key.strip(): [val.strip()]}
-    cfgwrite(RCFILE, opts)
+    if args.switch and any([args.add, args.delete]):
+        p.error("--switch and [--add, --delete] are mutually exclusive")
+
+    if args.switch:
+        cfgswitch_and_warn()
+        return
+
+    if not args.add and not args.delete:
+        p.error("nothing to do")
+
+    cfgedit(RCFILE, add=args.add, delete=args.delete)
+
     return 0
 
 
@@ -81,21 +92,35 @@ def _cfgparse(filename):
     return cfg
 
 
-def cfgwrite(filename, dict):
-    logger.write("writing the following options to {0}:".format(filename))
-    for (k, v) in dict.items():
-        logger.write("  {0}: {1}".format(k, v), transform=str)
+def cfgedit(filename, add=None, delete=None):
 
     a = _cfgparse(filename)
-    for (k, v) in dict.items():
-        if not isinstance(v, (list, tuple)):
-            v = [v]
-        a.setdefault(k, []).extend([x.strip() for x in v if x.split()])
+
+    if add is not None:
+        logger.write("writing the following options to {0}:".format(filename))
+        k, v = add
+        k = k.lower()
+        v = os.path.expanduser(v)
+        logger.write("  {0}: {1}".format(k, v), transform=str)
+        a.setdefault(k, []).append(v.strip())
+
+    if delete is not None:
+        logger.write("deleting the following options from {0}:".format(filename))
+        k, v = delete
+        k = k.lower()
+        logger.write("  {0}: {1}".format(k, v), transform=str)
+        av = a.get(k)
+        if not av:
+            logger.warn("{0}: option had not been set".format(k, v))
+        else:
+            a[k] = [x for x in av if x != v]
+
     lines = []
     for (k, v) in a.items():
-        lines.append('[{0}]'.format(k.strip()))
         # make sure each line is unique
         v = list(set(v))
+        if not v: continue
+        lines.append('[{0}]'.format(k.strip().lower()))
         lines.append("\n".join(v))
 
     with open(filename, "w") as fh:
@@ -124,7 +149,7 @@ def cfgswitch_and_warn():
     logger.write("**** WARNING " * 6 + "****")
     logger.write("=" * 82)
     if mtls_d:
-        cfgwrite(RCFILE, {"materials": mtls_d})
+        cfgedit(RCFILE, add=("materials", mtls_d))
 
 if __name__ == "__main__":
     main()
