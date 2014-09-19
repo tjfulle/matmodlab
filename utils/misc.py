@@ -58,6 +58,9 @@ def load_file(filepath, disp=0, reload=False):
     if not os.path.isfile(filepath):
         raise IOError("{0}: no such file".format(filepath))
 
+    filedir, filename = os.path.split(filepath)
+    loaded = None
+
     if ROOT_D in filepath:
         # import module from project directly
         module = _modname(ROOT_D, filepath)
@@ -65,22 +68,25 @@ def load_file(filepath, disp=0, reload=False):
             del sys.modules[module]
         if module in sys.modules:
             return sys.modules[module]
-        loaded = importlib.import_module(module)
+        try:
+            loaded = importlib.import_module(module)
+        except ImportError:
+            pass
 
-    else:
-        path, fname = os.path.split(filepath)
-        module = os.path.splitext(fname)[0]
+    if loaded is None:
+        module = os.path.splitext(filename)[0]
         if reload and module in sys.modules:
             del sys.modules[module]
         if module in sys.modules:
             return sys.modules[module]
-        fp, pathname, description = imp.find_module(module, [path])
+        fp, pathname, description = imp.find_module(module, [filedir])
         try:
             loaded = imp.load_module(module, fp, pathname, description)
         finally:
             # Since we may exit via an exception, close fp explicitly.
             if fp:
                 fp.close()
+
     if disp:
         return loaded, module
     return loaded
