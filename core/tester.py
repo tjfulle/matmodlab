@@ -103,6 +103,8 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
         html_summary = True
 
     sources = [os.path.realpath(s) for s in sources]
+    html_msg = {True: "FOR ALL TESTS",
+                False: "ONLY FOR FAILED TESTS"}[html_summary]
 
     logger.write("summary of user input")
     s = "\n                ".join("{0}".format(x) for x in sources)
@@ -115,7 +117,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
                  "\n  NUMBER OF SIMULTANEOUS JOBS: {3}"
                  "\n  TEAR DOWN OF PASSED TESTS: {5}"
                  "\n  CREATION OF HTML SUMMARY: {6}".format(
-                     s, kw, KW, nprocs, ROOT_RES_D, tear_down, html_summary),
+                     s, kw, KW, nprocs, ROOT_RES_D, tear_down, html_msg),
                  transform=str)
 
     # gather the tests
