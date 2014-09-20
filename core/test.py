@@ -164,13 +164,13 @@ class TestBase(object):
         """The standard setup
 
         """
-        self.make_test_dir()
         self.status = self.failed_to_run
 
         # standard files
         self.exofile = os.path.join(self.test_dir, self.runid + ".exo")
         if not self.base_res:
             self.base_res = os.path.join(self.d, self.runid + ".base_exo")
+        self.make_test_dir()
         self.ready = True
 
     def pre_hook(self, *args, **kwargs):
