@@ -58,38 +58,33 @@ def load_file(filepath, disp=0, reload=False):
     if not os.path.isfile(filepath):
         raise IOError("{0}: no such file".format(filepath))
 
-    filedir, filename = os.path.split(filepath)
-    loaded = None
+    s = os.path.sep
+    filedir = os.path.dirname(filepath)
+    d = ROOT_D if ROOT_D in filedir else filedir
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    m = os.path.splitext(filepath)[0]
+    modname = ".".join(m.replace(d+s, "").split(s))
+    module = None
 
-    if ROOT_D in filepath:
-        # import module from project directly
-        module = _modname(ROOT_D, filepath)
-        if reload and module in sys.modules:
-            del sys.modules[module]
-        if module in sys.modules:
-            return sys.modules[module]
-        try:
-            loaded = importlib.import_module(module)
-        except ImportError:
-            pass
+    # if reload was requested, remove the modname from sys.modules
+    if reload:
+        try: del sys.modules[modname]
+        except KeyError: pass
 
-    if loaded is None:
-        module = os.path.splitext(filename)[0]
-        if reload and module in sys.modules:
-            del sys.modules[module]
-        if module in sys.modules:
-            return sys.modules[module]
-        fp, pathname, description = imp.find_module(module, [filedir])
-        try:
-            loaded = imp.load_module(module, fp, pathname, description)
-        finally:
-            # Since we may exit via an exception, close fp explicitly.
-            if fp:
-                fp.close()
+    # return already loaded module
+    try: module = sys.modules[modname]
+    except KeyError: pass
+
+    if module is None:
+        cwd = os.getcwd()
+        os.chdir(d)
+        module = importlib.import_module(modname)
+        os.chdir(cwd)
 
     if disp:
-        return loaded, module
-    return loaded
+        return module, modname
+    return module
 
 
 def int2str(I, c=False, sep="-"):

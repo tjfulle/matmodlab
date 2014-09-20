@@ -135,7 +135,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     tests = gather_and_filter_tests(sources, ROOT_RES_D, include, exclude, **opts)
 
     for init_file in tests[INI]:
-        init, module = load_file(init_file, disp=1)
+        init, module = load_file(init_file, disp=1, reload=True)
         try:
             init.run(ROOT_RES_D)
         except AttributeError:

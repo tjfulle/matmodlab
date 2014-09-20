@@ -36,7 +36,13 @@ def main(argv=None):
         help="name and value of option to remove from configuration")
     p.add_argument("--switch", action="store_true", default=False,
         help="switch from old MMLMTLS environment variable to new config file")
+    p.add_argument("--cat", action="store_true", default=False,
+        help="print the MATMODLABRC file to the console and exit")
     args = p.parse_args(argv)
+    if args.cat:
+        sys.stdout.write("{0}:\n\n{1}\n".format(RCFILE, open(RCFILE).read()))
+        return 0
+
     if args.switch and any([args.add, args.delete]):
         p.error("--switch and [--add, --delete] are mutually exclusive")
 
