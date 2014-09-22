@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Conventions &mdash; Material Model Laboratory 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
+    <link rel="up" title="User’s Guide" href="users.html" />
+    <link rel="next" title="Running a Simulation" href="run.html" />
+    <link rel="prev" title="Solution Method" href="solmeth.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="run.html" title="Running a Simulation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="solmeth.html" title="Solution Method"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li>
+          <li><a href="users.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="conventions">
+<span id="id1"></span><h1>Conventions<a class="headerlink" href="#conventions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="dimension">
+<h2>Dimension<a class="headerlink" href="#dimension" title="Permalink to this headline">¶</a></h2>
+<p>Material models are always called with full 3D tensors.</p>
+</div>
+<div class="section" id="vector-storage">
+<h2>Vector Storage<a class="headerlink" href="#vector-storage" title="Permalink to this headline">¶</a></h2>
+<p>Vector components are stored as</p>
+<div class="math">
+<p><img src="_images/math/affb96e6cc9662507912386f7166d7be41f83c93.png" alt="\Tensor{v}{}{}{} = \{v_x, v_y, v_z\}"/></p>
+</div></div>
+<div class="section" id="tensor-storage">
+<h2>Tensor Storage<a class="headerlink" href="#tensor-storage" title="Permalink to this headline">¶</a></h2>
+<p>In general, second-order symmetric tensors are stored as 6x1 arrays with the
+following ordering</p>
+<div class="math" id="equation-order-symtens">
+<p><span class="eqno">(1)</span><img src="_images/math/c3d89350785edaa146f7abc50739d952b8f2939d.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{yz}, A_{xz}\}"/></p>
+</div><p>Tensor components are used for all second-order symmetric tensors.</p>
+<p>Nonsymmetric, Second-order tensors are stored as 9x1 arrays in row major
+ordering, i.e.,</p>
+<div class="math">
+<p><img src="_images/math/cf545e25a0be10e51ad618576a3e894ec003a160.png" alt="\BB = \{A_{xx}, A_{xy}, A_{xz},
+        A_{yx}, A_{yy}, A_{yz},
+        A_{zx}, A_{zy}, A_{zz}\}"/></p>
+</div><div class="section" id="abaqus-materials">
+<h3>Abaqus Materials<a class="headerlink" href="#abaqus-materials" title="Permalink to this headline">¶</a></h3>
+<p>For Abaqus materials, the order of the last two components of second-order
+tensors are modified when the material is called to be consistent with
+Abaqus/Standard.   i.e., the second-order tensor in <a href="#equation-order-symtens">(1)</a> is
+passed to an Abaqus material as</p>
+<div class="math">
+<p><img src="_images/math/1c2e4e7577b5ae251cecaa5febf59a587230c1b2.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{xz}, A_{yz}\}"/></p>
+</div><p>Also consistent with Abaqus conventions, the shear components of strain-like tensors are sent to the material model as engineering strains.</p>
+<p>Nonsymmetric, Second-order tensors are sent as 3x3 matrices.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="background.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="users.html">User&#8217;s Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
+</ul>
+</li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="_sources/conventions.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

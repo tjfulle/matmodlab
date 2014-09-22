@@ -1,0 +1,409 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Solution Method &mdash; Material Model Laboratory 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
+    <link rel="up" title="User’s Guide" href="users.html" />
+    <link rel="next" title="Conventions" href="conventions.html" />
+    <link rel="prev" title="User’s Guide" href="users.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="conventions.html" title="Conventions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="users.html" title="User’s Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li>
+          <li><a href="users.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="solution-method">
+<span id="id1"></span><h1>Solution Method<a class="headerlink" href="#solution-method" title="Permalink to this headline">¶</a></h1>
+<p><em>matmodlab</em> exercises a material model directly by &#8220;driving&#8221; it through user
+specified paths. <em>matmodlab</em> computes an increment in deformation for a given
+step and requires that the material model update the stress in the material to
+the end of that step, given the current state and an increment in deformation.
+Because of the similarity of the material model interface in <em>matmodlab</em> with
+many commercial finite element codes, transitioning material models developed
+and tested in <em>matmodlab</em> to full finite element codes should be an easy
+process.</p>
+<p>This guide has several purposes:</p>
+<ul class="simple">
+<li>Describe the role and importance of the material model in a finite element procedure</li>
+<li>Describe the solution method adopted by drivers in <em>matmodlab</em> (comparing to finite elements where applicable)</li>
+<li>Describe how to set up, run, and view results of a <em>matmodlab</em> simulation.</li>
+<li>Introduce material Validation and Verification testing procedures.</li>
+</ul>
+<div class="section" id="the-role-of-the-material-model-in-continuum-mechanics">
+<span id="role-of-material-model"></span><h2>The Role of the Material Model in Continuum Mechanics<a class="headerlink" href="#the-role-of-the-material-model-in-continuum-mechanics" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="conservation-laws">
+<span id="id2"></span><h3>Conservation Laws<a class="headerlink" href="#conservation-laws" title="Permalink to this headline">¶</a></h3>
+<p>Conservation of mass, momentum, and energy are the central tenets of the
+analysis of the response of a continuous media to deformation and/or load.
+Each conservation law can be summarized by the statement that <em>the time rate
+of change of a quantity in a continuous body is equal to the rate of
+production in the interior plus flux through the boundary</em></p>
+<p>Mathematically, the conservation laws for a point in the continuum are</p>
+<ul>
+<li><p class="first">Conservation of mass</p>
+<div class="math">
+<p><img src="_images/math/1aeb7a9ecc7ac43ff840bf0ee08b801877300a48.png" alt="\dDensity + \Density\Del\DotProd\dDisplacement = 0"/></p>
+</div></li>
+<li><p class="first">Conservtion of momentum per unit volume</p>
+<div class="math">
+<p><img src="_images/math/36d575dd1dcbd2ae9397558b01f0d81a73e1b194.png" alt="\Density\Der{}{t}\dDisplacement =
+\underset{\text{internal forces}}{\boxed{\Del\DotProd\Stress}} +
+\underset{\text{body forces}}{\boxed{\BodyForce}}"/></p>
+</div></li>
+<li><p class="first">Conservation of energy per unit volume</p>
+<div class="math">
+<p><img src="_images/math/bc05f6299a62768a7e908cc89e62a10c211d5dcf.png" alt="\Density\Der{}{t}\Energy =
+\underset{\text{heat source}}{\boxed{\Density s}} +
+\underset{\text{strain energy}}{\boxed{\Stress\DDotProd\dStrain}} +
+\underset{\text{heat flux}}{\boxed{\Del\DotProd\HeatFlux}}"/></p>
+</div></li>
+</ul>
+<p>where <img class="math" src="_images/math/a34535b0a943d4576da1485700d50cb3eec78aa1.png" alt="\Displacement"/> is the displacement, <img class="math" src="_images/math/858f446e275534dbabef1260ddba1b2eabcb18fb.png" alt="\Density"/> the mass
+density, <img class="math" src="_images/math/37eae74ebab0f2aedbbfa4e78e29dd1f986a66f1.png" alt="\Stress"/> the stress, <img class="math" src="_images/math/814511d889146ee5778d911cf17516401740655a.png" alt="\dStrain"/> the rate of strain,
+<img class="math" src="_images/math/43a803358575ad04dbb0315643120e3e5dde728b.png" alt="\BodyForce"/> the body force per unit volume, <img class="math" src="_images/math/9b6cce941ec75ad68a9913af703f15fe17fa0ad5.png" alt="\HeatFlux"/> the heat
+flux, <img class="math" src="_images/math/141c07bbb8275a861badadcbf9f71eca6c77f85a.png" alt="s"/> the heat source, and <img class="math" src="_images/math/b1aa9007313f70d85d8d063159c1c77b559c0008.png" alt="\Energy"/> is the internal energy
+per unit mass.</p>
+<p>In solid mechanics, mass is conserved trivially, and many problems are
+adiabatic or isotrhermal, so that only the momentum balance is explicitly
+solved</p>
+<div class="math" id="equation-mbal">
+<p><span class="eqno">(1)</span><img src="_images/math/36d575dd1dcbd2ae9397558b01f0d81a73e1b194.png" alt="\Density\Der{}{t}\dDisplacement =
+\underset{\text{internal forces}}{\boxed{\Del\DotProd\Stress}} +
+\underset{\text{body forces}}{\boxed{\BodyForce}}"/></p>
+</div><p>The balance of linear momentum is the continuum mechanics generalization of
+Newton&#8217;s second law <img class="math" src="_images/math/7fc2938aa130a76fe8e7239f29ccd2413a397ee2.png" alt="F=ma"/>.</p>
+<p>The first term on the RHS of <a href="#equation-mbal">(1)</a> represents the internal forces, which
+arise in the medium to resist imposed deformation. This resistance is a
+fundamental response of matter and is given by the divergence of the stress
+field.</p>
+<p>The balance of linear momentum represents an initial boundary value problem
+for applications of interest in solid dynamics:</p>
+<div class="math" id="equation-ibvp">
+<p><span class="eqno">(2)</span><img src="_images/math/d01bfa647e8953d5189d6d0d227c509ba980dac1.png" alt="\begin{aligned}
+  \Density\Der{}{t}\dDisplacement = \Del\DotProd\Stress + \BodyForce&amp;
+  &amp;&amp;\quad\text{in }\Omega \\
+  \Displacement = \Displacement_0&amp; &amp;&amp;\quad\text{on }\Gamma_0 \\
+  \Stress\DotProd\normal = \Traction&amp; &amp;&amp;\quad\text{on }\Gamma_t \\
+  \dDisplacement\left(\position, 0\right) =
+  \dDisplacement_0\left(\position\right)&amp;
+  &amp;&amp;\quad\text{on }\position\in\Omega
+\end{aligned}"/></p>
+</div></div>
+<div class="section" id="the-finite-element-method">
+<span id="femeth"></span><h3>The Finite Element Method<a class="headerlink" href="#the-finite-element-method" title="Permalink to this headline">¶</a></h3>
+<p>The form of the momentum equation in <a href="#equation-ibvp">(2)</a> is termed the <strong>strong</strong> form.
+The strong form of the initial BVP problem can also be expressed in the weak
+form by introducing a test function <img class="math" src="_images/math/d27f9f3ed7199f16b996b296980ccfdaa14112bb.png" alt="\Tensor{w}{}{}"/> and integrating
+over space</p>
+<div class="math" id="equation-ibvp-1">
+<p><span class="eqno">(3)</span><img src="_images/math/863a6ad36d8be327a34669ca72c8486d8df08a7f.png" alt="\begin{aligned}
+    \int_{\Omega}\Tensor{w}{}{}\DotProd\left(
+      \Del\DotProd\Stress + \BodyForce - \Density\Der{}{t}\dDisplacement
+    \right)\,d\Omega&amp; &amp;&amp;\quad \forall \Tensor{w}{}{} \\
+    \Displacement = \Displacement_0&amp; &amp;&amp;\quad\text{on }\Gamma_0 \\
+    \Stress\DotProd\normal = \Traction&amp; &amp;&amp;\quad\text{on }\Gamma_t \\
+    \dDisplacement\left(\position, 0\right) =
+    \dDisplacement_0\left(\position\right)&amp;
+    &amp;&amp;\quad\text{on }\position\in\Omega
+  \end{aligned}"/></p>
+</div><p>Integrating <a href="#equation-ibvp-1">(3)</a> by parts allows the traction boundary conditions to
+be incorporated in to the governing equations</p>
+<div class="math" id="equation-weak">
+<p><span class="eqno">(4)</span><img src="_images/math/8bad7b401ed94c42dd590c4a376cedc7454daea2.png" alt="\begin{aligned}
+    \int_{\Omega}\Density\Tensor{w}{}{}\DotProd\Acceleration +
+    \Stress\DDotProd\Del\Tensor{w}{}{}\,d\Omega
+    = \int_{\Omega}\Tensor{w}{}{}\DotProd\BodyForce\,d\Omega +
+    \int_{\Gamma}\Tensor{w}{}{}\DotProd\Traction\,d\Gamma_{t}&amp;
+    &amp;&amp;\forall \Tensor{w}{}{} \\
+    %
+    \Displacement = \Displacement_0&amp; &amp;&amp;\quad\text{on }\Gamma_0 \\
+    \dDisplacement\left(\position, 0\right) =
+    \dDisplacement_0\left(\position\right)&amp;
+    &amp;&amp;\quad\text{on }\position\in\Omega
+ \end{aligned}"/></p>
+</div><p>This form of the IBVP is called the <strong>weak</strong> form. The weak form poses the
+IBVP as a integro-differential equation and eliminates singularities that may
+arise in the strong form. Traction boundary conditions are incorporated in the
+governing equations. The weak form forms the basis for finite element methods.</p>
+<p>In the finite element method, forms of <img class="math" src="_images/math/d27f9f3ed7199f16b996b296980ccfdaa14112bb.png" alt="\Tensor{w}{}{}"/> are assumed in
+subdomains (elements) in <img class="math" src="_images/math/da27da5fc16fc119f77067e4662121b0fecf334e.png" alt="\Omega"/> and displacements are sought such that
+the force imbalance <img class="math" src="_images/math/fa8b469f14e028fc7e71cdb2d24986d6e9af5f8a.png" alt="R"/> is minimized:</p>
+<div class="math" id="equation-resid">
+<p><span class="eqno">(5)</span><img src="_images/math/de24b51b7e535e422841f68e1f8a0819d1c018bd.png" alt="R = \int_{\Omega}\Tensor{w}{}{}\DotProd\BodyForce\,d\Omega +
+\int_{\Gamma}\Tensor{w}{}{}\DotProd\Traction\,d\Gamma_{t} -
+ \int_{\Omega}\Density\Tensor{w}{}{}\DotProd\Acceleration +
+        \Stress\DDotProd\Del\Tensor{w}{}{}\,d\Omega"/></p>
+</div><p>The equations of motion as described in <a href="#equation-resid">(5)</a> are not closed, but
+require relationships relating <img class="math" src="_images/math/37eae74ebab0f2aedbbfa4e78e29dd1f986a66f1.png" alt="\Stress"/> to <img class="math" src="_images/math/a34535b0a943d4576da1485700d50cb3eec78aa1.png" alt="\Displacement"/></p>
+<p class="centered">
+<strong>Constitutive model <img class="math" src="_images/math/6f4d1323f2d0afff363087977a663097f80b13f0.png" alt="\longrightarrow"/> relationship between
+<img class="math" src="_images/math/37eae74ebab0f2aedbbfa4e78e29dd1f986a66f1.png" alt="\Stress"/> and <img class="math" src="_images/math/a34535b0a943d4576da1485700d50cb3eec78aa1.png" alt="\Displacement"/></strong></p><p>In the typical finite element procedure, the host finite element code passes
+to the constitutive routine the stress and material state at the beginning of
+a finite step (in time) and kinematic quantities at the end of the step. The
+constitutive routine is responsible for updating the stress to the end of the
+step. At the completion of the step, the host code then uses the updated
+stress to compute kinematic quantities at the end of the next step. This
+process is continued until the simulation is completed. The host finite
+element handles the allocation and management of all memory, including memory
+required for material variables.</p>
+</div>
+</div>
+<div class="section" id="solution-procedure">
+<span id="mmlsol"></span><h2>Solution Procedure<a class="headerlink" href="#solution-procedure" title="Permalink to this headline">¶</a></h2>
+<p>In addition to providing a platform for material model developers to formulate
+and test constitutive routines, <em>matmodlab</em> aims to provide users of material
+models an independent platform to exercise, parameterize, and compare material
+responses against single element finite element simulations. To this end, the
+solution procedure in <em>matmodlab</em> is similar to that of the finite element
+method, in that the host code (<em>matmodlab</em>) provides to the constitutive
+routine a measure of deformation at the end of a finite step and expects the
+updated stress in return. However, rather than solve the momentum equation at
+the beginning of each step and advancing kinematic quantities to the step&#8217;s
+end, <em>matmodlab</em> retrieves updated kinematic quantities from user defined
+tables and/or functions.</p>
+<p>The path through which a material is exercised is defined by piecewise
+continuous &#8220;legs&#8221; in which components of the &#8220;control type&#8221; <img class="math" src="_images/math/c4d5709ae148de97db9b320ca3e6ff90d993c63b.png" alt="c_{i}"/> are
+specified at discrete points in time, shown in <a class="reference internal" href="#figure-1">Figure 1</a>. The <img class="math" src="_images/math/c4d5709ae148de97db9b320ca3e6ff90d993c63b.png" alt="c_{i}"/>
+are used to obtain a sequence of piecewise constant strain rates that are used
+to advance the kinematic state. Supported control types are strain, strain
+rate, stress, stress rate, deformation gradient, displacement, and velocity.
+&#8220;Mixed-modes&#8221; of strain and stress (and their rates) are supported. Components
+of displacement and velocity control are applied only to the &#8220;+&#8221; faces of a
+unit cube centered at the coordinate origin.</p>
+<div class="align-center user defined path for the math-i-text-th component of math-c may represent strain rate stress deformation gradient displacement or velocity figure" id="figure-1">
+<a class="reference internal image-reference" href="_images/path.png"><img alt="_images/path.png" src="_images/path.png" style="width: 5in;" /></a>
+</div>
+<p>The components of strain are defined by</p>
+<div class="math">
+<p><img src="_images/math/b6760c94e549d4ce5dd0639f492d63e7ab7f5a03.png" alt="\Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)"/></p>
+</div><p>where <img class="math" src="_images/math/b9d83ce97f7307c534f8e331535890e55456bdf1.png" alt="\RightStretch"/> is the right Cauchy stretch tensor, defined by the
+polar decomposition of the deformation gradient <img class="math" src="_images/math/5e1f14d91355837599cfe9c6e4a089e3ff6df02e.png" alt="\DefGrad =
+\Rotation\DotProd\RightStretch"/>, and <img class="math" src="_images/math/73de11675304a824068cd40da89cd3e936e54757.png" alt="\kappa"/> is a user specified
+&#8220;Seth-Hill&#8221; parameter that controls the strain definition. Choosing
+<img class="math" src="_images/math/bbf57ba1ed09e08bb768338820a6d3e5e2a4b4fd.png" alt="\kappa=2"/> gives the Lagrange strain, which might be useful when testing
+models cast in a reference coordinate system. The choice <img class="math" src="_images/math/9139762a5b0c1cddc264982f680c61247b22d7b9.png" alt="\kappa=1"/>,
+which gives the engineering strain, is convenient when driving a problem over
+the same strain path as was used in an experiment. The choice <img class="math" src="_images/math/ddc65ccf9f4fef9864140c1e7d08e40cf32efa02.png" alt="\kappa=0"/>
+corresponds to the logarithmic (Hencky) strain. Common values of
+<img class="math" src="_images/math/73de11675304a824068cd40da89cd3e936e54757.png" alt="\kappa"/> and the associated names for each (there is some ambiguity in
+the names) are listed in <a class="reference internal" href="#table-1">Table 1</a></p>
+<table border="1" class="docutils" id="table-1">
+<colgroup>
+<col width="38%" />
+<col width="62%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><img class="math" src="_images/math/73de11675304a824068cd40da89cd3e936e54757.png" alt="\kappa"/></th>
+<th class="head">Name(s)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>-2</td>
+<td>Green</td>
+</tr>
+<tr class="row-odd"><td>-1</td>
+<td>True, Cauchy</td>
+</tr>
+<tr class="row-even"><td>0</td>
+<td>Logarithmic, Hencky, True</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>Engineering, Swainger</td>
+</tr>
+<tr class="row-even"><td>2</td>
+<td>Lagrange, Almansi</td>
+</tr>
+</tbody>
+</table>
+<p>The volumetric strain <img class="math" src="_images/math/af6478609682547da690d59994be567f9afdab7e.png" alt="\Strain[v]"/> is defined</p>
+<div class="math" id="equation-volstrain">
+<p><span class="eqno">(6)</span><img src="_images/math/19e028ccbe500d5366a5a691cb3b5d574ec11b63.png" alt="\Strain[v] =
+\begin{cases}
+    \OneOver{\kappa}\left(\Jacobian^{\kappa} - 1\right)
+    &amp; \text{if }\kappa \ne 0 \\
+    \ln{\Jacobian} &amp; \text{if }\kappa = 0
+\end{cases}"/></p>
+</div><p>where the Jacobian <img class="math" src="_images/math/6f73434d8fdc58707acc52ab7069ba40a187b627.png" alt="\Jacobian"/> is the determinant of the deformation gradient.</p>
+<p>Each leg in the control table, from time <img class="math" src="_images/math/c0d5f4a8345540b6da199cbae13947c64b1fbcc1.png" alt="t=0"/> to <img class="math" src="_images/math/4d67f093b8f737aec9148caf6f23d8b612096ed6.png" alt="t=t_f"/> is
+subdivided into a user-specified number of steps and the material model
+evaluated at each step. When volumetric strain, deformation gradient,
+displacement, or velocity are specified for a leg, <em>matmodlab</em> internally
+determines the corresponding strain components. If a component of stress is
+specified, <em>matmodlab</em> determines the strain increment that minimizes the
+distance between the prescribed stress component and model response.</p>
+<div class="section" id="strain-rate-from-prescribed-stress">
+<span id="sig2d"></span><h3>Strain Rate from Prescribed Stress<a class="headerlink" href="#strain-rate-from-prescribed-stress" title="Permalink to this headline">¶</a></h3>
+<p>The approach to determining unknown components of the strain rate from the
+prescribed stress is an iterative scheme employing a multidimensional Newton&#8217;s
+method that satisfies</p>
+<div class="math">
+<p><img src="_images/math/3ed627a26eaa7cb734ff63f9a7477d6b871e2207.png" alt="\Stress\left(\dStrain\,[\text{v}]\right) = \PrescStress"/></p>
+</div><p>where, <img class="math" src="_images/math/9e80f88db4146ee2c1d558aeba1f0274e6c77199.png" alt="\text{v}"/> is a vector subscript array containing the components
+for which stresses (or stress rates) are prescribed, and <img class="math" src="_images/math/58cfe599a3aade007da65617ea65d4564a642e56.png" alt="\PrescStress"/>
+are the components of prescribed stress.</p>
+<p>Each iteration begins by determining the submatrix of the material stiffness</p>
+<div class="math">
+<p><img src="_images/math/a4a99c83b544462b3bbedd17b9b35e37cc50fa54.png" alt="\Stiffness_{\text{v}} = \Stiffness\,[\text{v}, \text{v}]"/></p>
+</div><p>where <img class="math" src="_images/math/4fd520dd470a22cb8e4b9101681b185d1ccadf64.png" alt="\Stiffness"/> is the full stiffness matrix
+<img class="math" src="_images/math/b5988f4a5e4c3ea3f272302519e3cda99904e0ce.png" alt="\Stiffness=d\Stress/d\Strain"/>. The value of
+<img class="math" src="_images/math/f8ed994a8dce77259359f86eb8484f444b9fbb05.png" alt="\dStrain\,[\text{v}]"/> is then updated according to</p>
+<div class="math">
+<p><img src="_images/math/3d9db81c51505186132a68d8d30e3890f1e7a2e7.png" alt="\dStrain\,[\text{v}] =
+    \dStrain\,[\text{v}] -
+    \Stiffness_{\text{v}}\DDotProd\Stress^{*}(\dStrain\,[\text{v}])/dt"/></p>
+</div><p>where</p>
+<div class="math">
+<p><img src="_images/math/8750bba74ab4ca319c179ae713e3214efd67db4e.png" alt="\Stress^{*}(\dStrain\,[\text{v}]) = \Stress(\dStrain\,[\text{v}])
+                                  - \PrescStress"/></p>
+</div><p>The Newton procedure will converge for valid stress states. However, it is
+possible to prescribe invalid stress state, e.g. a stress state beyond the
+material&#8217;s elastic limit. In these cases, the Newton procedure may not
+converge to within the acceptable tolerance and a Nelder-Mead simplex method
+is used as a back up procedure. A warning is logged in these cases.</p>
+</div>
+</div>
+<div class="section" id="supported-drivers">
+<h2>Supported Drivers<a class="headerlink" href="#supported-drivers" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="continuum-driver">
+<h3>Continuum Driver<a class="headerlink" href="#continuum-driver" title="Permalink to this headline">¶</a></h3>
+<p>As the name implies, the <em>Continuum</em> driver is designed to exercise the type
+of material models encountered in continuum mechanics, with an emphasis on
+solid materials. The solution method is similar to that of many finite element
+codes, so that material models developed and tested in <em>matmodlab</em> can be
+easily transitioned to them.  <a href="#id3"><span class="problematic" id="id4">`finish_me`_</span></a></p>
+<div class="section" id="mechanical">
+<h4>Mechanical<a class="headerlink" href="#mechanical" title="Permalink to this headline">¶</a></h4>
+<p><strong>Direct</strong></p>
+<ul class="simple">
+<li>Strain rate</li>
+<li>Strain</li>
+<li>Deformation gradient</li>
+<li>Velocity</li>
+<li>Displacement</li>
+</ul>
+<p><strong>Inverse</strong></p>
+<ul class="simple">
+<li>Stress</li>
+<li>Stress rate</li>
+</ul>
+</div>
+<div class="section" id="electrical">
+<h4>Electrical<a class="headerlink" href="#electrical" title="Permalink to this headline">¶</a></h4>
+<p>Electric field can be prescribed for testing piezoelectric models.</p>
+<p><strong>Direct</strong></p>
+<ul class="simple">
+<li>Electric field</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="background.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="users.html">User&#8217;s Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
+</ul>
+</li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="_sources/solmeth.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

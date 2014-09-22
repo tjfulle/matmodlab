@@ -1,0 +1,260 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction &mdash; Material Model Laboratory 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
+    <link rel="next" title="User’s Guide" href="users.html" />
+    <link rel="prev" title="Material Model Laboratory - Official Documentation" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="users.html" title="User’s Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Material Model Laboratory - Official Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>The Material Model Laboratory (<em>matmodlab</em>) is a suite of tools whose
+purpose is to aid in the rapid development and testing of material models.
+<em>matmodlab</em> is made up of several components, the most notable being the
+Material Model Driver. The material model driver can be thought to drive a
+single material point of a finite element simulation through very specific
+user designed paths. This permits exercising material models in ways not
+possible in finite element calculations, desgining verification and validation
+tests of the material response, among others. <em>matmodlab</em> is a small suite
+of tools at the developers disposal to aid in the design and implementation of
+material models in larger finite element host codes. It is also a useful tool
+to analysists for understanding and parameterizing a material&#8217;s response to
+deformation.</p>
+<p>The core of <em>matmodlab</em> code base is written in Python and leverages
+Python&#8217;s object oriented programming (OOP) design. OOP techniques are used
+throughout <em>matmodlab</em> to setup and manage simulation data. Computationally
+heavy portions of the code, and many material models themselves are written in
+Fortran for its speed and ubiquity in scientific computing. Calling Fortran
+procedures from Python is made possible by the <tt class="docutils literal"><span class="pre">f2py</span></tt> module, standard in
+Numpy, that compiles and creates Python shared object libraries from Fortran
+sources.</p>
+<p>Output files from <em>matmodlab</em> simulations are in the <a class="reference internal" href="#exodusii">ExodusII</a>
+database format, devloped at Sandia National Labs for storing finite element
+simulation data. Since <em>matmodlab</em> is designed to be used by material model
+developers, it is expected that the typical user will want access to <em>all</em>
+available output from a material model, thus all simulation data is written to
+the output database. ExodusII database files can be visualized with the
+<em>matmodlab</em> visualization utility, in addition to other visualization
+packages such as <a class="reference internal" href="#paraview">ParaView</a></p>
+<p><em>matmodlab</em> is free software released under the MIT License.</p>
+<div class="section" id="why-a-single-element-driver">
+<h2>Why a Single Element Driver?<a class="headerlink" href="#why-a-single-element-driver" title="Permalink to this headline">¶</a></h2>
+<p>Due to their complexity, it is often over kill to use a finite element code
+for constitutive model development. In addition, features such as artificial
+viscosity can mask the actual material response from constitutive model
+development. Single element drivers allow the constituive model developer to
+concentrate on model development and not the finite element response. Other
+advantages of <em>matmodlab</em> (or, more generally, of any stand-alone
+constitutive model driver) are</p>
+<blockquote>
+<div><ul class="simple">
+<li><em>matmodlab</em> is a very small, special purpose, code. Thus, maintaining
+and adding new features to <em>matmodlab</em> is very easy.</li>
+<li>Simulations are not affected by irrelevant artifacts such as artificial
+viscosity or uncertainty in the handling of boundary conditions.</li>
+<li>It is straightforward to produce supplemental output for deep analysis of
+the results that would otherwise constitute an unnecessary overhead in a
+finite element code.</li>
+<li>Specific material benchmarks may be developed and automatically run
+quickly any time the model is changed.</li>
+<li>Specific features of a material model may be exercised easily by the model
+developer by prescribing strains, strain rates, stresses, stress rates, and
+deformation gradients as functions of time.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="why-python">
+<h2>Why Python?<a class="headerlink" href="#why-python" title="Permalink to this headline">¶</a></h2>
+<p>Python is an interpreted, high level object oriented language. It allows for
+writing programs rapidly and, because it is an interpreted language, does not
+require a compiling step. While this might make programs written in python slower
+than those written in a compiled language, modern packages and computers make the
+speed up difference between python and a compiled language for single element
+problems almost insignificant.</p>
+<p>For numeric computations, the <a class="reference external" href="http://www.numpy.org">NumPy</a> and <a class="reference external" href="http://www.scipy.org">SciPy</a> modules allow programs written in Python to leverage
+a large set of numerical routines provided by <tt class="docutils literal"><span class="pre">LAPACK</span></tt>, <tt class="docutils literal"><span class="pre">BLASPACK</span></tt>,
+<tt class="docutils literal"><span class="pre">EIGPACK</span></tt>, etc. Python&#8217;s APIs also allow for calling subroutines written in
+C or Fortran (in addition to a number of other languages), a prerequisite for
+model development as most legacy material models are written in Fortran. In
+fact, most modern material models are still written in Fortran to this day.</p>
+<p>Python&#8217;s object oriented nature allows for rapid installation of new material
+models.</p>
+</div>
+<div class="section" id="historical-background">
+<h2>Historical Background<a class="headerlink" href="#historical-background" title="Permalink to this headline">¶</a></h2>
+<p>When I was a graduate student at the University of Utah I had the good fortune
+to have as my advisor Dr. Rebecca Brannon <a class="reference external" href="http://www.mech.utah.edu/~brannon/">Rebecca Brannon&#8217;s</a>. Prof. Brannon instilled in me the
+necessity to develop material models in small special purpose drivers, free
+from the complexities of larger finite element codes. To this end, I began
+developing material models in Prof. Brannon&#8217;s <em>MED</em> driver (available upon
+request from Prof. Brannon). The <em>MED</em> driver was a special purpose driver for
+driving material models through predefined strain paths. After completing
+graduate school I began employment as a member of the Technical Staff at
+Sandia National Labs. Among the many projects I worked on was the development
+of material models for geologic applications. There, I found need to drive the
+material models through prescribed stress paths to match experimental records.
+This capability was not present in the <em>MED</em> and I sought a different
+solution. The solution came from the <em>MMD</em> driver, created years earlier at
+Sandia, by Tom Pucick. The <em>MMD</em> driver had the capability to drive material
+models through prescribed stress and strain paths, but also lacked many of the
+IO features of the <em>MED</em>. And so, for some time I used both the <em>MED</em> and
+<em>MMD</em> drivers in applications that suited their respective strengths. After
+some time using both drivers, I decided to combine the best features of each
+in to my own driver. Both the <em>MED</em> and <em>MMD</em> drivers were written in Fortran
+and I decided to write the new driver in Python so that I could leverage the
+large number of builtin libraries. The Numpy and Scipy Python libraries would
+be used for handling most number crunching. The new driver came to be known as
+<em>matmodlab</em>. <em>matmodlab</em> added many unique capabilities and became a capable piece
+of software used by other staff members at Sandia. But, <em>matmodlab</em> suffered
+from the fact that it was my first foray in to programming with Python. After
+some time, the bloat and bad programming practices with <em>matmodlab</em> caused me to
+spend a few weekends re-writing it in to what is now known as <em>matmodlab</em>.</p>
+</div>
+<div class="section" id="obtaining-matmodlab">
+<h2>Obtaining <em>matmodlab</em><a class="headerlink" href="#obtaining-matmodlab" title="Permalink to this headline">¶</a></h2>
+<p><em>matmodlab</em> is an open source project licensed under the MIT license. A copy
+of may be obtained from <a class="reference external" href="https://github.com/tjfulle/matmodlab">https://github.com/tjfulle/matmodlab</a></p>
+</div>
+<div class="section" id="about-this-guide">
+<h2>About This Guide<a class="headerlink" href="#about-this-guide" title="Permalink to this headline">¶</a></h2>
+<p><em>matmodlab</em> is developed as a tool for developers and analysts who care to
+understand the responses of material models to specific deformation paths. The
+target audience is assumed to have a basic knowledge of continuum mechanics
+and familiarity with other finite element codes. Accordingly, concepts of
+continuum mechanics and finite element methods are not described in detail and
+programing techniques are also not described.</p>
+</div>
+<div class="section" id="references">
+<span id="solmeth"></span><h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<table class="docutils citation" frame="void" id="exodusii" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[ExodusII]</td><td>Schoof, L. A.and Victor R. Yarberry, &#8220;EXODUS II A Finite Element Data Model&#8221;, SAND92-2137, Sandia National Laboratories, (1995).</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="paraview" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[ParaView]</td><td><ol class="first last upperalpha simple">
+<li>Henderson, ParaView Guide, A Parallel Visualization Application. Kitware Inc., 2007.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-a-single-element-driver">Why a Single Element Driver?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-python">Why Python?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#historical-background">Historical Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#obtaining-matmodlab">Obtaining <em>matmodlab</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#about-this-guide">About This Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="users.html">User&#8217;s Guide</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="_sources/background.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

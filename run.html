@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Running a Simulation &mdash; Material Model Laboratory 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
+    <link rel="up" title="User’s Guide" href="users.html" />
+    <link rel="next" title="Factory Methods" href="factory.html" />
+    <link rel="prev" title="Solution Method" href="solmeth.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="factory.html" title="Factory Methods"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="solmeth.html" title="Solution Method"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li>
+          <li><a href="users.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="running-a-simulation">
+<span id="first-example"></span><span id="running-simulations"></span><h1>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h1>
+<p>Simulations are run by processing <em>matmodlab</em> input scripts with the <tt class="docutils literal"><span class="pre">mml</span></tt>
+command line utility. A <em>matmodlab</em> input script consists of defining
+(minimally) a <tt class="docutils literal"><span class="pre">driver</span></tt>, <tt class="docutils literal"><span class="pre">material</span></tt>, and <tt class="docutils literal"><span class="pre">simulator</span></tt> through the
+<tt class="docutils literal"><span class="pre">Driver</span></tt>, <tt class="docutils literal"><span class="pre">Material</span></tt>, and <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> factory methods. By
+including</p>
+<div class="code highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<p>each of these factory methods is exposed to the simulation script&#8217;s namespace.
+Consider, for example, the following input, contained in <tt class="docutils literal"><span class="pre">runid.py</span></tt>, in
+which a material whose constitutive response is defined by the <tt class="docutils literal"><span class="pre">elastic</span></tt>
+material model, parameterized by the bulk modulus <img class="math" src="_images/math/9dcd0137ac9bf6bebbd9cd0bb350faae304a74bc.png" alt="K"/> and shear modulus
+<img class="math" src="_images/math/35fad2302b4254f53d7219798c2d19154deddf6c.png" alt="G"/>, that is driven through a path of uniaxial strain</p>
+<div class="code highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">runid</span> <span class="o">=</span> <span class="s">&quot;elastic_uniaxial_strain&quot;</span>
+
+<span class="c"># setup the material</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;K&quot;</span><span class="p">:</span> <span class="mf">135E+09</span><span class="p">,</span> <span class="s">&quot;G&quot;</span><span class="p">:</span> <span class="mf">54E+09</span><span class="p">}</span>
+<span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s">&quot;elastic&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">)</span>
+
+<span class="c"># set up the deformation path and driver</span>
+<span class="n">path</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;0  0 222  0 0 0</span>
+<span class="s">          1 10 222 .1 0 0&quot;&quot;&quot;</span>
+<span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="s">&quot;Continuum&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+<span class="c"># set up the simulator and run</span>
+<span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">material</span><span class="p">)</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Executing:</p>
+<div class="highlight-python"><div class="highlight"><pre>mml run runid.py
+</pre></div>
+</div>
+<p>will exercise the material for the deformation path defined.  The following files will be created by <tt class="docutils literal"><span class="pre">mml</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>ls runid*
+
+runid.exo         runid.log         runid.py
+</pre></div>
+</div>
+<p>In this guide, the <tt class="docutils literal"><span class="pre">Material</span></tt>, <tt class="docutils literal"><span class="pre">Driver</span></tt>, and <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt>, and other, factory methods will be described in more detail.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="background.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="users.html">User&#8217;s Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Running a Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build.html">Building <em>matmodlab</em></a></li>
+</ul>
+</li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="_sources/run.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

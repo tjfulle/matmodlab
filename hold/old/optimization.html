@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Optimization &mdash; Material Model Laboratory 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 2.0 documentation" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="optimization">
+<h1>Optimization<a class="headerlink" href="#optimization" title="Permalink to this headline">¶</a></h1>
+<p><em>Payette</em> has the ability to assist in the parameterization of material models
+through an optimization process whereby optimal parameters are found by
+minimizing errors on selected simulation output. Minimization is performed
+using <em>SciPy&#8217;s</em> minimization module. Below is a summary of the optimization
+block.</p>
+<div class="section" id="optimization-block">
+<h2>Optimization Block<a class="headerlink" href="#optimization-block" title="Permalink to this headline">¶</a></h2>
+<p>Input for the optimization problem is done in the <tt class="docutils literal"><span class="pre">optimization</span></tt> block. We
+specify every available option showing its default value in brackets, along
+with other available options in braces, if applicable.</p>
+<p>Below, we specify the optimization method and options. Thus far, all of the
+optimization methods are from <tt class="docutils literal"><span class="pre">scipy.optimize</span></tt> module.</p>
+<p>Parameters to be optimized, with optional upper and lower bounds, must also be
+specified. Many optimization methods do not accept bounds, but we have
+implemented a penalty method to force the bounds to be respected independent
+of the optimizer. For elastic moduli, bounds really should be used so the the
+optimizer does not send in invalid moduli that would crash the simulation.</p>
+<p>In addition to specifying the parameters to be optimized, simulation output to
+be minimized must be specified along with a &#8220;gold file&#8221; that contains results
+against which we compare the output from the simulation. The gold file must be
+columnar data with column names in the first row. The optimization algorithm
+optimizes the parameters specified above by minimizing the difference between
+the minimizing variables in the gold file and the simulation output file.</p>
+<div class="section" id="example-optimization-block">
+<h3>Example Optimization Block<a class="headerlink" href="#example-optimization-block" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre>begin optimization
+
+  method simplex  # optizing method [simplex] {simplex, powell, cobyla}
+  maxiter 25  # maximum number of iterations [25]
+  tolerance 1.e-4  # tolerance between out and gold file [1.e-4]
+  disp 0 # set to not zero to get detailed output from optimizer [0]
+
+  optimize K, bounds = (125.e9, 150.e9) # parameter to optimize
+  optimize G, bounds = (45.e9, 57.e9)  # parameter to optimize
+
+  gold file exmpls.gold
+  minimize sig11, sig22, sig33 versus time
+
+end optimization
+</pre></div>
+</div>
+<p>The full example can be found in <a class="reference download internal" href="../../_downloads/exmpl_7.inp"><tt class="xref download docutils literal"><span class="pre">exmpl_7.inp</span></tt></a>.</p>
+</div>
+<div class="section" id="options">
+<h3>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt><strong>optimize</strong> &lt;param&gt;, [bounds] (<em>required</em>)</dt>
+<dd>Parameter[s] to be minimized. Optional bounds are the lower and bounds on
+<tt class="docutils literal"><span class="pre">param</span></tt>.</dd>
+<dt><strong>minimize</strong> &lt;param_1[, param_2[,...param_n]]&gt; [versus param] (<em>required</em>)</dt>
+<dd>Variables[s] to be minimized.  The optional <em>versus</em> flag does something.</dd>
+<dt><strong>gold file</strong> &lt;file name&gt; (<em>required</em>)</dt>
+<dd>File against which to compare simulation output</dd>
+<dt><strong>method</strong> (<em>optional</em>, default: simplex)</dt>
+<dd>Optimization method.  Available methods: simplex, powell, cobyla</dd>
+<dt><strong>maxiter</strong> (<em>optional</em>, default: 25)</dt>
+<dd>Maximum number of iterations.</dd>
+<dt><strong>tolerance</strong> (<em>optional</em>, default: 1.e-4)</dt>
+<dd>Tolerance between out and gold file.</dd>
+<dt><strong>disp</strong> (<em>optional</em>, default: 0)</dt>
+<dd>Set to not zero to get detailed output from optimizer.</dd>
+</dl>
+</div>
+<div class="section" id="optimization-methods">
+<h3>Optimization Methods<a class="headerlink" href="#optimization-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>simplex</dt>
+<dd>Nelder-Meid simplex method [default], <tt class="docutils literal"><span class="pre">scipy.optimize.fmin</span></tt></dd>
+<dt>powell</dt>
+<dd>Powell method, <tt class="docutils literal"><span class="pre">scipy.optimize.fmin_powell</span></tt></dd>
+<dt>cobyla</dt>
+<dd>Constrain optimization by linear approximation, <tt class="docutils literal"><span class="pre">scipy.optimize.fmin_cobyla</span></tt></dd>
+</dl>
+</div>
+</div>
+<div class="section" id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
+<p>Known limitations</p>
+<ul class="simple">
+<li>Comparison between data and gold file limited</li>
+<li>Documentation</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../source/background.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../source/users.html">User&#8217;s Guide</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="../../_sources/hold/old/optimization.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

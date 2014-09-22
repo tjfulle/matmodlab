@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-if [ -z "$MML_ROOT" ];  then
-    echo >&2 "*** ERROR: $0: MML_ROOT ENVIRONMENT VARIABLE NOT SET"
-    echo >&2 "THIS SCRIPT SHOULD BE CALLED THROUGH matmodlab/bin/mml"
-    echo >&2 "AND NOT DIRECTLY"
-    exit 1
-fi
-PYFILE="$MML_ROOT/core/tester.py"
-$MML_PY_EXE $PYFILE "$@"
