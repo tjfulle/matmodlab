@@ -67,7 +67,7 @@ class Options:
             setattr(self, k, v)
 
 def mybool(s):
-    return s.lower() in ("0", "none", "false")
+    return s.lower() not in ("0", "no", "none", "false")
 
 def myint(n):
     return int(float(n))
