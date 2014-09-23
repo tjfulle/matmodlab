@@ -756,7 +756,7 @@ def find_materials():
             files = [f for f in os.listdir(item) if rx.search(f)]
         else:
             ConsoleLogger.warn("{0} no such directory or file, skipping".format(d),
-                               report_who=1, beg="*** WARNING: ")
+                               report_who=1)
             continue
         files = [f for f in files if f.endswith(".py")]
 
