@@ -3,7 +3,6 @@ import sys
 import argparse
 import ConfigParser
 from distutils.spawn import find_executable as which
-from core.configurer import cfgswitch_and_warn, cfgparse
 
 
 # ------------------------------------------------ PROJECT WIDE CONSTANTS --- #
@@ -20,10 +19,10 @@ UTL_D = os.path.join(ROOT_D, "utils")
 TLS_D = os.path.join(ROOT_D, "toolset")
 TEST_D = os.path.join(ROOT_D, "tests")
 PKG_D = os.path.join(ROOT_D, "lib")
-BLD_D = os.path.join(ROOT_D, "build")
 LIB_D = os.path.join(ROOT_D, "lib")
 EXO_D = os.path.join(UTL_D, "exojac")
 MATLIB = os.path.join(ROOT_D, "materials")
+BLD_D = os.path.join(LIB_D, "build")
 
 # --- OUTPUT DATABASE FILE
 F_EVALDB = "mml-evaldb.xml"
@@ -31,25 +30,16 @@ F_PRODUCT = "product.py"
 
 # --- MATERIAL AND TEST SEARCH DIRECTORIES
 MAT_LIB_DIRS = [MATLIB]
-TEST_DIRS = []
-for (dirname, dirs, files) in os.walk(TEST_D):
-    if dirname.endswith(".eval"):
-        del dirs[:]
-        continue
-    TEST_DIRS.extend([os.path.join(dirname, d) for d in dirs
-                      if not d.endswith(".eval")])
+TEST_DIRS = [os.path.join(TEST_D, d) for d in os.listdir(TEST_D)
+             if os.path.isdir(os.path.join(TEST_D, d))]
 
-# --- APPLY USER CONFIGURATIONS
+# User configuration
+RCFILE = os.getenv("MATMODLABRC") or os.path.expanduser("~/.matmodlabrc")
 p = argparse.ArgumentParser(add_help=False)
 p.add_argument("-E", action="store_true", default=False,
     help="Do not use matmodlabrc configuration file [default: False]")
 _a, sys.argv[1:] = p.parse_known_args()
-if not _a.E:
-    if os.getenv("MMLMTLS"):
-        cfgswitch_and_warn()
-    cfg = cfgparse()
-    MAT_LIB_DIRS.extend(cfg.user_mats)
-    TEST_DIRS.extend(cfg.user_tests)
+SUPRESS_USER_ENV = _a.E
 
 # OTHER CONSTANTS
 TEST_CONS_WIDTH = 80

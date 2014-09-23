@@ -4,6 +4,10 @@ import inspect
 import warnings
 from math import *
 from core.product import *
+from core.configurer import cfgswitch_and_warn
+
+if os.getenv("MMLMTLS"):
+    cfgswitch_and_warn()
 
 errors = []
 (major, minor, micro, relev, ser) = sys.version_info
@@ -24,7 +28,6 @@ except ImportError: errors.append("scipy not found")
 if errors:
     raise SystemExit("*** error: matmodlab could not run due to the "
                      "following errors:\n  {0}".format("\n  ".join(errors)))
-del errors
 
 # --- ADD CWD TO sys.path
 sys.path.insert(0, os.getcwd())
@@ -47,7 +50,6 @@ RAND = np.random.RandomState()
 def genrand():
     return RAND.random_sample()
 randreal = genrand()
-
 
 # --- DECORATOR FOR SIMULATION
 already_splashed = False

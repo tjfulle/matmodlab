@@ -10,11 +10,12 @@ import multiprocessing as mp
 
 from utils import xpyclbr
 from core.logger import Logger
+from core.configurer import cfgparse
 from utils.namespace import Namespace
 from utils.misc import fillwithdots, remove, load_file
-from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH
 from core.test import PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 from core.test import TestBase, TestError as TestError
+from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH, SUPRESS_USER_ENV
 
 
 
@@ -75,6 +76,12 @@ def main(argv=None):
     sources = args.sources
     if not sources:
         sources.extend(TEST_DIRS)
+        # Apply user configurations
+        if not SUPRESS_USER_ENV:
+            for user_test in cfgparse("user_tests"):
+                if user_test not in sources:
+                    sources.append(user_test)
+
     gather_and_run_tests(args.sources, args.k, args.K, nprocs=args.j,
         tear_down=not args.no_tear_down, html_summary=args.html,
         overlay=args.overlay, stop_on_bad=not args.X, list_and_stop=args.l)

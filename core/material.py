@@ -7,14 +7,15 @@ from utils.errors import *
 from core.runtime import opts
 import utils.xpyclbr as xpyclbr
 import utils.mmlabpack as mmlabpack
+from core.configurer import cfgparse
 from utils.fortran.product import FIO
 from utils.misc import load_file, remove
-from core.product import MAT_LIB_DIRS, PKG_D
 from utils.data_containers import Parameters
 from core.logger import Logger, ConsoleLogger
 from materials.product import ABA_MATS, USER_MAT
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 from utils.constants import DEFAULT_TEMP, SET_AT_RUNTIME, ENGW
+from core.product import MAT_LIB_DIRS, PKG_D, SUPRESS_USER_ENV
 np.set_printoptions(precision=2)
 
 try:
@@ -747,6 +748,11 @@ def find_materials():
     a = ["MaterialModel", "AbaqusMaterial"]
     n = ["name"]
     # gather and verify all files
+    if not SUPRESS_USER_ENV:
+        for user_mat in cfgparse("user_mats"):
+            if user_mat not in MAT_LIB_DIRS:
+                MAT_LIB_DIRS.append(user_mat)
+
     for item in MAT_LIB_DIRS:
         if os.path.isfile(item):
             d, files = os.path.split(os.path.realpath(item))

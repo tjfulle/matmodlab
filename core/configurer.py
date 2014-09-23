@@ -22,8 +22,8 @@ import re
 import sys
 import argparse
 from core.logger import ConsoleLogger as logger
+from core.product import RCFILE
 
-RCFILE = os.getenv("MATMODLABRC") or os.path.expanduser("~/.matmodlabrc")
 
 def main(argv=None):
     if argv is None:
@@ -66,12 +66,12 @@ class Options:
         self.user_tests = [os.path.expanduser(f) for f in l]
 
 
-def cfgparse(filename=None, disp=0):
+def cfgparse(option=None, filename=None):
     filename = filename or RCFILE
     a = _cfgparse(filename)
     config = Options(a)
-    if disp == 2:
-        return config.user_mats
+    if option is not None:
+        return getattr(config, option)
     return config
 
 
