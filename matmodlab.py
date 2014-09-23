@@ -107,11 +107,16 @@ def matmodlab(func):
 
     def decorated_func(*args, **kwargs):
         global already_splashed, already_wiped
+        get_f = kwargs.pop("get_f", None)
+        if get_f:
+            parser.add_argument("source", help="Source file [default: %(default)s]")
 
         argv = kwargs.pop("argv", None)
         if argv is None:
             argv = sys.argv[1:]
         clargs = parser.parse_args(argv)
+        if get_f and not os.path.isfile(clargs.source):
+            raise SystemExit("{0}: file not found".format(clargs.source))
 
         # set runtime options
         set_runtime_opt("debug", clargs.debug)
@@ -149,7 +154,10 @@ def matmodlab(func):
             warnings.simplefilter("ignore")
 
         # execute the function
-        out = func(*args, **kwargs)
+        if get_f:
+            out = func(clargs.source)
+        else:
+            out = func(*args, **kwargs)
 
         if clargs.v:
             from utils.quotes import write_random_quote
@@ -172,8 +180,14 @@ def get_my_directory():
     return d
 
 
-@matmodlab
 def main():
+    filename = exec_runner(None, get_f=1)
+    return
+
+
+@matmodlab
+def exec_runner(filename, **kwargs):
+    exec(compile(open(filename, "rb").read(), filename, 'exec'))
     return
 
 if __name__ == "__main__":
