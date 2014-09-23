@@ -21,8 +21,11 @@ import os
 import re
 import sys
 import argparse
-from core.logger import ConsoleLogger as logger
+from string import upper
 from core.product import RCFILE
+
+def write(message):
+    sys.stdout.write(message + "\n")
 
 
 def main(argv=None):
@@ -140,23 +143,23 @@ def cfgedit(filename, add=None, delete=None):
     a = _cfgparse(RCFILE)
 
     if add is not None:
-        logger.write("writing the following options to {0}:".format(filename))
+        write("WRITING THE FOLLOWING OPTIONS TO {0}:".format(filename))
         k, v = add
         k = k.lower()
         # dumb check to see if it is a file path
         if os.path.sep in v:
             v = os.path.realpath(os.path.expanduser(v))
-        logger.write("  {0}: {1}".format(k, v), transform=str)
+        write("  {0}: {1}".format(k, v))
         a.setdefault(k, []).append(v.strip())
 
     if delete is not None:
-        logger.write("deleting the following options from {0}:".format(filename))
+        write("DELETING THE FOLLOWING OPTIONS FROM {0}:".format(filename))
         k, v = delete
         k = k.lower()
-        logger.write("  {0}: {1}".format(k, v), transform=str)
+        write("  {0}: {1}".format(k, v))
         av = a.get(k)
         if not av:
-            logger.warn("{0}: option had not been set".format(k, v))
+            write("*** WARNING: {0}: OPTION HAD NOT BEEN SET".format(k, v))
         else:
             a[k] = [x for x in av if x != v]
 
@@ -181,18 +184,18 @@ def cfgswitch_and_warn():
     mtls_d = os.getenv("MMLMTLS")
     if not mtls_d:
         return
-    logger.write("=" * 82)
-    logger.write("**** WARNING " * 6 + "****")
-    logger.write("**** WARNING " * 6 + "****")
-    logger.write("""
+    write("=" * 82)
+    write("**** WARNING " * 6 + "****")
+    write("**** WARNING " * 6 + "****")
+    write("""
    LEGACY ENVIRONMENT VARIABLE 'MMLMTLS' CONVERTED TO NEW STYLE CONFIGURATION
    IN ~/.matmodlabrc.  THE LOCATION OF THIS FILE IS ALSO CONFIGURABLE BY THE
    MATMODLABRC ENVIRONMENT VARIABLE.  REMOVE MMLMTLS FROM YOUR ENVIRONMENT
    TO AVOID THIS WARNING IN THE FUTURE
-""", transform=str)
-    logger.write("**** WARNING " * 6 + "****")
-    logger.write("**** WARNING " * 6 + "****")
-    logger.write("=" * 82)
+""")
+    write("**** WARNING " * 6 + "****")
+    write("**** WARNING " * 6 + "****")
+    write("=" * 82)
     if mtls_d:
         cfgedit(RCFILE, add=("materials", mtls_d))
 

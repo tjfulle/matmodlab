@@ -1,24 +1,38 @@
 """Runtime options for simulations
 
 """
+from core.configurer import cfgparse
 from utils.namespace import Namespace
+from core.product import SUPRESS_USER_ENV
+
 opts = Namespace()
-opts.debug = False
-opts.sqa = False
+
 opts.I = None
-opts.verbosity = 1
 opts.runid = None
-opts.Werror = False
+
 opts.Wall = False
+opts.Werror = False
 opts.Wlimit = 10
-opts.switch = None
-opts.mimic = None
-opts.nprocs = 1
-opts.viz_on_completion = False
 opts.raise_e = False
 
-# do not use environment
-opts.E = False
+opts.viz_on_completion = False
+
+# user config file configurable options
+opts.sqa = False
+opts.warn = "std"
+opts.debug = False
+opts.mimic = None
+opts.nprocs = 1
+opts.switch = None
+opts.verbosity = 1
+if not SUPRESS_USER_ENV:
+    opts.sqa = cfgparse("sqa", default=opts.sqa)
+    opts.warn = cfgparse("warn", default=opts.warn)
+    opts.debug = cfgparse("debug", default=opts.debug)
+    opts.mimic = cfgparse("mimic", default=opts.mimic)
+    opts.switch = cfgparse("switch", default=opts.switch)
+    opts.nprocs = cfgparse("nprocs", default=opts.nprocs)
+    opts.verbosity = cfgparse("verbosity", default=opts.verbosity)
 
 def set_runtime_opt(opt, val):
     setattr(opts, opt, val)
