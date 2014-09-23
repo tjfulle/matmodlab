@@ -78,7 +78,7 @@ def main(argv=None):
         sources.extend(TEST_DIRS)
         # Apply user configurations
         if not SUPRESS_USER_ENV:
-            for user_test in cfgparse("user_tests"):
+            for user_test in cfgparse("tests"):
                 if user_test not in sources:
                     sources.append(user_test)
 

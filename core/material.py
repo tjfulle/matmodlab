@@ -749,7 +749,7 @@ def find_materials():
     n = ["name"]
     # gather and verify all files
     if not SUPRESS_USER_ENV:
-        for user_mat in cfgparse("user_mats"):
+        for user_mat in cfgparse("materials"):
             if user_mat not in MAT_LIB_DIRS:
                 MAT_LIB_DIRS.append(user_mat)
 

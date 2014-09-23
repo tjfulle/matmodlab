@@ -59,18 +59,16 @@ def main(argv=None):
 
 
 class Options:
-    def __init__(self, dict):
-        l = dict.get("materials", [])
-        self.user_mats = [os.path.expanduser(f) for f in l]
-        l = dict.get("tests", [])
-        self.user_tests = [os.path.expanduser(f) for f in l]
+    def __init__(self, **kwargs):
+        for (k, v) in kwargs.items():
+            setattr(self, k, v)
 
 
 def cfgparse(option=None, filename=None, _cache=[0]):
     filename = filename or RCFILE
     if not _cache[0]:
         a = _cfgparse(filename)
-        _cache[0] = Options(a)
+        _cache[0] = Options(**a)
     config = _cache[0]
     if option is not None:
         return getattr(config, option)
@@ -84,19 +82,31 @@ def _cfgparse(filename):
     except IOError:
         return {}
     regex = re.compile( r'\[(.*?)\]')
+
+    # store values from each option in a list. stack[0] will be the name of
+    # the option and stack[1:] the values
     stack = []
     for line in lines:
         tag = regex.search(line)
         if tag:
             if stack:
+                # write the stack to the current configuration and reset it
                 cfg.setdefault(stack[0], []).extend(stack[1:])
             stack = [tag.group(1).strip()]
             continue
         if not line.split():
             continue
+
+        # append option to stack
         stack.append(line.strip())
+
+    # if there is a leftover stack, add it on
     if stack:
         cfg.setdefault(stack[0], []).extend(stack[1:])
+
+    # enforce some required options (even if they are empty)
+    cfg["materials"] = cfg.pop("materials", [])
+    cfg["tests"] = cfg.pop("tests", [])
     return cfg
 
 
@@ -108,7 +118,9 @@ def cfgedit(filename, add=None, delete=None):
         logger.write("writing the following options to {0}:".format(filename))
         k, v = add
         k = k.lower()
-        v = os.path.expanduser(v)
+        # dumb check to see if it is a file path
+        if os.path.sep in v:
+            v = os.path.realpath(os.path.expanduser(v))
         logger.write("  {0}: {1}".format(k, v), transform=str)
         a.setdefault(k, []).append(v.strip())
 
