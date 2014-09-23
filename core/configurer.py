@@ -66,10 +66,12 @@ class Options:
         self.user_tests = [os.path.expanduser(f) for f in l]
 
 
-def cfgparse(option=None, filename=None):
+def cfgparse(option=None, filename=None, _cache=[0]):
     filename = filename or RCFILE
-    a = _cfgparse(filename)
-    config = Options(a)
+    if not _cache[0]:
+        a = _cfgparse(filename)
+        _cache[0] = Options(a)
+    config = _cache[0]
     if option is not None:
         return getattr(config, option)
     return config
