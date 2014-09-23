@@ -63,15 +63,43 @@ class Options:
         for (k, v) in kwargs.items():
             setattr(self, k, v)
 
+def mybool(s):
+    return s.lower() in ("0", "none", "false")
 
-def cfgparse(option=None, filename=None, _cache=[0]):
-    filename = filename or RCFILE
+def myint(n):
+    return int(float(n))
+
+def cfgparse(option=None, default=None, _cache=[0]):
     if not _cache[0]:
-        a = _cfgparse(filename)
+        a = _cfgparse(RCFILE)
+
+        # set some expected options (even if they are empty)
+        a["materials"] = a.pop("materials", [])
+        a["tests"] = a.pop("tests", [])
+
+        # a is a dict of options, each option is a list of strings. modify to
+        # suite some options better
+        for i in ("verbosity", "nprocs"):
+            x = a.pop(i, None)
+            if x is not None:
+                a[i] = myint(x[0])
+
+        for i in ("sqa", "debug"):
+            x = a.pop(i, None)
+            if x is not None:
+                a[i] = mybool(x[0])
+
+        for i in ("switch", "mimic", "warn"):
+            x = a.pop(i, None)
+            if x is not None:
+                a[i] = x[0]
+
         _cache[0] = Options(**a)
+
     config = _cache[0]
     if option is not None:
-        return getattr(config, option)
+        return getattr(config, option, default)
+
     return config
 
 
@@ -104,15 +132,12 @@ def _cfgparse(filename):
     if stack:
         cfg.setdefault(stack[0], []).extend(stack[1:])
 
-    # enforce some required options (even if they are empty)
-    cfg["materials"] = cfg.pop("materials", [])
-    cfg["tests"] = cfg.pop("tests", [])
     return cfg
 
 
 def cfgedit(filename, add=None, delete=None):
 
-    a = _cfgparse(filename)
+    a = _cfgparse(RCFILE)
 
     if add is not None:
         logger.write("writing the following options to {0}:".format(filename))
@@ -141,7 +166,7 @@ def cfgedit(filename, add=None, delete=None):
         v = list(set(v))
         if not v: continue
         lines.append('[{0}]'.format(k.strip().lower()))
-        lines.append("\n".join(v))
+        lines.append("\n".join(str(s) for s in v))
 
     with open(filename, "w") as fh:
         fh.write("\n".join(lines))

@@ -51,6 +51,13 @@ def genrand():
     return RAND.random_sample()
 randreal = genrand()
 
+# defaults for command line arguments
+argd = {"verbosity": 1, "sqa": False, "switch": None, "mimic": None,
+        "warn": "std", "nprocs": 1, "debug": False}
+if not SUPRESS_USER_ENV:
+    for (k, v) in argd.items():
+        argd[k] = cfgparse(k, default=v)
+
 # --- DECORATOR FOR SIMULATION
 already_splashed = False
 already_wiped = False
@@ -81,15 +88,15 @@ def matmodlab(func):
     interpreter if {1} is on your PYTHONPATH.""".format(prog, ROOT_D)
 
     parser = argparse.ArgumentParser(prog=prog, description=desc)
-    parser.add_argument("-v", default=1, type=int,
-       help="Verbosity [default: %(default)s]")
-    parser.add_argument("--dbg", default=False, action="store_true",
+    parser.add_argument("-v", default=argd["verbosity"],
+       type=int, help="Verbosity [default: %(default)s]")
+    parser.add_argument("--debug", default=argd["debug"], action="store_true",
        help="Debug mode [default: %(default)s]")
-    parser.add_argument("--sqa", default=False, action="store_true",
+    parser.add_argument("--sqa", default=argd["sqa"], action="store_true",
        help="SQA mode [default: %(default)s]")
-    parser.add_argument("--switch", metavar="MATERIAL",
+    parser.add_argument("--switch", metavar="MATERIAL", default=argd["switch"],
        help="Switch material in input with MATERIAL [default: %(default)s]")
-    parser.add_argument("--mimic", metavar="MATERIAL",
+    parser.add_argument("--mimic", metavar="MATERIAL", default=argd["mimic"],
        help=("Set parameters of input material to mimic MATERIAL "
              "(not supported by all models) [default: %(default)s]"))
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
@@ -97,11 +104,11 @@ def matmodlab(func):
         help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
     parser.add_argument("-V", default=False, action="store_true",
         help="Launch results viewer on completion [default: %(default)s]")
-    parser.add_argument("-j", type=int, default=1,
+    parser.add_argument("-j", "--nprocs", type=int, default=argd["nprocs"],
         help="Number of simultaneous jobs [default: %(default)s]")
     parser.add_argument("-E", action="store_true", default=False,
         help="Do not use matmodlabrc configuration file [default: False]")
-    parser.add_argument("-W", choices=["std", "all", "error"], default="std",
+    parser.add_argument("-W", choices=["std", "all", "error"], default=argd["warn"],
         help="Warning level [default: %(default)s]")
 
     def decorated_func(*args, **kwargs):
@@ -113,9 +120,9 @@ def matmodlab(func):
         clargs = parser.parse_args(argv)
 
         # set runtime options
-        set_runtime_opt("debug", clargs.dbg)
+        set_runtime_opt("debug", clargs.debug)
         set_runtime_opt("sqa", clargs.sqa)
-        set_runtime_opt("nprocs", clargs.j)
+        set_runtime_opt("nprocs", clargs.nprocs)
         set_runtime_opt("verbosity", clargs.v)
         if clargs.W == "error":
             set_runtime_opt("Wall", True)
@@ -131,10 +138,6 @@ def matmodlab(func):
             set_runtime_opt("mimic", clargs.mimic)
         if clargs.V:
             set_runtime_opt("viz_on_completion", True)
-
-        if not SUPRESS_USER_ENV:
-            cfg = cfgparse()
-            # set runtime options based on user configuration
 
         if clargs.B and not already_wiped:
             name = clargs.B.strip()
