@@ -4,7 +4,7 @@ import inspect
 import warnings
 from math import *
 from core.product import *
-from core.configurer import cfgswitch_and_warn
+from core.configurer import cfgswitch_and_warn, cfgparse
 
 if os.getenv("MMLMTLS"):
     cfgswitch_and_warn()
@@ -131,6 +131,10 @@ def matmodlab(func):
             set_runtime_opt("mimic", clargs.mimic)
         if clargs.V:
             set_runtime_opt("viz_on_completion", True)
+
+        if not SUPRESS_USER_ENV:
+            cfg = cfgparse()
+            # set runtime options based on user configuration
 
         if clargs.B and not already_wiped:
             name = clargs.B.strip()
