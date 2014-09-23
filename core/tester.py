@@ -50,7 +50,7 @@ def main(argv=None):
     p.add_argument("-X", action="store_true", default=False,
         help=("Do not stop on test initialization failure (tests that fail "
               "to initialize will be skipped) [default: %(default)s]"))
-    p.add_argument("-j", type=int, default=1,
+    p.add_argument("-j", type=int, default=cfgparse("nprocs", default=1),
         help="Number of simutaneous tests to run [default: ]")
     p.add_argument("--no-tear-down", action="store_true", default=False,
         help="Do not tear down passed tests on completion [default: ]")
