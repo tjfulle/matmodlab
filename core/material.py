@@ -592,7 +592,51 @@ def Material(model, parameters=None, depvar=None, constants=None,
              source_files=None, source_directory=None, initial_temp=None,
              expansion=None, trs=None, viscoelastic=None, logger=None,
              rebuild=0):
-    """Material model factory method
+    """Factory method for subclasses of MaterialModel
+
+    Parameters
+    ----------
+    model : str
+        material model name
+    parameters : dict or ndarray or float
+        model parameters. For Abaqus umat models and matmodlab user models,
+        parameters is a ndarray of model constants (specified in the order
+        expected by the model). For other model types, parameters is a
+        dictionary of name:value pairs.
+    depvar : int or None
+        Number of state dependent variables*.
+    constants : int or None
+        Number of parameters*.
+    source_files : list of str or None
+        List of model source files*. Each file name given in source_files must
+        exist. If the optional source_directory is given, source files are
+        looked for in it.
+    source_directory : str or None
+        Directory containing source files*. source_directory is optional, but
+        allows giving source_files as a list of file names only - not fully
+        qualified paths.
+    initial_temp : float or None
+        Initial temperature. The initial temperature, if given, must be
+        consistent with that of the simulation driver. Defaults to 298K if not
+        specified.
+    expansion : instance or None
+         An instance of an Expansion model.
+    trs : instance or None
+         An instance of a time-temperature shift (TRS) model
+    viscoelastic : instance or None
+         An instance of a Viscoelastic model.
+    logger : instance or None
+        A core.logger.Logger instance
+    rebuild : bool [False]
+        Rebuild the material, or not.
+
+    Returns
+    -------
+    material : MaterialModel instance
+
+    Notes
+    -----
+    *) Applicable only to Abaqus and matmodlab user material models
 
     """
     if parameters is None:

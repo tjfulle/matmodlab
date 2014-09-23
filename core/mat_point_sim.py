@@ -170,14 +170,10 @@ MATERIAL: {3}
 
         return
 
-    def dump(self, variables=None, paths=None, format="ascii", step=1,
-             time=True, ffmt=".18f"):
+    def dump(self, variables, format="ascii", step=1, time=True, ffmt=".18f"):
         from utils.exojac.exodump import exodump
-        if variables:
-            exodump(self.exo_file, step=step, ffmt=ffmt,
-                    variables=variables, ofmt=format, time=time)
-        if paths:
-            self.driver.extract_paths(self.exo_file, paths)
+        exodump(self.exo_file, step=step, ffmt=ffmt,
+                variables=variables, ofmt=format, time=time)
 
     def extract_from_db(self, variables, step=1, t=0):
         from utils.exojac.exodump import read_vars_from_exofile

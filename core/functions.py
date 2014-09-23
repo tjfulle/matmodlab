@@ -20,14 +20,14 @@ SAFE = {"np": np,
 DEFAULT_FUNCTIONS = {0: lambda x: 0., 1: lambda x: 1.}
 
 
-class Function(object):
+class _Function(object):
     def __init__(self, function_id, function_type, function_defn):
 
 	if function_id in DEFAULT_FUNCTIONS:
 	    raise GenericError("function_id must not be "
 			       "one of {0}".format(", ".join(DEFAULT_FUNCTIONS)))
 
-        func_type = function_type.lower()
+        func_type = "_".join(function_type.lower().split())
 	if func_type == "analytic_expression":
 	    self.func = function_defn
         elif func_type == "piecewise_linear":
@@ -101,3 +101,7 @@ def _build_lambda(expr, var="x", default=[0.], disp=0):
         return func
 
     return func, err
+
+
+def Function(func_id, func_type, func_defn):
+    return _Function(func_id, func_type, func_defn)

@@ -3,7 +3,7 @@ import numpy as np
 from utils.errors import GenericError, UserInputError
 from utils.constants import DEFAULT_TEMP, NTENS, NSYMM
 import utils.mmlabpack as mmlabpack
-from core.functions import Function, DEFAULT_FUNCTIONS
+from core.functions import _Function as Function, DEFAULT_FUNCTIONS
 
 CONTROL_FLAGS = {"D": 1,  # strain rate
                  "E": 2,  # strain

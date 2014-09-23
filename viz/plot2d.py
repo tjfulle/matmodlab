@@ -24,6 +24,12 @@ import pyface.api as papi
 from viz.colors import random_color
 from utils.exojac import ExodusIIFile
 
+SIZE = (700, 600)
+H1, W1 = 868., 1124.
+r = W1 / H1
+H = 700
+W = int(r * H)
+
 EXE = "plot2d"
 Change_X_Axis_Enabled = True
 LDICT = {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan,
@@ -33,7 +39,7 @@ LDICT = {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan,
          "ceil": math.ceil, "abs": math.fabs, "random": random.random, }
 GDICT = {"__builtins__": None}
 EPSILON = np.finfo(np.float).eps
-SIZE = (700, 600)
+
 LS = ['solid', 'dot dash', 'dash', 'dot', 'long dash']
 F_EVALDB = "mml-evaldb.xml"
 L_EXO_EXT = [".exo", ".base_exo", ".e"]
@@ -436,7 +442,7 @@ class SingleSelect(tapi.HasPrivateTraits):
                          editor=tuiapi.TabularEditor(
                              show_titles=True, selected='selected', editable=False,
                              multi_select=False, adapter=SingleSelectAdapter()))),
-        width=224, height=668, resizable=True, title='Change X-axis')
+        width=224, height=H-200, resizable=True, title='Change X-axis')
 
     @tapi.on_trait_change('selected')
     def _selected_modified(self, object, name, new):
@@ -489,7 +495,7 @@ class MultiSelect(tapi.HasPrivateTraits):
                              editable=False,
                              multi_select=True,
                              adapter=MultiSelectAdapter()))),
-        width=224, height=568, resizable=True)
+        width=224, height=H-300, resizable=True)
 
     @tapi.on_trait_change('selected')
     def _selected_modified(self, object, name, new):
@@ -716,11 +722,11 @@ def create_view(window_name):
     view = tuiapi.View(tuiapi.HSplit(
         tuiapi.VGroup(
             tuiapi.Item('Multi_Select', show_label=False, width=224,
-                        height=668, springy=True, resizable=True),
+                        height=H-200, springy=True, resizable=True),
             tuiapi.Item('Change_Axis', show_label=False), ),
-        tuiapi.Item('Plot_Data', show_label=False, width=800, height=768,
+        tuiapi.Item('Plot_Data', show_label=False, width=W-300, height=H-100,
                     springy=True, resizable=True)),
-                       style='custom', width=1124, height=868,
+                       style='custom', width=W, height=H,
                        resizable=True, title=window_name)
     return view
 
@@ -791,9 +797,9 @@ def create_model_plot(sources, handler=None, metadata=None):
                         'Close_Overlay', show_label=False, springy=True),),
                 tuiapi.Item('Single_Select_Overlay_Files', show_label=False,
                             resizable=False), show_border=True)),
-        tuiapi.Item('Plot_Data', show_label=False, width=800, height=768,
+        tuiapi.Item('Plot_Data', show_label=False, width=W-300, height=H-100,
                     springy=True, resizable=True)),
-        style='custom', width=1124, height=868,
+        style='custom', width=W, height=H,
         resizable=True, title=runid)
 
     main_window = ModelPlot(filepaths=filepaths, file_variables=variables)
