@@ -53,6 +53,7 @@ randreal = genrand()
 
 # --- DECORATOR FOR SIMULATION
 already_splashed = False
+already_wiped = False
 def matmodlab(func):
     """Decorator for func
 
@@ -72,11 +73,74 @@ def matmodlab(func):
     does any clean up
 
     """
-    from utils.clparse import parse_sim_argv
     from core.runtime import opts, set_runtime_opt
+
+    prog = "mml run"
+    desc = """{0}: run a matmodlab simulation script in the matmodlab
+    environment. Simulation scripts can be run directly by the python
+    interpreter if {1} is on your PYTHONPATH.""".format(prog, ROOT_D)
+
+    parser = argparse.ArgumentParser(prog=prog, description=desc)
+    parser.add_argument("-v", default=1, type=int,
+       help="Verbosity [default: %(default)s]")
+    parser.add_argument("--dbg", default=False, action="store_true",
+       help="Debug mode [default: %(default)s]")
+    parser.add_argument("--sqa", default=False, action="store_true",
+       help="SQA mode [default: %(default)s]")
+    parser.add_argument("--switch", metavar="MATERIAL",
+       help="Switch material in input with MATERIAL [default: %(default)s]")
+    parser.add_argument("--mimic", metavar="MATERIAL",
+       help=("Set parameters of input material to mimic MATERIAL "
+             "(not supported by all models) [default: %(default)s]"))
+    parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
+    parser.add_argument("-B", metavar="MATERIAL",
+        help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
+    parser.add_argument("-V", default=False, action="store_true",
+        help="Launch results viewer on completion [default: %(default)s]")
+    parser.add_argument("-j", type=int, default=1,
+        help="Number of simultaneous jobs [default: %(default)s]")
+    parser.add_argument("-E", action="store_true", default=False,
+        help="Do not use matmodlabrc configuration file [default: False]")
+    parser.add_argument("-W", choices=["std", "all", "error"], default="std",
+        help="Warning level [default: %(default)s]")
+
     def decorated_func(*args, **kwargs):
-        global already_splashed
-        clargs = parse_sim_argv()
+        global already_splashed, already_wiped
+
+        argv = kwargs.pop("argv", None)
+        if argv is None:
+            argv = sys.argv[1:]
+        clargs = parser.parse_args(argv)
+
+        # set runtime options
+        set_runtime_opt("debug", clargs.dbg)
+        set_runtime_opt("sqa", clargs.sqa)
+        set_runtime_opt("nprocs", clargs.j)
+        set_runtime_opt("verbosity", clargs.v)
+        if clargs.W == "error":
+            set_runtime_opt("Wall", True)
+            set_runtime_opt("Werror", True)
+        elif clargs.W == "all":
+            set_runtime_opt("Wall", True)
+
+        # directory to look for hrefs and other files
+        set_runtime_opt("I", clargs.I)
+        if clargs.switch:
+            set_runtime_opt("switch", clargs.switch)
+        if clargs.mimic:
+            set_runtime_opt("mimic", clargs.mimic)
+        if clargs.V:
+            set_runtime_opt("viz_on_completion", True)
+
+        if clargs.B and not already_wiped:
+            name = clargs.B.strip()
+            verbosity = 3 if clargs.v > 1 else 0
+            if os.path.isfile(os.path.join(PKG_D, "{0}.so".format(name))):
+                # removing is sufficient since the material class will attempt
+                # to build non-existent materials
+                os.remove(os.path.join(PKG_D, "{0}.so".format(name)))
+            already_wiped = True
+
         if clargs.v > 0 and not already_splashed:
             sys.stdout.write(SPLASH)
             already_splashed = True
@@ -105,3 +169,11 @@ def get_my_directory():
     stack = inspect.stack()[1]
     d = os.path.dirname(os.path.realpath(stack[1]))
     return d
+
+
+@matmodlab
+def main():
+    return
+
+if __name__ == "__main__":
+    main()
