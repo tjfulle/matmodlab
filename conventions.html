@@ -92,6 +92,41 @@ passed to an Abaqus material as</p>
 <p>Nonsymmetric, Second-order tensors are sent as 3x3 matrices.</p>
 </div>
 </div>
+<div class="section" id="matmodlab-namespace">
+<h2>matmodlab Namespace<a class="headerlink" href="#matmodlab-namespace" title="Permalink to this headline">¶</a></h2>
+<p>Input scripts to <em>matmodlab</em> should include:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<p>to populate the script&#8217;s namespace with <em>matmodlab</em> specific parameters and methods.</p>
+<div class="section" id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h3>
+<p>Some useful parameters exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt> are</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ROOT_D</span></tt>, The root <tt class="docutils literal"><span class="pre">matmodlab</span></tt> directory</li>
+<li><tt class="docutils literal"><span class="pre">PKG_D</span></tt>, The <tt class="docutils literal"><span class="pre">matmodlab/lib</span></tt> directory, the location shared objects are copied</li>
+<li><tt class="docutils literal"><span class="pre">EXO_D</span></tt>, The directory where the ExodusII tools are contained</li>
+<li><tt class="docutils literal"><span class="pre">MAT_D</span></tt>, The directory where builtin materials are contained</li>
+</ul>
+</div>
+<div class="section" id="methods">
+<h3>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h3>
+<p>Some useful methods exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt> are</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Driver</span></tt>, The driver factory method</li>
+<li><tt class="docutils literal"><span class="pre">Material</span></tt>, The material model factory method</li>
+<li><tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt>, The material point simulator constructor</li>
+<li><tt class="docutils literal"><span class="pre">Permutator</span></tt>, The permutator constructor</li>
+<li><tt class="docutils literal"><span class="pre">Optimizer</span></tt>, The optimizer constructor</li>
+<li><tt class="docutils literal"><span class="pre">Logger</span></tt>, The logger factory method.</li>
+<li><tt class="docutils literal"><span class="pre">Expansion</span></tt>, The expansion model constructor</li>
+<li><tt class="docutils literal"><span class="pre">TRS</span></tt>, The time-temperature shift model constructor</li>
+<li><tt class="docutils literal"><span class="pre">Viscoelastic</span></tt>, The viscoelastic model constructor</li>
+</ul>
+<p>Each of these methods is described in more detail in the following chapters
+and sections.</p>
+</div>
+</div>
 </div>
 
 
@@ -121,6 +156,7 @@ passed to an Abaqus material as</p>
 <li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
 <li class="toctree-l2"><a class="reference internal" href="clparse.html"><tt class="docutils literal"><span class="pre">mml</span> <span class="pre">run</span></tt> Command Line Arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>

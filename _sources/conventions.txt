@@ -1,15 +1,15 @@
 .. _Conventions:
 
 Conventions
-===========
+###########
 
 Dimension
----------
+=========
 
 Material models are always called with full 3D tensors.
 
 Vector Storage
---------------
+==============
 
 Vector components are stored as
 
@@ -18,7 +18,7 @@ Vector components are stored as
    \Tensor{v}{}{}{} = \{v_x, v_y, v_z\}
 
 Tensor Storage
---------------
+==============
 
 In general, second-order symmetric tensors are stored as 6x1 arrays with the
 following ordering
@@ -41,7 +41,7 @@ ordering, i.e.,
 
 
 Abaqus Materials
-~~~~~~~~~~~~~~~~
+----------------
 
 For Abaqus materials, the order of the last two components of second-order
 tensors are modified when the material is called to be consistent with
@@ -55,3 +55,40 @@ passed to an Abaqus material as
 Also consistent with Abaqus conventions, the shear components of strain-like tensors are sent to the material model as engineering strains.
 
 Nonsymmetric, Second-order tensors are sent as 3x3 matrices.
+
+matmodlab Namespace
+===================
+
+Input scripts to *matmodlab* should include::
+
+   from matmodlab import *
+
+to populate the script's namespace with *matmodlab* specific parameters and methods.
+
+Parameters
+----------
+
+Some useful parameters exposed by importing ``matmodlab`` are
+
+* ``ROOT_D``, The root ``matmodlab`` directory
+* ``PKG_D``, The ``matmodlab/lib`` directory, the location shared objects are copied
+* ``EXO_D``, The directory where the ExodusII tools are contained
+* ``MAT_D``, The directory where builtin materials are contained
+
+Methods
+-------
+
+Some useful methods exposed by importing ``matmodlab`` are
+
+* ``Driver``, The driver factory method
+* ``Material``, The material model factory method
+* ``MaterialPointSimulator``, The material point simulator constructor
+* ``Permutator``, The permutator constructor
+* ``Optimizer``, The optimizer constructor
+* ``Logger``, The logger factory method.
+* ``Expansion``, The expansion model constructor
+* ``TRS``, The time-temperature shift model constructor
+* ``Viscoelastic``, The viscoelastic model constructor
+
+Each of these methods is described in more detail in the following chapters
+and sections.

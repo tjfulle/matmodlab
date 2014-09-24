@@ -298,9 +298,9 @@ user defined function to specify the 11 component of strain through time</p>
 </pre></div>
 </div>
 <p>The formal parameters to the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor are</p>
-<dl class="function">
+<dl class="class">
 <dt id="MaterialPointSimulator">
-<tt class="descname">MaterialPointSimulator</tt><big>(</big><em>self</em>, <em>runid</em>, <em>driver</em>, <em>material</em>, <em>termination_time=None</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">MaterialPointSimulator</tt><big>(</big><em>self</em>, <em>runid</em>, <em>driver</em>, <em>material</em>, <em>termination_time=None</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>MaterialPointSimulator constructor.  Creates a MaterialPointSimulator object and sets up the simulation</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -323,13 +323,13 @@ user defined function to specify the 11 component of strain through time</p>
 
 <div class="section" id="public-methods-of-materialpointsimulator">
 <h3>Public Methods of <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt><a class="headerlink" href="#public-methods-of-materialpointsimulator" title="Permalink to this headline">¶</a></h3>
-<dl class="function">
+<dl class="method">
 <dt id="MaterialPointSimulator.run">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#MaterialPointSimulator.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the simulation</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="MaterialPointSimulator.dump">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">dump</tt><big>(</big><em>self</em>, <em>variables</em>, <em>format=&quot;ascii&quot;</em>, <em>step=1</em>, <em>time=True</em>, <em>ffmt=&quot;.18f&quot;</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.dump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dump variables from ExodusII database to other ascii formats</p>
@@ -350,7 +350,7 @@ user defined function to specify the 11 component of strain through time</p>
 </table>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="MaterialPointSimulator.extract_from_db">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">extract_from_db</tt><big>(</big><em>variables</em>, <em>step=1</em>, <em>t=0</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.extract_from_db" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract variables from ExodusII database.</p>
@@ -369,7 +369,7 @@ user defined function to specify the 11 component of strain through time</p>
 </table>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="MaterialPointSimulator.visualize_results">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">visualize_results</tt><big>(</big><em>overlay=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.visualize_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Display simulation results in visualizer.</p>
@@ -396,6 +396,92 @@ the factory method requires a unique function ID <tt class="docutils literal"><s
 <tt class="docutils literal"><span class="pre">func_type</span></tt>. At present, <tt class="docutils literal"><span class="pre">analytical</span> <span class="pre">expression</span></tt> and <tt class="docutils literal"><span class="pre">piecewise</span> <span class="pre">linear</span></tt>
 function types are supported.</p>
 <p>The formal parameters to <tt class="docutils literal"><span class="pre">Function</span></tt> are</p>
+</div>
+<div class="section" id="the-logger">
+<h2>The Logger<a class="headerlink" href="#the-logger" title="Permalink to this headline">¶</a></h2>
+<p>Logging in <em>matmodlab</em> is through the <tt class="docutils literal"><span class="pre">Logger</span></tt> class.</p>
+<p>It is useful to setup and pass the same logger to <tt class="docutils literal"><span class="pre">Material</span></tt>, <tt class="docutils literal"><span class="pre">Driver</span></tt>, and <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt>.  A logger instance is created through the <tt class="docutils literal"><span class="pre">Logger</span></tt> constructor.  The <tt class="docutils literal"><span class="pre">Logger</span></tt> constructor requires no arguments to setup</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">logger</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The formal parameters to <tt class="docutils literal"><span class="pre">Logger</span></tt> are</p>
+<dl class="class">
+<dt id="Logger">
+<em class="property">class </em><tt class="descname">Logger</tt><big>(</big><em>logfile=None</em>, <em>verbosity=1</em><big>)</big><a class="headerlink" href="#Logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>The matmodlab logger.  Logs messages and warnings to the console and/or file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logfile</strong> (<em>str or None</em>) &#8211; File name of log file.  If not given, messages are only logged to the console [default: None].</li>
+<li><strong>verbosity</strong> (<em>int</em>) &#8211; Verbosity.  If verbosity &lt; 1, then messages are only logged to file [default: 1].</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<div class="section" id="logger-methods">
+<h3>Logger Methods<a class="headerlink" href="#logger-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="Logger.write">
+<tt class="descclassname">Logger.</tt><tt class="descname">write</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#Logger.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log a message</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; The message to log</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Logger.warn">
+<tt class="descclassname">Logger.</tt><tt class="descname">warn</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#Logger.warn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log a warning message</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; The warning message to log</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Logger.error">
+<tt class="descclassname">Logger.</tt><tt class="descname">error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#Logger.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log an error message</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; The error message to log.  The simulation will not stop.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Logger.raise_error">
+<tt class="descclassname">Logger.</tt><tt class="descname">raise_error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#Logger.raise_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log an error message and raise an exception</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; The error message to log. An exception will be raised.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 </div>
 

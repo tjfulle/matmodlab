@@ -268,7 +268,7 @@ A ``MaterialPointSimulator`` instance is created directly through the
 
 The formal parameters to the ``MaterialPointSimulator`` constructor are
 
-.. function:: MaterialPointSimulator(self, runid, driver, material, termination_time=None, verbosity=1, d=None, logger=None)
+.. class:: MaterialPointSimulator(self, runid, driver, material, termination_time=None, verbosity=1, d=None, logger=None)
 
    MaterialPointSimulator constructor.  Creates a MaterialPointSimulator object and sets up the simulation
 
@@ -290,11 +290,11 @@ The formal parameters to the ``MaterialPointSimulator`` constructor are
 Public Methods of ``MaterialPointSimulator``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. function:: MaterialPointSimulator.run()
+.. method:: MaterialPointSimulator.run()
 
    Run the simulation
 
-.. function:: MaterialPointSimulator.dump(self, variables, format="ascii", step=1, time=True, ffmt=".18f")
+.. method:: MaterialPointSimulator.dump(self, variables, format="ascii", step=1, time=True, ffmt=".18f")
 
    Dump variables from ExodusII database to other ascii formats
 
@@ -309,7 +309,7 @@ Public Methods of ``MaterialPointSimulator``
    :param ffmt: Floating point number format.  Used as "{0:{1}}".format(number, ffmt)
    :type ffmt: str
 
-.. function:: MaterialPointSimulator.extract_from_db(variables, step=1, t=0)
+.. method:: MaterialPointSimulator.extract_from_db(variables, step=1, t=0)
 
    Extract variables from ExodusII database.
 
@@ -320,7 +320,7 @@ Public Methods of ``MaterialPointSimulator``
    :param time: Extract time [default: 0].
    :type time: int
 
-.. function:: MaterialPointSimulator.visualize_results(overlay=None)
+.. method:: MaterialPointSimulator.visualize_results(overlay=None)
 
    Display simulation results in visualizer.
 
@@ -345,3 +345,57 @@ The object returned from ``Function`` is an instance of the class defining
 function types are supported.
 
 The formal parameters to ``Function`` are
+
+
+The Logger
+----------
+
+Logging in *matmodlab* is through the ``Logger`` class.
+
+It is useful to setup and pass the same logger to ``Material``, ``Driver``, and ``MaterialPointSimulator``.  A logger instance is created through the ``Logger`` constructor.  The ``Logger`` constructor requires no arguments to setup
+
+.. code:: python
+
+   logger = Logger()
+
+The formal parameters to ``Logger`` are
+
+.. class:: Logger(logfile=None, verbosity=1)
+
+   The matmodlab logger.  Logs messages and warnings to the console and/or file
+
+   :param logfile: File name of log file.  If not given, messages are only logged to the console [default: None].
+   :type logfile: str or None
+   :param verbosity: Verbosity.  If verbosity < 1, then messages are only logged to file [default: 1].
+   :type verbosity: int
+
+Logger Methods
+~~~~~~~~~~~~~~
+
+.. method:: Logger.write(message)
+
+   Log a message
+
+   :parameter message: The message to log
+   :type message: str
+
+.. method:: Logger.warn(message)
+
+   Log a warning message
+
+   :parameter message: The warning message to log
+   :type message: str
+
+.. method:: Logger.error(message)
+
+   Log an error message
+
+   :parameter message: The error message to log.  The simulation will not stop.
+   :type message: str
+
+.. method:: Logger.raise_error(message)
+
+   Log an error message and raise an exception
+
+   :parameter message: The error message to log. An exception will be raised.
+   :type message: str

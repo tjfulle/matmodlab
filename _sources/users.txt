@@ -14,6 +14,7 @@ User's Guide
    aba
    addon
    clparse
+   config
    post
    build
    examples
