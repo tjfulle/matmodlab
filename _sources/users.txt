@@ -11,6 +11,7 @@ User's Guide
    solmeth
    run
    factory
+   aba
    addon
    clparse
    post
