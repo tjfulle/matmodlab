@@ -350,7 +350,6 @@ class MaterialModel(object):
 
         return Jsub
 
-    #if hasattr(material, "source_files"):
     @property
     def parameter_names(self):
         if self.model_to_mimic is None:
