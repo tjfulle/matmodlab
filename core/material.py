@@ -46,9 +46,6 @@ class MaterialModel(object):
             self.assert_attr_exists(attr)
 
         self.model_to_mimic = model_to_mimic
-        if self.model_to_mimic is not None:
-            print("we are acting like {0} but we are really {1}".format(self.model_to_mimic, self.name))
-
         self._vars = []
         self.nvisco = 0
         self.visco_model = None
@@ -353,10 +350,22 @@ class MaterialModel(object):
 
         return Jsub
 
+    #if hasattr(material, "source_files"):
     @property
     def parameter_names(self):
-        try: return [n.split(":")[0].upper() for n in self.param_names]
-        except TypeError: return self.param_names
+        if self.model_to_mimic is None:
+            pnames = self.param_names
+        elif hasattr(self, "can_mimic"):
+            if self.can_mimic.has_key(self.model_to_mimic):
+                pnames = self.can_mimic[self.model_to_mimic]
+            else:
+                self.logger.error("{0} does not know how to mimic {1}".
+                                  format(self.name, self.model_to_mimic))
+        else:
+            self.logger.error("{0} does not know how to mimic anything")
+
+        try: return [n.split(":")[0].upper() for n in pnames]
+        except TypeError: return pnames
 
     @parameter_names.setter
     def parameter_names(self, n):

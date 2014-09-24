@@ -19,7 +19,8 @@ class PyPlastic(MaterialModel):
                            "A4"]   # Pressure dependence term.
                                    #   A4 = -d(sqrt(J2)) / d(I1)
                                    #         always positive
-        self.can_mimic = {"elastic":["K", "G"],
+        self.can_mimic = {"pyelastic":["K", "G"],
+                          "elastic":["K", "G"],
                           "vonmises":["K", "G", "Y0", "H", "BETA"]}
 
     def setup(self):
@@ -27,23 +28,23 @@ class PyPlastic(MaterialModel):
 
         """
         # Check inputs
-        if opts.mimic == 'elastic':
-            logger.write("model '{0}' mimicing '{1}'".format(
-                self.name, self.params.modelname))
+        if self.model_to_mimic  in ['pyelastic', 'elastic']:
+            self.logger.write("model '{0}' mimicing '{1}'".format(
+                self.name, self.model_to_mimic))
             K = self.params["K"]
             G = self.params["G"]
             A1 = 1.0e99
             A4 = 0.0
-        elif opts.mimic == 'vonmises':
+        elif self.model_to_mimic == 'vonmises':
             self.logger.write("model '{0}' mimicing "
-                              "'{1}'".format(self.name, opts.mimic))
+                           "'{1}'".format(self.name, self.model_to_mimic))
             K = self.params["K"]
             G = self.params["G"]
             A1 = self.params["Y0"] * TOOR3
             A4 = 0.0
             if self.params["H"] != 0.0:
                 self.logger.error("model {0} cannot mimic {1} with "
-                                  "hardening".format(self.name, opts.mimic))
+                         "hardening".format(self.name, self.model_to_mimic))
         else:
             # default
             K = self.params["K"]
@@ -81,7 +82,7 @@ class PyPlastic(MaterialModel):
 
         # Save the new parameters
         newparams = [K, G, A1, A4]
-        self.params = Parameters(self.parameter_names, newparams, self.name)
+        self.params = Parameters(self.param_names, newparams, self.name)
 
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]
