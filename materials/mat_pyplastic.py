@@ -74,9 +74,9 @@ class PyPlastic(MaterialModel):
         if A1 <= 0.0:
             errors += 1
             self.logger.error("A1 must be positive nonzero")
-        if A4 <= 0.0:
+        if A4 < 0.0:
             errors += 1
-            self.logger.error("A4 must be positive nonzero")
+            self.logger.error("A4 must be non-negative")
         if errors:
             self.logger.error("stopping due to previous errors")
 

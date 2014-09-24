@@ -9,32 +9,47 @@ class VonMises(MaterialModel):
 
     def __init__(self):
         self.name = "vonmises"
-        self.param_names = ["K",    # Linear elastic bulk modulus
-                            "G",    # Linear elastic shear modulus
-                            "Y0",   # yield stress in uniaxial tension
-                                    # (yield in tension)=sqrt(3)*(yield in shear)
-                                    #                   = sqrt(3)*sqrt(J2)
-                            "H",    # Hardening modulus
-                            "BETA", # isotropic/kinematic hardening parameter
-                                    #    BETA = 0 for isotropic hardening
-                                    #    0 < BETA < 1 for mixed hardening
-                                    #    BETA = 1 for kinematic hardening
+        self.param_names = ["K",   # Linear elastic bulk modulus
+                            "G",   # Linear elastic shear modulus
+                            "Y0",  # yield stress in uniaxial tension
+                                   # (yield in tension)=sqrt(3)*(yield in shear)
+                                   #                   = sqrt(3)*sqrt(J2)
+                            "H",   # Hardening modulus
+                            "BETA",# isotropic/kinematic hardening parameter
+                                   #    BETA = 0 for isotropic hardening
+                                   #    0 < BETA < 1 for mixed hardening
+                                   #    BETA = 1 for kinematic hardening
                                     ]
+
+        self.can_mimic = {"pyelastic":["K", "G"],
+                          "elastic":["K", "G"],
+                          "pyplastic":["K", "G", "A1", "A4"]}
+
 
     def setup(self):
         """Set up the von Mises material
 
         """
         # Check inputs
-        if opts.mimic == "elastic":
-            self.logger.warn("model '{0}' mimicing '{1}'".format(
-                self.name, "elastic"))
+        if self.model_to_mimic in ["elastic", "pyelastic"]:
+            self.logger.write("model '{0}' mimicing '{1}'".format(
+                self.name, self.model_to_mimic))
             K = self.params["K"]
             G = self.params["G"]
             Y0 = 1.0e99
             H = 0.0
             BETA = 0.0
-
+        elif self.model_to_mimic == "pyplastic":
+            self.logger.write("model '{0}' mimicing '{1}'".format(
+                self.name, self.model_to_mimic))
+            K = self.params["K"]
+            G = self.params["G"]
+            Y0 = np.sqrt(3.0) * self.params["A1"]
+            H = 0.0
+            BETA = 0.0
+            if self.params["A4"] != 0.0:
+                self.logger.error("model {0} cannot mimic {1} with "
+                "pressure dependence".format(self.name, self.model_to_mimic))
         else:
             K = self.params["K"]
             G = self.params["G"]
