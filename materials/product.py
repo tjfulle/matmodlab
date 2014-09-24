@@ -1,7 +1,7 @@
 import os
 from utils.fortran.product import DGPADM_F, FIO
-from core.product import MATLIB
-D = os.path.join(MATLIB, "src")
+from core.product import MAT_D
+D = os.path.join(MAT_D, "src")
 
 # Auxiliary files
 ABA_UANISOHYPER_JAC_F90 = os.path.join(D, "uanisohyper_inv_jac.f90")

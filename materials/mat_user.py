@@ -1,5 +1,5 @@
 import os
-from core.product import MATLIB
+from core.product import MAT_D
 from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
@@ -10,7 +10,7 @@ class UserMat(AbaqusMaterial):
     def __init__(self):
         self.name = "user"
         self.param_names = SET_AT_RUNTIME
-        d = os.path.join(MATLIB, "src")
+        d = os.path.join(MAT_D, "src")
         self.aux_files = [os.path.join(d, "user.pyf")]
 
     def import_model(self):

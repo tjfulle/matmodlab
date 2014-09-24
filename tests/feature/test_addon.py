@@ -33,7 +33,7 @@ def runner_visco(d=None, runid=None, v=1):
     trs = TRS("wlf", [75, 35, 50])
     material = Material("umat", parameters=constants, constants=2,
                         source_files=["neohooke.f90"], initial_temp=75,
-                        source_directory=os.path.join(MATLIB, "abaumats"),
+                        source_directory=os.path.join(MAT_D, "abaumats"),
                         expansion=expansion, viscoelastic=viscoelastic, trs=trs)
     mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
     mps.run()
@@ -51,7 +51,7 @@ def runner_novisco(d=None, runid=None, v=1):
     constants = [E, Nu]
     material = Material("umat", parameters=constants, constants=2,
                         source_files=["neohooke.f90"], initial_temp=75,
-                        source_directory=os.path.join(MATLIB, "abaumats"))
+                        source_directory=os.path.join(MAT_D, "abaumats"))
     mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
     mps.run()
 

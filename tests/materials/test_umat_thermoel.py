@@ -38,7 +38,7 @@ def runner(d=None, v=1, runid=None, test=0):
     material = Material("umat", parameters=constants, constants=8,
                         initial_temp=298., depvar=12,
                         source_files=["thermoelastic.f90"],
-                        source_directory=os.path.join(MATLIB, "abaumats"))
+                        source_directory=os.path.join(MAT_D, "abaumats"))
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 

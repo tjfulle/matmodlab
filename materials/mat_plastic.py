@@ -1,5 +1,5 @@
 import os
-from core.product import MATLIB
+from core.product import MAT_D
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
 try: import lib.plastic as mat
@@ -10,7 +10,7 @@ class Plastic(MaterialModel):
     def __init__(self):
         self.name = "plastic"
         self.param_names = ["K", "G", "A1", "A4"]
-        d = os.path.join(MATLIB, "src")
+        d = os.path.join(MAT_D, "src")
         f1 = os.path.join(d, "plastic.f90")
         f2 = os.path.join(d, "plastic.pyf")
         self.source_files = [f1, f2]

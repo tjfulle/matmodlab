@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from core.product import MATLIB
+from core.product import MAT_D
 import utils.mmlabpack as mmlabpack
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
@@ -16,7 +16,7 @@ class MooneyRivlin(MaterialModel):
     def __init__(self):
         self.name = "mooney_rivlin"
         self.param_names = ["C10", "C01", "NU", "T0", "MC10", "MC01"]
-        d = os.path.join(MATLIB, "src")
+        d = os.path.join(MAT_D, "src")
         f1 = os.path.join(d, "mooney_rivlin.f90")
         f2 = os.path.join(d, "mooney_rivlin.pyf")
         self.source_files = [f1, f2]

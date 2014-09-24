@@ -35,7 +35,7 @@ def main(argv=None):
                                 description="%(prog)s: Set matmodlab options")
     p.add_argument("--add", nargs=2, metavar=("name", "value"),
         help="name and value of option to add to configuration")
-    p.add_argument("--del", dest="delete", nargs=2, metavar=("name", "value"),
+    p.add_argument("--del", dest="delete", nargs="+", metavar=("name", "value"),
         help="name and value of option to remove from configuration")
     p.add_argument("--switch", action="store_true", default=False,
         help="switch from old MMLMTLS environment variable to new config file")
@@ -154,14 +154,20 @@ def cfgedit(filename, add=None, delete=None):
 
     if delete is not None:
         write("DELETING THE FOLLOWING OPTIONS FROM {0}:".format(filename))
-        k, v = delete
-        k = k.lower()
+        try:
+            k, v = delete
+        except ValueError:
+            k = delete[0]
+            v = None
+        k = k.strip().lower()
+
         write("  {0}: {1}".format(k, v))
-        av = a.get(k)
+        av = a.pop(k, None)
         if not av:
             write("*** WARNING: {0}: OPTION HAD NOT BEEN SET".format(k, v))
-        else:
+        elif v:
             a[k] = [x for x in av if x != v]
+        # if v is None, the entire option is deleted
 
     lines = []
     for (k, v) in a.items():

@@ -1,5 +1,5 @@
 import os
-from core.product import MATLIB
+from core.product import MAT_D
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
 try: import lib.elastic as mat
@@ -10,7 +10,7 @@ class Elastic(MaterialModel):
     def __init__(self):
         self.name = "elastic"
         self.param_names = ["K:BMOD", "G:SMOD:MU"]
-        d = os.path.join(MATLIB, "src")
+        d = os.path.join(MAT_D, "src")
         f1 = os.path.join(d, "elastic.f90")
         f2 = os.path.join(d, "elastic.pyf")
         self.source_files = [f1, f2]
