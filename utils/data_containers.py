@@ -75,10 +75,11 @@ class Parameters(np.ndarray):
     parameter A0 has index 0)
 
     """
-    def __new__(cls, names, values):
+    def __new__(cls, names, values, model_name):
         if len(names) != len(values):
             raise ValueError("mismatch key,val pairs")
         obj = np.asarray(values).view(cls)
+        obj.model_name = model_name
         obj.names = [s.upper() for s in names]
         obj.named_idx = dict((s, i) for (i, s) in enumerate(obj.names))
         for (name, i) in obj.named_idx.items():

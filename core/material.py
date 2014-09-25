@@ -40,10 +40,14 @@ class MaterialModel(object):
         if getattr(self, attr, noattr) == noattr:
             raise Exception("material missing attribute: {0}".format(attr))
 
-    def init(self, logger=None, file=None):
+    def init(self, model_to_mimic=None, logger=None, file=None):
 
         for attr in ("name", "param_names"):
             self.assert_attr_exists(attr)
+
+        self.model_to_mimic = model_to_mimic
+        if self.model_to_mimic is not None:
+            print("we are acting like {0} but we are really {1}".format(self.model_to_mimic, self.name))
 
         self._vars = []
         self.nvisco = 0
@@ -104,6 +108,11 @@ class MaterialModel(object):
         self.logger.write("setting up {0} material".format(self.name))
         self.initial_temp = initial_temp
 
+        if self.model_to_mimic != None:
+            if not hasattr(self, "can_mimic") or not self.can_mimic.has_key(self.model_to_mimic):
+                raise UserInputError("Model {0} can't mimic {1}".
+                                     format(self.name, self.model_to_mimic))
+
         if self.parameter_names == SET_AT_RUNTIME:
             if hasattr(self, "aba_model"):
                 self.parameter_names = len(parameters) + 1
@@ -128,8 +137,8 @@ class MaterialModel(object):
                                          "for model {1}".format(key, self.name))
                 params[idx] = value
 
-        self.iparams = Parameters(self.parameter_names, params)
-        self.params = Parameters(self.parameter_names, params)
+        self.iparams = Parameters(self.parameter_names, params, self.name)
+        self.params = Parameters(self.parameter_names, params, self.name)
         try:
             self.setup(self.params, depvar)
         except TypeError:
@@ -641,10 +650,24 @@ def Material(model, parameters=None, depvar=None, constants=None,
 
     logger = logger or Logger()
 
-    # switch model, if requested
-    if opts.switch:
-        logger.warn("switching {0} for {1}".format(model, opts.switch))
-        model = opts.switch
+    # Check to see if any mimicing requests are made.
+    # If there are, see if it applies.
+    model_to_mimic = None
+    if opts.mimic:
+        for pair in opts.mimic:
+            newpair = pair.split(":", 1)
+            if len(newpair) != 2:
+                continue
+            if newpair[0].lower() != model.lower():
+                continue
+
+            model_to_mimic, model = model, newpair[1]
+
+            # Just because we request it, doesn't mean that a model
+            # can handle it. Make the request known.
+            logger.warn("Requesting that model {0} mimic model {1}".
+                                         format(model, model_to_mimic))
+            break
 
     # determine which model
     m = "_".join(model.split()).lower()
@@ -703,7 +726,8 @@ def Material(model, parameters=None, depvar=None, constants=None,
         material = mat_class()
 
     # initialize and set up material
-    material.init(logger=logger, file=libinfo.file)
+    material.init(model_to_mimic=model_to_mimic,
+                  logger=logger, file=libinfo.file)
 
     if material.parameter_names == SET_AT_RUNTIME:
         # some models, like abaqus models, do not have the parameter names

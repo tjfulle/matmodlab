@@ -19,6 +19,8 @@ class PyPlastic(MaterialModel):
                            "A4"]   # Pressure dependence term.
                                    #   A4 = -d(sqrt(J2)) / d(I1)
                                    #         always positive
+        self.can_mimic = {"elastic":["K", "G"],
+                          "vonmises":["K", "G", "Y0", "H", "BETA"]}
 
     def setup(self):
         """Set up the plastic material
@@ -79,7 +81,7 @@ class PyPlastic(MaterialModel):
 
         # Save the new parameters
         newparams = [K, G, A1, A4]
-        self.params = Parameters(self.parameter_names, newparams)
+        self.params = Parameters(self.parameter_names, newparams, self.name)
 
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]

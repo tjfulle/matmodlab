@@ -65,7 +65,7 @@ class VonMises(MaterialModel):
 
         newparams = [K, G, Y0, H, BETA]
         newnames = ["K", "G", "Y0", "H", "BETA"]
-        self.params = Parameters(newnames, newparams)
+        self.params = Parameters(newnames, newparams, self.name)
 
         self.bulk_modulus = self.params["K"]
         self.shear_modulus = self.params["G"]
