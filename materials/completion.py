@@ -35,8 +35,8 @@ DP_A = 50
 DP_B = 51
 
 # Cohesion and friction angle
-COHESION = 51
-FRICTION_ANGLE = 52
+COHESION = 61
+FRICTION_ANGLE = 62
 
 TEMP0 = 80
 
