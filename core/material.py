@@ -60,7 +60,6 @@ class MaterialModel(object):
         self.visco_params = None
         self.exp_params = None
         self.itemp = DEFAULT_TEMP
-        self.param_defaults = getattr(self, "param_defaults", None)
         self.initial_stress = np.zeros(6)
         self.logger = logger or Logger()
         self._file = file
@@ -115,10 +114,7 @@ class MaterialModel(object):
 
         else:
             nprops = len(self.parameter_names)
-            if self.param_defaults:
-                params = np.array(self.param_defaults)
-            else:
-                params = np.zeros(nprops)
+            params = np.zeros(nprops)
 
             if not isinstance(parameters, dict):
                 raise UserInputError("expected parameters to be a dict")

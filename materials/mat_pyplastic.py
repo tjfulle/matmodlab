@@ -14,11 +14,11 @@ class PyPlastic(MaterialModel):
                             "G",    # Linear elastic shear modulus
                             "A1",   # Intersection of the yield surface with the
                                     #   sqrt(J2) axis (pure shear).
-                                    #       sqrt(J2) = r / sqrt(2); r = sqrt(2*J2)
-                                    #       sqrt(J2) = q / sqrt(3); q = sqrt(3*J2)
+                                    #     sqrt(J2) = r / sqrt(2); r = sqrt(2*J2)
+                                    #     sqrt(J2) = q / sqrt(3); q = sqrt(3*J2)
                            "A4"]   # Pressure dependence term.
-                                   #   A4 = -d(sqrt(J2)) / d(I1)  # always positive
-        self.param_defaults = [0.0, 0.0, 1.0e99, 0.0]
+                                   #   A4 = -d(sqrt(J2)) / d(I1)
+                                   #         always positive
 
     def setup(self):
         """Set up the plastic material
@@ -48,6 +48,8 @@ class PyPlastic(MaterialModel):
             G = self.params["G"]
             A1 = self.params["A1"]
             A4 = self.params["A4"]
+            if A1 == 0.0:
+                A1 = 1.0e99
 
         # Check the input parameters
         errors = 0
