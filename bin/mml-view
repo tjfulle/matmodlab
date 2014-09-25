@@ -1,8 +1,10 @@
-#!/usr/bin/env python
-import os
-import sys
-d = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, os.path.dirname(d))
-from matmodlab import *
-from viz.plot2d import main
-sys.exit(main(sys.argv[1:]))
+#!/usr/bin/env bash
+if [ -z "$MML_ROOT" ];  then
+    echo >&2 "*** ERROR: mml-view: MML_ROOT ENVIRONMENT VARIABLE NOT SET"
+    echo >&2 "THIS SCRIPT SHOULD BE CALLED THROUGH matmodlab/bin/mml"
+    echo >&2 "AND NOT DIRECTLY"
+    exit 1
+fi
+PYFILE="$MML_ROOT/core/plotter.py"
+PYEXE=$(which python)
+$PYEXE $PYFILE "$@"

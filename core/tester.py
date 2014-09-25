@@ -16,7 +16,7 @@ from utils.misc import fillwithdots, remove, load_file
 from core.test import PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 from core.test import TestBase, TestError as TestError
 from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH, SUPRESS_USER_ENV
-
+from core.runtime import opts, set_runtime_opt
 
 
 TIMING = []
@@ -409,6 +409,9 @@ def run_test(test):
     Nothing is returned, the Namespace is modified with any information
 
     """
+    # Don't allow individual tests to use multiprocessing
+    set_runtime_opt("nprocs", 1)
+
     W = TEST_CONS_WIDTH
 
     ti = time.time()

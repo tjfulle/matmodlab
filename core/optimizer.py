@@ -9,6 +9,7 @@ import datetime
 from core.logger import Logger
 from utils.mmltab import MMLTabularWriter
 from runtime import opts, set_runtime_opt
+from utils.errors import MatModLabError
 
 IOPT = 0
 BIGNUM = 1.E+20
@@ -39,7 +40,7 @@ class Optimizer(object):
         # check method
         m = method.lower()
         if m not in OPT_METHODS:
-            raise UserInputError("{0}: unrecognized method".format(method))
+            raise MatModLabError("{0}: unrecognized method".format(method))
         self.method = m
 
         # set up logger
@@ -58,7 +59,7 @@ class Optimizer(object):
         self.bounds = []
         for x in xinit:
             if not isinstance(x, OptimizeVariable):
-                raise UserInputError("all xinit must be of type OptimizeVariable")
+                raise MatModLabError("all xinit must be of type OptimizeVariable")
 
             self.names.append(x.name)
             self.idata.append(x.initial_value)
@@ -254,9 +255,9 @@ class OptimizeVariable(object):
         # check bounds
         if bounds is not None:
             if not isinstance(bounds, (list, tuple, np.ndarray)):
-                raise UserInputError("expected bounds to be a tuple of length 2")
+                raise MatModLabError("expected bounds to be a tuple of length 2")
             if len(bounds) != 2:
-                raise UserInputError("expected bounds to be a tuple of length 2")
+                raise MatModLabError("expected bounds to be a tuple of length 2")
             if bounds[0] is None: bounds[0] = -BIGNUM
             if bounds[1] is None: bounds[1] =  BIGNUM
 
@@ -269,7 +270,7 @@ class OptimizeVariable(object):
                 logger.error("{0}: initial value not bracketed "
                              "by bounds".format(name))
             if errors:
-                raise UserInputError("stopping due to previous errors")
+                raise MatModLabError("stopping due to previous errors")
 
             self.bounds = np.array(bounds)
 

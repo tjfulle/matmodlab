@@ -1,4 +1,4 @@
-#!/usr/bin/env xpython
+#!/usr/bin/env mmd
 from matmodlab import *
 
 class TestElasticUnistrain(TestBase):

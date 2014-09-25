@@ -1,4 +1,4 @@
-#!/usr/bin/env xpython
+#!/usr/bin/env mmd
 from matmodlab import *
 import opt_routines as my_opt
 

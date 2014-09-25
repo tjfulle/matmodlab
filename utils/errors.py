@@ -42,16 +42,9 @@ class DuplicateExtModule(Exception):
         if opts.raise_e: super(DuplicateExtModule, self).__init__(message)
         else: raise SystemExit(message)
 
-class GenericError(Exception):
+class MatModLabError(Exception):
     def __init__(self, message):
         who = who_is_calling()
         message = adderr("{0}: ({1})".format(message.upper(), who))
-        if opts.raise_e: super(GenericError, self).__init__(message)
-        else: raise SystemExit(message)
-
-class UserInputError(Exception):
-    def __init__(self, message):
-        who = who_is_calling()
-        message = adderr("{0}: ({1})".format(message.upper(), who))
-        if opts.raise_e: super(InputError, self).__init__(message)
+        if opts.raise_e: super(MatModLabError, self).__init__(message)
         else: raise SystemExit(message)

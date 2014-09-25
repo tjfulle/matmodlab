@@ -35,7 +35,7 @@ sys.path.insert(0, os.getcwd())
 # ------------------------ FACTORY METHODS TO SET UP AND RUN A SIMULATION --- #
 from core.driver import Driver
 from core.material import Material
-from core.mat_point_sim import MaterialPointSimulator
+from core.simulator import MaterialPointSimulator
 from core.permutator import Permutator, PermutateVariable
 from core.optimizer import Optimizer, OptimizeVariable
 from core.functions import Function
@@ -108,6 +108,34 @@ def matmodlab(func):
     def decorated_func(*args, **kwargs):
         global already_splashed, already_wiped
         get_f = kwargs.pop("get_f", None)
+        prog = "mml run"
+        desc = """{0}: run a matmodlab simulation script in the matmodlab
+        environment. Simulation scripts can be run directly by the python
+        interpreter if {1} is on your PYTHONPATH.""".format(prog, ROOT_D)
+
+        parser = argparse.ArgumentParser(prog=prog, description=desc)
+        parser.add_argument("-v", default=opts.verbosity,
+           type=int, help="Verbosity [default: %(default)s]")
+        parser.add_argument("--debug", default=opts.debug, action="store_true",
+           help="Debug mode [default: %(default)s]")
+        parser.add_argument("--sqa", default=opts.sqa, action="store_true",
+           help="SQA mode [default: %(default)s]")
+        parser.add_argument("--switch", metavar="MATERIAL", default=opts.switch,
+           help="Switch material in input with MATERIAL [default: %(default)s]")
+        parser.add_argument("--mimic", metavar="MATERIAL", default=opts.mimic,
+           help=("Set parameters of input material to mimic MATERIAL "
+                 "(not supported by all models) [default: %(default)s]"))
+        parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
+        parser.add_argument("-B", metavar="MATERIAL",
+            help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
+        parser.add_argument("-V", default=False, action="store_true",
+            help="Launch results viewer on completion [default: %(default)s]")
+        parser.add_argument("-j", "--nprocs", type=int, default=opts.nprocs,
+            help="Number of simultaneous jobs [default: %(default)s]")
+        parser.add_argument("-E", action="store_true", default=False,
+            help="Do not use matmodlabrc configuration file [default: False]")
+        parser.add_argument("-W", choices=["std","all","error"], default=opts.warn,
+            help="Warning level [default: %(default)s]")
         if get_f:
             parser.add_argument("source", help="Source file [default: %(default)s]")
 

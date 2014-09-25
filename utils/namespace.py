@@ -8,3 +8,5 @@ class Namespace(object):
         return "Namespace({0})".format(string)
     def items(self):
         return self.__dict__.items()
+    def __iter__(self):
+        return iter([x for x in self.__dict__.keys() if not x.startswith("__")])

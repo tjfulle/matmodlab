@@ -1,7 +1,7 @@
 import sys
 import math
 import numpy as np
-from utils.errors import GenericError
+from utils.errors import MatModLabError
 
 
 GDICT = {"__builtins__": None}
@@ -24,8 +24,8 @@ class _Function(object):
     def __init__(self, function_id, function_type, function_defn):
 
 	if function_id in DEFAULT_FUNCTIONS:
-	    raise GenericError("function_id must not be "
-			       "one of {0}".format(", ".join(DEFAULT_FUNCTIONS)))
+	    raise MatModLabError("function_id must not be "
+                                 "one of {0}".format(", ".join(DEFAULT_FUNCTIONS)))
 
         func_type = "_".join(function_type.lower().split())
 	if func_type == "analytic_expression":
@@ -34,13 +34,13 @@ class _Function(object):
             a = np.array(function_defn)
             self.func = _build_interpolating_function(a)
 	else:
-	    raise GenericError("only analytic expression supported right now")
+	    raise MatModLabError("only analytic expression supported right now")
 
         try:
             self.func(0)
         except BaseException, e:
             err = e.message if not hasattr(e, "msg") else e.msg
-            raise GenericError(err)
+            raise MatModLabError(err)
 	self.func_id = function_id
 
     def __call__(self, x):
@@ -63,7 +63,7 @@ def _build_interpolating_function(a, monotonic=True):
             func()
         except BaseException, e:
             message = e.message if not hasattr(e, "msg") else e.msg
-            raise GenericError(message)
+            raise MatModLabError(message)
 
     return func
 

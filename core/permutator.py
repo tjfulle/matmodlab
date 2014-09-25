@@ -12,7 +12,7 @@ from itertools import izip, product
 from core.logger import Logger
 from core.runtime import opts
 import utils.mmltab as mmltab
-from utils.errors import UserInputError, GenericError
+from utils.errors import MatModLabError
 
 
 PERM_METHODS = ("zip", "combination", "shotgun", )
@@ -29,7 +29,7 @@ class Permutator(object):
         self.runid = runid
         #self.func = (func.__module__, func.func_name)
         self.func = func
-        self.nprocs = max(nprocs, opts.nprocs)
+        self.nprocs = nprocs
         self.correlations = correlations
 
         if not isinstance(descriptor, (list, tuple)):
@@ -56,7 +56,7 @@ class Permutator(object):
         # check method
         m = method.lower()
         if m not in PERM_METHODS:
-            raise UserInputError("{0}: unrecognized method".format(method))
+            raise MatModLabError("{0}: unrecognized method".format(method))
         self.method = m
 
         # check xinit
@@ -64,7 +64,7 @@ class Permutator(object):
         idata = []
         for x in xinit:
             if not isinstance(x, PermutateVariable):
-                raise UserInputError("all xinit must be of type PermutateVariable")
+                raise MatModLabError("all xinit must be of type PermutateVariable")
             self.names.append(x.name)
             idata.append(x.data)
 
@@ -74,7 +74,7 @@ class Permutator(object):
                 msg = ("Number of permutations must be the same for all "
                        "permutated parameters when using method: {0}".format(
                            self.method))
-                raise GenericError(msg)
+                raise MatModLabError(msg)
             self.data = zip(*idata)
 
         elif self.method == "combination":
@@ -108,7 +108,8 @@ starting values:
         args = [(self.func, x, self.funcargs, i, self.rootd, self.names,
                  self.descriptor, self.tabular)
                  for (i, x) in enumerate(self.data)]
-        nprocs = min(min(mp.cpu_count(), self.nprocs), len(self.data))
+        nprocs = max(self.nprocs, opts.nprocs)
+        nprocs = min(min(mp.cpu_count(), nprocs), len(self.data))
 
         self.statuses = []
         if nprocs == 1:
@@ -179,14 +180,14 @@ class PermutateVariable(object):
         m = method.lower()
         func = s.get(m)
         if func is None:
-            raise UserInputError("{0} unrecognized method".format(method))
+            raise MatModLabError("{0} unrecognized method".format(method))
 
         if m != "list":
             if arg is None:
-                raise UserInputError("{0}: arg keyword required".format(method))
+                raise MatModLabError("{0}: arg keyword required".format(method))
             if len(args) > 1:
                 n = len(args) + 1
-                raise UserInputError("{0}: expected only 2 positional "
+                raise MatModLabError("{0}: expected only 2 positional "
                                      "argument, got {1}".format(method, n))
             args = [args[0], arg, N]
             srep = "{0}({1}, {2}, {3})".format(m, args[0], arg, N)

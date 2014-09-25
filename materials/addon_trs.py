@@ -1,5 +1,5 @@
 import numpy as np
-from utils.errors import UserInputError
+from utils.errors import MatModLabError
 
 class TRS(object):
     def __init__(self, defn, data):
@@ -8,7 +8,7 @@ class TRS(object):
         if self.defn == "WLF":
             # check data
             if data.shape[0] != 3:
-                raise UserInputError("expected 3 WLF parameters")
+                raise MatModLabError("expected 3 WLF parameters")
             self._data = np.array(data)
 
     @property

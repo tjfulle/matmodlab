@@ -35,6 +35,9 @@ if not SUPRESS_USER_ENV:
     opts.verbosity = cfgparse("verbosity", default=opts.verbosity)
 
 def set_runtime_opt(opt, val):
+    if opt not in opts:
+        raise AttributeError("attempting to set invalid runtime "
+                             "option [{0}]".format(opt))
     setattr(opts, opt, val)
     if opts.debug:
         opts.raise_e = True

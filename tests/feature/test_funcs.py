@@ -1,4 +1,4 @@
-#!/usr/bin/env xpython
+#!/usr/bin/env mmd
 # -*- python -*-
 from matmodlab import *
 

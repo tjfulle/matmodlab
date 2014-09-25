@@ -33,12 +33,12 @@ class MaterialModel(object):
     """
     W = np.ones(6)
     def __init__(self):
-        raise Exception("materials must define own __init__")
+        raise MatModLabError("materials must define own __init__")
 
     def assert_attr_exists(self, attr):
         noattr = -31
         if getattr(self, attr, noattr) == noattr:
-            raise Exception("material missing attribute: {0}".format(attr))
+            raise MatModLabError("material missing attribute: {0}".format(attr))
 
     def init(self, model_to_mimic=None, logger=None, file=None):
 
@@ -77,8 +77,8 @@ class MaterialModel(object):
             new_logger.warn
             new_logger.error
         except AttributeError, TypeError:
-            raise TypeError("attempting to assign a non logger "
-                            "to the {0} material logger".format(self.name))
+            raise MatModLabError("attempting to assign a non logger "
+                                 "to the {0} material logger".format(self.name))
         self._logger = new_logger
 
     @property
@@ -123,14 +123,14 @@ class MaterialModel(object):
             params = np.zeros(nprops)
 
             if not isinstance(parameters, dict):
-                raise UserInputError("expected parameters to be a dict")
+                raise MatModLabError("expected parameters to be a dict")
 
             # populate the parameters array
             for (key, value) in parameters.items():
                 K = key.upper()
                 idx = self.parameter_name_map(key)
                 if idx is None:
-                    raise UserInputError("{0}: unrecognized parameter "
+                    raise MatModLabError("{0}: unrecognized parameter "
                                          "for model {1}".format(key, self.name))
                 params[idx] = value
 
@@ -242,13 +242,13 @@ class MaterialModel(object):
 
     def register_xtra_variables(self, keys, values, mig=False):
         if self.nxtra:
-            raise ValueError("Register extra variables at most once")
+            raise MatModLabError("Register extra variables at most once")
         if mig:
             keys = [" ".join(x.split())
                     for x in "".join(keys).split("|") if x.split()]
         self.nxtra = len(keys)
         if len(values) != len(keys):
-            raise ValueError("len(values) != len(keys)")
+            raise MatModLabError("len(values) != len(keys)")
         self.xkeys = keys
         self.initial_state = np.array(values)
 
@@ -256,7 +256,7 @@ class MaterialModel(object):
         # increase xkeys and initial state -> but not nxtra
         self.xkeys.extend(keys)
         if len(values) != len(keys):
-            raise ValueError("len(values) != len(keys)")
+            raise MatModLabError("len(values) != len(keys)")
         self.initial_state = np.append(self.initial_state, np.array(values))
 
     def get_initial_jacobian(self):
@@ -654,7 +654,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
 
     """
     if parameters is None:
-        raise InputError("{0}: required parameters not given".format(model))
+        raise MatModLabError("{0}: required parameters not given".format(model))
 
     logger = logger or Logger()
 
@@ -689,7 +689,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
     source_files = source_files or []
     if m in ABA_MATS + USER_MAT:
         if not source_files:
-            raise InputError("{0}: requires source_files".format(model))
+            raise MatModLabError("{0}: requires source_files".format(model))
         if source_directory is not None:
             source_files = [os.path.join(source_directory, f)
                             for f in source_files]
@@ -698,7 +698,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
                 errors += 1
                 ConsoleLogger.error("{0}: file not found".format(f))
     if errors:
-        raise UserInputError("stopping due to previous errors")
+        raise MatModLabError("stopping due to previous errors")
 
     # default temperature
     if initial_temp is None:
@@ -743,14 +743,14 @@ def Material(model, parameters=None, depvar=None, constants=None,
 
         # Check for number of constants
         if constants is None:
-            raise UserInputError("{0}: expected keyword constants".format(lib))
+            raise MatModLabError("{0}: expected keyword constants".format(lib))
         constants = int(constants)
 
         # Check parameters
         if not isinstance(parameters, (list, tuple, np.ndarray)):
-            raise UserInputError("{0}: parameters must be an array".format(lib))
+            raise MatModLabError("{0}: parameters must be an array".format(lib))
         if len(parameters) != constants:
-            raise UserInputError("len(parameters) != constants")
+            raise MatModLabError("len(parameters) != constants")
         parameters = np.array([float(x) for x in parameters])
 
     # Do the actual setup

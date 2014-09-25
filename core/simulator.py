@@ -9,7 +9,7 @@ from utils.exomgr import ExodusII
 from core.driver import PathDriver
 from core.product import MAT_LIB_DIRS
 from core.material import MaterialModel
-from utils.errors import UserInputError
+from utils.errors import MatModLabError
 from utils.data_containers import DataContainer
 from utils.variable import Variable, VAR_SCALAR
 from utils.constants import DEFAULT_TEMP
@@ -26,10 +26,10 @@ class MaterialPointSimulator(object):
 
         # check input
         if not isinstance(driver, PathDriver):
-            raise UserInputError("driver must be instance of Driver")
+            raise MatModLabError("driver must be instance of Driver")
         self.driver = driver
         if not isinstance(material, MaterialModel):
-            raise UserInputError("material must be instance of Material")
+            raise MatModLabError("material must be instance of Material")
         self.material = material
 
         # setup IO
@@ -71,7 +71,7 @@ class MaterialPointSimulator(object):
 
         # synchronize temperatures
         if abs(self.driver.initial_temp - self.material.initial_temp) > 1.e-12:
-            raise UserInputError("inconsistent initial temperatures in "
+            raise MatModLabError("inconsistent initial temperatures in "
                                  "driver and material")
 
         # set up timing
@@ -182,7 +182,7 @@ MATERIAL: {3}
         return data
 
     def visualize_results(self, overlay=None):
-        from viz.plot2d import create_model_plot
+        from core.plotter import create_model_plot
         create_model_plot(self.exo_file)
 
     @property

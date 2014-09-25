@@ -21,7 +21,6 @@ import chaco.api as capi
 import chaco.tools.api as ctapi
 import pyface.api as papi
 
-from viz.colors import random_color
 from utils.exojac import ExodusIIFile
 
 SIZE = (700, 600)
@@ -60,6 +59,23 @@ class Namespace(object):
     def items(self):
         return self.__dict__.items()
 
+
+def get_color(i=0, rand=False, _i=[0], reset=False):
+    c = ["Blue", "Red", "Purple", "Green", "Orange", "HotPink", "Cyan",
+         "Magenta", "Chocolate", "Yellow", "Black", "DodgerBlue", "DarkRed",
+         "DarkViolet", "DarkGreen", "OrangeRed", "Teal", "DarkSlateGray",
+         "RoyalBlue", "Crimson", "SeaGreen", "Plum", "DarkGoldenRod",
+         "MidnightBlue", "DarkOliveGreen", "DarkMagenta", "DarkOrchid",
+         "DarkTurquoise", "Lime", "Turquoise", "DarkCyan", "Maroon"]
+    if reset:
+        _i[0] = 0
+        return
+    if rand:
+        color = c[random.randint(0, len(c)-1)]
+    else:
+        color = c[_i[0] % (len(c) - 1)]
+        _i[0] += 1
+    return color.lower()
 
 
 def main(argv=None):
@@ -244,6 +260,7 @@ class Plot2D(tapi.HasTraits):
             if fnam in fnams:
                 fnam += "-{0}".format(len(fnams))
             fnams.append(fnam)
+            get_color(reset=1)
             for i, idx in enumerate(indices):
                 yname = mheader[idx]
 
@@ -259,7 +276,7 @@ class Plot2D(tapi.HasTraits):
                     entry = "({0}) {1}{2}".format(fnam, yname, variables)
                 else:
                     entry = "{0} {1}".format(yname, variables)
-                color = random_color(lower=True)
+                color = get_color()
                 ls = LS[(d + i) % len(LS)]
                 self.create_plot(x, y, color, ls, entry)
                 XY_DATA.append(Namespace(key=fnam, xname=xname, x=x,
@@ -286,7 +303,7 @@ class Plot2D(tapi.HasTraits):
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
                         _i = d + len(self.plot_data) + 3
-                        color = random_color(lower=True)
+                        color = get_color()
                         ls = LS[(d + ii) % len(LS)]
                         self.create_plot(xo, yo, color, ls, entry)
                         XY_DATA.append(Namespace(key=fnam, xname=xname, x=xo,

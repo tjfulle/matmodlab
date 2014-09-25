@@ -8,6 +8,13 @@ class PathTest(TestBase):
     def run_job(self):
         runner(d=self.test_dir, v=0)
 
+class PathTableTest(TestBase):
+    def __init__(self):
+        self.runid = "path_table"
+        self.keywords = ["fast", "feature", "path", "table", "builtin"]
+    def run_job(self):
+        run_table(d=self.test_dir, v=0)
+
 @matmodlab
 def runner(d=None, v=1):
     d = d or os.getcwd()
@@ -45,5 +52,23 @@ def runner(d=None, v=1):
     mps.run()
     return
 
+@matmodlab
+def run_table(d=None, v=1):
+    d = d or os.getcwd()
+    runid = "path_table"
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
+    path = """0E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
+              1E+00 1E-01 0E+00 0E+00 0E+00 0E+00 0E+00
+              2E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00"""
+    driver = Driver("Continuum", path=path, kappa=0.0, path_input="table",
+                    step_multiplier=10.0, cfmt="222222", cols=range(7),
+                    tfmt="time", logger=logger)
+    parameters = {"K":1.350E+11, "G":5.300E+10}
+    material = Material("elastic", parameters=parameters, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps.run()
+    return
+
 if __name__ == "__main__":
-    runner()
+    run_table()

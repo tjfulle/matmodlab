@@ -6,9 +6,8 @@ from numpy.linalg import solve, lstsq
 from core.logger import Logger
 from utils.variable import Variable
 from utils.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
-from utils.errors import FileNotFoundError, UserInputError
-from utils.dparse import (parse_default_path, format_continuum_path,
-    parse_function_path, parse_table_path)
+from utils.errors import FileNotFoundError, MatModLabError
+from utils.dparse import read_path
 from core.runtime import opts
 from utils.constants import NSYMM, NTENS, I9
 import utils.mmlabpack as mmlabpack
@@ -44,9 +43,9 @@ class ContinuumDriver(PathDriver):
 
         self._vars = []
         if path is None and path_file is None:
-            raise UserInputError("Expected one of path or path_file")
+            raise MatModLabError("Expected one of path or path_file")
         if path is not None and path_file is not None:
-            raise UserInputError("Expected only one of path or path_file")
+            raise MatModLabError("Expected only one of path or path_file")
 
         if path_file is not None:
             if not os.path.isfile(path_file):
@@ -54,33 +53,14 @@ class ContinuumDriver(PathDriver):
             path = open(path_file).read()
 
         path = [line.split() for line in path.split("\n") if line.split()]
-        if path_input.lower() == "default":
-            path = parse_default_path(path)
-        elif path_input.lower() == "function":
-            if num_steps is None:
-                num_steps = 1
-            if cfmt is None:
-                raise UserInputError("expected keyword cfmt")
-            num_steps = int(num_steps * step_multiplier)
-            path = parse_function_path(path, functions, num_steps, cfmt)
-        elif path_input.lower() == "table":
-            if cfmt is None:
-                raise UserInputError("expected keyword cfmt")
-            if cols is None:
-                raise UserInputError("expected keyword cols")
-            if not isinstance(cols, (list, tuple)):
-                raise UserInputError("expected cols to be a list")
-            path = parse_table_path(path, tfmt, cols, cfmt, skiprows)
-        else:
-            raise UserInputError("{0}: path_input not "
-                                 "recognized".format(path_input))
-
-        self.path = format_continuum_path(path, kappa, amplitude,
-            rate_multiplier, step_multiplier, num_io_dumps, estar,
-            tstar, sstar, fstar, efstar, dstar, termination_time)
+        self.path = read_path("continuum", path_input, path, num_steps, amplitude,
+                              rate_multiplier, step_multiplier, num_io_dumps,
+                              termination_time, tfmt, cols, cfmt, skiprows,
+                              functions, kappa, estar, tstar, sstar, fstar,
+                              efstar, dstar)
         self.kappa = kappa
         self.proportional = proportional
-        self.itemp = path[0][18]
+        self.itemp = self.path[0][18]
 
         # Register variables specifically needed by driver
         self.register_variable("STRESS", VAR_SYMTENSOR)
@@ -338,4 +318,4 @@ def Driver(kind="Continuum", **kwargs):
     for cls in PathDriver.__subclasses__():
         if cls.kind.lower() == kind.lower():
             return cls(**kwargs)
-    raise UserInputError("{0}: unrecognized driver kind".format(kind))
+    raise MatModLabError("{0}: unrecognized driver kind".format(kind))

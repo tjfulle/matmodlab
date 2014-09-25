@@ -1,4 +1,4 @@
-#!/usr/bin/env xpython
+#!/usr/bin/env mmd
 # -*- python -*-
 # basic testing of post processing functionality
 from matmodlab import *

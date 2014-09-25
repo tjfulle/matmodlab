@@ -6,4 +6,5 @@ if [ -z "$MML_ROOT" ];  then
     exit 1
 fi
 PYFILE="$MML_ROOT/core/builder.py"
-$MML_PY_EXE $PYFILE "$@"
+PYEXE=$(which python)
+$PYEXE $PYFILE "$@"

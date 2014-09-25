@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.errors import GenericError, UserInputError
+from utils.errors import MatModLabError
 from utils.constants import DEFAULT_TEMP, NTENS, NSYMM
 import utils.mmlabpack as mmlabpack
 from core.functions import _Function as Function, DEFAULT_FUNCTIONS
@@ -15,7 +15,48 @@ CONTROL_FLAGS = {"D": 1,  # strain rate
                  "U": 8,  # displacement
                  "X": 9}  # user defined field
 
-def parse_default_path(lines):
+
+def read_path(driver, path_input, path, num_steps, amplitude, rate_multiplier,
+              step_multiplier, num_io_dumps, termination_time, tfmt, cols,
+              cfmt, skiprows, functions, kappa, estar, tstar, sstar,
+              fstar, efstar, dstar):
+    d = driver.lower()
+    if d not in ("continuum",):
+        raise MatModLabError("{0}: driver not recognized".format(driver))
+
+    p = path_input.lower()
+    if p not in ("default", "function", "table"):
+        raise MatModLabError("{0}: path_input not recognized".format(path_input))
+
+    if d == "continuum":
+        if p == "default":
+            path = _parse_default_path(path)
+
+        elif p == "function":
+            num_steps = num_steps or 1
+            if cfmt is None:
+                raise MatModLabError("function path: expected keyword cfmt")
+            num_steps = int(num_steps * step_multiplier)
+            path = _parse_function_path(path, functions, num_steps, cfmt)
+
+        elif path_input.lower() == "table":
+            if cfmt is None:
+                raise MatModLabError("table path: expected keyword cfmt")
+            if cols is None:
+                raise MatModLabError("table path: expected keyword cols")
+            if not isinstance(cols, (list, tuple)):
+                raise MatModLabError("table path: expected cols to be a list")
+            path = _parse_table_path(path, tfmt, cols, cfmt, skiprows)
+
+        path = format_continuum_path(path, kappa, amplitude, rate_multiplier,
+                                     step_multiplier, num_io_dumps, estar,
+                                     tstar, sstar, fstar, efstar, dstar,
+                                     termination_time)
+
+    return path
+
+
+def _parse_default_path(lines):
     """Parse the individual path
 
     """
@@ -50,16 +91,16 @@ def parse_default_path(lines):
             try:
                 comp = float(comp)
             except ValueError:
-                raise ValueError("Path: Component {0} of leg {1} must be a "
-                                 "float, got {2}".format(i+1, leg_num, comp))
+                raise MatModLabError("Path: Component {0} of leg {1} must be a "
+                                     "float, got {2}".format(i+1, leg_num, comp))
             Cij.append(comp)
 
         Cij = np.array(Cij)
 
         # --- Check lengths of Cij and control are consistent
         if len(Cij) != len(control):
-            raise ValueError("Path: len(Cij) != len(control) in leg {0}"
-                             .format(leg_num))
+            raise MatModLabError("Path: len(Cij) != len(control) in leg {0}"
+                                 .format(leg_num))
             continue
 
         path.append([termination_time, num_steps, control, Cij])
@@ -72,15 +113,15 @@ def format_termination_time(leg_num, termination_time, final_time):
     try:
         termination_time = float(termination_time)
     except ValueError:
-        raise UserInputError("Path: expected float for termination time of "
+        raise MatModLabError("Path: expected float for termination time of "
                              "leg {0} got {1}".format(leg_num, termination_time))
 
     if termination_time < 0.:
-        raise UserInputError("Path: expected positive termination time leg {0} "
+        raise MatModLabError("Path: expected positive termination time leg {0} "
                              "got {1}".format(leg_num, termination_time))
 
     if termination_time < final_time:
-        raise UserInputError("Path: expected time to increase monotonically in "
+        raise MatModLabError("Path: expected time to increase monotonically in "
                              "leg {0}".format(leg_num))
 
     return termination_time
@@ -89,12 +130,12 @@ def format_num_steps(leg_num, num_steps):
     try:
         num_steps = int(num_steps)
     except ValueError:
-        raise ValueError("Path: expected integer number of steps in "
-                         "leg {0} got {1}".format(leg_num, num_steps))
+        raise MatModLabError("Path: expected integer number of steps in "
+                             "leg {0} got {1}".format(leg_num, num_steps))
         return
     if num_steps < 0:
-        raise ValueError("Path: expected positive integer number of "
-                         "steps in leg {0} got {1}".format(leg_num, num_steps))
+        raise MatModLabError("Path: expected positive integer number of "
+                             "steps in leg {0} got {1}".format(leg_num, num_steps))
         return
 
     return num_steps
@@ -109,43 +150,43 @@ def format_path_control(cfmt, leg_num=None):
         try:
             flag = int(flag)
         except ValueError:
-            raise ValueError("Path: unexpected control flag {0}".format(flag))
+            raise MatModLabError("Path: unexpected control flag {0}".format(flag))
             continue
 
         if flag not in CONTROL_FLAGS.values():
             valid = ", ".join(xmltools.stringify(x)
                               for x in CONTROL_FLAGS.values())
-            raise ValueError("Path: expected control flag to be one of {0}, "
-                             "got {1} {2}".format(valid, flag, leg))
+            raise MatModLabError("Path: expected control flag to be one of {0}, "
+                                 "got {1} {2}".format(valid, flag, leg))
             continue
 
         control.append(flag)
 
     if control.count(7) > 1:
-            raise ValueError("Path: multiple temperature fields in "
-                             "leg {0}".format(leg))
+            raise MatModLabError("Path: multiple temperature fields in "
+                                 "leg {0}".format(leg))
 
     if 5 in control:
         if any(flag != 5 and flag not in (6, 9) for flag in control):
-            raise ValueError("Path: mixed mode deformation not allowed with "
-                             "deformation gradient control {0}".format(leg))
+            raise MatModLabError("Path: mixed mode deformation not allowed with "
+                                 "deformation gradient control {0}".format(leg))
 
         # must specify all components
         elif len(control) < 9:
-            raise ValueError("all 9 components of deformation gradient must "
-                             "be specified {0}".format(leg))
+            raise MatModLabError("all 9 components of deformation gradient must "
+                                 "be specified {0}".format(leg))
 
     if 8 in control:
         # like deformation gradient control, if displacement is specified
         # for one, it must be for all
         if any(flag != 8 and flag not in (6, 9) for flag in control):
-            raise ValueError("Path: mixed mode deformation not allowed with "
-                             "displacement control {0}".format(leg))
+            raise MatModLabError("Path: mixed mode deformation not allowed with "
+                                 "displacement control {0}".format(leg))
 
         # must specify all components
         elif len(control) < 3:
-            raise ValueError("all 3 components of displacement must "
-                             "be specified {0}".format(leg))
+            raise MatModLabError("all 3 components of displacement must "
+                                 "be specified {0}".format(leg))
 
     return np.array(control, dtype=np.int)
 
@@ -157,7 +198,7 @@ def format_continuum_path(path, kappa, amplitude, ratfac, nfac, ndumps,
     # stress control if any of the control types are 3 or 4
     stress_control = any(c in (3, 4) for leg in path for c in leg[2])
     if stress_control and kappa != 0.:
-        raise ValueError("kappa must be 0 with stress control option")
+        raise MatModLabError("kappa must be 0 with stress control option")
 
     # From these formulas, note that AMPL may be used to increase or
     # decrease the peak strain without changing the strain rate. ratfac is
@@ -189,8 +230,8 @@ def format_continuum_path(path, kappa, amplitude, ratfac, nfac, ndumps,
         termination_time = tfac * termination_time
 
         if len(control) != len(Cij):
-            raise ValueError("len(cij) != len(control) in leg "
-                             "{0}".format(leg_num))
+            raise MatModLabError("len(cij) != len(control) in leg "
+                                 "{0}".format(leg_num))
             continue
 
         # pull out electric field from other deformation specifications
@@ -218,16 +259,16 @@ def format_continuum_path(path, kappa, amplitude, ratfac, nfac, ndumps,
             defgrad = np.reshape(ffac * Cij, (3, 3))
             jac = np.linalg.det(defgrad)
             if jac <= 0:
-                raise ValueError("Inadmissible deformation gradient in "
-                                 "leg {0} gave a Jacobian of "
-                                 "{1:f}".format(leg_num, jac))
+                raise MatModLabError("Inadmissible deformation gradient in "
+                                     "leg {0} gave a Jacobian of "
+                                     "{1:f}".format(leg_num, jac))
 
             # convert defgrad to strain E with associated rotation given by
             # axis of rotation x and angle of rotation theta
             Rij, Vij = np.linalg.qr(defgrad)
             if np.max(np.abs(Rij - np.eye(3))) > np.finfo(np.float).eps:
-                raise ValueError("Rotation encountered in leg {0}. "
-                                 "Rotations are not supported".format(leg_num))
+                raise MatModLabError("Rotation encountered in leg {0}. "
+                                     "Rotations are not supported".format(leg_num))
             Uij = np.dot(Rij.T, np.dot(Vij, Rij))
             Cij = mmlabpack.u2e(Uij, kappa)
             Rij = np.reshape(Rij, (NTENS,))
@@ -249,8 +290,8 @@ def format_continuum_path(path, kappa, amplitude, ratfac, nfac, ndumps,
             # only one strain value given -> volumetric strain
             evol = Cij[0]
             if kappa * evol + 1. < 0.:
-                raise ValueError("1 + kappa * ev must be positive in leg "
-                                 "{0}".format(leg_num))
+                raise MatModLabError("1 + kappa * ev must be positive in leg "
+                                     "{0}".format(leg_num))
 
             if kappa == 0.:
                 eij = evol / 3.
@@ -282,8 +323,8 @@ def format_continuum_path(path, kappa, amplitude, ratfac, nfac, ndumps,
                 Cij[idx] *= efac
 
                 if kappa * Cij[idx] + 1. < 0.:
-                    raise ValueError("1 + kappa*E[{0}] must be positive in "
-                                     "leg {1}".format(idx, leg_num))
+                    raise MatModLabError("1 + kappa*E[{0}] must be positive in "
+                                         "leg {1}".format(idx, leg_num))
 
             elif ctype == 4:
                 # adjust stress
@@ -294,10 +335,10 @@ def format_continuum_path(path, kappa, amplitude, ratfac, nfac, ndumps,
         # initial stress check
         if termination_time == 0.:
             if 3 in control:
-                raise ValueError("initial stress rate ambiguous")
+                raise MatModLabError("initial stress rate ambiguous")
 
             elif 4 in control and any(x != 0. for x in Cij):
-                raise ValueError("nonzero initial stress not yet supported")
+                raise MatModLabError("nonzero initial stress not yet supported")
 
         # Replace leg with modfied values
         leg = [termination_time, num_steps]
@@ -317,18 +358,18 @@ def format_continuum_path(path, kappa, amplitude, ratfac, nfac, ndumps,
 
     return np.array(path)
 
-def parse_function_path(lines, functions, num_steps, cfmt):
+def _parse_function_path(lines, functions, num_steps, cfmt):
     """Parse the path given by functions
 
     """
     start_time = 0.
     leg_num = 1
     if not lines:
-        raise GenericError("Empty path encountered")
+        raise MatModLabError("Empty path encountered")
         return
     elif len(lines) > 1:
-        raise GenericError("Only one line of table functions allowed, "
-                           "got {0}".format(len(lines)))
+        raise MatModLabError("Only one line of table functions allowed, "
+                             "got {0}".format(len(lines)))
         return
 
     # format functions
@@ -359,25 +400,24 @@ def parse_function_path(lines, functions, num_steps, cfmt):
         try:
             fid = int(float(fid))
         except ValueError:
-            raise GenericError("expected integer function ID, got {0}".format(fid))
+            raise MatModLabError("expected integer function ID, "
+                                 "got {0}".format(fid))
             continue
         try:
             scale = float(scale)
         except ValueError:
-            raise GenericError("expected real function scale for function {0}"
-                               ", got {1}".format(fid, scale))
-            continue
+            raise MatModLabError("expected real function scale for function {0}"
+                                 ", got {1}".format(fid, scale))
 
         fcn = functions.get(fid)
         if fcn is None:
-            raise GenericError("{0}: function not defined".format(fid))
-            continue
+            raise MatModLabError("{0}: function not defined".format(fid))
         Cij.append((scale, fcn))
 
     # --- Check lengths of Cij and control are consistent
     if len(Cij) != len(control):
-        raise UserInputError("Path: len(Cij) != len(control) in leg {0}"
-                             .format(leg_num))
+        raise MatModLabError("Path: len(Cij) != len(control) in "
+                             "leg {0}".format(leg_num))
 
     path = []
     vals = np.zeros(len(control))
@@ -402,12 +442,12 @@ def format_functions(funcs):
     else:
         for func in funcs:
             if not isinstance(func, Function):
-                raise GenericError("functions must be instances "
-                                   "of utils.functions.Function")
+                raise MatModLabError("functions must be instances "
+                                     "of utils.functions.Function")
             functions[func.func_id] = func
     return functions
 
-def parse_table_path(lines, tfmt, cols, cfmt, lineskip):
+def _parse_table_path(lines, tfmt, cols, cfmt, lineskip):
     """Parse the path table
 
     """
@@ -428,9 +468,8 @@ def parse_table_path(lines, tfmt, cols, cfmt, lineskip):
         try:
             line = [float(x) for x in line]
         except ValueError:
-            raise UserInputError("Expected floats in leg {0}, got {1}".format(
+            raise MatModLabError("Expected floats in leg {0}, got {1}".format(
                 leg_num, line))
-            continue
         tbl.append(line)
     tbl = np.array(tbl)
 
@@ -444,9 +483,8 @@ def parse_table_path(lines, tfmt, cols, cfmt, lineskip):
         try:
             line = line[columns]
         except IndexError:
-            raise UserInputError("Requested column not found in leg "
+            raise MatModLabError("Requested column not found in leg "
                                  "{0}".format(leg_num))
-            continue
 
         if tfmt == "dt":
             termination_time += line[0]
@@ -468,8 +506,8 @@ def parse_table_path(lines, tfmt, cols, cfmt, lineskip):
 
         # --- Check lengths of Cij and control are consistent
         if len(Cij) != len(control):
-            raise UserInputError("Path: len(Cij) != len(control) in leg {0}"
-                                 .format(leg_num))
+            raise MatModLabError("Path: len(Cij) != len(control) "
+                                 "in leg {0}".format(leg_num))
 
         path.append([termination_time, num_steps, control, Cij])
         leg_num += 1
