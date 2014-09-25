@@ -47,6 +47,16 @@ TEMP0 = 80
 
 
 class Completion:
+    """Container class for material completions.
+
+    Note that __getitem__ is hijacked to not raise an
+    exception if you are trying to get something that is not
+    in __dict___.  While this is normally dangerous, it is 
+    nice here so that we don't have to explicitly set every 
+    possible property in the completion (some for which there 
+    isn't enough info to compute in the first place).
+
+    """
     def __init__(self, dict):
         self.__dict__.update(dict)
     def __getitem__(self, key):
