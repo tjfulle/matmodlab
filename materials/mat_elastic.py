@@ -2,6 +2,7 @@ import os
 from core.product import MAT_D
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
+from materials.completion import EC_BULK, EC_SHEAR
 try: import lib.elastic as mat
 except ImportError: mat = None
 
@@ -10,6 +11,7 @@ class Elastic(MaterialModel):
     def __init__(self):
         self.name = "elastic"
         self.param_names = ["K:BMOD", "G:SMOD:MU"]
+        self.prop_names = [EC_BULK, EC_SHEAR]
         d = os.path.join(MAT_D, "src")
         f1 = os.path.join(d, "elastic.f90")
         f2 = os.path.join(d, "elastic.pyf")
@@ -23,8 +25,6 @@ class Elastic(MaterialModel):
             raise ModelNotImportedError("elastic")
         comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
         mat.elastic_check(self.params, *comm)
-        self.bulk_modulus = self.params["K"]
-        self.shear_modulus = self.params["G"]
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):

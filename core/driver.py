@@ -10,6 +10,7 @@ from utils.errors import FileNotFoundError, MatModLabError
 from utils.dparse import read_path
 from core.runtime import opts
 from utils.constants import NSYMM, NTENS, I9
+from materials.completion import EC_BULK
 import utils.mmlabpack as mmlabpack
 from core.solvers import sig2d
 
@@ -294,7 +295,7 @@ class ContinuumDriver(PathDriver):
                     absmax = lambda a: np.max(np.abs(a))
                     sigerr = np.sqrt(np.sum((sig[v] - sigspec[2]) ** 2))
                     warned = True
-                    _tol = np.amax(np.abs(sig[v])) / material.bulk_modulus
+                    _tol = np.amax(np.abs(sig[v])) / material.completions[EC_BULK]
                     _tol = max(_tol, 1e-4)
                     if sigerr > _tol:
                         self.logger.warn("leg: {0}, prescribed stress error: "

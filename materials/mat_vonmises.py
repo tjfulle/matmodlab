@@ -4,6 +4,7 @@ from core.runtime import opts
 from core.material import MaterialModel
 from utils.constants import ROOT2, ROOT23
 from utils.data_containers import Parameters
+from materials.completion import EC_BULK, EC_SHEAR, Y_TENSION, HARD_MOD, HARD_PARAM
 
 class VonMises(MaterialModel):
 
@@ -20,70 +21,49 @@ class VonMises(MaterialModel):
                                    #    0 < BETA < 1 for mixed hardening
                                    #    BETA = 1 for kinematic hardening
                                     ]
+        self.prop_names = [EC_BULK, EC_SHEAR, Y_TENSION, HARD_MOD, HARD_PARAM]
 
-        self.can_mimic = {"pyelastic":["K", "G"],
-                          "elastic":["K", "G"],
-                          "pyplastic":["K", "G", "A1", "A4"]}
-
+    def mimicking(self):
+        iparray = np.zeros(5)
+        iparray[0] = self.mimic.completions[EC_BULK] or 0.
+        iparray[1] = self.mimic.completions[EC_SHEAR] or 0.
+        iparray[2] = self.mimic.completions[Y_TENSION] or 1.E+99
+        iparray[3] = self.mimic.completions[HARD_MOD] or 0.
+        iparray[4] = self.mimic.completions[HARD_PARAM] or 0.
+        if self.mimic.completions[FRICTION_ANGLE]:
+            self.logger.warn("model {0} cannot mimic {1} with "
+                "pressure dependence".format(self.name, self.mimic.name))
+        return iparray
 
     def setup(self):
         """Set up the von Mises material
 
         """
         # Check inputs
-        if self.model_to_mimic in ["elastic", "pyelastic"]:
-            self.logger.write("model '{0}' mimicing '{1}'".format(
-                self.name, self.model_to_mimic))
-            K = self.params["K"]
-            G = self.params["G"]
+        K, G, Y0, H, BETA = self.params
+
+        errors = 0
+        if K <= 0.0:
+            errors += 1
+            self.logger.error("Bulk modulus K must be positive")
+        if G <= 0.0:
+            errors += 1
+            self.logger.error("Shear modulus G must be positive")
+        nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
+        if nu > 0.5:
+            errors += 1
+            self.logger.error("Poisson's ratio > .5")
+        if nu < -1.0:
+            errors += 1
+            self.logger.error("Poisson's ratio < -1.")
+        if nu < 0.0:
+            self.logger.warn("negative Poisson's ratio")
+        if abs(Y0) <= 1.E-12:
             Y0 = 1.0e99
-            H = 0.0
-            BETA = 0.0
-        elif self.model_to_mimic == "pyplastic":
-            self.logger.write("model '{0}' mimicing '{1}'".format(
-                self.name, self.model_to_mimic))
-            K = self.params["K"]
-            G = self.params["G"]
-            Y0 = np.sqrt(3.0) * self.params["A1"]
-            H = 0.0
-            BETA = 0.0
-            if self.params["A4"] != 0.0:
-                self.logger.error("model {0} cannot mimic {1} with "
-                "pressure dependence".format(self.name, self.model_to_mimic))
-        else:
-            K = self.params["K"]
-            G = self.params["G"]
-            Y0 = self.params["Y0"]
-            H = self.params["H"]
-            BETA = self.params["BETA"]
+        if errors:
+            self.logger.raise_error("stopping due to previous errors")
 
-            errors = 0
-            if K <= 0.0:
-                errors += 1
-                self.logger.error("Bulk modulus K must be positive")
-            if G <= 0.0:
-                errors += 1
-                self.logger.error("Shear modulus G must be positive")
-            nu = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
-            if nu > 0.5:
-                errors += 1
-                self.logger.error("Poisson's ratio > .5")
-            if nu < -1.0:
-                errors += 1
-                self.logger.error("Poisson's ratio < -1.")
-            if nu < 0.0:
-                self.logger.warn("negative Poisson's ratio")
-            if Y0 == 0.0:
-                Y0 = 1.0e99
-            if errors:
-                self.logger.raise_error("stopping due to previous errors")
-
-        newparams = [K, G, Y0, H, BETA]
-        newnames = ["K", "G", "Y0", "H", "BETA"]
-        self.params = Parameters(newnames, newparams, self.name)
-
-        self.bulk_modulus = self.params["K"]
-        self.shear_modulus = self.params["G"]
+        self.params[:] = [K, G, Y0, H, BETA]
 
         # Register State Variables
         self.sv_names = ["EQPS", "Y",
@@ -130,7 +110,7 @@ class VonMises(MaterialModel):
         iso = de[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         dev = de - iso
 
-        stress_trial = stress + 3.0 * self.bulk_modulus * iso + 2.0 * self.shear_modulus * dev
+        stress_trial = stress + 3.0 * self.params["K"] * iso + 2.0 * self.params["G"] * dev
 
         xi_trial = stress_trial - bs
         xi_trial_eqv = self.eqv(xi_trial)
@@ -141,10 +121,10 @@ class VonMises(MaterialModel):
         else:
             N = xi_trial - xi_trial[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
             N = N / (ROOT23 * xi_trial_eqv)
-            deqps = (xi_trial_eqv - yn) / (3.0 * self.shear_modulus + self.params["H"])
+            deqps = (xi_trial_eqv - yn) / (3.0 * self.params["G"] + self.params["H"])
             dps = 1. / ROOT23 * deqps * N
 
-            stress_final = stress_trial - 2.0 * self.shear_modulus / ROOT23 * deqps * N
+            stress_final = stress_trial - 2.0 * self.params["G"] / ROOT23 * deqps * N
 
             bs = bs + 2.0 / 3.0 * self.params["H"] * self.params["BETA"] * dps
 

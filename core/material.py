@@ -4,6 +4,7 @@ import sys
 import numpy as np
 
 from utils.errors import *
+from materials.completion import *
 from core.runtime import opts
 import utils.xpyclbr as xpyclbr
 import utils.mmlabpack as mmlabpack
@@ -27,90 +28,61 @@ try:
 except ImportError:
     xpansion = None
 
+
+class MetaClass(type):
+    """metaclass which overrides the "__call__" function"""
+    def __call__(cls, *args, **kwargs):
+        """Called when you call Class() """
+        obj = type.__call__(cls)
+        obj.pre_init(*args, **kwargs)
+        return obj
+
+
 class MaterialModel(object):
     """The base material class
 
     """
+    __metaclass__ = MetaClass
     W = np.ones(6)
     def __init__(self):
         raise MatModLabError("materials must define own __init__")
 
-    def assert_attr_exists(self, attr):
-        noattr = -31
-        if getattr(self, attr, noattr) == noattr:
-            raise MatModLabError("material missing attribute: {0}".format(attr))
+    def pre_init(self, *args, **kwargs):
+        """Parses parameters from user input and allocates parameter array
 
-    def init(self, model_to_mimic=None, logger=None, file=None):
-
+        """
+        parameters = args[0]
+        constants = args[1]
+        self.mimic = kwargs.pop("mimic", None)
+        self._param_name_map = {}
+        self.prop_names = getattr(self, "prop_names", None)
         for attr in ("name", "param_names"):
             self.assert_attr_exists(attr)
 
-        self.model_to_mimic = model_to_mimic
-        self._vars = []
-        self.nvisco = 0
-        self.visco_model = None
-        self.trs_model = None
-        self.expansion_model = None
-        self.bulk_modulus = None
-        self.shear_modulus = None
-        self.J0 = None
-        self.nxtra = 0
-        self.initial_state = np.zeros(self.nxtra)
-        self.xkeys = []
-        self.initialized = True
-        self.visco_params = None
-        self.exp_params = None
-        self.itemp = DEFAULT_TEMP
-        self.initial_stress = np.zeros(6)
-        self.logger = logger or Logger()
-        self._file = file
-        self._param_name_map = {}
+        if self.mimic is not None:
+            # parameters have already been parsed by the model we are
+            # mimicking, now we just need to modify them for this model
+            params = self.mimicking()
 
-    @property
-    def logger(self):
-        return self._logger
+        elif self.parameter_names == SET_AT_RUNTIME:
+            # some models, like abaqus models, do not have the parameter names
+            # set. The user must provide the entire UI array - as an array.
 
-    @logger.setter
-    def logger(self, new_logger):
-        try:
-            new_logger.write
-            new_logger.warn
-            new_logger.error
-        except AttributeError, TypeError:
-            raise MatModLabError("attempting to assign a non logger "
-                                 "to the {0} material logger".format(self.name))
-        self._logger = new_logger
+            # Check for number of constants
+            if constants is None:
+                raise MatModLabError("{0}: expected keyword "
+                                     "constants".format(self.name))
+            constants = int(constants)
 
-    @property
-    def file(self):
-        return self._file
+            # Check parameters
+            if not isinstance(parameters, (list, tuple, np.ndarray)):
+                raise MatModLabError("{0}: parameters must be "
+                                     "an array".format(self.name))
+            if len(parameters) != constants:
+                raise MatModLabError("len(parameters) != constants")
 
-    @file.setter
-    def file(self, value):
-        self._file = value
+            parameters = np.array([float(x) for x in parameters])
 
-    @property
-    def initial_temp(self):
-        return self.itemp
-
-    @initial_temp.setter
-    def initial_temp(self, value):
-        self.itemp = value
-
-    def setup_new_material(self, parameters, depvar, initial_temp, trs=None,
-                           expansion=None, viscoelastic=None):
-        """Set up the new material
-
-        """
-        self.logger.write("setting up {0} material".format(self.name))
-        self.initial_temp = initial_temp
-
-        if self.model_to_mimic != None:
-            if not hasattr(self, "can_mimic") or not self.can_mimic.has_key(self.model_to_mimic):
-                raise UserInputError("Model {0} can't mimic {1}".
-                                     format(self.name, self.model_to_mimic))
-
-        if self.parameter_names == SET_AT_RUNTIME:
             if hasattr(self, "aba_model"):
                 self.parameter_names = len(parameters) + 1
                 params = np.append(parameters, [0])
@@ -134,8 +106,47 @@ class MaterialModel(object):
                                          "for model {1}".format(key, self.name))
                 params[idx] = value
 
-        self.iparams = Parameters(self.parameter_names, params, self.name)
-        self.params = Parameters(self.parameter_names, params, self.name)
+        self.iparray = np.array(params)
+        self.completions = complete_properties(self.iparray, self.prop_names)
+
+    def initialize(self, depvar, initial_temp, file=None, trs=None,
+                   expansion=None, viscoelastic=None, logger=None):
+        self._vars = []
+        self.nvisco = 0
+        self.visco_model = None
+        self.trs_model = None
+        self.expansion_model = None
+        self.J0 = None
+        self.nxtra = 0
+        self.initial_state = np.zeros(self.nxtra)
+        self.xkeys = []
+        self.initialized = True
+        self.visco_params = None
+        self.exp_params = None
+        self.itemp = DEFAULT_TEMP
+        self.initial_stress = np.zeros(6)
+        self.logger = logger or Logger()
+        self._file = file
+
+        # Do the actual setup
+        self._setup(depvar, initial_temp, trs=trs, expansion=expansion,
+                    viscoelastic=viscoelastic)
+        self._initialize()
+
+    def mimicking(self):
+        raise NotImplementedError("mimicking not supported by "
+                                  "{0}".format(self.name))
+
+    def _setup(self, depvar, initial_temp, trs=None, expansion=None,
+               viscoelastic=None):
+        """Set up the new material
+
+        """
+        self.logger.write("setting up {0} material".format(self.name))
+        self.initial_temp = initial_temp
+        self.iparams = Parameters(self.parameter_names, self.iparray, self.name)
+        self.params = Parameters(self.parameter_names, self.iparray, self.name)
+
         try:
             self.setup(self.params, depvar)
         except TypeError:
@@ -200,6 +211,42 @@ class MaterialModel(object):
 
         self.set_constant_jacobian()
 
+    def assert_attr_exists(self, attr):
+        noattr = -31
+        if getattr(self, attr, noattr) == noattr:
+            raise MatModLabError("material missing attribute: {0}".format(attr))
+
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, new_logger):
+        try:
+            new_logger.write
+            new_logger.warn
+            new_logger.error
+        except AttributeError, TypeError:
+            raise MatModLabError("attempting to assign a non logger "
+                                 "to the {0} material logger".format(self.name))
+        self._logger = new_logger
+
+    @property
+    def file(self):
+        return self._file
+
+    @file.setter
+    def file(self, value):
+        self._file = value
+
+    @property
+    def initial_temp(self):
+        return self.itemp
+
+    @initial_temp.setter
+    def initial_temp(self, value):
+        self.itemp = value
+
     def register_variable(self, var_name, var_type, keys=None, ivals=None):
         if keys is not None:
             length = len(ivals)
@@ -214,16 +261,18 @@ class MaterialModel(object):
         return self._vars
 
     def set_constant_jacobian(self):
-        if not self.bulk_modulus:
+        if not self.completions[EC_BULK]:
             self.logger.warn("{0}: bulk modulus not defined".format(self.name))
+            self.J0 = self.get_initial_jacobian()
             return
-        if not self.shear_modulus:
+        if not self.completions[EC_SHEAR]:
             self.logger.warn("{0}: shear modulus not defined".format(self.name))
+            self.J0 = self.get_initial_jacobian()
             return
 
         self.J0 = np.zeros((6, 6))
-        threek = 3. * self.bulk_modulus
-        twog = 2. * self.shear_modulus
+        threek = 3. * self.completions[EC_BULK]
+        twog = 2. * self.completions[EC_SHEAR]
         nu = (threek - twog) / (2. * threek + twog)
         c1 = (1. - nu) / (1. + nu)
         c2 = nu / (1. + nu)
@@ -260,25 +309,17 @@ class MaterialModel(object):
         self.initial_state = np.append(self.initial_state, np.array(values))
 
     def get_initial_jacobian(self):
-        """Get the initial Jacobian numerically
-
-        """
-        d = np.zeros(6)
-        stress = np.zeros(6)
-        time = 0.
-        dtime = 1.
-        F0 = np.eye(3).reshape(9,)
-        F = np.eye(3).reshape(9,)
-        stran = np.zeros(6)
-        elec_field = np.zeros(3)
-        temp = self.initial_temp
-        dtemp = 0.
-        user_field = 0.
+        """Get the initial Jacobian"""
+        time, dtime = 0, 0
+        temp, dtemp = self.initial_temp, 0.
         kappa = 0
-        v = range(6)
-        c = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0, F,
-            stran, d, elec_field, user_field, stress, self.initial_state, v)
-        return c
+        F0, F = np.eye(3), np.eye(3)
+        stran, d, elec_field = np.zeros(6), np.zeros(6), np.zeros(3)
+        user_field = 0
+        ddsdde = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
+                       F0, F, stran, d, elec_field, user_field,
+                       self.initial_stress, self.initial_state, disp=2)
+        return ddsdde
 
     def numerical_jacobian(self, time, dtime, temp, dtemp, kappa, F0, F, stran, d,
                            elec_field, user_field, stress, xtra, v):
@@ -352,19 +393,8 @@ class MaterialModel(object):
 
     @property
     def parameter_names(self):
-        if self.model_to_mimic is None:
-            pnames = self.param_names
-        elif hasattr(self, "can_mimic"):
-            if self.can_mimic.has_key(self.model_to_mimic):
-                pnames = self.can_mimic[self.model_to_mimic]
-            else:
-                self.logger.error("{0} does not know how to mimic {1}".
-                                  format(self.name, self.model_to_mimic))
-        else:
-            self.logger.error("{0} does not know how to mimic anything")
-
-        try: return [n.split(":")[0].upper() for n in pnames]
-        except TypeError: return pnames
+        try: return [n.split(":")[0].upper() for n in self.param_names]
+        except TypeError: return self.param_names
 
     @parameter_names.setter
     def parameter_names(self, n):
@@ -468,7 +498,7 @@ class MaterialModel(object):
 
         return sig, xtra, ddsdde
 
-    def initialize(self):
+    def _initialize(self):
         """Call the material with initial state
 
         """
@@ -538,13 +568,6 @@ class AbaqusMaterial(MaterialModel):
         xkeys = ["SDV{0}".format(i+1) for i in range(depvar)]
         self.register_xtra_variables(xkeys, statev)
 
-        ddsdde = self.get_initial_jacobian()
-        mu = ddsdde[3, 3]
-        lam = ddsdde[0, 0] - 2. * mu
-
-        self.bulk_modulus = lam + 2. / 3. * mu
-        self.shear_modulus = mu
-
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, statev, **kwargs):
         # abaqus defaults
@@ -577,29 +600,9 @@ class AbaqusMaterial(MaterialModel):
         return stress, statev, ddsdde
 
     def set_constant_jacobian(self):
-        time, dtime = 0, 0
-        temp, dtemp = self.initial_temp, 0.
-        kappa = 0
-        F0, F = np.eye(3), np.eye(3)
-        stran, d, elec_field = np.zeros(6), np.zeros(6), np.zeros(3)
-        user_field = 0
-        self.J0 = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
-                       F0, F, stran, d, elec_field, user_field,
-                       self.initial_stress, self.initial_state, disp=2)
+        self.J0 = self.get_initial_jacobian()
         return
 
-    def get_initial_jacobian(self):
-        """Get the initial Jacobian"""
-        time, dtime = 0, 0
-        temp, dtemp = self.initial_temp, 0.
-        kappa = 0
-        F0, F = np.eye(3), np.eye(3)
-        stran, d, elec_field = np.zeros(6), np.zeros(6), np.zeros(3)
-        user_field = 0
-        ddsdde = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
-                       F0, F, stran, d, elec_field, user_field,
-                       self.initial_stress, self.initial_state, disp=2)
-        return ddsdde
 
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
@@ -658,28 +661,10 @@ def Material(model, parameters=None, depvar=None, constants=None,
 
     logger = logger or Logger()
 
-    # Check to see if any mimicing requests are made.
-    # If there are, see if it applies.
-    model_to_mimic = None
-    if opts.mimic:
-        for pair in opts.mimic:
-            newpair = pair.split(":", 1)
-            if len(newpair) != 2:
-                continue
-            if newpair[0].lower() != model.lower():
-                continue
-
-            model_to_mimic, model = model, newpair[1]
-
-            # Just because we request it, doesn't mean that a model
-            # can handle it. Make the request known.
-            logger.warn("Requesting that model {0} mimic model {1}".
-                                         format(model, model_to_mimic))
-            break
-
     # determine which model
+    all_mats = find_materials()
     m = "_".join(model.split()).lower()
-    for (lib, libinfo) in find_materials().items():
+    for (lib, libinfo) in all_mats.items():
         if lib.lower() == m:
             break
     else:
@@ -707,7 +692,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
     # import the material
     module = load_file(libinfo.file)
     mat_class = getattr(module, libinfo.class_name)
-    material = mat_class()
+    material = mat_class(parameters, constants)
 
     if m in ABA_MATS or m in USER_MAT:
         material.source_files = material.aux_files
@@ -731,33 +716,40 @@ def Material(model, parameters=None, depvar=None, constants=None,
             del sys.modules[libinfo.module]
         module = load_file(libinfo.file, reload=True)
         mat_class = getattr(module, libinfo.class_name)
-        material = mat_class()
+        material = mat_class(parameters, constants)
+
+    # Check to see if any mimicing requests are made.
+    for item in opts.switch:
+        (old, new) = item.split(":")
+        if old.lower() != material.name.lower():
+            continue
+        # a switch was requested, assign the previously instantiated mode to
+        # mimic and instantiate the new model
+        mimic, model = material, new
+
+        # Make the request known.
+        logger.warn("requesting that model {0} mimic model {1}".format(
+            model, mimic.name))
+
+        # Get the new material model
+        m = "_".join(model.split()).lower()
+        for (lib, libinfo) in all_mats.items():
+            if lib.lower() == m:
+                break
+        else:
+            raise MatModelNotFoundError(model)
+            break
+
+        # import and instantiate the new material
+        module = load_file(libinfo.file)
+        mat_class = getattr(module, libinfo.class_name)
+        # send the mimic keyword to the constructor this time around
+        material = mat_class(parameters, constants, mimic=mimic)
 
     # initialize and set up material
-    material.init(model_to_mimic=model_to_mimic,
-                  logger=logger, file=libinfo.file)
-
-    if material.parameter_names == SET_AT_RUNTIME:
-        # some models, like abaqus models, do not have the parameter names
-        # set. The user must provide the entire UI array - as an array.
-
-        # Check for number of constants
-        if constants is None:
-            raise MatModLabError("{0}: expected keyword constants".format(lib))
-        constants = int(constants)
-
-        # Check parameters
-        if not isinstance(parameters, (list, tuple, np.ndarray)):
-            raise MatModLabError("{0}: parameters must be an array".format(lib))
-        if len(parameters) != constants:
-            raise MatModLabError("len(parameters) != constants")
-        parameters = np.array([float(x) for x in parameters])
-
-    # Do the actual setup
-    material.setup_new_material(parameters, depvar, initial_temp, trs=trs,
-                                expansion=expansion, viscoelastic=viscoelastic)
-    material.initialize()
-
+    material.initialize(depvar, initial_temp, file=libinfo.file, trs=trs,
+                        expansion=expansion, viscoelastic=viscoelastic,
+                        logger=logger)
     return material
 
 

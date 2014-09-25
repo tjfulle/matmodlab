@@ -4,6 +4,7 @@ from core.runtime import opts
 from core.material import MaterialModel
 from utils.data_containers import Parameters
 from utils.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6
+from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B, HARD_MOD
 
 
 class PyPlastic(MaterialModel):
@@ -19,40 +20,27 @@ class PyPlastic(MaterialModel):
                            "A4"]   # Pressure dependence term.
                                    #   A4 = -d(sqrt(J2)) / d(I1)
                                    #         always positive
-        self.can_mimic = {"pyelastic":["K", "G"],
-                          "elastic":["K", "G"],
-                          "vonmises":["K", "G", "Y0", "H", "BETA"]}
+        self.prop_names = [EC_BULK, EC_SHEAR, DP_A, DP_B]
+
+    def mimicking(self):
+        # Check inputs
+        iparray = np.zeros(len(self.param_names))
+        iparray[0] = self.mimic.completions[EC_BULK] or 0.
+        iparray[1] = self.mimic.completions[EC_SHEAR] or 0.
+        iparray[2] = self.mimic.completions[DP_A] or 1.E+99
+        iparray[3] = self.mimic.completions[DP_B] or 0.
+        if self.mimic.completions[HARD_MOD]:
+            self.logger.warn("model {0} cannot mimic {1} with "
+                             "hardening".format(self.name, self.mimic.name))
+        return iparray
 
     def setup(self):
         """Set up the plastic material
 
         """
-        # Check inputs
-        if self.model_to_mimic  in ['pyelastic', 'elastic']:
-            self.logger.write("model '{0}' mimicing '{1}'".format(
-                self.name, self.model_to_mimic))
-            K = self.params["K"]
-            G = self.params["G"]
+        K, G, A1, A4 = self.params
+        if abs(A1) <= 1.E-12:
             A1 = 1.0e99
-            A4 = 0.0
-        elif self.model_to_mimic == 'vonmises':
-            self.logger.write("model '{0}' mimicing "
-                           "'{1}'".format(self.name, self.model_to_mimic))
-            K = self.params["K"]
-            G = self.params["G"]
-            A1 = self.params["Y0"] * TOOR3
-            A4 = 0.0
-            if self.params["H"] != 0.0:
-                self.logger.error("model {0} cannot mimic {1} with "
-                         "hardening".format(self.name, self.model_to_mimic))
-        else:
-            # default
-            K = self.params["K"]
-            G = self.params["G"]
-            A1 = self.params["A1"]
-            A4 = self.params["A4"]
-            if A1 == 0.0:
-                A1 = 1.0e99
 
         # Check the input parameters
         errors = 0
@@ -81,11 +69,7 @@ class PyPlastic(MaterialModel):
             self.logger.error("stopping due to previous errors")
 
         # Save the new parameters
-        newparams = [K, G, A1, A4]
-        self.params = Parameters(self.param_names, newparams, self.name)
-
-        self.bulk_modulus = self.params["K"]
-        self.shear_modulus = self.params["G"]
+        self.params[:] = [K, G, A1, A4]
 
         # Register State Variables
         self.sv_names = ["EP_XX", "EP_YY", "EP_ZZ", "EP_XY", "EP_XZ", "EP_YZ",
@@ -166,7 +150,7 @@ class PyPlastic(MaterialModel):
         xtra[idx('ROOTJ2')] = self.rootj2(stress)
         xtra[idx('YROOTJ2')] = A1 - A4 * self.i1(stress)
 
-        return stress, xtra, self.constant_jacobian
+        return stress, xtra, None
 
     def dot_with_elastic_stiffness(self, A):
         return (3.0 * self.params["K"] * self.iso(A) +

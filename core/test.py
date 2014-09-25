@@ -27,24 +27,24 @@ class TestError(Exception):
     pass
 
 
-class PostInit(type):
+class MetaSuperInit(type):
     """metaclass which overrides the "__call__" function"""
     def __call__(cls, *args, **kwargs):
         """Called when you call Class() """
-        d = args[0]
         obj = type.__call__(cls)
-        obj.post_init(*args, **kwargs)
+        obj.super_init(*args, **kwargs)
         return obj
 
+
 class TestBase(object):
-    __metaclass__ = PostInit
+    __metaclass__ = MetaSuperInit
     passed = PASSED
     diffed = DIFFED
     failed = FAILED
     failed_to_run = FAILED_TO_RUN
     not_run = NOT_RUN
 
-    def post_init(self, *args, **kwargs):
+    def super_init(self, *args, **kwargs):
         """Initialize the test.
 
         This is done in the parent class after any subclasses have been

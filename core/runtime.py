@@ -21,15 +21,13 @@ opts.viz_on_completion = False
 opts.sqa = False
 opts.warn = "std"
 opts.debug = False
-opts.mimic = []
 opts.nprocs = 1
-opts.switch = None
+opts.switch = []
 opts.verbosity = 1
 if not SUPRESS_USER_ENV:
     opts.sqa = cfgparse("sqa", default=opts.sqa)
     opts.warn = cfgparse("warn", default=opts.warn)
     opts.debug = cfgparse("debug", default=opts.debug)
-    opts.mimic = cfgparse("mimic", default=opts.mimic)
     opts.switch = cfgparse("switch", default=opts.switch)
     opts.nprocs = cfgparse("nprocs", default=opts.nprocs)
     opts.verbosity = cfgparse("verbosity", default=opts.verbosity)

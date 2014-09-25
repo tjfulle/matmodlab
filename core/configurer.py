@@ -79,8 +79,18 @@ def cfgparse(option=None, default=None, _cache=[0]):
         a = _cfgparse(RCFILE)
 
         # parse list-of-string options (default empty list)
-        for i in ("materials", "tests", "mimic"):
+        for i in ("materials", "tests"):
             a[i] = a.pop(i, [])
+
+        # model switching
+        switch = []
+        for pair in a.pop("switch", []):
+            try:
+                old, new = [x.strip() for x in pair.split(":", 1)]
+            except ValueError:
+                raise ValueError("switch option must be specified as a:b")
+            switch.append(":".join([old, new]))
+        a["switch"] = switch
 
         errmsg = "rcfile option '{0}' requires type {1}, got {2}"
         # parse integer options
@@ -106,7 +116,7 @@ def cfgparse(option=None, default=None, _cache=[0]):
             a[i] = mybool(x[0])
 
         # parse string options
-        for i in ("switch", "warn"):
+        for i in ("warn",):
             x = a.pop(i, None)
             if x is None:
                 continue

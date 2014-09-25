@@ -4,6 +4,7 @@ from core.product import MAT_D
 import utils.mmlabpack as mmlabpack
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
+from materials.completion import EC_C10, EC_C01, EC_NU, TEMP0
 try: import lib.mooney_rivlin as mat
 except ImportError: mat = None
 
@@ -16,6 +17,7 @@ class MooneyRivlin(MaterialModel):
     def __init__(self):
         self.name = "mooney_rivlin"
         self.param_names = ["C10", "C01", "NU", "T0", "MC10", "MC01"]
+        self.prop_names = [EC_C10, EC_C01, EC_NU, TEMP0, None, None]
         d = os.path.join(MAT_D, "src")
         f1 = os.path.join(d, "mooney_rivlin.f90")
         f2 = os.path.join(d, "mooney_rivlin.pyf")
@@ -28,11 +30,6 @@ class MooneyRivlin(MaterialModel):
         """
         if mat is None:
             raise ModelNotImportedError("mooney_rivlin")
-        smod = 2. * (self.params["C10"] + self.params["C01"])
-        nu = self.params["NU"]
-        bmod = 2. * smod * (1.+ nu) / 3. / (1 - 2. * nu)
-        self.bulk_modulus = bmod
-        self.shear_modulus = smod
         return
 
     #    def set_constant_jacobian(self):

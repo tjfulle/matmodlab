@@ -34,9 +34,6 @@ class TransIsoElas(MaterialModel):
         xvals = np.zeros(len(xkeys))
         self.register_xtra_variables(xkeys, xvals)
 
-        self.bulk_modulus = self.params["B0"]
-        self.shear_modulus = self.params["A0"]
-
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """Compute updated stress given strain increment
@@ -88,4 +85,4 @@ class TransIsoElas(MaterialModel):
         retstress = np.array([stress[0, 0], stress[1, 1], stress[2, 2],
                               stress[0, 1], stress[1, 2], stress[0, 2]])
 
-        return retstress, xtra, self.constant_jacobian
+        return retstress, xtra, None

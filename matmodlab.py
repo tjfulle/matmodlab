@@ -75,36 +75,6 @@ def matmodlab(func):
 
     """
     from core.runtime import opts, set_runtime_opt
-
-    prog = "mml run"
-    desc = """{0}: run a matmodlab simulation script in the matmodlab
-    environment. Simulation scripts can be run directly by the python
-    interpreter if {1} is on your PYTHONPATH.""".format(prog, ROOT_D)
-
-    parser = argparse.ArgumentParser(prog=prog, description=desc)
-    parser.add_argument("-v", default=opts.verbosity,
-       type=int, help="Verbosity [default: %(default)s]")
-    parser.add_argument("--debug", default=opts.debug, action="store_true",
-       help="Debug mode [default: %(default)s]")
-    parser.add_argument("--sqa", default=opts.sqa, action="store_true",
-       help="SQA mode [default: %(default)s]")
-    parser.add_argument("--switch", metavar="MATERIAL", default=opts.switch,
-       help="Switch material in input with MATERIAL [default: %(default)s]")
-    parser.add_argument("--mimic", metavar="MATX:MATY", default=opts.mimic,
-       nargs="*", help=("Run with MATY instead of MATX, if present"
-             "(not supported by all models) [default: %(default)s]"))
-    parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument("-B", metavar="MATERIAL",
-        help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
-    parser.add_argument("-V", default=False, action="store_true",
-        help="Launch results viewer on completion [default: %(default)s]")
-    parser.add_argument("-j", "--nprocs", type=int, default=opts.nprocs,
-        help="Number of simultaneous jobs [default: %(default)s]")
-    parser.add_argument("-E", action="store_true", default=False,
-        help="Do not use matmodlabrc configuration file [default: False]")
-    parser.add_argument("-W", choices=["std", "all", "error"], default=opts.warn,
-        help="Warning level [default: %(default)s]")
-
     def decorated_func(*args, **kwargs):
         global already_splashed, already_wiped
         get_f = kwargs.pop("get_f", None)
@@ -120,11 +90,9 @@ def matmodlab(func):
            help="Debug mode [default: %(default)s]")
         parser.add_argument("--sqa", default=opts.sqa, action="store_true",
            help="SQA mode [default: %(default)s]")
-        parser.add_argument("--switch", metavar="MATERIAL", default=opts.switch,
-           help="Switch material in input with MATERIAL [default: %(default)s]")
-        parser.add_argument("--mimic", metavar="MATERIAL", default=opts.mimic,
-           help=("Set parameters of input material to mimic MATERIAL "
-                 "(not supported by all models) [default: %(default)s]"))
+        parser.add_argument("--switch", metavar="MATX:MATY", default=opts.switch,
+           nargs="+", help=("Run with MATY instead of MATX, if present"
+             "(not supported by all models) [default: %(default)s]"))
         parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
         parser.add_argument("-B", metavar="MATERIAL",
             help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
@@ -159,10 +127,14 @@ def matmodlab(func):
 
         # directory to look for hrefs and other files
         set_runtime_opt("I", clargs.I)
-        if clargs.switch:
-            set_runtime_opt("switch", clargs.switch)
-        if clargs.mimic:
-            set_runtime_opt("mimic", clargs.mimic)
+        switch = []
+        for pair in clargs.switch:
+            try:
+                (old, new) = pair.split(":")
+            except ValueError:
+                parser.error("expected switch arguments as MATX:MATY")
+            switch.append(":".join([old, new]))
+        set_runtime_opt("switch", clargs.switch)
         if clargs.V:
             set_runtime_opt("viz_on_completion", True)
 
