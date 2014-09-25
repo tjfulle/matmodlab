@@ -751,7 +751,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         module = load_file(libinfo.file)
         mat_class = getattr(module, libinfo.class_name)
         # send the mimic keyword to the constructor this time around
-        material = mat_class(parameters, constants, mimic=mimic)
+        material = mat_class(None, None, mimic=mimic)
 
     # initialize and set up material
     material.initialize(depvar, initial_temp, file=libinfo.file, trs=trs,
