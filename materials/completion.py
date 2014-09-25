@@ -104,7 +104,7 @@ def complete_properties(parameters, propmap):
         if idx is None:
             continue
         completion[idx] = parameters[i]
-        if idx < 12:
+        if idx <= DENSITY:
             elas[idx] = parameters[i]
     completion.update(compute_elastic_constants(elas, disp=1))
 
