@@ -90,8 +90,8 @@ def matmodlab(func):
        help="SQA mode [default: %(default)s]")
     parser.add_argument("--switch", metavar="MATERIAL", default=opts.switch,
        help="Switch material in input with MATERIAL [default: %(default)s]")
-    parser.add_argument("--mimic", metavar="MATERIAL", default=opts.mimic,
-       help=("Set parameters of input material to mimic MATERIAL "
+    parser.add_argument("--mimic", metavar="MATX:MATY", default=opts.mimic,
+       nargs="*", help=("Run with MATY instead of MATX, if present"
              "(not supported by all models) [default: %(default)s]"))
     parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("-B", metavar="MATERIAL",

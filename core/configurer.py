@@ -74,28 +74,47 @@ def myint(n):
 
 def cfgparse(option=None, default=None, _cache=[0]):
     if not _cache[0]:
+        # 'a' is a dict of options, each option is a list of strings, each
+        # string is a line from the config file.
         a = _cfgparse(RCFILE)
 
-        # set some expected options (even if they are empty)
-        a["materials"] = a.pop("materials", [])
-        a["tests"] = a.pop("tests", [])
+        # parse list-of-string options (default empty list)
+        for i in ("materials", "tests", "mimic"):
+            a[i] = a.pop(i, [])
 
-        # a is a dict of options, each option is a list of strings. modify to
-        # suite some options better
+        errmsg = "rcfile option '{0}' requires type {1}, got {2}"
+        # parse integer options
         for i in ("verbosity", "nprocs"):
             x = a.pop(i, None)
-            if x is not None:
-                a[i] = myint(x[0])
+            if x is None:
+                continue
+            if len(x) > 1:
+                raise TypeError(errmsg.format(i, "int", "list"))
+            if len(x) < 1:
+                raise TypeError(errmsg.format(i, "int", "nothing"))
+            a[i] = myint(x[0])
 
+        # parse boolean options
         for i in ("sqa", "debug"):
             x = a.pop(i, None)
-            if x is not None:
-                a[i] = mybool(x[0])
+            if x is None:
+                continue
+            if len(x) > 1:
+                raise TypeError(errmsg.format(i, "bool", "list"))
+            if len(x) < 1:
+                raise TypeError(errmsg.format(i, "bool", "nothing"))
+            a[i] = mybool(x[0])
 
-        for i in ("switch", "mimic", "warn"):
+        # parse string options
+        for i in ("switch", "warn"):
             x = a.pop(i, None)
-            if x is not None:
-                a[i] = x[0]
+            if x is None:
+                continue
+            if len(x) > 1:
+                raise TypeError(errmsg.format(i, "string", "list"))
+            if len(x) < 1:
+                raise TypeError(errmsg.format(i, "string", "nothing"))
+            a[i] = x[0]
 
         _cache[0] = Options(**a)
 
@@ -107,11 +126,18 @@ def cfgparse(option=None, default=None, _cache=[0]):
 
 
 def _cfgparse(filename):
+    # Set up variables and functions for removing comments
+    comment_char = "#"
+    rmcomments= lambda x: x[:x.find(comment_char)] if comment_char in x else x
+
     cfg = {}
     try:
-        lines = open(filename).readlines()
+        # read in the file and strip comments at the same time
+        lines = [rmcomments(_) for _ in open(filename).readlines()]
     except IOError:
         return {}
+
+
     regex = re.compile( r'\[(.*?)\]')
 
     # store values from each option in a list. stack[0] will be the name of
