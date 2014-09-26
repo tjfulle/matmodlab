@@ -101,7 +101,7 @@ class Builder(object):
                 I = getattr(material, "include_dirs", [d])
                 fort_libs.update({name: {"source_files": source_files,
                                          "lapack": l, "include_dirs": I}})
-        if mats_to_fetch != "all":
+        if mats_to_fetch != "all" and mats_to_fetch is not None:
             for mat in mats_to_fetch:
                 if mat not in mats_fetched:
                     logger.error("{0}: material not found".format(mat))

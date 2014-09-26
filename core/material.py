@@ -51,6 +51,13 @@ class MaterialModel(object):
         """Parses parameters from user input and allocates parameter array
 
         """
+
+        # The build routine was causing problems here. It kept failing
+        # with a args[0] out-of-bounds error. I figure that when building
+        # you really don't need to do much with pre_init().
+        if len(args) == 0:
+            return
+
         parameters = args[0]
         constants = args[1]
         self.mimic = kwargs.pop("mimic", None)

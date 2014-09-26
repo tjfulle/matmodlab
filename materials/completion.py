@@ -87,6 +87,8 @@ def complete_properties(parameters, propmap):
     elas = [None] * 12
     for (i, idx) in enumerate(propmap):
         completion[i] = None
+        if idx is None:
+            continue
         if idx < 12:
             elas[idx] = parameters[i]
     completion.update(compute_elastic_constants(elas, disp=1))
