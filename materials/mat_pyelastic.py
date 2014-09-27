@@ -10,12 +10,12 @@ class PyElastic(MaterialModel):
         self.param_names = ["K", "G"]
         self.prop_names = [EC_BULK, EC_SHEAR]
 
-    def mimicking(self):
+    def mimicking(self, mat_mimic):
         # reset the initial parameter array to represent this material
         iparray = np.zeros(2)
-        iparray[0] = self.mimic.completions[EC_BULK] or 0.
-        iparray[1] = self.mimic.completions[EC_SHEAR] or 0.
-        if self.mimic.completions[Y_TENSION]:
+        iparray[0] = mat_mimic.completions[EC_BULK] or 0.
+        iparray[1] = mat_mimic.completions[EC_SHEAR] or 0.
+        if mat_mimic.completions[Y_TENSION]:
             self.logger.warn("{0} cannot mimic a strength limit, only "
                              "an elastic response will occur".format(self.name))
         return iparray

@@ -23,16 +23,16 @@ class VonMises(MaterialModel):
                                     ]
         self.prop_names = [EC_BULK, EC_SHEAR, Y_TENSION, HARD_MOD, HARD_PARAM]
 
-    def mimicking(self):
+    def mimicking(self, mat_mimic):
         iparray = np.zeros(5)
-        iparray[0] = self.mimic.completions[EC_BULK] or 0.
-        iparray[1] = self.mimic.completions[EC_SHEAR] or 0.
-        iparray[2] = self.mimic.completions[Y_TENSION] or 1.E+99
-        iparray[3] = self.mimic.completions[HARD_MOD] or 0.
-        iparray[4] = self.mimic.completions[HARD_PARAM] or 0.
-        if self.mimic.completions[FRICTION_ANGLE]:
+        iparray[0] = mat_mimic.completions[EC_BULK] or 0.
+        iparray[1] = mat_mimic.completions[EC_SHEAR] or 0.
+        iparray[2] = mat_mimic.completions[Y_TENSION] or 1.E+99
+        iparray[3] = mat_mimic.completions[HARD_MOD] or 0.
+        iparray[4] = mat_mimic.completions[HARD_PARAM] or 0.
+        if mat_mimic.completions[FRICTION_ANGLE]:
             self.logger.warn("model {0} cannot mimic {1} with "
-                "pressure dependence".format(self.name, self.mimic.name))
+                "pressure dependence".format(self.name, mat_mimic.name))
         return iparray
 
     def setup(self):

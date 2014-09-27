@@ -22,7 +22,7 @@ opts.sqa = False
 opts.warn = "std"
 opts.debug = False
 opts.nprocs = 1
-opts.switch = []
+opts.switch = None
 opts.verbosity = 1
 if not SUPRESS_USER_ENV:
     opts.sqa = cfgparse("sqa", default=opts.sqa)
@@ -36,6 +36,7 @@ def set_runtime_opt(opt, val):
     if opt not in opts:
         raise AttributeError("attempting to set invalid runtime "
                              "option [{0}]".format(opt))
+
     setattr(opts, opt, val)
     if opts.debug:
         opts.raise_e = True

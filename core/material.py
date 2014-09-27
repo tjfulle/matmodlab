@@ -60,16 +60,16 @@ class MaterialModel(object):
 
         parameters = args[0]
         constants = args[1]
-        self.mimic = kwargs.pop("mimic", None)
         self._param_name_map = {}
         self.prop_names = getattr(self, "prop_names", None)
         for attr in ("name", "param_names"):
             self.assert_attr_exists(attr)
 
-        if self.mimic is not None:
+        mat_mimic = kwargs.pop("mimic", None)
+        if mat_mimic is not None:
             # parameters have already been parsed by the model we are
             # mimicking, now we just need to modify them for this model
-            params = self.mimicking()
+            params = self.mimicking(mat_mimic)
 
         elif self.parameter_names == SET_AT_RUNTIME:
             # some models, like abaqus models, do not have the parameter names
@@ -140,7 +140,7 @@ class MaterialModel(object):
                     viscoelastic=viscoelastic)
         self._initialize()
 
-    def mimicking(self):
+    def mimicking(self, mat_mimic):
         raise NotImplementedError("mimicking not supported by "
                                   "{0}".format(self.name))
 
@@ -615,7 +615,7 @@ class AbaqusMaterial(MaterialModel):
 def Material(model, parameters=None, depvar=None, constants=None,
              source_files=None, source_directory=None, initial_temp=None,
              expansion=None, trs=None, viscoelastic=None, logger=None,
-             rebuild=0):
+             rebuild=0, switch=None):
     """Factory method for subclasses of MaterialModel
 
     Parameters
@@ -653,6 +653,10 @@ def Material(model, parameters=None, depvar=None, constants=None,
         A core.logger.Logger instance
     rebuild : bool [False]
         Rebuild the material, or not.
+    switch : list of str of form "MATX:MATY" or None
+        A list of strings that tell us to use MATY instead of MATX whenever
+        MATX is encountered
+
 
     Returns
     -------
@@ -726,8 +730,11 @@ def Material(model, parameters=None, depvar=None, constants=None,
         material = mat_class(parameters, constants)
 
     # Check to see if any mimicing requests are made.
-    for item in opts.switch:
-        (old, new) = item.split(":")
+    # Switch options that are passed take precedence over the rcfile
+    all_switch_opts = ((switch if switch is not None else []) +
+                       (opts.switch if opts.switch is not None else []))
+    for sedset in all_switch_opts:
+        (old, new) = sedset.split(":")
         if old.lower() != material.name.lower():
             continue
         # a switch was requested, assign the previously instantiated mode to
@@ -752,6 +759,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         mat_class = getattr(module, libinfo.class_name)
         # send the mimic keyword to the constructor this time around
         material = mat_class(None, None, mimic=mimic)
+        break  # Only swap once
 
     # initialize and set up material
     material.initialize(depvar, initial_temp, file=libinfo.file, trs=trs,

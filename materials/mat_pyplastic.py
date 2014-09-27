@@ -22,16 +22,16 @@ class PyPlastic(MaterialModel):
                                    #         always positive
         self.prop_names = [EC_BULK, EC_SHEAR, DP_A, DP_B]
 
-    def mimicking(self):
-        # Check inputs
+    def mimicking(self, mat_mimic):
+        # mat_mimic is a material instance of the material model to mimic
         iparray = np.zeros(len(self.param_names))
-        iparray[0] = self.mimic.completions[EC_BULK] or 0.
-        iparray[1] = self.mimic.completions[EC_SHEAR] or 0.
-        iparray[2] = self.mimic.completions[DP_A] or 1.E+99
-        iparray[3] = self.mimic.completions[DP_B] or 0.
-        if self.mimic.completions[HARD_MOD]:
+        iparray[0] = mat_mimic.completions[EC_BULK] or 0.
+        iparray[1] = mat_mimic.completions[EC_SHEAR] or 0.
+        iparray[2] = mat_mimic.completions[DP_A] or 1.E+99
+        iparray[3] = mat_mimic.completions[DP_B] or 0.
+        if mat_mimic.completions[HARD_MOD]:
             self.logger.warn("model {0} cannot mimic {1} with "
-                             "hardening".format(self.name, self.mimic.name))
+                             "hardening".format(self.name, mat_mimic.name))
         return iparray
 
     def setup(self):
