@@ -342,9 +342,24 @@ the factory method requires a unique function ID ``func_id``, function type ``fu
 
 The object returned from ``Function`` is an instance of the class defining
 ``func_type``. At present, ``analytical expression`` and ``piecewise linear``
-function types are supported.
+function types are supported.  When evaluated, functions are called as::
+
+   Function(t)
+
+where ``t`` is the time of interest in the simulation.
 
 The formal parameters to ``Function`` are
+
+.. function:: Function(func_id, func_type, func_defn)
+
+   Build a function object with which a Path path can be created.
+
+   :parameter func_id: Unique integer ID to identify the function.  IDs 0 and 1 are reserved for the constant 0 and 1 functions.
+   :type function_id: int
+   :parameter func_type: The type of function.  One of "analytic expression" or "piecewise linear".  Analytic expression should be a function with 1 callable argument.  If piecewise linear, the current value are interpolated through time.
+   :type function_id: int
+   :parameter func_defn: The function definition.  If func_type is analytic expression, a function of a single argument.  If func_type is piecewise linear, a 2 column table; the first column represents time and the second the values to interpolate through time.
+   :type function_id: callable or str
 
 
 The Logger

@@ -394,8 +394,31 @@ the factory method requires a unique function ID <tt class="docutils literal"><s
 </div>
 <p>The object returned from <tt class="docutils literal"><span class="pre">Function</span></tt> is an instance of the class defining
 <tt class="docutils literal"><span class="pre">func_type</span></tt>. At present, <tt class="docutils literal"><span class="pre">analytical</span> <span class="pre">expression</span></tt> and <tt class="docutils literal"><span class="pre">piecewise</span> <span class="pre">linear</span></tt>
-function types are supported.</p>
+function types are supported.  When evaluated, functions are called as:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Function</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <tt class="docutils literal"><span class="pre">t</span></tt> is the time of interest in the simulation.</p>
 <p>The formal parameters to <tt class="docutils literal"><span class="pre">Function</span></tt> are</p>
+<dl class="function">
+<dt id="Function">
+<tt class="descname">Function</tt><big>(</big><em>func_id</em>, <em>func_type</em>, <em>func_defn</em><big>)</big><a class="headerlink" href="#Function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a function object with which a Path path can be created.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>func_id</strong> &#8211; Unique integer ID to identify the function.  IDs 0 and 1 are reserved for the constant 0 and 1 functions.</li>
+<li><strong>func_type</strong> &#8211; The type of function.  One of &#8220;analytic expression&#8221; or &#8220;piecewise linear&#8221;.  Analytic expression should be a function with 1 callable argument.  If piecewise linear, the current value are interpolated through time.</li>
+<li><strong>func_defn</strong> &#8211; The function definition.  If func_type is analytic expression, a function of a single argument.  If func_type is piecewise linear, a 2 column table; the first column represents time and the second the values to interpolate through time.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 <div class="section" id="the-logger">
 <h2>The Logger<a class="headerlink" href="#the-logger" title="Permalink to this headline">¶</a></h2>
@@ -515,6 +538,8 @@ function types are supported.</p>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
 <li class="toctree-l2"><a class="reference internal" href="clparse.html"><tt class="docutils literal"><span class="pre">mml</span> <span class="pre">run</span></tt> Command Line Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>

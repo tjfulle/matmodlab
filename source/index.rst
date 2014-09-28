@@ -7,13 +7,6 @@ The Material Model Laboratory
 
    background
    users
-..   layout
-..   matint
-..   Files/test_payette
-..   Files/installing_materials
-..   Files/optimization
-..   Files/permutation
-..   Files/materials
 
 
 Indices and tables
