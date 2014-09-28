@@ -25,10 +25,13 @@ from string import upper
 from core.product import RCFILE
 
 def Bool(it):
-    return it[0].lower() not in ("0", "no", "none", "false")
+    return it.lower() not in ("0", "no", "none", "false")
 
 def Int(it):
-    return int(float(it[0]))
+    return int(float(it))
+
+def Float(it):
+    return float(it)
 
 def List(it):
     return [x.strip() for x in it if x.split()]
@@ -105,15 +108,19 @@ def cfgparse(reqopt=None, default=None, _cache=[0]):
             if cfgopt is None:
                 continue
 
-            if info["N"] == "?":
+            N, dtype = info["N"], info["type"]
+            if N == "?" or N == 1:
                 if len(cfgopt) > 1:
                     raise SystemExit(
                         "*** error: mml config: expected option {0} to "
                         "have only one line of options".format(opt))
+                if N ==1 and not cfgopt:
+                    raise SystemExit(
+                        "*** error: mml config: expected option {0}".format(opt))
                 cfgopt = cfgopt[0]
 
             # gets its type
-            cfgopt = info["type"](cfgopt)
+            cfgopt = (cfgopt)
 
             # some checks
             if opt == "switch":
