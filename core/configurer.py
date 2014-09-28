@@ -109,7 +109,7 @@ def cfgparse(reqopt=None, default=None, _cache=[0]):
                 continue
 
             N, dtype = info["N"], info["type"]
-            if N == "?" or N == 1:
+            if N in ("?", 1):
                 if len(cfgopt) > 1:
                     raise SystemExit(
                         "*** error: mml config: expected option {0} to "
@@ -120,7 +120,7 @@ def cfgparse(reqopt=None, default=None, _cache=[0]):
                 cfgopt = cfgopt[0]
 
             # gets its type
-            cfgopt = (cfgopt)
+            cfgopt = dtype(cfgopt)
 
             # some checks
             if opt == "switch":
