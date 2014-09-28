@@ -8,9 +8,9 @@ from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B, HARD_MOD
 
 
 class PyPlastic(MaterialModel):
+    name = "pyplastic"
 
     def __init__(self):
-        self.name = "pyplastic"
         self.param_names = ["K",    # Linear elastic bulk modulus
                             "G",    # Linear elastic shear modulus
                             "A1",   # Intersection of the yield surface with the

@@ -7,9 +7,8 @@ from utils.data_containers import Parameters
 from materials.completion import EC_BULK, EC_SHEAR, Y_TENSION, HARD_MOD, HARD_PARAM
 
 class VonMises(MaterialModel):
-
+    name = "vonmises"
     def __init__(self):
-        self.name = "vonmises"
         self.param_names = ["K",   # Linear elastic bulk modulus
                             "G",   # Linear elastic shear modulus
                             "Y0",  # yield stress in uniaxial tension

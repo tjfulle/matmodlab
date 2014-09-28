@@ -6,16 +6,17 @@ from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B
 try: import lib.plastic as mat
 except ImportError: mat = None
 
+d = os.path.join(MAT_D, "src")
+f1 = os.path.join(d, "plastic.f90")
+f2 = os.path.join(d, "plastic.pyf")
+
 class Plastic(MaterialModel):
+    name = "plastic"
+    source_files = [f1, f2]
 
     def __init__(self):
-        self.name = "plastic"
         self.param_names = ["K", "G", "A1", "A4"]
         self.prop_names = [EC_BULK, EC_SHEAR, DP_A, DP_B]
-        d = os.path.join(MAT_D, "src")
-        f1 = os.path.join(d, "plastic.f90")
-        f2 = os.path.join(d, "plastic.pyf")
-        self.source_files = [f1, f2]
 
     def setup(self):
         """Set up the Plastic material

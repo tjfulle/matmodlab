@@ -11,15 +11,14 @@ import matplotlib.pyplot as plt
 try: from enthought import *
 except ImportError: pass
 
+from chaco.api import *
+from traits.api import *
+from traitsui.api import *
+from chaco.tools.api import *
+from enable.api import ComponentEditor
+from pyface.api import FileDialog, OK as pyOK
 from chaco.example_support import COLOR_PALETTE
-from enable.example_support import DemoFrame, demo_main
-import enable.api as eapi
-import traits.api as tapi
-import traitsui.api as tuiapi
-import traitsui.tabular_adapter as tuit
-import chaco.api as capi
-import chaco.tools.api as ctapi
-import pyface.api as papi
+from traitsui.tabular_adapter import TabularAdapter
 
 from utils.exojac import ExodusIIFile
 
@@ -41,9 +40,6 @@ EPSILON = np.finfo(np.float).eps
 
 LS = ['solid', 'dot dash', 'dash', 'dot', 'long dash']
 F_EVALDB = "mml-evaldb.xml"
-L_EXO_EXT = [".exo", ".base_exo", ".e"]
-L_DAT_EXT = [".out", ".dat", ".base_dat"]
-L_REC_EXT = L_EXO_EXT + L_DAT_EXT
 XY_DATA = None
 SCALE = True
 
@@ -83,7 +79,7 @@ def main(argv=None):
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
     parser.add_argument("sources", nargs="+")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     sources = []
     for source in args.sources:
         if source.rstrip(os.path.sep).endswith(".eval"):
@@ -98,30 +94,30 @@ def main(argv=None):
     create_model_plot(sources)
 
 
-class Plot2D(tapi.HasTraits):
-    container = tapi.Instance(capi.Plot)
-    plot_info = tapi.Dict(tapi.Int, tapi.Dict(tapi.Str, tapi.List(tapi.Str)))
-    plot_data = tapi.List(tapi.Array)
-    overlay_headers = tapi.Dict(tapi.Str, tapi.List(tapi.Str))
-    overlay_plot_data = tapi.Dict(tapi.Str, tapi.Array)
-    variables = tapi.List(tapi.Str)
-    plot_indices = tapi.List(tapi.Int)
-    x_idx = tapi.Int
-    y_idx = tapi.Int
-    Time = tapi.Float
-    high_time = tapi.Float
-    low_time = tapi.Float
-    time_data_labels = tapi.Dict(tapi.Int, tapi.List)
-    runs_shown = tapi.List(tapi.Bool)
-    x_scale = tapi.Float
-    y_scale = tapi.Float
-    _line_style_index = tapi.Int
+class Plot2D(HasTraits):
+    container = Instance(Plot)
+    plot_info = Dict(Int, Dict(Str, List(Str)))
+    plot_data = List(Array)
+    overlay_headers = Dict(Str, List(Str))
+    overlay_plot_data = Dict(Str, Array)
+    variables = List(Str)
+    plot_indices = List(Int)
+    x_idx = Int
+    y_idx = Int
+    Time = Float
+    high_time = Float
+    low_time = Float
+    time_data_labels = Dict(Int, List)
+    runs_shown = List(Bool)
+    x_scale = Float
+    y_scale = Float
+    _line_style_index = Int
 
-    traits_view = tuiapi.View(
-        tuiapi.Group(
-            tuiapi.Item('container', editor=eapi.ComponentEditor(size=SIZE),
+    traits_view = View(
+        Group(
+            Item('container', editor=ComponentEditor(size=SIZE),
                         show_label=False),
-            tuiapi.Item('Time', editor=tuiapi.RangeEditor(low_name='low_time',
+            Item('Time', editor=RangeEditor(low_name='low_time',
                                                           high_name='high_time',
                                                           format='%.1f',
                                                           label_width=28,
@@ -131,7 +127,7 @@ class Plot2D(tapi.HasTraits):
         width=SIZE[0], height=SIZE[1] + 100)
 
     def __init__(self, **traits):
-        tapi.HasTraits.__init__(self, **traits)
+        HasTraits.__init__(self, **traits)
         self.time_data_labels = {}
         self.x_idx = 0
         self.y_idx = 0
@@ -140,7 +136,7 @@ class Plot2D(tapi.HasTraits):
         self.x_scale, self.y_scale = 1., 1.
         pass
 
-    @tapi.on_trait_change('Time')
+    @on_trait_change('Time')
     def change_data_markers(self):
         ti = self.find_time_index()
         for d in range(len(self.plot_data)):
@@ -156,9 +152,9 @@ class Plot2D(tapi.HasTraits):
         return
 
     def create_container(self):
-        container = capi.Plot(padding=80, fill_padding=True,
-                              bgcolor="white", use_backbuffer=True,
-                              border_visible=True)
+        container = Plot(padding=80, fill_padding=True,
+                         bgcolor="white", use_backbuffer=True,
+            border_visible=True)
         return container
 
     def find_time_index(self):
@@ -189,15 +185,14 @@ class Plot2D(tapi.HasTraits):
             lform = "({0}) {1}".format(self.get_file_name(d), nform)
         else:
             lform = nform
-        label = capi.DataLabel(component=self.container, data_point=(xp, yp),
-                               label_position="bottom right",
-                               border_visible=False,
-                               bgcolor="transparent",
-                               label_format=lform,
-                               marker_color=tuple(COLOR_PALETTE[(d + di) % 10]),
-                               marker_line_color="transparent",
-                               marker="diamond",
-                               arrow_visible=False)
+        label = DataLabel(component=self.container, data_point=(xp, yp),
+                          label_position="bottom right",
+                          border_visible=False,
+                          bgcolor="transparent",
+                          label_format=lform,
+                          marker_color=tuple(COLOR_PALETTE[(d + di) % 10]),
+                          marker_line_color="transparent",
+                          marker="diamond", arrow_visible=False)
 
         self.time_data_labels[d].append(label)
         self.container.overlays.append(label)
@@ -219,7 +214,7 @@ class Plot2D(tapi.HasTraits):
         self.container = self.create_container()
         self.high_time = float(max(self.plot_data[0][:, 0]))
         self.low_time = float(min(self.plot_data[0][:, 0]))
-        self.container.data = capi.ArrayPlotData()
+        self.container.data = ArrayPlotData()
         self.time_data_labels = {}
         if len(indices) == 0:
             return
@@ -311,20 +306,20 @@ class Plot2D(tapi.HasTraits):
                         ii += 1
                         continue
 
-        capi.add_default_grids(self.container)
-        capi.add_default_axes(self.container, htitle=mheader[self.x_idx])
+        add_default_grids(self.container)
+        add_default_axes(self.container, htitle=mheader[self.x_idx])
 
         self.container.index_range.tight_bounds = False
         self.container.index_range.refresh()
         self.container.value_range.tight_bounds = False
         self.container.value_range.refresh()
 
-        self.container.tools.append(ctapi.PanTool(self.container))
+        self.container.tools.append(PanTool(self.container))
 
-        zoom = ctapi.ZoomTool(self.container, tool_mode="box", always_on=False)
+        zoom = ZoomTool(self.container, tool_mode="box", always_on=False)
         self.container.overlays.append(zoom)
 
-        dragzoom = ctapi.DragZoom(self.container, drag_button="right")
+        dragzoom = DragZoom(self.container, drag_button="right")
         self.container.tools.append(dragzoom)
 
         self.container.legend.visible = True
@@ -412,21 +407,21 @@ class Plot2D(tapi.HasTraits):
         return x_scale, y_scale
 
 
-class ChangeAxisHandler(tuiapi.Handler):
+class ChangeAxisHandler(Handler):
 
     def closed(self, info, is_ok):
         global Change_X_Axis_Enabled
         Change_X_Axis_Enabled = True
 
 
-class ChangeAxis(tapi.HasStrictTraits):
+class ChangeAxis(HasStrictTraits):
 
-    Change_X_Axis = tapi.Button('Change X-axis')
-    Plot_Data = tapi.Instance(Plot2D)
-    headers = tapi.List(tapi.Str)
+    Change_X_Axis = Button('Change X-axis')
+    Plot_Data = Instance(Plot2D)
+    headers = List(Str)
 
     def __init__(self, **traits):
-        tapi.HasStrictTraits.__init__(self, **traits)
+        HasStrictTraits.__init__(self, **traits)
 
     def _Change_X_Axis_fired(self):
         global Change_X_Axis_Enabled
@@ -434,79 +429,79 @@ class ChangeAxis(tapi.HasStrictTraits):
         ms = SingleSelect(choices=self.headers, plot=self.Plot_Data)
         ms.configure_traits(handler=ChangeAxisHandler())
 
-    view = tuiapi.View(tuiapi.Item('Change_X_Axis',
+    view = View(Item('Change_X_Axis',
                                    enabled_when='Change_X_Axis_Enabled==True',
                                    show_label=False))
 
 
-class SingleSelectAdapter(tuit.TabularAdapter):
+class SingleSelectAdapter(TabularAdapter):
     columns = [('Plotable Variables', 'myvalue')]
 
-    myvalue_text = tapi.Property
+    myvalue_text = Property
 
     def _get_myvalue_text(self):
         return self.item
 
 
-class SingleSelect(tapi.HasPrivateTraits):
-    choices = tapi.List(tapi.Str)
-    selected = tapi.Str
-    plot = tapi.Instance(Plot2D)
+class SingleSelect(HasPrivateTraits):
+    choices = List(Str)
+    selected = Str
+    plot = Instance(Plot2D)
 
-    view = tuiapi.View(
-        tuiapi.HGroup(
-            tuiapi.UItem('choices',
-                         editor=tuiapi.TabularEditor(
+    view = View(
+        HGroup(
+            UItem('choices',
+                         editor=TabularEditor(
                              show_titles=True, selected='selected', editable=False,
                              multi_select=False, adapter=SingleSelectAdapter()))),
         width=224, height=H-200, resizable=True, title='Change X-axis')
 
-    @tapi.on_trait_change('selected')
+    @on_trait_change('selected')
     def _selected_modified(self, object, name, new):
         self.plot.change_axis(object.choices.index(object.selected))
 
 
-class SingleSelectOverlayFilesAdapter(tuit.TabularAdapter):
+class SingleSelectOverlayFilesAdapter(TabularAdapter):
     columns = [('Overlay File Name', 'myvalue')]
 
-    myvalue_text = tapi.Property
+    myvalue_text = Property
 
     def _get_myvalue_text(self):
         return self.item
 
 
-class SingleSelectOverlayFiles(tapi.HasPrivateTraits):
-    choices = tapi.List(tapi.Str)
-    selected = tapi.Str
+class SingleSelectOverlayFiles(HasPrivateTraits):
+    choices = List(Str)
+    selected = Str
 
-    view = tuiapi.View(
-        tuiapi.HGroup(
-            tuiapi.UItem('choices',
-                         editor=tuiapi.TabularEditor(
+    view = View(
+        HGroup(
+            UItem('choices',
+                         editor=TabularEditor(
                              show_titles=True, selected='selected',
                              editable=False, multi_select=False,
                              adapter=SingleSelectOverlayFilesAdapter()))),
         width=224, height=100)
 
 
-class MultiSelectAdapter(tuit.TabularAdapter):
+class MultiSelectAdapter(TabularAdapter):
     columns = [('Plotable Variables', 'myvalue')]
 
-    myvalue_text = tapi.Property
+    myvalue_text = Property
 
     def _get_myvalue_text(self):
         return self.item
 
 
-class MultiSelect(tapi.HasPrivateTraits):
-    choices = tapi.List(tapi.Str)
-    selected = tapi.List(tapi.Str)
-    plot = tapi.Instance(Plot2D)
+class MultiSelect(HasPrivateTraits):
+    choices = List(Str)
+    selected = List(Str)
+    plot = Instance(Plot2D)
 
-    view = tuiapi.View(
-        tuiapi.HGroup(
-            tuiapi.UItem('choices',
-                         editor=tuiapi.TabularEditor(
+    view = View(
+        HGroup(
+            UItem('choices',
+                         editor=TabularEditor(
                              show_titles=True,
                              selected='selected',
                              editable=False,
@@ -514,7 +509,7 @@ class MultiSelect(tapi.HasPrivateTraits):
                              adapter=MultiSelectAdapter()))),
         width=224, height=H-300, resizable=True)
 
-    @tapi.on_trait_change('selected')
+    @on_trait_change('selected')
     def _selected_modified(self, object, name, new):
         ind = []
         for i in object.selected:
@@ -522,22 +517,22 @@ class MultiSelect(tapi.HasPrivateTraits):
         self.plot.change_plot(ind)
 
 
-class ModelPlot(tapi.HasStrictTraits):
+class ModelPlot(HasStrictTraits):
 
-    Plot_Data = tapi.Instance(Plot2D)
-    plot_info = tapi.Dict(tapi.Int, tapi.Dict(tapi.Str, tapi.List(tapi.Str)))
-    Multi_Select = tapi.Instance(MultiSelect)
-    Change_Axis = tapi.Instance(ChangeAxis)
-    Reset_Zoom = tapi.Button('Reset Zoom')
-    Reload_Data = tapi.Button('Reload Data')
-    Print_to_PDF = tapi.Button('Print to PDF')
-    Load_Overlay = tapi.Button('Open Overlay')
-    Close_Overlay = tapi.Button('Close Overlay')
-    X_Scale = tapi.String("1.0")
-    Y_Scale = tapi.String("1.0")
-    Single_Select_Overlay_Files = tapi.Instance(SingleSelectOverlayFiles)
-    filepaths = tapi.List(tapi.String)
-    file_variables = tapi.List(tapi.String)
+    Plot_Data = Instance(Plot2D)
+    plot_info = Dict(Int, Dict(Str, List(Str)))
+    Multi_Select = Instance(MultiSelect)
+    Change_Axis = Instance(ChangeAxis)
+    Reset_Zoom = Button('Reset Zoom')
+    Reload_Data = Button('Reload Data')
+    Print_to_PDF = Button('Print to PDF')
+    Load_Overlay = Button('Open Overlay')
+    Close_Overlay = Button('Close Overlay')
+    X_Scale = String("1.0")
+    Y_Scale = String("1.0")
+    Single_Select_Overlay_Files = Instance(SingleSelectOverlayFiles)
+    filepaths = List(String)
+    file_variables = List(String)
 
     def __init__(self, **traits):
         """Put together information to be sent to Plot2D information
@@ -555,7 +550,7 @@ class ModelPlot(tapi.HasStrictTraits):
 
         """
 
-        tapi.HasStrictTraits.__init__(self, **traits)
+        HasStrictTraits.__init__(self, **traits)
         fileinfo = get_sorted_fileinfo(self.filepaths)
         data = []
         for idx, (fnam, fhead, fdata) in enumerate(fileinfo):
@@ -716,10 +711,10 @@ class ModelPlot(tapi.HasStrictTraits):
             self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
 
     def _Load_Overlay_fired(self):
-        dialog = papi.FileDialog(action="open")
+        dialog = FileDialog(action="open")
         dialog.open()
         info = {}
-        if dialog.return_code == papi.OK:
+        if dialog.return_code == pyOK:
             for eachfile in dialog.paths:
                 try:
                     fhead, fdata = loadcontents(eachfile)
@@ -736,12 +731,12 @@ class ModelPlot(tapi.HasStrictTraits):
 
 
 def create_view(window_name):
-    view = tuiapi.View(tuiapi.HSplit(
-        tuiapi.VGroup(
-            tuiapi.Item('Multi_Select', show_label=False, width=224,
+    view = View(HSplit(
+        VGroup(
+            Item('Multi_Select', show_label=False, width=224,
                         height=H-200, springy=True, resizable=True),
-            tuiapi.Item('Change_Axis', show_label=False), ),
-        tuiapi.Item('Plot_Data', show_label=False, width=W-300, height=H-100,
+            Item('Change_Axis', show_label=False), ),
+        Item('Plot_Data', show_label=False, width=W-300, height=H-100,
                     springy=True, resizable=True)),
                        style='custom', width=W, height=H,
                        resizable=True, title=window_name)
@@ -781,10 +776,6 @@ def create_model_plot(sources, handler=None, metadata=None):
             if not os.path.isfile(source):
                 logerr("{0}: {1}: no such file".format(iam, source))
                 continue
-            fname, fext = os.path.splitext(source)
-            if fext not in L_REC_EXT:
-                logerr("{0}: unrecognized file extension".format(source))
-                continue
             filepaths.append(source)
         if logerr():
             stop("***error: stopping due to previous errors")
@@ -792,29 +783,29 @@ def create_model_plot(sources, handler=None, metadata=None):
         runid = ("Material Model Laboratory" if len(filepaths) > 1
                  else genrunid(filepaths[0]))
 
-    view = tuiapi.View(tuiapi.HSplit(
-        tuiapi.VGroup(
-            tuiapi.Item('Multi_Select', show_label=False),
-            tuiapi.Item('Change_Axis', show_label=False),
-            tuiapi.Item('Reset_Zoom', show_label=False),
-            tuiapi.Item('Reload_Data', show_label=False),
-            tuiapi.Item('Print_to_PDF', show_label=False),
-            tuiapi.VGroup(
-                tuiapi.HGroup(tuiapi.Item("X_Scale", label="X Scale",
-                                          editor=tuiapi.TextEditor(
+    view = View(HSplit(
+        VGroup(
+            Item('Multi_Select', show_label=False),
+            Item('Change_Axis', show_label=False),
+            Item('Reset_Zoom', show_label=False),
+            Item('Reload_Data', show_label=False),
+            Item('Print_to_PDF', show_label=False),
+            VGroup(
+                HGroup(Item("X_Scale", label="X Scale",
+                                          editor=TextEditor(
                                               multi_line=False)),
-                              tuiapi.Item("Y_Scale", label="Y Scale",
-                                          editor=tuiapi.TextEditor(
+                              Item("Y_Scale", label="Y Scale",
+                                          editor=TextEditor(
                                               multi_line=False))),
                 show_border=True),
-            tuiapi.VGroup(
-                tuiapi.HGroup(
-                    tuiapi.Item('Load_Overlay', show_label=False, springy=True),
-                    tuiapi.Item(
+            VGroup(
+                HGroup(
+                    Item('Load_Overlay', show_label=False, springy=True),
+                    Item(
                         'Close_Overlay', show_label=False, springy=True),),
-                tuiapi.Item('Single_Select_Overlay_Files', show_label=False,
+                Item('Single_Select_Overlay_Files', show_label=False,
                             resizable=False), show_border=True)),
-        tuiapi.Item('Plot_Data', show_label=False, width=W-300, height=H-100,
+        Item('Plot_Data', show_label=False, width=W-300, height=H-100,
                     springy=True, resizable=True)),
         style='custom', width=W, height=H,
         resizable=True, title=runid)
@@ -872,6 +863,7 @@ def loadcontents(filepath):
         head = ["TIME"] + glob_var_names + elem_var_names
         exof.close()
     else:
+        # treat all other files as ascii text and cross fingers...
         head = loadhead(filepath)
         data = loadtxt(filepath, skiprows=1)
     return head, data

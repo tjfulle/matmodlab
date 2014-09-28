@@ -24,6 +24,7 @@ opts.debug = False
 opts.nprocs = 1
 opts.switch = None
 opts.verbosity = 1
+opts.sqa_stiff = False
 if not SUPRESS_USER_ENV:
     opts.sqa = cfgparse("sqa", default=opts.sqa)
     opts.warn = cfgparse("warn", default=opts.warn)

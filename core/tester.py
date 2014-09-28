@@ -378,6 +378,11 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
             tests[DISABLED].append(the_test.name)
             continue
 
+        kw = "special_request"
+        if kw in the_test.keywords and kw not in include:
+            tests[SKIP].append(the_test.name)
+            continue
+
         # filter tests to be excluded
         if any([kw in the_test.keywords for kw in exclude]):
             tests[SKIP].append(the_test.name)

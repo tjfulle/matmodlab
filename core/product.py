@@ -34,7 +34,11 @@ TEST_DIRS = [os.path.join(TEST_D, d) for d in os.listdir(TEST_D)
              if os.path.isdir(os.path.join(TEST_D, d))]
 
 # User configuration
-RCFILE = os.getenv("MATMODLABRC") or os.path.expanduser("~/.matmodlabrc")
+f = "matmodlabrc"
+if os.path.isfile(f):
+    RCFILE = os.path.realpath(f)
+else:
+    RCFILE = os.getenv("MATMODLABRC") or os.path.expanduser("~/.{0}".format(f))
 p = argparse.ArgumentParser(add_help=False)
 p.add_argument("-E", action="store_true", default=False,
     help="Do not use matmodlabrc configuration file [default: False]")

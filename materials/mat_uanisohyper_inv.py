@@ -8,12 +8,12 @@ mat = None
 
 class UAnisoHyper(AbaqusMaterial):
     """Constitutive model class for the uanisohyper model"""
+    name = "uanisohyper_inv"
+    aux_files = [ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
+                 ABA_UANISOHYPER_PYF, ABA_UANISOHYPER_JAC_F90]
+
     def __init__(self):
-        self.name = "uanisohyper_inv"
         self.param_names = SET_AT_RUNTIME
-        self.aux_files = [ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
-                          ABA_UANISOHYPER_PYF, ABA_UANISOHYPER_JAC_F90]
-        self.aba_model = True
 
     def import_model(self):
         global mat

@@ -1,4 +1,6 @@
-#!/usr/bin/env mmd-exec
+#!/usr/bin/env python
+
+from matmodlab import *
 
 K = 1.350E+11
 G = 5.300E+10

@@ -44,6 +44,13 @@ class MaterialModel(object):
     """
     __metaclass__ = MetaClass
     W = np.ones(6)
+    name = None
+    lapack = None
+    aux_files = None
+    prop_names = None
+    param_names = None
+    source_files = None
+
     def __init__(self):
         raise MatModLabError("materials must define own __init__")
 
@@ -51,24 +58,31 @@ class MaterialModel(object):
         """Parses parameters from user input and allocates parameter array
 
         """
-
-        # The build routine was causing problems here. It kept failing
-        # with a args[0] out-of-bounds error. I figure that when building
-        # you really don't need to do much with pre_init().
-        if len(args) == 0:
+        # Material models are instantiated by the build process so that the
+        # builder can get the list of source files (if any) to build. The
+        # builder does not have a notion of simulation parameters - it just
+        # wants the source files (which are now known). If that's the case,
+        # (we know because no args were sent int) just return now.
+        if not args:
             return
 
-        parameters = args[0]
-        constants = args[1]
+        parameters, constants = args[:2]
         self._param_name_map = {}
-        self.prop_names = getattr(self, "prop_names", None)
-        for attr in ("name", "param_names"):
-            self.assert_attr_exists(attr)
+
+        if self.name is None:
+            raise MatModLabError("material did not define name attribute")
+
+        if self.param_names is None:
+            raise MatModLabError("material did not define param_names attribute")
 
         mat_mimic = kwargs.pop("mimic", None)
         if mat_mimic is not None:
             # parameters have already been parsed by the model we are
             # mimicking, now we just need to modify them for this model
+            if mat_mimic.completions is None:
+                raise MatModLabError("{0}: model completion not done.\nthis is "
+                                     "likely because the model did not provide "
+                                     "a prop_names attribute".format(mimic.name))
             params = self.mimicking(mat_mimic)
 
         elif self.parameter_names == SET_AT_RUNTIME:
@@ -218,11 +232,6 @@ class MaterialModel(object):
 
         self.set_constant_jacobian()
 
-    def assert_attr_exists(self, attr):
-        noattr = -31
-        if getattr(self, attr, noattr) == noattr:
-            raise MatModLabError("material missing attribute: {0}".format(attr))
-
     @property
     def logger(self):
         return self._logger
@@ -309,7 +318,9 @@ class MaterialModel(object):
         self.initial_state = np.array(values)
 
     def augment_xtra(self, keys, values):
-        # increase xkeys and initial state -> but not nxtra
+        """Increase xkeys and initial state -> but not nxtra. Used by the
+        visco model to tack on the extra visco variables to the end of the
+        xtra array."""
         self.xkeys.extend(keys)
         if len(values) != len(keys):
             raise MatModLabError("len(values) != len(keys)")
@@ -488,7 +499,7 @@ class MaterialModel(object):
             # sub-Jacobian
             ddsdde = ddsdde[[[i] for i in v], v]
 
-        if last and opts.sqa:
+        if last and opts.sqa_stiff:
             # check how close stiffness returned from material is to the numeric
             c = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0,
                         Fm, Em, d, elec_field, user_field, stress, xtra, V)
@@ -567,6 +578,7 @@ class MaterialModel(object):
 
 class AbaqusMaterial(MaterialModel):
     W = np.array([1., 1., 1., 2., 2., 2.])
+    aba_model = True
     def setup(self, props, depvar):
         self.import_model()
         if not depvar:
@@ -653,7 +665,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         A core.logger.Logger instance
     rebuild : bool [False]
         Rebuild the material, or not.
-    switch : list of str of form "MATX:MATY" or None
+    switch : list of tuple of form ("MATX", "MATY") or None
         A list of strings that tell us to use MATY instead of MATX whenever
         MATX is encountered
 
@@ -674,16 +686,14 @@ def Material(model, parameters=None, depvar=None, constants=None,
 
     # determine which model
     all_mats = find_materials()
-    m = "_".join(model.split()).lower()
-    for (lib, libinfo) in all_mats.items():
-        if lib.lower() == m:
-            break
-    else:
+    mat_name = "_".join(model.split()).lower()
+    mat_info = all_mats.get(mat_name)
+    if mat_info is None:
         raise MatModelNotFoundError(model)
 
     errors = 0
     source_files = source_files or []
-    if m in ABA_MATS + USER_MAT:
+    if mat_name in ABA_MATS + USER_MAT:
         if not source_files:
             raise MatModLabError("{0}: requires source_files".format(model))
         if source_directory is not None:
@@ -700,41 +710,37 @@ def Material(model, parameters=None, depvar=None, constants=None,
     if initial_temp is None:
         initial_temp = DEFAULT_TEMP
 
-    # import the material
-    module = load_file(libinfo.file)
-    mat_class = getattr(module, libinfo.class_name)
-    material = mat_class(parameters, constants)
+    # instantiate the material
+    material = mat_info.mat_class(parameters, constants)
 
-    if m in ABA_MATS or m in USER_MAT:
-        material.source_files = material.aux_files
+    if material.aux_files:
+        source_files.extend(material.aux_files)
+
+    if material.source_files:
+        source_files.extend(material.source_files)
 
     # Check if model is already built (if applicable)
-    if hasattr(material, "source_files"):
-        so_lib = os.path.join(PKG_D, lib + ".so")
+    if source_files:
+        so_lib = os.path.join(PKG_D, material.name + ".so")
         if rebuild: remove(so_lib)
         if not os.path.isfile(so_lib):
             logger.write("{0}: rebuilding material library".format(material.name))
-            material.source_files.extend(source_files)
-            lapack = getattr(material, "lapack", None)
             import core.builder as bb
-            bb.Builder.build_material(lib, material.source_files,
-                                      lapack=lapack,
+            bb.Builder.build_material(material.name, source_files,
+                                      lapack=material.lapack,
                                       verbosity=opts.verbosity)
         if not os.path.isfile(so_lib):
-            raise ModelLibNotFoundError(lib)
+            raise ModelLibNotFoundError(material.name)
+
         # reload model
-        if libinfo.module in sys.modules:
-            del sys.modules[libinfo.module]
-        module = load_file(libinfo.file, reload=True)
-        mat_class = getattr(module, libinfo.class_name)
+        module = load_file(mat_info.file, reload=True)
+        mat_class = getattr(module, mat_info.class_name)
         material = mat_class(parameters, constants)
 
     # Check to see if any mimicing requests are made.
     # Switch options that are passed take precedence over the rcfile
-    all_switch_opts = ((switch if switch is not None else []) +
-                       (opts.switch if opts.switch is not None else []))
-    for sedset in all_switch_opts:
-        (old, new) = sedset.split(":")
+    all_switch_opts = ((switch or []) + (opts.switch or []))
+    for (old, new) in all_switch_opts:
         if old.lower() != material.name.lower():
             continue
         # a switch was requested, assign the previously instantiated mode to
@@ -746,23 +752,19 @@ def Material(model, parameters=None, depvar=None, constants=None,
             model, mimic.name))
 
         # Get the new material model
-        m = "_".join(model.split()).lower()
-        for (lib, libinfo) in all_mats.items():
-            if lib.lower() == m:
-                break
-        else:
+        mat_name = "_".join(model.split()).lower()
+        mat_info = all_mats.get(mat_name)
+        if mat_info is None:
             raise MatModelNotFoundError(model)
-            break
 
         # import and instantiate the new material
-        module = load_file(libinfo.file)
-        mat_class = getattr(module, libinfo.class_name)
         # send the mimic keyword to the constructor this time around
+        mat_class = mat_info.mat_class
         material = mat_class(None, None, mimic=mimic)
         break  # Only swap once
 
     # initialize and set up material
-    material.initialize(depvar, initial_temp, file=libinfo.file, trs=trs,
+    material.initialize(depvar, initial_temp, file=mat_info.file, trs=trs,
                         expansion=expansion, viscoelastic=viscoelastic,
                         logger=logger)
     return material
@@ -781,7 +783,6 @@ def find_materials():
     mat_libs = {}
     rx = re.compile(r"(?:^|[\\b_\\.-])[Mm]at")
     a = ["MaterialModel", "AbaqusMaterial"]
-    n = ["name"]
     # gather and verify all files
     if not SUPRESS_USER_ENV:
         for user_mat in cfgparse("materials"):
@@ -808,7 +809,7 @@ def find_materials():
         for f in files:
             module = f[:-3]
             try:
-                libs = xpyclbr.readmodule(module, [d], ancestors=a, reqattrs=n)
+                libs = xpyclbr.readmodule(module, [d], ancestors=a)
             except AttributeError as e:
                 errors.append(e.args[0])
                 ConsoleLogger.error(e.args[0])
@@ -818,7 +819,13 @@ def find_materials():
                     ConsoleLogger.error("{0}: duplicate material".format(lib))
                     errors.append(lib)
                     continue
-                mat_libs.update({libs[lib].name: libs[lib]})
+                module = load_file(libs[lib].file)
+                mat_class = getattr(module, libs[lib].class_name)
+                if not mat_class.name:
+                    raise MatModLabError("{0}: material name attribute "
+                                         "not defined".format(lib))
+                libs[lib].mat_class = mat_class
+                mat_libs.update({mat_class.name.lower(): libs[lib]})
 
     if errors:
         raise DuplicateExtModule(", ".join(errors))

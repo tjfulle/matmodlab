@@ -9,14 +9,13 @@ mat = None
 
 class UHyper(AbaqusMaterial):
     """Constitutive model class for the umat model"""
+    name = "uhyper"
+    lapack = "lite"
+    aux_files = [ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
+                 ABA_UHYPER_PYF, ABA_UHYPER_JAC_F90]
 
     def __init__(self):
-        self.name = "uhyper"
         self.param_names = SET_AT_RUNTIME
-        self.aux_files = [ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
-                          ABA_UHYPER_PYF, ABA_UHYPER_JAC_F90]
-        self.lapack = "lite"
-        self.aba_model = True
 
     def import_model(self):
         global mat

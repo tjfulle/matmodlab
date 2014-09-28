@@ -63,7 +63,7 @@ class Permutator(object):
         self.names = []
         idata = []
         for x in xinit:
-            if not isinstance(x, PermutateVariable):
+            if not isinstance(x, _PermutateVariable):
                 raise MatModLabError("all xinit must be of type PermutateVariable")
             self.names.append(x.name)
             idata.append(x.data)
@@ -163,44 +163,14 @@ starting values:
         seedset[0] = 1
 
 
-class PermutateVariable(object):
+class _PermutateVariable(object):
 
-    def __init__(self, name, *args, **kwargs):
-        N = int(kwargs.get("N", 10))
-        arg = kwargs.get("arg")
-        method = kwargs.get("method", "list")
-
-        l = np.linspace
-        s = {"range": lambda a, b, N: l(a, b, N),
-             "list": lambda *a: np.array(a),
-             "weibull": lambda a, b, N: a * RAND.weibull(b, N),
-             "uniform": lambda a, b, N: RAND.uniform(a, b, N),
-             "normal": lambda a, b, N: RAND.normal(a, b, N),
-             "percentage": lambda a, b, N: (l(a-(b/100.)*a, a+(b/100.)* a, N))}
-        m = method.lower()
-        func = s.get(m)
-        if func is None:
-            raise MatModLabError("{0} unrecognized method".format(method))
-
-        if m != "list":
-            if arg is None:
-                raise MatModLabError("{0}: arg keyword required".format(method))
-            if len(args) > 1:
-                n = len(args) + 1
-                raise MatModLabError("{0}: expected only 2 positional "
-                                     "argument, got {1}".format(method, n))
-            args = [args[0], arg, N]
-            srep = "{0}({1}, {2}, {3})".format(m, args[0], arg, N)
-        else:
-            if len(args) == 1:
-                args = args[0]
-            srep = "{0}({1},...,{2})".format(m, args[0], args[-1])
-
+    def __init__(self, name, method, ival, data, srep):
         self.name = name
+        self._m = method
         self.srep = srep
-        self.ival = args[0]
-        self._data = func(*args)
-        self._m = m
+        self.ival = ival
+        self._data = data
 
     def __repr__(self):
         return self.srep
@@ -216,6 +186,38 @@ class PermutateVariable(object):
     @property
     def method(self):
         return self._m
+
+def PermutateVariable(name, init, method="list", b=None, N=10):
+    """PermutateVariable factory method
+
+    """
+    l = np.linspace
+    s = {"range": lambda a, b, N: l(a, b, N),
+         "list": lambda *a: np.array(a),
+         "weibull": lambda a, b, N: a * RAND.weibull(b, N),
+         "uniform": lambda a, b, N: RAND.uniform(a, b, N),
+         "normal": lambda a, b, N: RAND.normal(a, b, N),
+         "percentage": lambda a, b, N: (l(a-(b/100.)*a, a+(b/100.)* a, N))}
+    m = method.lower()
+    func = s.get(m)
+    if func is None:
+        raise MatModLabError("{0} unrecognized method".format(method))
+
+    if m == "list":
+        fun_args = [x for x in init]
+        srep = "{0}({1},...,{2})".format(m, args[0], args[-1])
+    else:
+        try:
+            init = float(init)
+            b = float(b)
+        except TypeError:
+            raise MatModLabError("{0}: b keyword required".format(method))
+        fun_args = [init, b, int(N)]
+        srep = "{0}({1}, {2}, {3})".format(m, init, b, N)
+
+    ival = fun_args[0]
+    data = func(*fun_args)
+    return _PermutateVariable(name, m, ival, data, srep)
 
 def catd(d, i):
     N = max(len(str(NJOBS)), 2)

@@ -86,21 +86,17 @@ class Builder(object):
                 if mats_to_fetch != "all" and name not in mats_to_fetch:
                     continue
                 mats_fetched.append(name)
-                # meta information, such as source files, are stored as
-                # instance attributes of the material. Load it to get the
-                # info.
-                loaded = load_file(info.file)
-                material = getattr(loaded, info.class_name)()
-                if not hasattr(material, "source_files"):
+                material = info.mat_class
+                if material.source_files is None:
                     continue
                 d = os.path.dirname(info.file)
-                source_files = material.source_files
+                source_files = [x for x in material.source_files]
                 if name not in ABA_MATS:
                     source_files.append(FIO)
-                l = getattr(material, "lapack", None)
                 I = getattr(material, "include_dirs", [d])
                 fort_libs.update({name: {"source_files": source_files,
-                                         "lapack": l, "include_dirs": I}})
+                                         "lapack": material.lapack,
+                                         "include_dirs": I}})
         if mats_to_fetch != "all" and mats_to_fetch is not None:
             for mat in mats_to_fetch:
                 if mat not in mats_fetched:

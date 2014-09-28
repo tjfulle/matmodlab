@@ -77,7 +77,6 @@ def matmodlab(func):
     from core.runtime import opts, set_runtime_opt
     def decorated_func(*args, **kwargs):
         global already_splashed, already_wiped
-        get_f = kwargs.pop("get_f", None)
         prog = "mml run"
         desc = """{0}: run a matmodlab simulation script in the matmodlab
         environment. Simulation scripts can be run directly by the python
@@ -90,9 +89,10 @@ def matmodlab(func):
            help="Debug mode [default: %(default)s]")
         parser.add_argument("--sqa", default=opts.sqa, action="store_true",
            help="SQA mode [default: %(default)s]")
-        parser.add_argument("--switch", metavar="MATX:MATY", default=opts.switch,
-           nargs="+", help=("Run with MATY instead of MATX, if present"
-             "(not supported by all models) [default: %(default)s]"))
+        parser.add_argument("--switch", metavar=("MATX", "MATY"),
+           default=None, nargs=2,
+           help=("Run with MATY instead of MATX, if present"
+                 "(not supported by all models) [default: %(default)s]"))
         parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
         parser.add_argument("-B", metavar="MATERIAL",
             help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
@@ -104,15 +104,13 @@ def matmodlab(func):
             help="Do not use matmodlabrc configuration file [default: False]")
         parser.add_argument("-W", choices=["std","all","error"], default=opts.warn,
             help="Warning level [default: %(default)s]")
-        if get_f:
-            parser.add_argument("source", help="Source file [default: %(default)s]")
+        parser.add_argument("source",
+            help="Python source file [default: %(default)s]")
 
-        argv = kwargs.pop("argv", None)
-        if argv is None:
-            argv = sys.argv[1:]
+        # for this decorated function, the source file is already loaded, but
+        # we want the source file requirement to show up in the usage and help
+        argv = sys.argv[1:] + ["dummy_source"]
         clargs = parser.parse_args(argv)
-        if get_f and not os.path.isfile(clargs.source):
-            raise SystemExit("{0}: file not found".format(clargs.source))
 
         # set runtime options
         set_runtime_opt("debug", clargs.debug)
@@ -127,14 +125,14 @@ def matmodlab(func):
 
         # directory to look for hrefs and other files
         set_runtime_opt("I", clargs.I)
+
+        # model switching
         switch = []
-        for pair in clargs.switch:
-            try:
-                (old, new) = pair.split(":")
-            except ValueError:
-                parser.error("expected switch arguments as MATX:MATY")
-            switch.append(":".join([old, new]))
-        set_runtime_opt("switch", clargs.switch)
+        if clargs.switch:
+            switch.append(clargs.switch)
+        switch.extend(opts.switch)
+        set_runtime_opt("switch", switch)
+
         if clargs.V:
             set_runtime_opt("viz_on_completion", True)
 
@@ -150,14 +148,12 @@ def matmodlab(func):
         if clargs.v > 0 and not already_splashed:
             sys.stdout.write(SPLASH)
             already_splashed = True
+
         if not opts.Wall:
             warnings.simplefilter("ignore")
 
         # execute the function
-        if get_f:
-            out = func(clargs.source)
-        else:
-            out = func(*args, **kwargs)
+        out = func(*args, **kwargs)
 
         if clargs.v:
             from utils.quotes import write_random_quote
@@ -180,15 +176,10 @@ def get_my_directory():
     return d
 
 
-def main():
-    filename = exec_runner(None, get_f=1)
-    return
-
-
 @matmodlab
-def exec_runner(filename, **kwargs):
-    exec(compile(open(filename, "rb").read(), filename, 'exec'))
-    return
+def main(argv):
+    pass
+
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

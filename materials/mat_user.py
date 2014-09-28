@@ -5,13 +5,15 @@ from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
 user = None
 
+d = os.path.join(MAT_D, "src")
+f = os.path.join(d, "user.pyf")
 class UserMat(AbaqusMaterial):
     """Constitutive model class for the user model"""
+    name = "user"
+    aux_files = [f]
+
     def __init__(self):
-        self.name = "user"
         self.param_names = SET_AT_RUNTIME
-        d = os.path.join(MAT_D, "src")
-        self.aux_files = [os.path.join(d, "user.pyf")]
 
     def import_model(self):
         global user

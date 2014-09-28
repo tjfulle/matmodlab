@@ -6,16 +6,16 @@ from materials.completion import EC_BULK, EC_SHEAR
 try: import lib.elastic as mat
 except ImportError: mat = None
 
-class Elastic(MaterialModel):
+d = os.path.join(MAT_D, "src")
+f1 = os.path.join(d, "elastic.f90")
+f2 = os.path.join(d, "elastic.pyf")
 
+class Elastic(MaterialModel):
+    name = "elastic"
+    source_files = [f1, f2]
     def __init__(self):
-        self.name = "elastic"
         self.param_names = ["K:BMOD", "G:SMOD:MU"]
         self.prop_names = [EC_BULK, EC_SHEAR]
-        d = os.path.join(MAT_D, "src")
-        f1 = os.path.join(d, "elastic.f90")
-        f2 = os.path.join(d, "elastic.pyf")
-        self.source_files = [f1, f2]
 
     def setup(self):
         """Set up the Elastic material
@@ -25,6 +25,16 @@ class Elastic(MaterialModel):
             raise ModelNotImportedError("elastic")
         comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
         mat.elastic_check(self.params, *comm)
+
+    def mimicking(self, mat_mimic):
+        # reset the initial parameter array to represent this material
+        iparray = np.zeros(2)
+        iparray[0] = mat_mimic.completions[EC_BULK] or 0.
+        iparray[1] = mat_mimic.completions[EC_SHEAR] or 0.
+        if mat_mimic.completions[Y_TENSION]:
+            self.logger.warn("{0} cannot mimic a strength limit, only "
+                             "an elastic response will occur".format(self.name))
+        return iparray
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):

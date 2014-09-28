@@ -64,4 +64,5 @@ def run_uhyper(d=None, v=1, test=0):
     mps.run()
 
 if __name__ == "__main__":
+    run_umat()
     run_uhyper()

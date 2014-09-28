@@ -49,12 +49,11 @@ TEMP0 = 80
 class Completion:
     """Container class for material completions.
 
-    Note that __getitem__ is hijacked to not raise an
-    exception if you are trying to get something that is not
-    in __dict___.  While this is normally dangerous, it is 
-    nice here so that we don't have to explicitly set every 
-    possible property in the completion (some for which there 
-    isn't enough info to compute in the first place).
+    Note that __getitem__ is hijacked to not raise an exception if you are
+    trying to get something that is not in __dict___. While this is normally
+    dangerous, it is nice here so that we don't have to explicitly set every
+    possible property in the completion (some for which there isn't enough
+    info to compute in the first place).
 
     """
     def __init__(self, dict):
@@ -62,9 +61,11 @@ class Completion:
     def __getitem__(self, key):
         return self.__dict__.get(key)
     def __str__(self):
-        x = ",".join("{0}".format(v) for (k,v) in self.__dict__.items()
-                     if isinstance(k, int))
-        return "PropertyCompletion[{0}]".format(x)
+        x = ", ".join("{0}={1}".format(k,v)
+                      for (a, v) in self.__dict__.items()
+                      for (k, b) in globals().items()
+                      if a is b)
+        return "PropertyCompletion({0})".format(x)
 
 
 def complete_properties(parameters, propmap):
@@ -98,6 +99,8 @@ def complete_properties(parameters, propmap):
         propmap.append(EC_BULK)
         parameters = np.append(parameters, k)
 
+    # prepopulate the completion mapping with properties already specified by
+    # the material model. save the elastic constants in their own list
     completion = {}
     elas = [None] * 12
     for (i, idx) in enumerate(propmap):
@@ -106,20 +109,24 @@ def complete_properties(parameters, propmap):
         completion[idx] = parameters[i]
         if idx <= DENSITY:
             elas[idx] = parameters[i]
+
+    # complete the elastic constants
     completion.update(compute_elastic_constants(elas, disp=1))
 
     # complete inelastic properties
+
+    # yield strength in shear and tension
     ys = completion.get(Y_SHEAR)
     yt = completion.get(Y_TENSION)
     if ys is not None:
         if yt is None:
             yt = ys / TOOR3
     elif yt is not None:
-        if ys is None:
-            ys = yt * TOOR3
+        ys = yt * TOOR3
     completion[Y_SHEAR] = ys
     completion[Y_TENSION] = yt
 
+    # Linear Drucker-Prager and Mohr-Coulomb properties
     A = completion.get(DP_A)
     B = completion.get(DP_B)
     C = completion.get(COHESION)

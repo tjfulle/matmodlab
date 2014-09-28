@@ -188,7 +188,8 @@ class TestBase(object):
         except BaseException as e:
             tb = sys.exc_info()[2]
             tb_list = traceback.extract_tb(tb)
-            tb_str = " ".join(traceback.format_list(tb_list)) + "\n" + e.args[0]
+            s = " ".join("{0}".format(x) for x in e.args)
+            tb_str = " ".join(traceback.format_list(tb_list)) + "\n" + s
             raise TestError(tb_str)
 
         if not os.path.isfile(self.exofile):

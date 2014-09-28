@@ -8,21 +8,20 @@ from materials.completion import EC_C10, EC_C01, EC_NU, TEMP0
 try: import lib.mooney_rivlin as mat
 except ImportError: mat = None
 
+d = os.path.join(MAT_D, "src")
+f1 = os.path.join(d, "mooney_rivlin.f90")
+f2 = os.path.join(d, "mooney_rivlin.pyf")
 
 class MooneyRivlin(MaterialModel):
     """Constitutive model class for the Mooney-Rivlin model
 
     """
-
+    name = "mooney_rivlin"
+    source_files = [f1, f2]
+    lapack = "lite"
     def __init__(self):
-        self.name = "mooney_rivlin"
         self.param_names = ["C10", "C01", "NU", "T0", "MC10", "MC01"]
         self.prop_names = [EC_C10, EC_C01, EC_NU, TEMP0, None, None]
-        d = os.path.join(MAT_D, "src")
-        f1 = os.path.join(d, "mooney_rivlin.f90")
-        f2 = os.path.join(d, "mooney_rivlin.pyf")
-        self.source_files = [f1, f2]
-        self.lapack = "lite"
 
     def setup(self):
         """Set up the domain Mooney-Rivlin materia

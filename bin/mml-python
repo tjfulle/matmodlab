@@ -1,9 +1,0 @@
-#!/bin/bash
-if [ -z "$MML_ROOT" ];  then
-    echo >&2 "*** error: mml-run: MML_ROOT environment variable not set"
-    echo >&2 "this script should be called through matmodlab/bin/mml"
-    echo >&2 "and not directly"
-    exit 1
-fi
-PYEXE=$(which python)
-$PYEXE "$@"

@@ -4,9 +4,9 @@ from core.material import MaterialModel
 from materials.completion import EC_BULK, EC_SHEAR, Y_TENSION
 
 class PyElastic(MaterialModel):
+    name = "pyelastic"
 
     def __init__(self):
-        self.name = "pyelastic"
         self.param_names = ["K", "G"]
         self.prop_names = [EC_BULK, EC_SHEAR]
 

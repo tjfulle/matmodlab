@@ -3,9 +3,9 @@ import numpy as np
 from core.material import MaterialModel
 
 class TransIsoElas(MaterialModel):
+    name = "transisoelas"
 
     def __init__(self):
-        self.name = "transisoelas"
         self.param_names = ["A0", "A1", "A2", "A3",  # A0 = A1 = 0 for natural state
                             "B0", "B1", "C0", "C1",
                             "V1", "V2", "V3",

@@ -24,6 +24,33 @@ import argparse
 from string import upper
 from core.product import RCFILE
 
+def Bool(it):
+    return it[0].lower() not in ("0", "no", "none", "false")
+
+def Int(it):
+    return int(float(it[0]))
+
+def List(it):
+    return [x.strip() for x in it if x.split()]
+
+def ListOfFiles(it):
+    list_of_files = []
+    for f in it:
+        if not os.path.exists(f):
+            write("*** warning: {0}: not such file or directory".format(f))
+        list_of_files.append(os.path.realpath(os.path.expanduser(f)))
+    return list_of_files
+
+options = {"materials": {"N": "+", "type": ListOfFiles, "default": []},
+               "tests": {"N": "+", "type": ListOfFiles, "default": []},
+              "switch": {"N": "+", "type":        List, "default": []},
+                "warn": {"N": "?", "type":        Bool, "default": None},
+                 "sqa": {"N": "?", "type":        Bool, "default": None},
+               "debug": {"N": "?", "type":        Bool, "default": None},
+           "verbosity": {"N": "?", "type":         Int, "default": None},
+              "nprocs": {"N": "?", "type":         Int, "default": None}}
+
+
 def write(message):
     sys.stdout.write(message + "\n")
 
@@ -33,11 +60,11 @@ def main(argv=None):
         argv = sys.argv[1:]
     p = argparse.ArgumentParser(prog="mml config",
                                 description="%(prog)s: Set matmodlab options")
-    p.add_argument("--add", nargs=2, metavar=("name", "value"),
+    p.add_argument("--add", nargs="+", metavar=("name", "value[s]"),
         help="name and value of option to add to configuration")
-    p.add_argument("--del", dest="delete", nargs="+", metavar=("name", "value"),
+    p.add_argument("--del", dest="delete", nargs="+", metavar=("name", "value[s]"),
         help="name and value of option to remove from configuration")
-    p.add_argument("--switch", action="store_true", default=False,
+    p.add_argument("--old2new", action="store_true", default=False,
         help="switch from old MMLMTLS environment variable to new config file")
     p.add_argument("--cat", action="store_true", default=False,
         help="print the MATMODLABRC file to the console and exit")
@@ -46,10 +73,10 @@ def main(argv=None):
         sys.stdout.write("{0}:\n\n{1}\n".format(RCFILE, open(RCFILE).read()))
         return 0
 
-    if args.switch and any([args.add, args.delete]):
-        p.error("--switch and [--add, --delete] are mutually exclusive")
+    if args.old2new and any([args.add, args.delete]):
+        p.error("--old2new and [--add, --delete] are mutually exclusive")
 
-    if args.switch:
+    if args.old2new:
         cfgswitch_and_warn()
         return
 
@@ -66,71 +93,45 @@ class Options:
         for (k, v) in kwargs.items():
             setattr(self, k, v)
 
-def mybool(s):
-    return s.lower() not in ("0", "no", "none", "false")
-
-def myint(n):
-    return int(float(n))
-
-def cfgparse(option=None, default=None, _cache=[0]):
+def cfgparse(reqopt=None, default=None, _cache=[0]):
     if not _cache[0]:
         # 'a' is a dict of options, each option is a list of strings, each
         # string is a line from the config file.
         a = _cfgparse(RCFILE)
 
         # parse list-of-string options (default empty list)
-        for i in ("materials", "tests"):
-            a[i] = a.pop(i, [])
-
-        # model switching
-        switch = []
-        for pair in a.pop("switch", []):
-            try:
-                old, new = [x.strip() for x in pair.split(":", 1)]
-            except ValueError:
-                raise ValueError("switch option must be specified as a:b")
-            switch.append(":".join([old, new]))
-        a["switch"] = switch
-
-        errmsg = "rcfile option '{0}' requires type {1}, got {2}"
-        # parse integer options
-        for i in ("verbosity", "nprocs"):
-            x = a.pop(i, None)
-            if x is None:
+        for (opt, info) in options.items():
+            cfgopt = a.pop(opt, info["default"])
+            if cfgopt is None:
                 continue
-            if len(x) > 1:
-                raise TypeError(errmsg.format(i, "int", "list"))
-            if len(x) < 1:
-                raise TypeError(errmsg.format(i, "int", "nothing"))
-            a[i] = myint(x[0])
 
-        # parse boolean options
-        for i in ("sqa", "debug"):
-            x = a.pop(i, None)
-            if x is None:
-                continue
-            if len(x) > 1:
-                raise TypeError(errmsg.format(i, "bool", "list"))
-            if len(x) < 1:
-                raise TypeError(errmsg.format(i, "bool", "nothing"))
-            a[i] = mybool(x[0])
+            if info["N"] == "?":
+                if len(cfgopt) > 1:
+                    raise SystemExit(
+                        "*** error: mml config: expected option {0} to "
+                        "have only one line of options".format(opt))
+                cfgopt = cfgopt[0]
 
-        # parse string options
-        for i in ("warn",):
-            x = a.pop(i, None)
-            if x is None:
-                continue
-            if len(x) > 1:
-                raise TypeError(errmsg.format(i, "string", "list"))
-            if len(x) < 1:
-                raise TypeError(errmsg.format(i, "string", "nothing"))
-            a[i] = x[0]
+            # gets its type
+            cfgopt = info["type"](cfgopt)
+
+            # some checks
+            if opt == "switch":
+                for (i, pair) in enumerate(cfgopt):
+                    try:
+                        old, new = pair.split()
+                    except ValueError:
+                        raise SystemExit("*** error: mml config: switch option "
+                                         "must be specified as a b")
+                    cfgopt[i] = (old.strip(), new.strip())
+
+            a[opt] = cfgopt
 
         _cache[0] = Options(**a)
 
     config = _cache[0]
-    if option is not None:
-        return getattr(config, option, default)
+    if reqopt is not None:
+        return getattr(config, reqopt, default)
 
     return config
 
@@ -179,38 +180,57 @@ def cfgedit(filename, add=None, delete=None):
     a = _cfgparse(RCFILE)
 
     if add is not None:
-        write("WRITING THE FOLLOWING OPTIONS TO {0}:".format(filename))
-        k, v = add
-        k = k.lower()
+        key = add[0].lower().strip()
+        val = [x.strip() for x in add[1:] if x.split()]
+        if key not in options:
+            raise SystemExit("*** error: mml config: {0}: not a matmodlab "
+                             "option".format(key))
+
         # dumb check to see if it is a file path
-        if os.path.sep in v:
-            v = os.path.realpath(os.path.expanduser(v))
-        write("  {0}: {1}".format(k, v))
-        a.setdefault(k, []).append(v.strip())
+        if options[key]["type"] == ListOfFiles:
+            for (i, v) in enumerate(val):
+                if os.path.sep in v:
+                    val[i] = os.path.realpath(os.path.expanduser(v))
+
+        if key == "switch":
+            try:
+                old, new = val
+            except ValueError:
+                raise SystemExit("*** error: mml config: switch expected "
+                                 "orig_mat switch_mat arguments")
+            val = (old.strip(), new.strip())
+
+        val = " ".join(val)
+
+        write("writing the following options to {0}:".format(filename))
+        write("  {0}: {1}".format(key, val))
+        if options[key]["N"] == "?":
+            # 0 or 1 option
+            a[key] = [val]
+        else:
+            a.setdefault(key, []).append(val)
 
     if delete is not None:
-        write("DELETING THE FOLLOWING OPTIONS FROM {0}:".format(filename))
-        try:
-            k, v = delete
-        except ValueError:
-            k = delete[0]
-            v = None
-        k = k.strip().lower()
-
-        write("  {0}: {1}".format(k, v))
-        av = a.pop(k, None)
+        write("deleting the following options from {0}:".format(filename))
+        key = delete[0].lower().strip()
+        val = [x.strip() for x in delete[1:] if x.split()]
+        if not val: val = None
+        else: val = " ".join(val)
+        write("  {0}: {1}".format(key, val))
+        av = a.pop(key, None)
         if not av:
-            write("*** WARNING: {0}: OPTION HAD NOT BEEN SET".format(k, v))
-        elif v:
-            a[k] = [x for x in av if x != v]
-        # if v is None, the entire option is deleted
+            write("*** warning: {0}: option had not been set".format(key, val))
+        elif val:
+            a[key] = [x for x in av if x != val]
+        # if val is None, the entire option is deleted
 
     lines = []
     for (k, v) in a.items():
         # make sure each line is unique
         v = list(set(v))
         if not v: continue
-        lines.append('[{0}]'.format(k.strip().lower()))
+        key = k.strip().lower()
+        lines.append('[{0}]'.format(key))
         lines.append("\n".join(str(s) for s in v))
 
     with open(filename, "w") as fh:
