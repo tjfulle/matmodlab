@@ -92,13 +92,16 @@ def main(argv=None):
     # to get to this point, the command was 'run'. we use the python
     # interpreter to call the file argument directly. first, we format argv
     assert x == "run"
-    if not isfile(argv[0]):
-        sys.exit("*** error: mml run: {0}: no such file".format(argv[0]))
-    elif not argv or argv[0] in ("-h", "--help"):
+
+    if not argv or argv[0] in ("-h", "--help"):
         f = join(ROOT_D, "matmodlab.py")
         sys.argv = ["mml {0}".format(x)] + ["-h"]
         module = load_file(f)
         sys.exit(module.main(argv=sys.argv))
+
+    if not isfile(argv[0]):
+        sys.exit("*** error: mml run: {0}: no such file".format(argv[0]))
+
 
 
     # reorder argv so that files are first
