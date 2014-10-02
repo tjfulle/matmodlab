@@ -33,32 +33,24 @@ def const_elast_params():
     NU  = (3.0 * K - 2.0 * G) / (2.0 * (3.0 * K + G))
     return NU, E, K, G, LAM
 
-def gen_analytical_response(LAM, G):
-    N = 100
-    strain_fac = 0.01
-    #               time   e11   e22   e33
-    strain_table = [[0.0, 0.0, 0.0, 0.0]]
-    for idx in range(1, 6):
-        strain_table.append([float(idx), random.uniform(-strain_fac, strain_fac),
-                                         random.uniform(-strain_fac, strain_fac),
-                                         random.uniform(-strain_fac, strain_fac)])
+def gen_analytical_response(LAM, G, nlegs=4, test_type="PRINCIPAL"):
+    stiff = (LAM * np.outer(np.array([1,1,1,0,0,0]), np.array([1,1,1,0,0,0])) +
+             2.0 * G * np.identity(6))
 
-    expanded = [[_] for _ in strain_table[0]]
-    for idx in range(0, len(strain_table) - 1):
-        for jdx in range(0, len(strain_table[0])):
-            start = strain_table[idx][jdx]
-            end = strain_table[idx + 1][jdx]
-            expanded[jdx] = expanded[jdx] + list(np.linspace(start, end, N))[1:]
+    rnd = lambda: random.uniform(-0.01, 0.01)
+    table = [np.zeros(1 + 6 + 6)]
+    for idx in range(1, nlegs):
+        if test_type == "FULL":
+            strains = np.array([rnd(), rnd(), rnd(), rnd(), rnd(), rnd()])
+        elif test_type == "PRINCIPAL":
+            strains = np.array([rnd(), rnd(), rnd(), 0.0, 0.0, 0.0])
+        elif test_type == "UNIAXIAL":
+            strains = np.array([rnd(), 0.0, 0.0, 0.0, 0.0, 0.0])
+        elif test_type == "BIAXIAL":
+            tmp = rnd()
+            strains = np.array([tmp, tmp, 0.0, 0.0, 0.0, 0.0])
+        table.append(np.hstack(([idx], strains, np.dot(stiff, strains))))
 
-    table = []
-    for idx in range(0, len(expanded[0])):
-        t = expanded[0][idx]
-        e1 = expanded[1][idx]
-        e2 = expanded[2][idx]
-        e3 = expanded[3][idx]
-        sig = get_stress(e1, e2, e3, 0.0, 0.0, 0.0, LAM, G)
-        sig11, sig22, sig33, sig12, sig23, sig13 = sig
-        table.append([t, e1, e2, e3, sig11, sig22, sig33])
+    # returns a tablewith each row comprised of
+    # time=table[0], strains=table[1:7], stresses=table[7:]
     return np.array(table)
-
-
