@@ -118,6 +118,15 @@ def complete_properties(parameters, propmap):
     # yield strength in shear and tension
     ys = completion.get(Y_SHEAR)
     yt = completion.get(Y_TENSION)
+
+    # Linear Drucker-Prager and Mohr-Coulomb properties
+    A = completion.get(DP_A)
+    B = completion.get(DP_B)
+    C = completion.get(COHESION)
+    phi = completion.get(FRICTION_ANGLE)
+
+    if ys is None and yt is None and A is not None and B == 0.0:
+        ys = A
     if ys is not None:
         if yt is None:
             yt = ys / TOOR3
@@ -126,11 +135,6 @@ def complete_properties(parameters, propmap):
     completion[Y_SHEAR] = ys
     completion[Y_TENSION] = yt
 
-    # Linear Drucker-Prager and Mohr-Coulomb properties
-    A = completion.get(DP_A)
-    B = completion.get(DP_B)
-    C = completion.get(COHESION)
-    phi = completion.get(FRICTION_ANGLE)
     if phi is None and B is not None:
         # B = 2 Sin[PHI] / ROOT3 / (3 + Sin[PHI])
         x = 0.
