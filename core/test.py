@@ -123,7 +123,7 @@ class TestBase(object):
     @base_res.setter
     def base_res(self, base_res):
         if not os.path.isfile(base_res):
-            raise TestError("{0}: base_res file not found".format(self.name))
+            raise TestError("{0}: base_res file not found".format(self.runid))
         self._base_res = base_res
 
     @property
