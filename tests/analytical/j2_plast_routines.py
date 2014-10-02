@@ -14,73 +14,47 @@ def gen_rand_params():
     # LAM is used for computation
     LAM = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
 
-    return nu, E, K, G, LAM
+    # Compute a realistic shear yield stress for our parameters
+    Y_SHEAR = 2.0 * G * random.uniform(1.0e-6, 1.0e-1)
 
+    return nu, E, K, G, LAM, Y_SHEAR
 
-def gen_rand_analytic_resp_1(nu, E, K, G, LAM, disp=0):
-    N = 500
-    epsrand = lambda: random.uniform(-0.1, 0.1)
-    eps1 = epsrand()
-    eps2 = epsrand()
-    eps3 = epsrand()
-    expanded = [list(np.linspace(0.0, 1.0, N)),         # time
-                list(np.linspace(0.0, eps1, N)),   # e11
-                list(np.linspace(0.0, eps2, N)),   # e22
-                list(np.linspace(0.0, eps3, N))]   # e33
+def gen_rand_analytical_resp_1(LAM, G, Y_SHEAR, test_type="PRINCIPAL"):
+    # This function randomly comes up with a strain path
+    # to do a simple test of von mises plasticity. Yield is achieved
+    # right when T=1 (for simple debugging).
 
-    counter = 0
-    rootj2lim = 0.0
-    args_1 = [eps1, eps2, eps3, 0.0, 0.0, 0.0, LAM, G, rootj2lim]
-    args_2 = [eps1/4.0, eps2/4.0, eps3/4.0, 0.0, 0.0, 0.0, LAM, G, rootj2lim]
-    while (not get_stress1(*args_1)[1] or get_stress1(*args_2)[1]):
-        rootj2lim = max(1.0, 10 ** random.uniform(0.0, 12.0))
-        counter += 1
-        if counter > 100:
-            break
-        args_1[-1] = rootj2lim
-        args_2[-1] = rootj2lim
-        continue
+    # Populate the stiffness tensor
+    stiff = (LAM * np.outer(np.array([1,1,1,0,0,0]), np.array([1,1,1,0,0,0])) +
+             2.0 * G * np.identity(6))
 
-    analytic_solution = []
-    for idx in range(0, len(expanded[0])):
-        t = expanded[0][idx]
-        e1 = expanded[1][idx]
-        e2 = expanded[2][idx]
-        e3 = expanded[3][idx]
-        sig, YIELDING = get_stress1(e1, e2, e3, 0.0, 0.0, 0.0, LAM, G, rootj2lim)
-        sig11, sig22, sig33, sig12, sig23, sig13 = sig
-        analytic_solution.append([t, e1, e2, e3, sig11, sig22, sig33])
-    analytic_solution = np.array(analytic_solution)
+    rnd = lambda: random.uniform(-0.01, 0.01)
+    if test_type == "FULL":
+        strain = np.array([rnd(), rnd(), rnd(), rnd(), rnd(), rnd()])
+    elif test_type == "PRINCIPAL":
+        strain = np.array([rnd(), rnd(), rnd(), 0.0, 0.0, 0.0])
+    elif test_type == "UNIAXIAL":
+        strain = np.array([rnd(), 0.0, 0.0, 0.0, 0.0, 0.0])
+    elif test_type == "BIAXIAL":
+        tmp = rnd()
+        strain = np.array([tmp, tmp, 0.0, 0.0, 0.0, 0.0])
 
-    Y0 = np.sqrt(3) * rootj2lim
+    strain_iso = strain[:3].sum() / 3.0 * np.array([1, 1, 1, 0, 0, 0])
+    strain_dev = strain - strain_iso
+    strain_dev_mag = np.sqrt(2.0 * np.dot(strain_dev, strain_dev) -
+                             np.dot(strain_dev[:3], strain_dev[:3]))
 
-    # generate the path (must be a string")
-    path = []
-    for row in analytic_solution:
-        path.append("{0} 1 222 {1} {2} {3}".format(*row[[0,1,2,3]]))
-    path = "\n".join(path)
+    mag_fac = Y_SHEAR / (np.sqrt(2.0) * G * strain_dev_mag)
+    strain1 = mag_fac * strain_iso + mag_fac * strain_dev
+    strain2 = 2.0 * mag_fac * strain_iso + mag_fac * strain_dev
 
+    table = np.vstack((np.hstack(([0.0], np.zeros(6), np.zeros(6))),
+                       np.hstack(([1.0], strain1, np.dot(stiff, strain1))),
+                       np.hstack(([2.0], 2.0 * strain1, np.dot(stiff, strain2)))))
 
-    if disp:
-        # write the analytic solution to disk
-        testname = "random_j2_plasticity_1"
-        with open(testname + "_parameters.txt", 'w') as f:
-            f.write("      <K> {0:.14e} </K>\n".format(K))
-            f.write("      <G> {0:.14e} </G>\n".format(G))
-            f.write("      <Y0> {0:.14e} </Y0>\n".format(np.sqrt(3) * rootj2lim))
-
-        flfmt = lambda x: "{0:20.10e}".format(x)
-        strfmt = lambda x: "{0:>20s}".format(x)
-        headers = ["TIME", "STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
-                           "STRESS_XX", "STRESS_YY", "STRESS_ZZ"]
-        with open(testname + "_analytical.out", 'w') as f:
-            f.write("".join([strfmt(_) for _ in headers]) + "\n")
-
-        for row in analytic_solution:
-            f.write("".join(flfmt(_) for _ in row) + "\n")
-
-    return path, analytic_solution, Y0
-
+    # returns a tablewith each row comprised of
+    # time=table[0], strains=table[1:7], stresses=table[7:]
+    return table
 
 def gen_rand_analytic_resp_2(nu, E, K, G, LAM, Y0, disp=0):
     # Here we generate a random unit vector that will not be too close to
@@ -258,3 +232,5 @@ def gen_uniax_strain_path(Y, YF, G, LAM):
 
     return path
 
+if __name__ == '__main__':
+    print(gen_rand_analytical_resp_0(1.0, 1.0, 1.0))
