@@ -9,14 +9,13 @@ import numpy as np
 import multiprocessing as mp
 
 from utils import xpyclbr
+from core.runtime import opts
 from core.logger import Logger
 from core.configurer import cfgparse
-from utils.namespace import Namespace
 from utils.misc import fillwithdots, remove, load_file
 from core.test import PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
 from core.test import TestBase, TestError as TestError
-from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH, SUPRESS_USER_ENV
-from core.runtime import opts, set_runtime_opt
+from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH, SUPPRESS_USER_ENV
 
 
 TIMING = []
@@ -28,7 +27,7 @@ ROOT_RES_D = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
 if not os.path.isdir(ROOT_RES_D):
     os.makedirs(ROOT_RES_D)
 logfile = os.path.join(ROOT_RES_D, "testing.log")
-logger = Logger(logfile=logfile, ignore_opts=1)
+logger = Logger(logfile=logfile, chatty=1)
 INI, SKIP, DISABLED, BAD, RUN = range(5)
 
 prog = "mml test"
@@ -77,7 +76,7 @@ def main(argv=None):
     if not sources:
         sources.extend(TEST_DIRS)
         # Apply user configurations
-        if not SUPRESS_USER_ENV:
+        if not SUPPRESS_USER_ENV:
             for user_test in cfgparse("tests"):
                 if user_test not in sources:
                     sources.append(user_test)
@@ -138,8 +137,8 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
 
     # gather the tests
     TIMING.append(time.time())
-    opts = {"overlay": overlay}
-    tests = gather_and_filter_tests(sources, ROOT_RES_D, include, exclude, **opts)
+    kw = {"overlay": overlay}
+    tests = gather_and_filter_tests(sources, ROOT_RES_D, include, exclude, **kw)
 
     for init_file in tests[INI]:
         init, module = load_file(init_file, disp=1, reload=True)
@@ -191,7 +190,11 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     if logger.errors and stop_on_bad:
         logger.error("stopping due to previous errors", beg="", raise_error=True)
 
+    # determine number of processors to use
     nprocs = min(min(mp.cpu_count(), nprocs), ntests_to_run)
+
+    # Let everyone know we are running tests
+    opts.mml_running_tests = 1
 
     # run the tests
     logger.write("\nRUNNING TESTS")
@@ -289,7 +292,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     return
 
 
-def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
+def gather_and_filter_tests(sources, root_dir, include, exclude, **kwargs):
     """Gather all tests
 
     Parameters
@@ -365,7 +368,7 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
         # instantiate and filter tests
         module = sys.modules.get(info.module, load_file(info.file))
         try:
-            the_test = getattr(module, test)(root_dir, **opts)
+            the_test = getattr(module, test)(root_dir, **kwargs)
         except TestError as e:
             name = "{0}.{1}".format(info.module, test)
             logger.error("THE FOLLOWING ERRORS WERE ENCOUNTERED WHILE INITIALIZING "
@@ -404,19 +407,7 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **opts):
 def run_test(test):
     """Run a single test
 
-    Parameters
-    ----------
-    test : Namespace object
-        A Namespace object as described in gather_and_filter_tests
-
-    Notes
-    -----
-    Nothing is returned, the Namespace is modified with any information
-
     """
-    # Don't allow individual tests to use multiprocessing
-    set_runtime_opt("nprocs", 1)
-
     W = TEST_CONS_WIDTH
 
     ti = time.time()

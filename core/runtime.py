@@ -1,45 +1,106 @@
 """Runtime options for simulations
 
 """
+import os
+import multiprocessing as mp
 from core.configurer import cfgparse
-from utils.namespace import Namespace
-from core.product import SUPRESS_USER_ENV
+from core.product import SUPPRESS_USER_ENV
 
-opts = Namespace()
+class RuntimeOptions(object):
+    def __init__(self):
+        # warning level
+        self._warn = "std"
+        self.Wall = False
+        self.Werror = False
+        self.Wlimit = 10
+        self.raise_e = False
 
-opts.I = None
-opts.runid = None
+        self._sqa = False
+        self._debug = False
+        self.sqa_stiff = False
 
-opts.Wall = False
-opts.Werror = False
-opts.Wlimit = 10
-opts.raise_e = False
+        self._v = 1
 
-opts.viz_on_completion = False
+        self._nprocs = 1
+        self.mml_running_tests = 0
+        self.mml_running_perm = 0
 
-# user config file configurable options
-opts.sqa = False
-opts.warn = "std"
-opts.debug = False
-opts.nprocs = 1
-opts.switch = None
-opts.verbosity = 1
-opts.sqa_stiff = False
-if not SUPRESS_USER_ENV:
-    opts.sqa = cfgparse("sqa", default=opts.sqa)
-    opts.warn = cfgparse("warn", default=opts.warn)
-    opts.debug = cfgparse("debug", default=opts.debug)
-    opts.switch = cfgparse("switch", default=opts.switch)
-    opts.nprocs = cfgparse("nprocs", default=opts.nprocs)
-    opts.verbosity = cfgparse("verbosity", default=opts.verbosity)
+        self.viz_on_completion = False
+        self._switch = None
+        self.rebuild_mat_lib = False
 
-def set_runtime_opt(opt, val):
-    if opt not in opts:
-        raise AttributeError("attempting to set invalid runtime "
-                             "option [{0}]".format(opt))
+        # user config file configurable options
+        if not SUPPRESS_USER_ENV:
+            self.sqa = cfgparse("sqa", default=self._sqa)
+            self.warn = cfgparse("warn", default=self._warn)
+            self.debug = cfgparse("debug", default=self._debug)
+            self.switch = cfgparse("switch", default=self._switch)
+            self.nprocs = cfgparse("nprocs", default=self._nprocs)
+            self.verbosity = cfgparse("verbosity", default=self._v)
 
-    setattr(opts, opt, val)
-    if opts.debug:
-        opts.raise_e = True
-    if opts.Wall:
-        opts.Wlimit = 10000
+    @property
+    def warn(self):
+        return self._warn
+    @warn.setter
+    def warn(self, x):
+        v = x.lower()
+        self._warn = v
+        if v == "all":
+            self.Wall = True
+            self.Wlimit = 10000
+        elif v == "error":
+            self.Wall = self.Werror = self.raise_e = True
+
+    @property
+    def switch(self):
+        return self._switch
+    @switch.setter
+    def switch(self, x):
+        self._switch = []
+        if x is None:
+            return
+        for (i, pair) in enumerate(x):
+            # check to be sure switching is set correctly
+            try:
+                a, b = pair
+            except ValueError:
+                raise ValueError("invalid switching directive")
+            self._switch.append((a, b))
+
+    @property
+    def debug(self):
+        return self._debug
+    @debug.setter
+    def debug(self, x):
+        self._debug = bool(x)
+        if self._debug:
+            self.warn = "error"
+
+    @property
+    def sqa(self):
+        return self._sqa
+    @sqa.setter
+    def sqa(self, x):
+        self._sqa = bool(x)
+
+    @property
+    def nprocs(self):
+        num_procs = 1 if self.mml_running_tests else self._nprocs
+        return min(mp.cpu_count(), num_procs)
+
+    @nprocs.setter
+    def nprocs(self, n):
+        self._nprocs = n
+
+    @property
+    def verbosity(self):
+        return self._v
+    @verbosity.setter
+    def verbosity(self, x):
+        self._v = int(x)
+
+    @property
+    def parent_process_running(self):
+        return any([self.mml_running_tests, self.mml_running_perm])
+
+opts = RuntimeOptions()

@@ -74,7 +74,7 @@ def matmodlab(func):
     does any clean up
 
     """
-    from core.runtime import opts, set_runtime_opt
+    from core.runtime import opts
     def decorated_func(*args, **kwargs):
         global already_splashed, already_wiped
         prog = "mml run"
@@ -93,7 +93,6 @@ def matmodlab(func):
            default=None, nargs=2,
            help=("Run with MATY instead of MATX, if present"
                  "(not supported by all models) [default: %(default)s]"))
-        parser.add_argument("-I", default=os.getcwd(), help=argparse.SUPPRESS)
         parser.add_argument("-B", metavar="MATERIAL",
             help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
         parser.add_argument("-V", default=False, action="store_true",
@@ -104,6 +103,9 @@ def matmodlab(func):
             help="Do not use matmodlabrc configuration file [default: False]")
         parser.add_argument("-W", choices=["std","all","error"], default=opts.warn,
             help="Warning level [default: %(default)s]")
+        parser.add_argument("-w", action="store_true", default=False,
+            help=("Wipe and rebuild material in Material factory before "
+                  "running [default: %(default)s]"))
         parser.add_argument("source",
             help="Python source file [default: %(default)s]")
 
@@ -113,28 +115,22 @@ def matmodlab(func):
         clargs = parser.parse_args(argv)
 
         # set runtime options
-        set_runtime_opt("debug", clargs.debug)
-        set_runtime_opt("sqa", clargs.sqa)
-        set_runtime_opt("nprocs", clargs.nprocs)
-        set_runtime_opt("verbosity", clargs.v)
-        if clargs.W == "error":
-            set_runtime_opt("Wall", True)
-            set_runtime_opt("Werror", True)
-        elif clargs.W == "all":
-            set_runtime_opt("Wall", True)
-
-        # directory to look for hrefs and other files
-        set_runtime_opt("I", clargs.I)
+        opts.debug = clargs.debug
+        opts.sqa = clargs.sqa
+        opts.nprocs = clargs.nprocs
+        opts.verbosity = clargs.v
+        opts.rebuild_mat_lib = clargs.w
+        opts.warn = clargs.W
 
         # model switching
         switch = []
         if clargs.switch:
             switch.append(clargs.switch)
         switch.extend(opts.switch)
-        set_runtime_opt("switch", switch)
+        opts.switch = switch
 
         if clargs.V:
-            set_runtime_opt("viz_on_completion", True)
+            opts.viz_on_completion = True
 
         if clargs.B and not already_wiped:
             name = clargs.B.strip()

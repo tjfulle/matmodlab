@@ -40,10 +40,9 @@ if os.path.isfile(f):
 else:
     RCFILE = os.getenv("MATMODLABRC") or os.path.expanduser("~/.{0}".format(f))
 p = argparse.ArgumentParser(add_help=False)
-p.add_argument("-E", action="store_true", default=False,
-    help="Do not use matmodlabrc configuration file [default: False]")
+p.add_argument("-E", action="store_true", default=False)
 _a, sys.argv[1:] = p.parse_known_args()
-SUPRESS_USER_ENV = _a.E
+SUPPRESS_USER_ENV = _a.E
 
 # OTHER CONSTANTS
 TEST_CONS_WIDTH = 80

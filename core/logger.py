@@ -1,22 +1,21 @@
 import os
 import sys
 import string
-from utils.misc import who_is_calling
 from core.runtime import opts
+from utils.misc import who_is_calling
 
 
 std_transform = string.upper
 
 class Logger(object):
-    def __init__(self, logfile=None, verbosity=1, no_fh=0, ignore_opts=0,
-                 mode="w"):
+    def __init__(self, logfile=None, verbosity=None, no_fh=0, chatty=0, mode="w"):
         self.ch = sys.stdout
         self.eh = sys.stderr
         self.no_fh = no_fh
+        self.chatty = chatty
         self._fh = open(os.devnull, "a")
-        self.verbosity = verbosity
+        self.verbosity = verbosity or opts.verbosity
         self.assign_logfile(logfile, mode=mode)
-        self.ignore_opts = ignore_opts
         self.errors = 0
 
     @property
@@ -25,6 +24,8 @@ class Logger(object):
 
     @verbosity.setter
     def verbosity(self, v):
+        if v is None:
+            v = 1
         self._v = v
         if not self._v:
             self.ch = open(os.devnull, "a")
@@ -66,16 +67,20 @@ class Logger(object):
             beg = "{0}{1}: ".format(beg, who)
         message = message.rstrip()
         message = "{0}{1}{2}".format(beg, transform_str(message, transform), end)
-        v = opts.verbosity if not self.ignore_opts else 1
-        if write_to_console and v:
+
+        # always write to file
+        self.fh.write(message)
+
+        if opts.parent_process_running and not self.chatty:
+            return
+
+        if write_to_console and self.verbosity:
             # write to console
             if log_to_eh:
                 self.ch.flush()
                 self.eh.write(message)
             else:
                 self.ch.write(message)
-        # always write to file
-        self.fh.write(message)
 
     def warn(self, message, limit=False, warnings=[0], report_who=None):
         who = None if not report_who else who_is_calling()

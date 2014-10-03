@@ -3,8 +3,8 @@ from core.product import MAT_D
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
 from materials.completion import EC_BULK, EC_SHEAR
-try: import lib.elastic as mat
-except ImportError: mat = None
+
+mat = None
 
 d = os.path.join(MAT_D, "src")
 f1 = os.path.join(d, "elastic.f90")
@@ -21,7 +21,10 @@ class Elastic(MaterialModel):
         """Set up the Elastic material
 
         """
-        if mat is None:
+        global mat
+        try:
+            import lib.elastic as mat
+        except ImportError:
             raise ModelNotImportedError("elastic")
         comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
         mat.elastic_check(self.params, *comm)

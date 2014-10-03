@@ -34,8 +34,8 @@ def func(x, *args):
 def runner():
 
     runid = "permutation"
-    K = PermutateVariable("K", 125e9, method="weibull", arg=14, N=3)
-    G = PermutateVariable("G", 45e9, method="percentage", arg=10, N=3)
+    K = PermutateVariable("K", 125e9, method="weibull", b=14, N=3)
+    G = PermutateVariable("G", 45e9, method="percentage", b=10, N=3)
     xinit = [K, G]
     permutator = Permutator(func, xinit, runid=runid, descriptor=["MAX_PRES"],
                             method="zip", correlations=True, funcargs=[runid])

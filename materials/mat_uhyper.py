@@ -6,7 +6,6 @@ from materials.product import (ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
                                ABA_UHYPER_PYF, ABA_UHYPER_JAC_F90)
 mat = None
 
-
 class UHyper(AbaqusMaterial):
     """Constitutive model class for the umat model"""
     name = "uhyper"

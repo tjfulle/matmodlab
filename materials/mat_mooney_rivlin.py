@@ -5,8 +5,8 @@ import utils.mmlabpack as mmlabpack
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
 from materials.completion import EC_C10, EC_C01, EC_NU, TEMP0
-try: import lib.mooney_rivlin as mat
-except ImportError: mat = None
+
+mat = None
 
 d = os.path.join(MAT_D, "src")
 f1 = os.path.join(d, "mooney_rivlin.f90")
@@ -27,7 +27,10 @@ class MooneyRivlin(MaterialModel):
         """Set up the domain Mooney-Rivlin materia
 
         """
-        if mat is None:
+        global mat
+        try:
+            import lib.mooney_rivlin as mat
+        except ImportError:
             raise ModelNotImportedError("mooney_rivlin")
         return
 
@@ -35,7 +38,7 @@ class MooneyRivlin(MaterialModel):
         #     Vij = mmlabpack.asarray(np.eye(3), 6)
         #     T0 = 298. if not self.params["T0"] else self.params["T0"]
         #     Rij = np.eye(3)
-        #     comm = (self.logger.error, self.logger.write)
+        # comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
         #     _, ddsdde = mat.mnrv_mat(self.params, Rij, Vij, *comm)
         #     return ddsdde
 

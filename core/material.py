@@ -16,17 +16,8 @@ from core.logger import Logger, ConsoleLogger
 from materials.product import ABA_MATS, USER_MAT
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 from utils.constants import DEFAULT_TEMP, SET_AT_RUNTIME, ENGW
-from core.product import MAT_LIB_DIRS, PKG_D, SUPRESS_USER_ENV
+from core.product import MAT_LIB_DIRS, PKG_D, SUPPRESS_USER_ENV
 np.set_printoptions(precision=2)
-
-try:
-    from lib.visco import visco as visco
-except ImportError:
-    visco = None
-try:
-    from lib.expansion import expansion as xpansion
-except ImportError:
-    xpansion = None
 
 
 class MetaClass(type):
@@ -37,6 +28,13 @@ class MetaClass(type):
         obj.pre_init(*args, **kwargs)
         return obj
 
+def Eye(n):
+    # Specialized identity for tensors
+    if n == 6:
+        return np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
+    if n == 9:
+        return np.array([1, 0, 0, 0, 1, 0, 0, 0, 1], dtype=np.float64)
+    raise MatModLabError("incorrect n")
 
 class MaterialModel(object):
     """The base material class
@@ -49,6 +47,7 @@ class MaterialModel(object):
     aux_files = None
     prop_names = None
     param_names = None
+    completions = None
     source_files = None
 
     def __init__(self):
@@ -128,38 +127,33 @@ class MaterialModel(object):
                 params[idx] = value
 
         self.iparray = np.array(params)
-        self.completions = complete_properties(self.iparray, self.prop_names)
+        if self.prop_names is not None:
+            self.completions = complete_properties(self.iparray, self.prop_names)
 
     def initialize(self, depvar, initial_temp, file=None, trs=None,
-                   expansion=None, viscoelastic=None, logger=None):
+                   expansion=None, viscoelastic=None, logger=None, **kwargs):
         self._vars = []
-        self.nvisco = 0
         self.visco_model = None
-        self.trs_model = None
         self.expansion_model = None
         self.J0 = None
         self.nxtra = 0
         self.initial_state = np.zeros(self.nxtra)
         self.xkeys = []
         self.initialized = True
-        self.visco_params = None
-        self.exp_params = None
         self.itemp = DEFAULT_TEMP
         self.initial_stress = np.zeros(6)
         self.logger = logger or Logger()
         self._file = file
 
         # Do the actual setup
-        self._setup(depvar, initial_temp, trs=trs, expansion=expansion,
-                    viscoelastic=viscoelastic)
+        self._setup(depvar, initial_temp, expansion, trs, viscoelastic, **kwargs)
         self._initialize()
 
     def mimicking(self, mat_mimic):
         raise NotImplementedError("mimicking not supported by "
                                   "{0}".format(self.name))
 
-    def _setup(self, depvar, initial_temp, trs=None, expansion=None,
-               viscoelastic=None):
+    def _setup(self, depvar, initial_temp, expansion, viscoelastic, trs, **kwargs):
         """Set up the new material
 
         """
@@ -169,63 +163,18 @@ class MaterialModel(object):
         self.params = Parameters(self.parameter_names, self.iparray, self.name)
 
         try:
-            self.setup(self.params, depvar)
+            self.setup(self.params, depvar, **kwargs)
         except TypeError:
             self.setup()
 
         if viscoelastic is not None:
-            if visco is None:
-                self.logger.raise_error("attempting visco analysis but "
-                                        "lib/visco.so not imported")
             self.visco_model = viscoelastic
-
-            # setup viscoelastic params
-            self.visco_params = np.zeros(24)
-            # starting location of G and T Prony terms
-            n = self.visco_model.nprony
-            I, J = (4, 14)
-            self.visco_params[I:I+n] = self.visco_model.data[:, 0]
-            self.visco_params[J:J+n] = self.visco_model.data[:, 1]
-            # Ginf
-            self.visco_params[3] = self.visco_model.Ginf
-
-            # Allocate storage for visco data
-            visco_keys = []
-
-            # Shift factors
-            visco_keys.extend(["SHIFT_{0}".format(i+1) for i in range(2)])
-
-            # Instantaneous deviatoric PK2
-            m = {0: "XX", 1: "YY", 2: "ZZ", 3: "XY", 4: "YZ", 5: "XZ"}
-            visco_keys.extend(["TE_{0}".format(m[i]) for i in range(6)])
-
-            # Visco elastic model supports up to 10 Prony series terms,
-            # allocate storage for stress corresponding to each
-            nprony = 10
-            for l in range(nprony):
-                for i in range(6):
-                    visco_keys.append("H{0}_{1}".format(l+1, m[i]))
-
-            self.nvisco = len(visco_keys)
-            visco_idata = np.zeros(self.nvisco)
-            self.augment_xtra(visco_keys, visco_idata)
-
-        if trs is not None:
-            self.trs_model = trs
-            self.visco_params[0] = self.trs_model.data[1] # C1
-            self.visco_params[1] = self.trs_model.data[2] # C2
-            self.visco_params[2] = self.trs_model.temp_ref # REF TEMP
+            vk, vd = self.visco_model.setup(self.logger, trs_model=trs)
+            self.augment_xtra(vk, vd)
 
         if expansion is not None:
-            if xpansion is None:
-                self.logger.error("attempting thermal expansion but "
-                                  "lib/expansion.so not imported")
             self.expansion_model = expansion
-            self.exp_params = self.expansion_model.data
-
-        if self.visco_params is not None:
-            comm = (self.logger.error, self.logger.write, self.logger.warn)
-            visco.propcheck(self.visco_params, *comm)
+            self.expansion_model.setup()
 
         self.register_variable("XTRA", VAR_ARRAY, keys=self.xkeys,
                                ivals=self.initial_state)
@@ -277,13 +226,17 @@ class MaterialModel(object):
         return self._vars
 
     def set_constant_jacobian(self):
-        if not self.completions[EC_BULK]:
-            self.logger.warn("{0}: bulk modulus not defined".format(self.name))
+
+        if self.completions is None:
+            # compute stiffness, determine elastic properties, and perform the
+            # completion
             self.J0 = self.get_initial_jacobian()
-            return
-        if not self.completions[EC_SHEAR]:
-            self.logger.warn("{0}: shear modulus not defined".format(self.name))
-            self.J0 = self.get_initial_jacobian()
+            C = isotropic_part(self.J0)
+            lame = C[0,1]
+            mu = C[5,5] / 2.
+            a = np.array([mu, lame])
+            b = [EC_LAME, EC_SHEAR]
+            self.completions = complete_properties(a, b)
             return
 
         self.J0 = np.zeros((6, 6))
@@ -331,7 +284,7 @@ class MaterialModel(object):
         time, dtime = 0, 0
         temp, dtemp = self.initial_temp, 0.
         kappa = 0
-        F0, F = np.eye(3), np.eye(3)
+        F0, F = Eye(9), Eye(9)
         stran, d, elec_field = np.zeros(6), np.zeros(6), np.zeros(3)
         user_field = 0
         ddsdde = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
@@ -451,7 +404,6 @@ class MaterialModel(object):
         """
         V = v if v is not None else range(6)
         N = self.nxtra
-        comm = (self.logger.error, self.logger.write, self.logger.warn)
 
         sig = np.array(stress)
         xtra = np.array(statev)
@@ -459,12 +411,10 @@ class MaterialModel(object):
         # Mechanical deformation
         Fm, Em = F, stran
 
-        if self.exp_params is not None:
+        if self.expansion_model is not None:
             # thermal expansion: get mechanical deformation
-            Fm = xpansion.mechdef(self.exp_params, temp, dtemp,
-                                  F.reshape(3,3), *comm)
-            Fm = Fm.reshape(9,)
-            Em = mmlabpack.update_strain(kappa, Fm)
+            Fm, Em = self.expansion_model.update_state(
+                self.logger, temp, dtemp, F, kappa)
 
         rho = 1.
         energy = 1.
@@ -472,18 +422,15 @@ class MaterialModel(object):
             energy, rho, F0, Fm, Em, d, elec_field, user_field, sig,
             xtra[:N], last=last, mode=0)
 
-        if self.visco_params is not None:
+        if self.visco_model is not None:
             # get visco correction
-            X = np.array(xtra[N:], order="F")
-            cfac = np.zeros(2)
-            sig, cfac = visco.viscorelax(dtime, time, temp, dtemp,
-                             self.visco_params, F.reshape(3,3), X, sig, *comm)
-            xtra[N:] = X[:]
+            sig, cfac, xtra[N:] = self.visco_model.update_state(
+                self.logger, time, dtime, temp, dtemp, xtra[N:], F, sig)
 
         if disp == 3:
             return sig
 
-        if ddsdde is None or self.visco_params is not None:
+        if ddsdde is None or self.visco_model is not None:
             # material models without an analytic jacobian send the Jacobian
             # back as None so that it is found numerically here. Likewise, we
             # find the numerical jacobian for visco materials - otherwise we
@@ -522,20 +469,17 @@ class MaterialModel(object):
         """
         N = self.nxtra
         xtra = self.initial_state
-        if self.visco_params is not None:
+        if self.visco_model is not None:
             # initialize the visco variables
-            x = xtra[N:]
-            comm = (self.logger.error, self.logger.write, self.logger.warn)
-            visco.viscoini(self.visco_params, x, *comm)
-            xtra[N:] = x
+            xtra[N:] = self.visco_model.initialize(self.logger, xtra[N:])
 
         time = 0.
         dtime = 1.
         dtemp = 0.
         temp = self.initial_temp
         stress = self.initial_stress
-        F0 = np.eye(3).reshape(9,)
-        F = np.eye(3).reshape(9,)
+        F0 = Eye(9)
+        F = Eye(9)
         stran = np.zeros(6)
         d = np.zeros(6)
         elec_field = np.zeros(3)
@@ -579,13 +523,18 @@ class MaterialModel(object):
 class AbaqusMaterial(MaterialModel):
     W = np.array([1., 1., 1., 2., 2., 2.])
     aba_model = True
-    def setup(self, props, depvar):
+    lapack = "lite"
+    def setup(self, props, depvar, **kwargs):
         self.import_model()
         if not depvar:
             depvar = 1
         statev = np.zeros(depvar)
         xkeys = ["SDV{0}".format(i+1) for i in range(depvar)]
         self.register_xtra_variables(xkeys, statev)
+        self.model_setup(**kwargs)
+
+    def model_setup(self, *args, **kwargs):
+        pass
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, statev, **kwargs):
@@ -618,16 +567,12 @@ class AbaqusMaterial(MaterialModel):
         stress = stress[[0,1,2,3,5,4]]
         return stress, statev, ddsdde
 
-    def set_constant_jacobian(self):
-        self.J0 = self.get_initial_jacobian()
-        return
-
 
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters=None, depvar=None, constants=None,
              source_files=None, source_directory=None, initial_temp=None,
              expansion=None, trs=None, viscoelastic=None, logger=None,
-             rebuild=0, switch=None):
+             rebuild=0, switch=None, fiber_dirs=None):
     """Factory method for subclasses of MaterialModel
 
     Parameters
@@ -722,7 +667,9 @@ def Material(model, parameters=None, depvar=None, constants=None,
     # Check if model is already built (if applicable)
     if source_files:
         so_lib = os.path.join(PKG_D, material.name + ".so")
-        if rebuild: remove(so_lib)
+        if rebuild or opts.rebuild_mat_lib:
+            remove(so_lib)
+            opts.rebuild_mat_lib = False
         if not os.path.isfile(so_lib):
             logger.write("{0}: rebuilding material library".format(material.name))
             import core.builder as bb
@@ -766,17 +713,12 @@ def Material(model, parameters=None, depvar=None, constants=None,
     # initialize and set up material
     material.initialize(depvar, initial_temp, file=mat_info.file, trs=trs,
                         expansion=expansion, viscoelastic=viscoelastic,
-                        logger=logger)
+                        logger=logger, fiber_dirs=fiber_dirs)
     return material
 
 
 def find_materials():
     """Find material models
-
-    Notes
-    -----
-    Looks for function product.material_libraries in directories specified in
-    environ["MMLMTLS"].
 
     """
     errors = []
@@ -784,11 +726,14 @@ def find_materials():
     rx = re.compile(r"(?:^|[\\b_\\.-])[Mm]at")
     a = ["MaterialModel", "AbaqusMaterial"]
     # gather and verify all files
-    if not SUPRESS_USER_ENV:
+    if not SUPPRESS_USER_ENV:
         for user_mat in cfgparse("materials"):
             if user_mat not in MAT_LIB_DIRS:
                 MAT_LIB_DIRS.append(user_mat)
 
+    # go through each item in MAT_LIB_DIRS and generate a list of material
+    # interface files. if item is a directory gather all files that match rx;
+    # if it's a file, add it to the list of material files
     for item in MAT_LIB_DIRS:
         if os.path.isfile(item):
             d, files = os.path.split(os.path.realpath(item))
@@ -806,6 +751,8 @@ def find_materials():
             ConsoleLogger.write("{0}: no mat files found".format(d),
                                 report_who=1, beg="*** WARNING: ")
 
+        # go through files and determine if it's an interface file. if it is,
+        # load it and add it to mat_libs
         for f in files:
             module = f[:-3]
             try:
@@ -831,3 +778,14 @@ def find_materials():
         raise DuplicateExtModule(", ".join(errors))
 
     return mat_libs
+
+
+def isotropic_part(A):
+    alpha = np.sum(A[:3,:3])
+    beta = np.trace(A)
+    a = (2. * alpha - beta) / 15.
+    b = (3. * beta - alpha) / 15.
+    Aiso = b * np.eye(6)
+    Aiso[:3,:3] += a * np.ones((3,3))
+    return Aiso
+

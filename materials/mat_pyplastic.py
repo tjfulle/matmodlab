@@ -1,5 +1,4 @@
 import numpy as np
-
 from core.runtime import opts
 from core.material import MaterialModel
 from utils.data_containers import Parameters

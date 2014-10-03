@@ -1,5 +1,4 @@
 import numpy as np
-
 from core.material import MaterialModel
 from materials.completion import EC_BULK, EC_SHEAR, Y_TENSION
 

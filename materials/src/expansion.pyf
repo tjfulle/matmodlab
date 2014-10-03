@@ -20,7 +20,7 @@ end python module mml__user__routines
 python module expansion ! in
     interface  ! in :expansion
         module expansion ! in :expansion:expansion.f90
-            subroutine mechdef(nprop,props,tempn,dtemp,f,fm) ! in :expansion:expansion.f90:expansion
+            subroutine mechdef(nprop,props,tempn,dtemp,k,f,fm,em) ! in :expansion:expansion.f90:expansion
             use mml__user__routines
             intent(callback) log_message
             external log_message
@@ -32,8 +32,10 @@ python module expansion ! in
                 real(8) dimension(nprop),intent(in) :: props
                 real(8) intent(in) :: tempn
                 real(8) intent(in) :: dtemp
-                real(8) dimension(3,3),intent(in) :: f
-                real(8) dimension(3,3),intent(out) :: fm
+                real(8) intent(in) :: k
+                real(8) dimension(9),intent(in) :: f
+                real(8) dimension(9),intent(out) :: fm
+                real(8) dimension(6),intent(out) :: em
             end subroutine mechdef
         end module expansion
     end interface

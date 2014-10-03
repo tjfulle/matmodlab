@@ -6,9 +6,9 @@ import numpy as np
 import shutil
 import datetime
 
+from runtime import opts
 from core.logger import Logger
 from utils.mmltab import MMLTabularWriter
-from runtime import opts, set_runtime_opt
 from utils.errors import MatModLabError
 
 IOPT = 0
@@ -21,7 +21,7 @@ logger = Logger()
 class Optimizer(object):
     def __init__(self, func, xinit, runid, method="simplex", verbosity=1, d=None,
                  maxiter=MAXITER, tolerance=TOL, descriptor=None, funcargs=[]):
-        set_runtime_opt("raise_e", True)
+        opts.raise_e = True
         self.runid = runid
         self.func = func
 

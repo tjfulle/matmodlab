@@ -2,8 +2,6 @@
 
 from matmodlab import *
 
-RUNID = "visco_neohooke"
-
 TEMP0 = 75
 TEMPF = 95
 TIMEF = 50
@@ -18,7 +16,7 @@ Nu = .45
 @matmodlab
 def runner_visco(d=None, runid=None, v=1):
     d = d or os.getcwd()
-    runid = RUNID
+    runid = "visco_neohooke"
 
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
@@ -39,9 +37,28 @@ def runner_visco(d=None, runid=None, v=1):
     mps.run()
 
 @matmodlab
+def runner_expansion(d=None, runid=None, v=1):
+    d = d or os.getcwd()
+    runid = "expansion_neohooke"
+
+    logfile = os.path.join(d, runid + ".log")
+    logger = Logger(logfile=logfile, verbosity=v)
+
+    driver = Driver("Continuum", path=PATH, logger=logger, estar=.1)
+
+    constants = [E, Nu]
+    expansion = Expansion("isotropic", [1.E-5])
+    material = Material("umat", parameters=constants, constants=2,
+                        source_files=["neohooke.f90"], initial_temp=75,
+                        source_directory=os.path.join(MAT_D, "abaumats"),
+                        expansion=expansion)
+    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
+    mps.run()
+
+@matmodlab
 def runner_novisco(d=None, runid=None, v=1):
     d = d or os.getcwd()
-    runid = "no" + RUNID
+    runid = "novisco_neohooke"
 
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
@@ -58,3 +75,4 @@ def runner_novisco(d=None, runid=None, v=1):
 
 if __name__ == "__main__":
     runner_visco()
+    runner_expansion()

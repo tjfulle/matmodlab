@@ -2,8 +2,8 @@ from materials.product import ABA_IO_F90, ABA_UMAT_PYF
 from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
-mat = None
 
+mat = None
 
 class UMat(AbaqusMaterial):
     """Constitutive model class for the umat model"""

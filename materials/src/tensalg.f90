@@ -30,7 +30,7 @@ MODULE TENSALG
   PRIVATE
   PUBLIC :: DET, INV, DBD, DEV, ISO, SQRTM, MAG, ASARRAY, ASMAT, EYE, DOT
   PUBLIC :: TRACE, I6, SYMSHUFF, SYMLEAFF, DYAD, PUSH, PULL, IDSPLIT, INVARS
-  PUBLIC :: SYMSQ, RELFLOOR, II1, II2, II3, II4, II5, MAKESYM, SHUFFLE
+  PUBLIC :: SYMSQ, RELFLOOR, II1, II2, II3, II4, II5, MAKESYM, SHUFFLE, D_LA_RV
 
   INTEGER, PARAMETER :: DP=SELECTED_REAL_KIND(14)
   REAL(KIND=DP), PARAMETER :: ZERO=0._DP
@@ -163,7 +163,7 @@ MODULE TENSALG
      MODULE PROCEDURE PULL_3X3, PULL_6X1
   END INTERFACE PULL
   INTERFACE INVARS
-     MODULE PROCEDURE INVARS_6X1
+     MODULE PROCEDURE INVARS_6X1, INVARS_ANISO
   END INTERFACE INVARS
 
 ! ***************************************************** MODULE PROCEDURES *** !
@@ -717,6 +717,20 @@ CONTAINS
     FN_VAL(6) = LA(2)*RA(6)+LA(4)*RA(5)+LA(6)*RA(3)
   END FUNCTION D_LA_RA
 
+  FUNCTION D_LA_RV(LA, RV) RESULT(FN_VAL)
+    REAL(KIND=DP), INTENT(IN) :: LA(6), RV(3)
+    REAL(KIND=DP) :: FN_VAL(3)
+    FN_VAL(1) = LA(1)*RV(1) + LA(4)*RV(2) + LA(5)*RV(3)
+    FN_VAL(2) = LA(4)*RV(1) + LA(2)*RV(2) + LA(6)*RV(3)
+    FN_VAL(3) = LA(5)*RV(1) + LA(6)*RV(2) + LA(3)*RV(3)
+  END FUNCTION D_LA_RV
+
+  FUNCTION D_LV_RV(LV, RV) RESULT(FN_VAL)
+    REAL(KIND=DP), INTENT(IN) :: LV(3), RV(3)
+    REAL(KIND=DP) :: FN_VAL
+    FN_VAL = SUM(LV * RV)
+  END FUNCTION D_LV_RV
+
   ! ************************************************************************* !
 
   FUNCTION DYAD(A, B) RESULT(FN_VAL)
@@ -848,6 +862,22 @@ CONTAINS
   END SUBROUTINE INVARS_6X1
 
   ! ************************************************************************* !
+
+  SUBROUTINE INVARS_ANISO(A, N, I1, I2, I3, I4, I5)
+    ! ----------------------------------------------------------------------- !
+    ! INVARIANTS OF SYMMETRIC SECOND ORDER TENSOR A
+    ! ----------------------------------------------------------------------- !
+    REAL(DP), INTENT(IN) :: A(6), N(3)
+    REAL(DP), INTENT(OUT) :: I1, I2, I3, I4, I5
+    REAL(DP) :: ASQ(6)
+    CALL INVARS_6X1(A, I1, I2, I3)
+    ASQ = D_LA_RA(A, A)
+    I4 = D_LV_RV(N, D_LA_RV(A, N))
+    I5 = D_LV_RV(N, D_LA_RV(ASQ, N))
+  END SUBROUTINE INVARS_ANISO
+
+  ! ************************************************************************* !
+
   SUBROUTINE SYMMETRIC_SHUFFLE(A, B, L)
     ! ----------------------------------------------------------------------- !
     ! SYMMETRIC SHUFFLE

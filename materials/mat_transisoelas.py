@@ -1,5 +1,4 @@
 import numpy as np
-
 from core.material import MaterialModel
 
 class TransIsoElas(MaterialModel):

@@ -3,8 +3,6 @@ from core.product import MAT_D
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
 from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B
-try: import lib.plastic as mat
-except ImportError: mat = None
 
 d = os.path.join(MAT_D, "src")
 f1 = os.path.join(d, "plastic.f90")
@@ -22,7 +20,10 @@ class Plastic(MaterialModel):
         """Set up the Plastic material
 
         """
-        if mat is None:
+        global mat
+        try:
+            import lib.plastic as mat
+        except ImportError:
             raise ModelNotImportedError("plastic")
         comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
         mat.plastic_check(self.params, *comm)

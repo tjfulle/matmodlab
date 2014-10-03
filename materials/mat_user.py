@@ -3,6 +3,7 @@ from core.product import MAT_D
 from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
+
 user = None
 
 d = os.path.join(MAT_D, "src")

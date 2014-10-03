@@ -16,18 +16,23 @@ from utils.errors import MatModLabError
 
 
 PERM_METHODS = ("zip", "combination", "shotgun", )
-NJOBS = 0
 RAND = np.random.RandomState()
-logger = Logger()
+logger = Logger(chatty=1)
+
+class PermutatorState:
+    pass
+ps = PermutatorState()
+ps.num_jobs = 0
+ps.job_num = 0
 
 
 class Permutator(object):
     def __init__(self, func, xinit, runid, method="zip", correlations=False,
                  verbosity=1, descriptor=None, nprocs=1, funcargs=[], d=None):
-        global NJOBS
-
         self.runid = runid
         #self.func = (func.__module__, func.func_name)
+        opts.mml_running_perm = 1
+
         self.func = func
         self.nprocs = nprocs
         self.correlations = correlations
@@ -80,7 +85,7 @@ class Permutator(object):
         elif self.method == "combination":
             self.data = list(product(*idata))
 
-        NJOBS = len(self.data)
+        ps.num_jobs = len(self.data)
         self.timing = {}
 
         # setup the mml-evaldb file
@@ -98,7 +103,7 @@ number of realizations: {2}
 variables: {3:d}
 starting values:
 {4}
-""".format(self.runid, self.method, NJOBS, len(self.names), str_pars)
+""".format(self.runid, self.method, ps.num_jobs, len(self.names), str_pars)
         logger.write(summary)
 
     def run(self):
@@ -145,7 +150,8 @@ starting values:
         if self.correlations and [x for x in self.statuses if x == 0]:
             logger.write("{0}: creating correlation matrix".format(self.runid))
             mmltab.correlations(self.tabular._filepath)
-            mmltab.plot_correlations(self.tabular._filepath)
+            if not opts.mml_running_tests:
+                mmltab.plot_correlations(self.tabular._filepath)
 
         # close the log
         logger.finish()
@@ -220,7 +226,7 @@ def PermutateVariable(name, init, method="list", b=None, N=10):
     return _PermutateVariable(name, m, ival, data, srep)
 
 def catd(d, i):
-    N = max(len(str(NJOBS)), 2)
+    N = max(len(str(ps.num_jobs)), 2)
     return os.path.join(d, "eval_{0:0{1}d}".format(i, N))
 
 def run_job(args):
@@ -231,7 +237,8 @@ def run_job(args):
     #func = getattr(sys.modules[func[0]], func[1])
 
     job_num = i + 1
-    evald = catd(rootd, job_num)
+    ps.job_num = i + 1
+    evald = catd(rootd, ps.job_num)
     os.makedirs(evald)
     funcargs[0] = evald
 
@@ -241,19 +248,19 @@ def run_job(args):
         for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
 
-    logger.write("starting job {0}/{1} with {2}".format(job_num, NJOBS,
+    logger.write("starting job {0}/{1} with {2}".format(ps.job_num, ps.num_jobs,
         ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
 
     try:
         resp = func(x, *funcargs)
-        logger.write("finished job {0}".format(job_num))
+        logger.write("finished job {0}".format(ps.job_num))
         stat = 0
     except BaseException as e:
         message = " ".join("{0}".format(_) for _ in e.args)
         if hasattr(e, "filename"):
             message = e.filename + ": " + message[1:]
         logger.error("\nrun {0} failed with the following exception:\n"
-                     "   {1}".format(job_num, message))
+                     "   {1}".format(ps.job_num, message))
         stat = 1
         resp = [np.nan for _ in range(len(descriptor))]
 
@@ -263,10 +270,10 @@ def run_job(args):
             resp = resp,
         if len(descriptor) != len(resp):
             logger.error("job {0}: number of responses does not match number "
-                         "of response descriptors".format(job_num))
+                         "of response descriptors".format(ps.job_num))
         else:
             response = [(n, resp[i]) for (i, n) in enumerate(descriptor)]
 
-    tabular.write_eval_info(job_num, stat, evald, parameters, response)
+    tabular.write_eval_info(ps.job_num, stat, evald, parameters, response)
 
     return stat

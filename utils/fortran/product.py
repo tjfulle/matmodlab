@@ -11,6 +11,7 @@ IO = os.path.join(_D, "fio.f90")
 SO_EXT = np_so_ext()
 SO_EXT = ".so"
 
+MMLABPACK = [MMLABPACK_F90, DGPADM_F, IO]
+
 def fortran_libraries():
-    return {"mmlabpack": {"source_files": [MMLABPACK_F90, DGPADM_F, IO],
-                          "lapack": "lite"}}
+    return {"mmlabpack": {"source_files": MMLABPACK, "lapack": "lite"}}

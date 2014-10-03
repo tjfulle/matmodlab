@@ -31,21 +31,22 @@ if errors:
     sys.exit("*** error: matmodlab could not run due to the "
              "following errors:\n  {0}".format("\n  ".join(errors)))
 
-def sorter(a):
-    if isfile(a): return 0
-    return 1
+import matmodlab as matmodlab
+import core.builder as builder
+import utils.mmlclean as clean
+import core.configurer as configurer
+import utils.mmlconv as mmlconv
+import core.tester as tester
+import core.plotter as plotter
 
-def getf(k):
-    try:
-	return {"build": join(CORE_D, "builder.py"),
-                "clean": join(UTL_D, "mmlclean.py"),
-                "config": join(CORE_D, "configurer.py"),
-                "convert": join(UTL_D, "mmlconv.py"),
-                "run": None,
-                "test": join(CORE_D, "tester.py"),
-                "view": join(CORE_D, "plotter.py")}[k]
-    except KeyError:
-	sys.exit("mml: '{0}' is not a mml command.  See 'mml -h'.".format(k))
+commands = {"build": builder,
+            "clean": clean,
+            "config": configurer,
+            "convert": mmlconv,
+            "helper": matmodlab,
+            "run": None,
+            "test": tester,
+            "view": plotter}
 
 usage = """\
 usage: mml [-h|help] <command> [<args>]
@@ -62,6 +63,10 @@ The mml commands are:
 See 'mml help <command>' to read about a specific subcommand.
 """
 
+def envins(E, x, i=0):
+    e = os.getenv(E, "").split(os.pathsep)
+    e.insert(i, x)
+    return os.pathsep.join(e)
 
 def main(argv=None):
     if argv is None:
@@ -83,40 +88,39 @@ def main(argv=None):
         x, argv = argv[0], ["-h"]
 
     # at this point, x is a mml command.  get the specific file to load
-    f = getf(x)
-    if f:
+    try:
+        module = commands[x]
+    except KeyError:
+        sys.exit("mml: '{0}' is not a mml command.  See 'mml -h'.".format(x))
+
+    if module:
         sys.argv = ["mml {0}".format(x)] + argv
-        module = load_file(f)
         sys.exit(module.main(argv=argv))
 
     # to get to this point, the command was 'run'. we use the python
-    # interpreter to call the file argument directly. first, we format argv
+    # interpreter to call the file argument directly - unless a help was
+    # requested, then we print the help message.
     assert x == "run"
-
     if not argv or argv[0] in ("-h", "--help"):
         f = join(ROOT_D, "matmodlab.py")
         sys.argv = ["mml {0}".format(x)] + ["-h"]
-        module = load_file(f)
+        module = commands["helper"]
         sys.exit(module.main(argv=sys.argv))
 
+    # first argument should be a file name, otherwise, positional arguments
+    # will be interpreted by the python executable and not mml
     if not isfile(argv[0]):
-        sys.exit("*** error: mml run: {0}: no such file".format(argv[0]))
+        sys.exit("*** error: mml run: {0}: expected first argument to be "
+                 "a file name".format(argv[0]))
 
-
-
-    # reorder argv so that files are first
-    argv = sorted(argv, key=sorter)
     command = "{0} {1}".format(sys.executable, " ".join(argv))
 
-    # set the environment in which the simulation will be run
+    # set the (minimal) environment in which the simulation will be run
     environment = {}
-    p = os.getenv("PYTHONPATH", "").split(os.pathsep)
-    p.insert(0, ROOT_D)
-    environment["PYTHONPATH"] = os.pathsep.join(p)
-    p = os.getenv("PATH").split(os.pathsep)
-    p.append(D)
-    environment["PATH"] = os.pathsep.join(p)
     environment["FC"] = os.getenv("FC", "gfortran")
+    environment["PATH"] = envins("PATH", D)
+    environment["DISPLAY"] = os.getenv("DISPLAY", ":0")
+    environment["PYTHONPATH"] = envins("PYTHONPATH", ROOT_D)
 
     proc = Popen(command.split(), env=environment)
     proc.wait()

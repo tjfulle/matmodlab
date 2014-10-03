@@ -9,8 +9,9 @@ d = get_my_directory()
 class TestOverlay(TestBase):
     def __init__(self):
         self.runid = runid
+        self.disabled = True
         self.keywords = ["long", "overlay", "feature", "function", "builtin"]
-        self.base_res = os.path.join(d, "test_funcs.base_exo")
+        self.base_res = os.path.join(d, "path_func.base_exo")
 
     def run(self):
         self.status = self.failed_to_run

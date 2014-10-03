@@ -17,9 +17,9 @@ python module mml__user__routines
     end interface mml_user_interface
 end python module mml__user__routines
 
-python module uanisohyper_inv ! in
-    interface  ! in :uanisohyper_inv
-        subroutine uanisohyper_inv(ainv_arg,ua,zeta,nfibers,ninva,ui1,ui2,ui3,temp,noel,cmname,incmpflag,ihybflag,numstatev,statev,numfieldv,fieldv,fieldvinc,numprops,props) ! in :uanisohyper:uanisohyper.f90
+python module uanisohyper_inv
+    interface  ! in :
+        subroutine umat(stress,statev,ddsdde,sse,spd,scd,rpl,ddsddt,drplde,drpldt,stran,dstran,time,dtime,temp,dtemp,predef,dpred,cmname,ndi,nshr,ntens,nstatv,props,nprops,fiber_dir,nfibers,drot,pnewdt,celent,dfgrd0,dfgrd1,noel,npt,layer,kspt,kstep,kinc)
             use mml__user__routines
             intent(callback) log_message
             external log_message
@@ -27,27 +27,45 @@ python module uanisohyper_inv ! in
             external log_warning
             intent(callback) log_error
             external log_error
-            real(kind=8) dimension(ninva),intent(in) :: ainv_arg
-            real(kind=8) dimension(2),intent(out) :: ua
-            real(kind=8) dimension(nfibers*(nfibers-1)/2),intent(in),depend(nfibers) :: zeta
-            integer intent(in) :: nfibers
-            integer, optional,intent(in),check(len(ainv_arg)>=ninva),depend(ainv_arg) :: ninva=len(ainv_arg)
-            real(kind=8) dimension(ninva),intent(out),depend(ninva) :: ui1
-            real(kind=8) dimension(ninva*(ninva+1)/2),intent(out),depend(ninva) :: ui2
-            real(kind=8) dimension(ninva*(ninva+1)/2),intent(out),depend(ninva) :: ui3
+            real(kind=8) dimension(ntens),intent(inout),depend(ntens) :: stress
+            real(kind=8) dimension(nstatv),intent(inout),depend(nstatv) :: statev
+            real(kind=8) dimension(ntens,ntens),intent(inout),depend(ntens,ntens) :: ddsdde
+            real(kind=8) intent(in) :: sse
+            real(kind=8) intent(in) :: spd
+            real(kind=8) intent(in) :: scd
+            real(kind=8) intent(in) :: rpl
+            real(kind=8) dimension(ntens),intent(inout) :: ddsddt
+            real(kind=8) dimension(ntens),intent(inout),depend(ntens) :: drplde
+            real(kind=8) intent(in) :: drpldt
+            real(kind=8) dimension(ntens),intent(in),depend(ntens) :: stran
+            real(kind=8) dimension(ntens),intent(in),depend(ntens) :: dstran
+            real(kind=8) dimension(2),intent(in) :: time
+            real(kind=8) intent(in) :: dtime
             real(kind=8) intent(in) :: temp
+            real(kind=8) intent(in) :: dtemp
+            real(kind=8) dimension(1),intent(in) :: predef
+            real(kind=8) dimension(1),intent(in) :: dpred
+            character*8 intent(in) :: cmname
+            integer intent(in) :: ndi
+            integer intent(in) :: nshr
+            integer, optional,intent(in),check(len(ddsddt)>=ntens),depend(ddsddt) :: ntens=len(ddsddt)
+            integer intent(in) :: nstatv
+            real(kind=8) dimension(nprops),intent(in) :: props
+            integer, optional,intent(in),check(len(props)>=nprops),depend(props) :: nprops=len(props)
+            integer intent(in) :: nfibers
+            real(kind=8) dimension(nfibers,3),intent(in) :: fiber_dir
+            real(kind=8) dimension(3,3),intent(in) :: drot
+            real(kind=8) intent(in) :: pnewdt
+            real(kind=8) intent(in) :: celent
+            real(kind=8) dimension(3,3),intent(in) :: dfgrd0
+            real(kind=8) dimension(3,3),intent(in) :: dfgrd1
             integer intent(in) :: noel
-            character*80 :: cmname
-            integer intent(in) :: incmpflag
-            integer intent(in) :: ihybflag
-            integer, optional,intent(in),check(len(statev)>=numstatev),depend(statev) :: numstatev=len(statev)
-            real(kind=8) dimension(numstatev),intent(inout) :: statev
-            integer, optional,intent(in),check(len(fieldv)>=numfieldv),depend(fieldv) :: numfieldv=len(fieldv)
-            real(kind=8) dimension(numfieldv),intent(inout) :: fieldv
-            real(kind=8) dimension(numfieldv),intent(inout),depend(numfieldv) :: fieldvinc
-            integer, optional,intent(in),check(len(props)>=numprops),depend(props) :: numprops=len(props)
-            real(kind=8) dimension(numprops),intent(in) :: props
-        end subroutine uanisohyper_inv
+            integer intent(in) :: npt
+            integer intent(in) :: layer
+            integer intent(in) :: kspt
+            integer intent(in) :: kstep
+            integer intent(in) :: kinc
+        end subroutine umat
     end interface
 end python module uanisohyper_inv
 

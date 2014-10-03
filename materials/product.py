@@ -27,6 +27,7 @@ def fortran_libraries():
 
     expansion_f90 = os.path.join(D, "expansion.f90")
     expansion_pyf = os.path.join(D, "expansion.pyf")
-    libs["expansion"] = {"source_files": [expansion_f90, expansion_pyf, FIO]}
+    libs["expansion"] = {"source_files": [expansion_f90, expansion_pyf],
+                         "mmlabpack": True}
 
     return libs

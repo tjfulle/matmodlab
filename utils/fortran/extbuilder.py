@@ -16,7 +16,7 @@ from numpy.distutils.core import setup
 from utils.misc import remove, stdout_redirected, merged_stderr_stdout
 from core.product import FC, PKG_D, FFLAGS
 from core.logger import ConsoleLogger as logger
-from utils.fortran.product import LAPACK, LAPACK_OBJ
+from utils.fortran.product import LAPACK, LAPACK_OBJ, MMLABPACK
 
 FORT_COMPILER = FC
 
@@ -54,6 +54,12 @@ class FortranExtBuilder(object):
         """Add an extension module to build"""
         options = {}
         lapack = kwargs.get("lapack")
+        mmlabpack = kwargs.get("mmlabpack")
+
+        if mmlabpack:
+            lapack = "lite"
+            sources = MMLABPACK + sources
+
         if lapack:
             if lapack == "lite":
                 self._build_blas_lapack = True
@@ -66,6 +72,7 @@ class FortranExtBuilder(object):
                                  "not found, skipping".format(name))
                     return -1
                 options.update(lapack)
+
         idirs = kwargs.get("include_dirs")
         if idirs:
             options["include_dirs"] = idirs
