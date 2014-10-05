@@ -1,11 +1,12 @@
 """Module containing utilities for Payette's iterative stress solver"""
 
+import sys
 import math
 import numpy as np
-import sys
+from numpy.linalg import LinAlgError as LinAlgError
 
-import utils.mmlabpack as mmlabpack
 from core.runtime import opts
+import utils.mmlabpack as mmlabpack
 
 EPS = np.finfo(np.float).eps
 
@@ -149,15 +150,20 @@ def _newton(material, t, dt, temp, dtemp, kappa, f0, farg, stran, darg,
             f0, f, stran, d, efield, ufield, sig, xtra, v=v, disp=2)
 
         if opts.sqa:
-            evals = np.linalg.eigvalsh(Jsub)
-            if np.any(evals < 0.):
-                negevals = evals[np.where(evals < 0.)]
-                logger.warn("negative eigen value[s] encountered in material "
-                            "Jacobian: {0} ({1:.2f})".format(negevals, t))
+            try:
+                evals = np.linalg.eigvalsh(Jsub)
+            except LinAlgError:
+                logger.raise_error("failed to determine elastic "
+                                   "stiffness eigenvalues")
+            else:
+                if np.any(evals < 0.):
+                    negevals = evals[np.where(evals < 0.)]
+                    logger.warn("negative eigen value[s] encountered in material "
+                                "Jacobian: {0} ({1:.2f})".format(negevals, t))
         try:
             d[v] -= np.linalg.solve(Jsub, sigerr) / dt
 
-        except:
+        except LinAlgError:
             d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
             logger.warn("using least squares approximation to "
                         "matrix inverse", limit=True)

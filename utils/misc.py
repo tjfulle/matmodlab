@@ -6,6 +6,9 @@ import inspect
 import importlib
 from select import select
 from contextlib import contextmanager
+from os.path import splitext, split, dirname, isfile, sep, basename, exists
+from core.product import ROOT_D
+from core.runtime import opts
 
 def whoami():
     """ return name of calling function """
@@ -16,8 +19,7 @@ def who_is_calling():
     """return the name of the calling function"""
     stack = inspect.stack()[2]
     return "{0}.{1}".format(
-        os.path.splitext(os.path.basename(stack[1]))[0], stack[3])
-
+        splitext(basename(stack[1]))[0], stack[3])
 
 
 def timed_raw_input(message, timeout=10, default=None):
@@ -34,18 +36,13 @@ def timed_raw_input(message, timeout=10, default=None):
     else:
         return default
 
-def _modname(rootd, filename):
-    s = os.path.sep
-    m = os.path.splitext(filename)[0]
-    return ".".join(m.replace(rootd+s, "").split(s))
 
-
-def load_file(filepath, disp=0, reload=False):
-    """Load a python module by filepath
+def load_file(filename, disp=0, reload=False):
+    """Load a python module by filename
 
     Parameters
     ----------
-    filepath : str
+    filename : str
         path to python module
 
     Returns
@@ -54,36 +51,37 @@ def load_file(filepath, disp=0, reload=False):
         import python module
 
     """
-    from core.product import ROOT_D
-    if not os.path.isfile(filepath):
-        raise IOError("{0}: no such file".format(filepath))
+    if not isfile(filename):
+        raise IOError("{0}: no such file".format(filename))
 
-    s = os.path.sep
-    filedir = os.path.dirname(filepath)
-    d = ROOT_D if ROOT_D in filedir else filedir
-    if d not in sys.path:
-        sys.path.insert(0, d)
-    m = os.path.splitext(filepath)[0]
-    modname = ".".join(m.replace(d+s, "").split(s))
-    module = None
+    path, base = split(filename)
+    name = splitext(base)[0]
+    if ROOT_D in path:
+        d = "_".join(path.replace(ROOT_D+sep, "").split(sep))
+        long_name = "{0}_{1}".format(d, name)
+    else:
+        long_name = name
 
-    # if reload was requested, remove the modname from sys.modules
+    # if reload was requested, remove the module from sys.modules
     if reload:
-        try: del sys.modules[modname]
-        except KeyError: pass
+        try:
+            del sys.modules[long_name]
+        except KeyError:
+            pass
 
     # return already loaded module
-    try: module = sys.modules[modname]
-    except KeyError: pass
-
+    module = sys.modules.get(long_name)
     if module is None:
-        cwd = os.getcwd()
-        os.chdir(d)
-        module = importlib.import_module(modname)
-        os.chdir(cwd)
+        fp, pathname, description = imp.find_module(name, [path])
+        try:
+            module = imp.load_module(long_name, fp, pathname, description)
+        finally:
+            if fp:
+                fp.close()
 
     if disp:
-        return module, modname
+        return module, long_name
+
     return module
 
 
@@ -142,7 +140,7 @@ def remove(path):
     """Remove file or directory -- dangerous!
 
     """
-    if not os.path.exists(path): return
+    if not exists(path): return
     try: os.remove(path)
     except OSError: shutil.rmtree(path)
     return

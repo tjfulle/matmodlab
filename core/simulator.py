@@ -33,17 +33,17 @@ class MaterialPointSimulator(object):
         self.material = material
 
         # setup IO
-        run_dir = d or os.getcwd()
+        opts.simulation_dir = d or os.getcwd()
 	self.title = "matmodlab single element simulation"
         if logger is None:
-            logfile = os.path.join(run_dir, self.runid + ".log")
+            logfile = os.path.join(opts.simulation_dir, self.runid + ".log")
             logger = Logger(logfile=logfile, verbosity=verbosity)
         self.logger = logger
 
         material.logger = self.logger
         driver.logger = self.logger
 
-        self.exo_db = ExodusII(self.runid, d=run_dir)
+        self.exo_db = ExodusII(self.runid, d=opts.simulation_dir)
         self.exo_file = self.exo_db.filepath
 
 	# register global variables

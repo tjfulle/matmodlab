@@ -53,7 +53,8 @@ class ContinuumDriver(PathDriver):
                 raise FileNotFoundError(path_file)
             path = open(path_file).read()
 
-        path = [line.split() for line in path.split("\n") if line.split()]
+        if not isinstance(path, np.ndarray):
+            path = [line.split() for line in path.split("\n") if line.split()]
         self.path = read_path("continuum", path_input, path, num_steps, amplitude,
                               rate_multiplier, step_multiplier, num_io_dumps,
                               termination_time, tfmt, cols, cfmt, skiprows,

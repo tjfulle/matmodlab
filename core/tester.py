@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import glob
 import argparse
 import textwrap
 import datetime
@@ -62,12 +63,24 @@ def main(argv=None):
         help="Do not use matmodlabrc configuration file [default: False]")
     p.add_argument("-l", action="store_true", default=False,
         help="List tests and exit [default: False]")
+    p.add_argument("--rebaseline", action="store_true", default=False,
+        help="Rebaseline test in PWD [default: False]")
     p.add_argument("sources", nargs="*",
         help=("[Optional] directores and/or files to find matmodlab tests.  "
               "The default directories will not be searched."))
 
     # parse out known arguments and reset sys.argv
     args, sys.argv[1:] = p.parse_known_args(argv)
+
+    if args.rebaseline:
+        for f in glob.glob("*.base_exo"):
+            base_file = os.path.realpath(f)
+            res_file = os.path.splitext(f)[0] + ".exo"
+            if os.path.isfile(res_file):
+                print("Rebaselining {0}".format(os.path.basename(base_file)))
+                remove(base_file)
+                os.rename(res_file, base_file)
+        return 0
 
     # suppress logging from other products
     sys.argv.extend(["-v", "0"])

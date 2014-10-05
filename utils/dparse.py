@@ -39,7 +39,7 @@ def read_path(driver, path_input, path, num_steps, amplitude, rate_multiplier,
             num_steps = int(num_steps * step_multiplier)
             path = _parse_function_path(path, functions, num_steps, cfmt)
 
-        elif path_input.lower() == "table":
+        elif p == "table":
             if cfmt is None:
                 raise MatModLabError("table path: expected keyword cfmt")
             if cols is None:
@@ -459,19 +459,22 @@ def _parse_table_path(lines, tfmt, cols, cfmt, lineskip):
     # check the control
     control = format_path_control(cfmt)
 
-    tbl = []
-    for idx, line in enumerate(lines):
-        if idx < lineskip or not line:
-            continue
-        if line[0].strip().startswith("#"):
-            continue
-        try:
-            line = [float(x) for x in line]
-        except ValueError:
-            raise MatModLabError("Expected floats in leg {0}, got {1}".format(
-                leg_num, line))
-        tbl.append(line)
-    tbl = np.array(tbl)
+    if isinstance(lines, np.ndarray):
+        tbl = np.array(lines)
+    else:
+        tbl = []
+        for idx, line in enumerate(lines):
+            if idx < lineskip or not line:
+                continue
+            if line[0].strip().startswith("#"):
+                continue
+            try:
+                line = [float(x) for x in line]
+            except ValueError:
+                raise MatModLabError("Expected floats in leg {0}, got {1}".format(
+                    leg_num, line))
+            tbl.append(line)
+        tbl = np.array(tbl)
 
     # if cols was not specified, must want all
     if not cols:

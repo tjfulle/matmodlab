@@ -10,7 +10,7 @@ import utils.xpyclbr as xpyclbr
 import utils.mmlabpack as mmlabpack
 from core.configurer import cfgparse
 from utils.fortran.product import FIO
-from utils.misc import load_file, remove
+from utils.misc import load_file, remove, who_is_calling
 from utils.data_containers import Parameters
 from core.logger import Logger, ConsoleLogger
 from materials.product import ABA_MATS, USER_MAT
@@ -281,7 +281,7 @@ class MaterialModel(object):
 
     def get_initial_jacobian(self):
         """Get the initial Jacobian"""
-        time, dtime = 0, 0
+        time, dtime = 0, 1
         temp, dtemp = self.initial_temp, 0.
         kappa = 0
         F0, F = Eye(9), Eye(9)
@@ -473,10 +473,8 @@ class MaterialModel(object):
             # initialize the visco variables
             xtra[N:] = self.visco_model.initialize(self.logger, xtra[N:])
 
-        time = 0.
-        dtime = 1.
-        dtemp = 0.
-        temp = self.initial_temp
+        time, dtime = 0., 1.
+        temp, dtemp = self.initial_temp, 0.
         stress = self.initial_stress
         F0 = Eye(9)
         F = Eye(9)
@@ -788,4 +786,3 @@ def isotropic_part(A):
     Aiso = b * np.eye(6)
     Aiso[:3,:3] += a * np.ones((3,3))
     return Aiso
-

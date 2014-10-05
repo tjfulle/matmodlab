@@ -29,6 +29,8 @@ class RuntimeOptions(object):
         self._switch = None
         self.rebuild_mat_lib = False
 
+        self._sim_dir = os.getcwd()
+
         # user config file configurable options
         if not SUPPRESS_USER_ENV:
             self.sqa = cfgparse("sqa", default=self._sqa)
@@ -102,5 +104,13 @@ class RuntimeOptions(object):
     @property
     def parent_process_running(self):
         return any([self.mml_running_tests, self.mml_running_perm])
+
+    @property
+    def simulation_dir(self):
+        return self._sim_dir
+    @simulation_dir.setter
+    def simulation_dir(self, x):
+        assert os.path.isdir(x)
+        self._sim_dir = x
 
 opts = RuntimeOptions()
