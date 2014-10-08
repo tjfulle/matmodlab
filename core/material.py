@@ -662,6 +662,9 @@ def Material(model, parameters=None, depvar=None, constants=None,
     if material.source_files:
         source_files.extend(material.source_files)
 
+    if material.depvar:
+        depvar = material.depvar
+
     # Check if model is already built (if applicable)
     if source_files:
         so_lib = os.path.join(PKG_D, material.name + ".so")
