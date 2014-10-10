@@ -10,14 +10,14 @@ A material instance is created through the ``Material`` factory method.  Minimal
 
 .. code:: python
 
-   material = Material(mat_name, parameters=parameters)
+   material = Material(mat_name, parameters)
 
 The object returned from ``Material`` is an instance of the class defining
 ``model``.
 
 The formal parameters to ``Material`` are
 
-.. function:: Material(model, parameters=parameters, depvar=None, constants=None, source_files=None, source_directory=None, initial_temp=None, expansion=None, trs=None, viscoelastic=None, logger=None, rebuild=False)
+.. function:: Material(model, parameters, initial_temp=None, logger=None, expansion=None, trs=None, viscoelastic=None, rebuild=False, source_files=None, source_directory=None, depvar=None, param_names=None, switch=None)
 
    Factory method for subclasses of MaterialModel
 
@@ -25,26 +25,28 @@ The formal parameters to ``Material`` are
    :type model: str
    :param parameters: model parameters.  For Abaqus umat models and matmodlab user models, parameters is a ndarray of model constants (specified in the order expected by the model).  For other model types, parameters is a dictionary of name:value pairs.
    :type parameters: dict or ndarray
-   :param depvar: Number of state dependent variables*.
-   :type depvar: int or None
-   :param constants: Number of parameters*.
-   :type constants: int or None
-   :param source_files: List of model source files*.  Each file name given in source_files must exist.  If the optional source_directory is given, source files are looked for in it.
-   :type source_files: list or None
-   :param source_directory: Directory containing source files*.  source_directory is optional, but allows giving source_files as a list of file names only - not fully qualified paths.
-   :type source_directory: str or None
    :param initial_temp: Initial temperature.  The initial temperature, if given, must be consistent with that of the simulation driver.  Defaults to 298K if not specified.
    :type initial_temp: float or None
+   :param logger: An instance of a Logger
+   :type logger: instance or None
    :param expansion: An instance of an Expansion model.
    :type expansion: instance or None
    :param trs: An instance of a time-temperature shift (TRS) model
    :type trs: instance or None
    :param viscoelastic: An instance of a Viscoelastic model.
    :type viscoelastic: instance or None
-   :param logger: An instance of a Logger
-   :type logger: instance or None
    :param rebuild: Rebuild the material, or not.
    :type rebuild: bool
+   :param source_files: List of model source files*.  Each file name given in source_files must exist.  If the optional source_directory is given, source files are looked for in it.
+   :type source_files: list or None
+   :param source_directory: Directory containing source files*.  source_directory is optional, but allows giving source_files as a list of file names only - not fully qualified paths.
+   :type source_directory: str or None
+   :param depvar: Number of state dependent variables*.
+   :type depvar: int or None
+   :param param_names: List of model parameter names*.  If specified, parameters are given as dict and not ndarray.
+   :type param_names: list or None
+   :param switch: Model switch.  Two tuple given as (original material, new material).
+   :type switch: tuple or None
    :rtype: MaterialModel instance
 
 The Driver Factory Method
@@ -56,23 +58,21 @@ specification ``path``
 
 .. code:: python
 
-   driver = Driver(driver_kind, path=path)
+   driver = Driver(driver_kind, path)
 
 The object returned from ``Driver`` is an instance of the class defining
 ``driver_kind``.  At present, only ``driver_kind="Continuum"`` is defined.
 
 The formal parameters to ``Driver`` are
 
-.. function:: Driver(driver_kind, path=None, path_file=None, path_input="default", kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1., num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1., efstar=1., dstar=1., proportional=False, termination_time=None, functions=None, cfmt=None, tfmt="time", num_steps=None, cols=None, skiprows=0, logger=None)
+.. function:: Driver(driver_kind, path, path_input="default", kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1., num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1., efstar=1., dstar=1., proportional=False, termination_time=None, functions=None, cfmt=None, tfmt="time", num_steps=None, cols=None, skiprows=0, logger=None)
 
    Factory method for subclasses of PathDriver
 
    :param driver_kind: The driver kind
    :type driver_kind: str
    :param path: The deformation path through which to driver the material
-   :type path: str or None
-   :param path_file: File name where path is contained.  path and path_file are mutually exclusive, and one must be specified.
-   :type path_file: str or None
+   :type path: str
    :param path_input: Type of path input.  Choices are default, table, function [default: default]
    :type path_input: str or None
    :param kappa: The Seth-Hill parameter [default: 0.]
@@ -174,7 +174,7 @@ Types of deformation represented by ``cfmt`` are shown in `Table 1`_
 +----------+----------------------+
 
 The component ordering of vectors and tensors follows what is described in
-ref:`Conventions`. If ``len(Cij)`` does not equal 6, (or 9 for deformation
+:ref:`Conventions`. If ``len(Cij)`` does not equal 6, (or 9 for deformation
 gradient), the missing components are assumed to be zero strain.
 
 If temperature is not prescribed, it is presumed to have a constant value of 298K.
@@ -197,7 +197,7 @@ Temperature can be included with any deformation type.
 User defined field can be included with any deformation type.
 
 If only one component of stress rate, stress, strain rate, or strain is
-specified, the component ``Cij`` is taken to be either the pressure of
+specified, the component ``Cij`` is taken to be either the pressure or
 volumetric strain.
 
 .. _tblform:
@@ -219,7 +219,7 @@ The following input stubs sets up the driver with the same path as in the
 
    path = """0  0 0 0
              1 .1 0 0"""
-   driver = Driver("Continuum", path=path, path_input="table",
+   driver = Driver("Continuum", path, path_input="table",
                    cols=[0,1,2,3], cfmt="222", tfmt="time, num_steps=10)
 
 The table input format is convenent for using experimental data, contained in
@@ -248,7 +248,7 @@ user defined function to specify the 11 component of strain through time
    func = Function(2, "analytic_expression", lambda t: np.sin(t))
    functions = [func,]
    path = "{0} 2:1.e-1 0 0".format(2*pi)
-   driver = Driver("Continuum", path=path, path_input="function",
+   driver = Driver("Continuum", path, path_input="function",
                    num_steps=200, termination_time=1.8*pi,
                    functions=functions, cfmt="222")
 

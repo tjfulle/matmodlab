@@ -60,7 +60,7 @@
 <div class="section" id="the-material-factory-method">
 <h2>The Material Factory Method<a class="headerlink" href="#the-material-factory-method" title="Permalink to this headline">¶</a></h2>
 <p>A material instance is created through the <tt class="docutils literal"><span class="pre">Material</span></tt> factory method.  Minimally, the factory method requires the material model name <tt class="docutils literal"><span class="pre">model</span></tt> and the model parameters <tt class="docutils literal"><span class="pre">parameters</span></tt></p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">mat_name</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">)</span>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">mat_name</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The object returned from <tt class="docutils literal"><span class="pre">Material</span></tt> is an instance of the class defining
@@ -68,7 +68,7 @@
 <p>The formal parameters to <tt class="docutils literal"><span class="pre">Material</span></tt> are</p>
 <dl class="function">
 <dt id="Material">
-<tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters=parameters</em>, <em>depvar=None</em>, <em>constants=None</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>initial_temp=None</em>, <em>expansion=None</em>, <em>trs=None</em>, <em>viscoelastic=None</em>, <em>logger=None</em>, <em>rebuild=False</em><big>)</big><a class="headerlink" href="#Material" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>initial_temp=None</em>, <em>logger=None</em>, <em>expansion=None</em>, <em>trs=None</em>, <em>viscoelastic=None</em>, <em>rebuild=False</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>depvar=None</em>, <em>param_names=None</em>, <em>switch=None</em><big>)</big><a class="headerlink" href="#Material" title="Permalink to this definition">¶</a></dt>
 <dd><p>Factory method for subclasses of MaterialModel</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -77,16 +77,17 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>model</strong> (<em>str</em>) &#8211; material model name</li>
 <li><strong>parameters</strong> (<em>dict or ndarray</em>) &#8211; model parameters.  For Abaqus umat models and matmodlab user models, parameters is a ndarray of model constants (specified in the order expected by the model).  For other model types, parameters is a dictionary of name:value pairs.</li>
-<li><strong>depvar</strong> (<em>int or None</em>) &#8211; Number of state dependent variables*.</li>
-<li><strong>constants</strong> (<em>int or None</em>) &#8211; Number of parameters*.</li>
-<li><strong>source_files</strong> (<em>list or None</em>) &#8211; List of model source files*.  Each file name given in source_files must exist.  If the optional source_directory is given, source files are looked for in it.</li>
-<li><strong>source_directory</strong> (<em>str or None</em>) &#8211; Directory containing source files*.  source_directory is optional, but allows giving source_files as a list of file names only - not fully qualified paths.</li>
 <li><strong>initial_temp</strong> (<em>float or None</em>) &#8211; Initial temperature.  The initial temperature, if given, must be consistent with that of the simulation driver.  Defaults to 298K if not specified.</li>
+<li><strong>logger</strong> (<em>instance or None</em>) &#8211; An instance of a Logger</li>
 <li><strong>expansion</strong> (<em>instance or None</em>) &#8211; An instance of an Expansion model.</li>
 <li><strong>trs</strong> (<em>instance or None</em>) &#8211; An instance of a time-temperature shift (TRS) model</li>
 <li><strong>viscoelastic</strong> (<em>instance or None</em>) &#8211; An instance of a Viscoelastic model.</li>
-<li><strong>logger</strong> (<em>instance or None</em>) &#8211; An instance of a Logger</li>
 <li><strong>rebuild</strong> (<em>bool</em>) &#8211; Rebuild the material, or not.</li>
+<li><strong>source_files</strong> (<em>list or None</em>) &#8211; List of model source files*.  Each file name given in source_files must exist.  If the optional source_directory is given, source files are looked for in it.</li>
+<li><strong>source_directory</strong> (<em>str or None</em>) &#8211; Directory containing source files*.  source_directory is optional, but allows giving source_files as a list of file names only - not fully qualified paths.</li>
+<li><strong>depvar</strong> (<em>int or None</em>) &#8211; Number of state dependent variables*.</li>
+<li><strong>param_names</strong> (<em>list or None</em>) &#8211; List of model parameter names*.  If specified, parameters are given as dict and not ndarray.</li>
+<li><strong>switch</strong> (<em>tuple or None</em>) &#8211; Model switch.  Two tuple given as (original material, new material).</li>
 </ul>
 </td>
 </tr>
@@ -103,7 +104,7 @@
 <p>A driver instance is created through the <tt class="docutils literal"><span class="pre">Driver</span></tt> factory method. Minimally,
 the factory method requires the driver kind <tt class="docutils literal"><span class="pre">driver_kind</span></tt> and the path
 specification <tt class="docutils literal"><span class="pre">path</span></tt></p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="n">driver_kind</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="n">driver_kind</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The object returned from <tt class="docutils literal"><span class="pre">Driver</span></tt> is an instance of the class defining
@@ -111,7 +112,7 @@ specification <tt class="docutils literal"><span class="pre">path</span></tt></p
 <p>The formal parameters to <tt class="docutils literal"><span class="pre">Driver</span></tt> are</p>
 <dl class="function">
 <dt id="Driver">
-<tt class="descname">Driver</tt><big>(</big><em>driver_kind</em>, <em>path=None</em>, <em>path_file=None</em>, <em>path_input=&quot;default&quot;</em>, <em>kappa=0.</em>, <em>amplitude=1.</em>, <em>rate_multiplier=1.</em>, <em>step_multiplier=1.</em>, <em>num_io_dumps=&quot;all&quot;</em>, <em>estar=1.</em>, <em>tstar=1.</em>, <em>sstar=1.</em>, <em>fstar=1.</em>, <em>efstar=1.</em>, <em>dstar=1.</em>, <em>proportional=False</em>, <em>termination_time=None</em>, <em>functions=None</em>, <em>cfmt=None</em>, <em>tfmt=&quot;time&quot;</em>, <em>num_steps=None</em>, <em>cols=None</em>, <em>skiprows=0</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#Driver" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">Driver</tt><big>(</big><em>driver_kind</em>, <em>path</em>, <em>path_input=&quot;default&quot;</em>, <em>kappa=0.</em>, <em>amplitude=1.</em>, <em>rate_multiplier=1.</em>, <em>step_multiplier=1.</em>, <em>num_io_dumps=&quot;all&quot;</em>, <em>estar=1.</em>, <em>tstar=1.</em>, <em>sstar=1.</em>, <em>fstar=1.</em>, <em>efstar=1.</em>, <em>dstar=1.</em>, <em>proportional=False</em>, <em>termination_time=None</em>, <em>functions=None</em>, <em>cfmt=None</em>, <em>tfmt=&quot;time&quot;</em>, <em>num_steps=None</em>, <em>cols=None</em>, <em>skiprows=0</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#Driver" title="Permalink to this definition">¶</a></dt>
 <dd><p>Factory method for subclasses of PathDriver</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -119,8 +120,7 @@ specification <tt class="docutils literal"><span class="pre">path</span></tt></p
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>driver_kind</strong> (<em>str</em>) &#8211; The driver kind</li>
-<li><strong>path</strong> (<em>str or None</em>) &#8211; The deformation path through which to driver the material</li>
-<li><strong>path_file</strong> (<em>str or None</em>) &#8211; File name where path is contained.  path and path_file are mutually exclusive, and one must be specified.</li>
+<li><strong>path</strong> (<em>str</em>) &#8211; The deformation path through which to driver the material</li>
 <li><strong>path_input</strong> (<em>str or None</em>) &#8211; Type of path input.  Choices are default, table, function [default: default]</li>
 <li><strong>kappa</strong> (<em>float</em>) &#8211; The Seth-Hill parameter [default: 0.]</li>
 <li><strong>amplitude</strong> (<em>float</em>) &#8211; Factor multiplied to all components of deformation [default: 1.]</li>
@@ -222,7 +222,7 @@ where the path was prescribed as:</p>
 </tbody>
 </table>
 <p>The component ordering of vectors and tensors follows what is described in
-ref:<cite>Conventions</cite>. If <tt class="docutils literal"><span class="pre">len(Cij)</span></tt> does not equal 6, (or 9 for deformation
+<a class="reference internal" href="conventions.html#conventions"><em>Conventions</em></a>. If <tt class="docutils literal"><span class="pre">len(Cij)</span></tt> does not equal 6, (or 9 for deformation
 gradient), the missing components are assumed to be zero strain.</p>
 <p>If temperature is not prescribed, it is presumed to have a constant value of 298K.</p>
 <p>If a user defined field is not prescribed, it is presumed to be <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
@@ -238,7 +238,7 @@ rate, and stress.</p>
 <p>Temperature can be included with any deformation type.</p>
 <p>User defined field can be included with any deformation type.</p>
 <p>If only one component of stress rate, stress, strain rate, or strain is
-specified, the component <tt class="docutils literal"><span class="pre">Cij</span></tt> is taken to be either the pressure of
+specified, the component <tt class="docutils literal"><span class="pre">Cij</span></tt> is taken to be either the pressure or
 volumetric strain.</p>
 </div>
 <div class="section" id="path-input-table">
@@ -255,7 +255,7 @@ each leg can be set by <tt class="docutils literal"><span class="pre">num_steps<
 <a class="reference internal" href="run.html#first-example"><em>Running a Simulation</em></a>, but specified by a table:</p>
 <div class="highlight-python"><div class="highlight"><pre>path = &quot;&quot;&quot;0  0 0 0
           1 .1 0 0&quot;&quot;&quot;
-driver = Driver(&quot;Continuum&quot;, path=path, path_input=&quot;table&quot;,
+driver = Driver(&quot;Continuum&quot;, path, path_input=&quot;table&quot;,
                 cols=[0,1,2,3], cfmt=&quot;222&quot;, tfmt=&quot;time, num_steps=10)
 </pre></div>
 </div>
@@ -280,7 +280,7 @@ user defined function to specify the 11 component of strain through time</p>
 <span class="n">func</span> <span class="o">=</span> <span class="n">Function</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s">&quot;analytic_expression&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
 <span class="n">functions</span> <span class="o">=</span> <span class="p">[</span><span class="n">func</span><span class="p">,]</span>
 <span class="n">path</span> <span class="o">=</span> <span class="s">&quot;{0} 2:1.e-1 0 0&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span>
-<span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="s">&quot;Continuum&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">path_input</span><span class="o">=</span><span class="s">&quot;function&quot;</span><span class="p">,</span>
+<span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="s">&quot;Continuum&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">path_input</span><span class="o">=</span><span class="s">&quot;function&quot;</span><span class="p">,</span>
                 <span class="n">num_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">termination_time</span><span class="o">=</span><span class="mf">1.8</span><span class="o">*</span><span class="n">pi</span><span class="p">,</span>
                 <span class="n">functions</span><span class="o">=</span><span class="n">functions</span><span class="p">,</span> <span class="n">cfmt</span><span class="o">=</span><span class="s">&quot;222&quot;</span><span class="p">)</span>
 </pre></div>
@@ -537,7 +537,8 @@ function types are supported.  When evaluated, functions are called as:</p>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Factory Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clparse.html"><tt class="docutils literal"><span class="pre">mml</span> <span class="pre">run</span></tt> Command Line Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clparse.html">Command Line Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
@@ -545,6 +546,7 @@ function types are supported.  When evaluated, functions are called as:</p>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="dev.html">Developers&#8217;s Guide</a></li>
 </ul>
 
 

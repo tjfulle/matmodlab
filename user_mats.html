@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Abaqus Materials &mdash; Material Model Laboratory 2.0 documentation</title>
+    <title>Writing User Material Models &mdash; Material Model Laboratory 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,9 +24,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
-    <link rel="up" title="User’s Guide" href="users.html" />
-    <link rel="next" title="Optional Material Addons" href="addon.html" />
-    <link rel="prev" title="Factory Methods" href="factory.html" />
+    <link rel="up" title="Developers’s Guide" href="dev.html" />
+    <link rel="next" title="Testing" href="test.html" />
+    <link rel="prev" title="Developers’s Guide" href="dev.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,13 +40,13 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="addon.html" title="Optional Material Addons"
+          <a href="test.html" title="Testing"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="factory.html" title="Factory Methods"
+          <a href="dev.html" title="Developers’s Guide"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li>
-          <li><a href="users.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+          <li><a href="dev.html" accesskey="U">Developers&#8217;s Guide</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -55,8 +55,98 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="abaqus-materials">
-<h1>Abaqus Materials<a class="headerlink" href="#abaqus-materials" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="writing-user-material-models">
+<span id="user-mats"></span><h1>Writing User Material Models<a class="headerlink" href="#writing-user-material-models" title="Permalink to this headline">¶</a></h1>
+<p><em>matmodlab</em> can find, build, and exercise the following types of user
+materials:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">native</span></tt> material models.  See <a class="reference internal" href="#native"><em>Native Material Models</em></a>.</li>
+<li>Abaqus <tt class="docutils literal"><span class="pre">umat</span></tt> material models.  See <a class="reference internal" href="#abamods"><em>Abaqus Materials</em></a>.</li>
+<li><em>matmodlab</em> <tt class="docutils literal"><span class="pre">user</span></tt> material models.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The source code from user materials is never copied in to <em>matmodlab</em>.</p>
+</div>
+<div class="section" id="native-material-models">
+<span id="native"></span><h2>Native Material Models<a class="headerlink" href="#native-material-models" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">native</span></tt> material models behave as if they were builtin models of
+<em>matmodlab</em>. <em>matmodlab</em> interacts with <tt class="docutils literal"><span class="pre">native</span></tt> through a material model
+interface file that defines a material class (called <tt class="docutils literal"><span class="pre">NativeMaterial</span></tt> in the
+following. The <tt class="docutils literal"><span class="pre">NativeMaterial</span></tt> must be a subclass of
+<tt class="docutils literal"><span class="pre">matmodlab/core/material/MaterialModel</span></tt>. <tt class="docutils literal"><span class="pre">NativeMaterial</span></tt> defines</p>
+<dl class="class">
+<dt id="NativeMaterial">
+<em class="property">class </em><tt class="descname">NativeMaterial</tt><big>(</big><em>MaterialModel</em><big>)</big><a class="headerlink" href="#NativeMaterial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class defining a native type user material</p>
+<dl class="data">
+<dt id="NativeMaterial.name">
+<tt class="descname">name</tt><a class="headerlink" href="#NativeMaterial.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>(required) the name by which it is invoked in the <tt class="docutils literal"><span class="pre">Material</span></tt> factory method.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="NativeMaterial.source_files">
+<tt class="descname">source_files</tt><a class="headerlink" href="#NativeMaterial.source_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>(optional) - list of model (fortran) source files.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="NativeMaterial.lapack">
+<tt class="descname">lapack</tt><a class="headerlink" href="#NativeMaterial.lapack" title="Permalink to this definition">¶</a></dt>
+<dd><p>(optional) - flag to use lapack when building the source files.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="NativeMaterial.__init__">
+<tt class="descname">__init__</tt><big>(</big><big>)</big><a class="headerlink" href="#NativeMaterial.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the material.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="NativeMaterial.setup">
+<tt class="descname">setup</tt><big>(</big><big>)</big><a class="headerlink" href="#NativeMaterial.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks user input and requests allocation of storage for state dependent variables. By the time <tt class="docutils literal"><span class="pre">setup</span></tt> is called, the user input parameters have been parsed by the base <tt class="docutils literal"><span class="pre">MaterialModel</span></tt> class and are stored in the <tt class="docutils literal"><span class="pre">params</span></tt> attribute.  <tt class="docutils literal"><span class="pre">setup</span></tt> should check the goodness of the material parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="NativeMaterial.update_state">
+<tt class="descname">update_state</tt><big>(</big><em>time</em>, <em>dtime</em>, <em>temp</em>, <em>dtemp</em>, <em>energy</em>, <em>density</em>, <em>F0</em>, <em>F1</em>, <em>strain</em>, <em>dstrain</em>, <em>elec_field</em>, <em>user_field</em>, <em>stress</em>, <em>xtra</em>, <em>last=False</em><big>)</big><a class="headerlink" href="#NativeMaterial.update_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the the material state</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>time</strong> (<em>ndarray</em>) &#8211; The time at the beginning of the time step</li>
+<li><strong>dtime</strong> (<em>float</em>) &#8211; Step time step size</li>
+<li><strong>temp</strong> (<em>float</em>) &#8211; The temperature at the beginning of the time step</li>
+<li><strong>dtemp</strong> (<em>float</em>) &#8211; Step temperature increment</li>
+<li><strong>energy</strong> (<em>float</em>) &#8211; The energy at the beginning of the time step</li>
+<li><strong>density</strong> (<em>float</em>) &#8211; The material density</li>
+<li><strong>F0</strong> &#8211; The deformation gradient at the beginning of the time step</li>
+<li><strong>F1</strong> &#8211; The deformation gradient at the beginning of the time step</li>
+<li><strong>strain</strong> &#8211; The strain at the beginning of the time step</li>
+<li><strong>dstrain</strong> (<em>ndarray</em>) &#8211; The strain increment over the step</li>
+<li><strong>elec_field</strong> (<em>ndarray</em>) &#8211; The electric field at the end of the step</li>
+<li><strong>user_field</strong> (<em>ndarray or None</em>) &#8211; The user defined field at the end of the step</li>
+<li><strong>stress</strong> (<em>ndarray</em>) &#8211; The stress at the beginning of the step</li>
+<li><strong>xtra</strong> (<em>ndarray</em>) &#8211; The state dependent variables at the beginning of the step</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><tt class="docutils literal"><span class="pre">(stress,</span> <span class="pre">xtra,</span> <span class="pre">stiff)</span></tt>. The stress, state dependent variables at the end of the step, and the 6x6 material stiffness</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="abaqus-materials">
+<span id="abamods"></span><h2>Abaqus Materials<a class="headerlink" href="#abaqus-materials" title="Permalink to this headline">¶</a></h2>
 <p><em>matmodlab</em> can build and exercise Abaqus <tt class="docutils literal"><span class="pre">UMAT</span></tt> and <tt class="docutils literal"><span class="pre">UHYPER</span></tt> material
 models. <em>matmodlab</em> builds the Abaqus models and calls the <tt class="docutils literal"><span class="pre">UMAT</span></tt> and
 <tt class="docutils literal"><span class="pre">UHYPER</span></tt> procedures with the same calling arguments as Abaqus. <tt class="docutils literal"><span class="pre">UMAT</span></tt> and
@@ -87,6 +177,7 @@ required for the model.</li>
 <li><tt class="docutils literal"><span class="pre">STDB_ABQERR</span></tt>.  Message passing interface from material model to host code.</li>
 </ul>
 <p>Consult the Abaqus documentation for more information.</p>
+</div>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <p>Two parameter Neo-Hookean nonlinear elastic model implemented as a <tt class="docutils literal"><span class="pre">UMAT</span></tt>.</p>
@@ -129,24 +220,12 @@ required for the model.</li>
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="background.html">Introduction</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="users.html">User&#8217;s Guide</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">Abaqus Materials</a></li>
-<li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clparse.html">Command Line Interface</a></li>
-<li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="users.html">User&#8217;s Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="dev.html">Developers&#8217;s Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="">Writing User Material Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="test.html">Testing</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dev.html">Developers&#8217;s Guide</a></li>
 </ul>
 
 
@@ -175,7 +254,7 @@ required for the model.</li>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |
-      <a href="_sources/aba.txt"
+      <a href="_sources/user_mats.txt"
           rel="nofollow">Page source</a></li>
     </div>
 
