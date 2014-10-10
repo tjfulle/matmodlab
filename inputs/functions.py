@@ -19,12 +19,12 @@ def runner():
     functions = [f2, f3]
 
     # set up the driver
-    driver = Driver("Continuum", path=path, path_input="function",
+    driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, functions=functions, cfmt="222")
 
     # set up the material
     parameters = {"K": K, "G": G}
-    material = Material("elastic", parameters=parameters)
+    material = Material("elastic", parameters)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material)

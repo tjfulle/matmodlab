@@ -21,15 +21,15 @@ def runner_visco(d=None, runid=None, v=1):
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
 
-    driver = Driver("Continuum", path=PATH, logger=logger, estar=.1)
+    driver = Driver("Continuum", PATH, logger=logger, estar=.1)
 
-    constants = [E, Nu]
+    parameters = [E, Nu]
     expansion = Expansion("isotropic", [1.E-5])
     viscoelastic = Viscoelastic("prony",
                                 np.array([[.35, 600.], [.15, 20.], [.25, 30.],
                                           [.05, 40.], [.05, 50.], [.15, 60.]]))
     trs = TRS("wlf", [75, 35, 50])
-    material = Material("umat", parameters=constants, constants=2,
+    material = Material("umat", parameters,
                         source_files=["neohooke.f90"], initial_temp=75,
                         source_directory=os.path.join(MAT_D, "abaumats"),
                         expansion=expansion, viscoelastic=viscoelastic, trs=trs)
@@ -44,11 +44,11 @@ def runner_expansion(d=None, runid=None, v=1):
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
 
-    driver = Driver("Continuum", path=PATH, logger=logger, estar=.1)
+    driver = Driver("Continuum", PATH, logger=logger, estar=.1)
 
-    constants = [E, Nu]
+    parameters = [E, Nu]
     expansion = Expansion("isotropic", [1.E-5])
-    material = Material("umat", parameters=constants, constants=2,
+    material = Material("umat", parameters,
                         source_files=["neohooke.f90"], initial_temp=75,
                         source_directory=os.path.join(MAT_D, "abaumats"),
                         expansion=expansion)
@@ -63,10 +63,10 @@ def runner_novisco(d=None, runid=None, v=1):
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
 
-    driver = Driver("Continuum", path=PATH, logger=logger, estar=.1)
+    driver = Driver("Continuum", PATH, logger=logger, estar=.1)
 
-    constants = [E, Nu]
-    material = Material("umat", parameters=constants, constants=2,
+    parameters = [E, Nu]
+    material = Material("umat", parameters,
                         source_files=["neohooke.f90"], initial_temp=75,
                         source_directory=os.path.join(MAT_D, "abaumats"))
     mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)

@@ -5,11 +5,12 @@ import random
 import argparse
 import linecache
 import numpy as np
-import matplotlib.pyplot as plt
 
 # chaco and traits imports are in the enthought directory in EPD/Canopy
-try: from enthought import *
-except ImportError: pass
+try:
+    from enthought import chaco, traits
+except ImportError:
+    pass
 
 from chaco.api import *
 from traits.api import *
@@ -668,6 +669,7 @@ class ModelPlot(HasStrictTraits):
         self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
 
     def _Print_to_PDF_fired(self):
+        import matplotlib.pyplot as plt
         if not XY_DATA:
             return
 

@@ -72,9 +72,14 @@ def load_file(filename, disp=0, reload=False):
     # return already loaded module
     module = sys.modules.get(long_name)
     if module is None:
-        fp, pathname, description = imp.find_module(name, [path])
+        fp, pathname, (_s, _m, ty) = imp.find_module(name, [path] + sys.path)
+        if ty != imp.PY_SOURCE:
+            # not Python source, can't do anything with this module
+            fp.close()
+            return None
+
         try:
-            module = imp.load_module(long_name, fp, pathname, description)
+            module = imp.load_module(long_name, fp, pathname, (_s, _m, ty))
         finally:
             if fp:
                 fp.close()

@@ -1,7 +1,6 @@
 import numpy as np
 from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
-from utils.errors import ModelNotImportedError
 from materials.product import (ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
                   ABA_UANISOHYPER_PYF, ABA_UANISOHYPER_JAC_F90)
 
@@ -18,10 +17,7 @@ class UAnisoHyperInv(AbaqusMaterial):
 
     def import_model(self):
         global mat
-        try:
-            import lib.uanisohyper_inv as mat
-        except ImportError:
-            raise ModelNotImportedError("uanisohyper_inv")
+        import lib.uanisohyper_inv as mat
 
     def model_setup(self, *args, **kwargs):
         fiber_dirs = kwargs.get("fiber_dirs", [1, 0, 0])

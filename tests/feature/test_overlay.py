@@ -49,7 +49,7 @@ def runner(d=None, v=1):
     functions = [f2, f3]
 
     # set up the driver
-    driver = Driver("Continuum", path=path, path_input="function",
+    driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, termination_time=1.8*pi,
                     functions=functions, cfmt="222", logger=logger)
 
@@ -57,7 +57,7 @@ def runner(d=None, v=1):
     K = 10.e9
     G = 3.75e9
     parameters = {"K":K, "G":G}
-    material = Material("elastic", parameters=parameters, logger=logger)
+    material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)

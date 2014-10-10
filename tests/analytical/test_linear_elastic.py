@@ -81,8 +81,8 @@ def runner(d=None, runid=None, v=1, test=0):
 
     # set up the material and driver
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
-    driver = Driver("Continuum", path=path, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
+    driver = Driver("Continuum", path, logger=logger)
 
     # Run the simulation
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -125,7 +125,7 @@ def run_biax_strain_ext_stressc(d=None, runid=None, v=1):
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -135,7 +135,7 @@ def run_biax_strain_ext_stressc(d=None, runid=None, v=1):
       3 1 444444 11230352666.666668 11230352666.666668  7479414666.666667 0 0 0
       4 1 444444           0.0                0.0                0.0      0 0 0
       """
-    driver = Driver("Continuum", path=path, logger=logger, step_multiplier=50)
+    driver = Driver("Continuum", path, logger=logger, step_multiplier=50)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -151,7 +151,7 @@ def run_biax_strain_comp_stressc(d=None, runid=None, v=1):
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -161,7 +161,7 @@ def run_biax_strain_comp_stressc(d=None, runid=None, v=1):
       3 1 444444 -11230352666.666668 -11230352666.666668  -7479414666.666667 0 0 0
       4 1 444444            0.0                 0.0                 0.0      0 0 0
       """
-    driver = Driver("Continuum", path=path, logger=logger, step_multiplier=50)
+    driver = Driver("Continuum", path, logger=logger, step_multiplier=50)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -176,7 +176,7 @@ def run_biax_strain_ext_strainc(d=None, runid=None, v=1):
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -186,7 +186,7 @@ def run_biax_strain_ext_strainc(d=None, runid=None, v=1):
       3 1 222222 1 1 0 0 0 0
       4 1 222222 0 0 0 0 0 0
       """
-    driver = Driver("Continuum", path=path, logger=logger, estar=.5,
+    driver = Driver("Continuum", path, logger=logger, estar=.5,
                     step_multiplier=50)
 
     # set up and run the model
@@ -202,7 +202,7 @@ def run_biax_strain_comp_strainc(d=None, runid=None, v=1):
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -212,7 +212,7 @@ def run_biax_strain_comp_strainc(d=None, runid=None, v=1):
       3 1 222222 1 1 0 0 0 0
       4 1 222222 0 0 0 0 0 0
       """
-    driver = Driver("Continuum", path=path, logger=logger, estar=-.5,
+    driver = Driver("Continuum", path, logger=logger, estar=-.5,
                     step_multiplier=50)
 
     # set up and run the model
@@ -229,7 +229,7 @@ def run_uniax_strain_comp_strainc(d=None, runid=None, v=1):
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -239,7 +239,7 @@ def run_uniax_strain_comp_strainc(d=None, runid=None, v=1):
       3 1 222222 1 0 0 0 0 0
       4 1 222222 0 0 0 0 0 0
       """
-    driver = Driver("Continuum", path=path, logger=logger, estar=-.5,
+    driver = Driver("Continuum", path, logger=logger, estar=-.5,
                     step_multiplier=50)
 
     # set up and run the model
@@ -255,7 +255,7 @@ def run_uniax_strain_ext_strainc(d=None, runid=None, v=1):
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -265,7 +265,7 @@ def run_uniax_strain_ext_strainc(d=None, runid=None, v=1):
       3 1 222222 1 0 0 0 0 0
       4 1 222222 0 0 0 0 0 0
       """
-    driver = Driver("Continuum", path=path, logger=logger, estar=.5,
+    driver = Driver("Continuum", path, logger=logger, estar=.5,
                     step_multiplier=50)
 
     # set up and run the model
@@ -281,7 +281,7 @@ def run_uniax_strain_comp_stressc(d=None, runid=None, v=1):
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -291,7 +291,7 @@ def run_uniax_strain_comp_stressc(d=None, runid=None, v=1):
       3 1 444444  -7490645333.333334 -3739707333.3333335 -3739707333.3333335 0 0 0
       4 1 444444            0.0                 0.0                 0.0      0 0 0
       """
-    driver = Driver("Continuum", path=path, logger=logger, step_multiplier=50)
+    driver = Driver("Continuum", path, logger=logger, step_multiplier=50)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -307,7 +307,7 @@ def run_uniax_strain_ext_stressc(d=None, runid=None, v=1):
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters=parameters, logger=logger)
+    material = Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -317,7 +317,7 @@ def run_uniax_strain_ext_stressc(d=None, runid=None, v=1):
       3 1 444444  7490645333.333334 3739707333.3333335 3739707333.3333335 0 0 0
       4 1 444444           0.0               0.0                0.0       0 0 0
       """
-    driver = Driver("Continuum", path=path, logger=logger, step_multiplier=50)
+    driver = Driver("Continuum", path, logger=logger, step_multiplier=50)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)

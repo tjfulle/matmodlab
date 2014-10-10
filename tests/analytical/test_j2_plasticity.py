@@ -164,9 +164,8 @@ def rand_runner1(d=None, runid=None, v=1, test=0):
 
     # set up the material and driver
     parameters = {"K": K, "G": G, "A1": Y_SHEAR}
-    material = Material("pyplastic", parameters=parameters, logger=logger)
-    driver = Driver("Continuum", path=path, logger=logger,
-                    step_multiplier=100)
+    material = Material("pyplastic", parameters, logger=logger)
+    driver = Driver("Continuum", path, logger=logger, step_multiplier=100)
 
     # Run the simulation
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -235,12 +234,12 @@ def rand_runner2(d=None, runid=None, v=1, test=0):
             f.write("".join(["{0:20.10e}".format(_) for _ in row]) + "\n")
     logger.write("  Writing is complete")
 
-    driver = Driver("Continuum", path=path, logger=logger,
+    driver = Driver("Continuum", path, logger=logger,
                     num_io_dumps=100, step_multiplier=100)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y0, "H": 0., "BETA": 0.}
-    material = Material("vonmises", parameters=parameters, logger=logger)
+    material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -295,11 +294,11 @@ def runner1(d=None, v=1, runid=None):
 
     # set up the driver
     path = j2pr.gen_uniax_strain_path(Y, YF, G, LAM)
-    driver = Driver("Continuum", path=path, step_multiplier=200, logger=logger)
+    driver = Driver("Continuum", path, step_multiplier=200, logger=logger)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": YF, "H": H, "BETA": 0}
-    material = Material("vonmises", parameters=parameters, logger=logger)
+    material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -323,11 +322,11 @@ def iso_hard_runner(d=None, v=1, runid=None):
 
     # set up the driver
     path = j2pr.gen_uniax_strain_path(Y, YF, G, LAM)
-    driver = Driver("Continuum", path=path, step_multiplier=200, logger=logger)
+    driver = Driver("Continuum", path, step_multiplier=200, logger=logger)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y, "H": H, "BETA": BETA}
-    material = Material("vonmises", parameters=parameters, logger=logger)
+    material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -352,11 +351,11 @@ def kin_hard_runner(d=None, v=1, runid=None):
 
     # set up the driver
     path = j2pr.gen_uniax_strain_path(Y, YF, G, LAM)
-    driver = Driver("Continuum", path=path, step_multiplier=200, logger=logger)
+    driver = Driver("Continuum", path, step_multiplier=200, logger=logger)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y, "H": H, "BETA": BETA}
-    material = Material("vonmises", parameters=parameters, logger=logger)
+    material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -381,11 +380,11 @@ def mix_hard_runner(d=None, v=1, runid=None):
 
     # set up the driver
     path = j2pr.gen_uniax_strain_path(Y, YF, G, LAM)
-    driver = Driver("Continuum", path=path, step_multiplier=200, logger=logger)
+    driver = Driver("Continuum", path, step_multiplier=200, logger=logger)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y, "H": H, "BETA": BETA}
-    material = Material("vonmises", parameters=parameters, logger=logger)
+    material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)

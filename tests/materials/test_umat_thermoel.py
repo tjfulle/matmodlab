@@ -25,7 +25,7 @@ def runner(d=None, v=1, runid=None, test=0):
     3 1 ESST 1 0 0 340
     4 1 ESST 0 0 0 375
     """
-    driver = Driver("Continuum", path=path, logger=logger)
+    driver = Driver("Continuum", path, logger=logger)
 
     E0 = 29.E+06
     NU0 = .33
@@ -35,8 +35,8 @@ def runner(d=None, v=1, runid=None, test=0):
     NU1 = .33
     TI = 298.
     ALPHA = 0
-    constants = np.array([E0, NU0, T0, E1, NU1, T1, ALPHA, TI])
-    material = Material("umat", parameters=constants, constants=8,
+    parameters = np.array([E0, NU0, T0, E1, NU1, T1, ALPHA, TI])
+    material = Material("umat", parameters,
                         initial_temp=298., depvar=12,
                         source_files=["thermoelastic.f90"],
                         source_directory=os.path.join(MAT_D, "abaumats"))

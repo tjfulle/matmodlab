@@ -49,6 +49,7 @@ class MaterialModel(object):
     param_names = None
     completions = None
     source_files = None
+    pre_initialized = False
 
     def __init__(self):
         raise MatModLabError("materials must define own __init__")
@@ -57,15 +58,12 @@ class MaterialModel(object):
         """Parses parameters from user input and allocates parameter array
 
         """
-        # Material models are instantiated by the build process so that the
-        # builder can get the list of source files (if any) to build. The
-        # builder does not have a notion of simulation parameters - it just
-        # wants the source files (which are now known). If that's the case,
-        # (we know because no args were sent int) just return now.
+        # If no args are sent in, the caller must not want to do the material
+        # pre-initialization
         if not args:
             return
 
-        parameters, constants = args[:2]
+        parameters = args[0]
         self._param_name_map = {}
 
         if self.name is None:
@@ -88,50 +86,62 @@ class MaterialModel(object):
             # some models, like abaqus models, do not have the parameter names
             # set. The user must provide the entire UI array - as an array.
 
-            # Check for number of constants
-            if constants is None:
-                raise MatModLabError("{0}: expected keyword "
-                                     "constants".format(self.name))
-            constants = int(constants)
+            if kwargs.get("param_names", None) is not None:
+                # param_names passed in as argument. parse parameters as a
+                # builtin model
+                self.parameter_names = kwargs["param_names"]
+                params = self._parse_params(parameters)
 
-            # Check parameters
-            if not isinstance(parameters, (list, tuple, np.ndarray)):
-                raise MatModLabError("{0}: parameters must be "
-                                     "an array".format(self.name))
-            if len(parameters) != constants:
-                raise MatModLabError("len(parameters) != constants")
-
-            parameters = np.array([float(x) for x in parameters])
-
-            if hasattr(self, "aba_model"):
-                self.parameter_names = len(parameters) + 1
-                params = np.append(parameters, [0])
             else:
-                self.parameter_names = len(parameters)
-                params = np.array(parameters)
+                # Check parameters -> must be an array
+                if not isinstance(parameters, (list, tuple, np.ndarray)):
+                    raise MatModLabError("{0}: parameters must be "
+                                         "an array".format(self.name))
+                params = np.array([float(x) for x in parameters])
+                constants = len(params)
+
+                # check if user sent param_names, or set default
+                pnames = lambda n: ["PROP{0:02d}".format(i+1) for i in range(n)]
+                self.parameter_names = pnames(constants)
 
         else:
-            nprops = len(self.parameter_names)
-            params = np.zeros(nprops)
-
-            if not isinstance(parameters, dict):
-                raise MatModLabError("expected parameters to be a dict")
-
-            # populate the parameters array
-            for (key, value) in parameters.items():
-                K = key.upper()
-                idx = self.parameter_name_map(key)
-                if idx is None:
-                    raise MatModLabError("{0}: unrecognized parameter "
-                                         "for model {1}".format(key, self.name))
-                params[idx] = value
+            # default: param_names set be Material class
+            params = self._parse_params(parameters)
 
         self.iparray = np.array(params)
         if self.prop_names is not None:
             self.completions = complete_properties(self.iparray, self.prop_names)
+        self.pre_initialized = True
 
-    def initialize(self, depvar, initial_temp, file=None, trs=None,
+    def _parse_params(self, parameters):
+
+        if not isinstance(parameters, dict):
+            raise MatModLabError("expected parameters to be a dict")
+
+        nprops = len(self.parameter_names)
+        params = np.zeros(nprops)
+
+        # populate the parameters array
+        errors = 0
+        for (key, value) in parameters.items():
+            K = key.upper()
+            idx = self.parameter_name_map(key)
+            if idx is None:
+                errors += 1
+                logger.error("{0}: unrecognized parameter "
+                             "for model {1}".format(key, self.name))
+            params[idx] = value
+
+        if errors:
+            raise MatModLabError("stopping due to previous errors")
+
+        return params
+
+    def initialize(self, initial_temp, file=None, trs=None,
                    expansion=None, viscoelastic=None, logger=None, **kwargs):
+        if not self.pre_initialized:
+            raise MatModLabError("material not pre-initialized")
+
         self._vars = []
         self.visco_model = None
         self.expansion_model = None
@@ -146,14 +156,14 @@ class MaterialModel(object):
         self._file = file
 
         # Do the actual setup
-        self._setup(depvar, initial_temp, expansion, trs, viscoelastic, **kwargs)
+        self._setup(initial_temp, expansion, trs, viscoelastic, **kwargs)
         self._initialize()
 
     def mimicking(self, mat_mimic):
         raise NotImplementedError("mimicking not supported by "
                                   "{0}".format(self.name))
 
-    def _setup(self, depvar, initial_temp, expansion, viscoelastic, trs, **kwargs):
+    def _setup(self, initial_temp, expansion, viscoelastic, trs, **kwargs):
         """Set up the new material
 
         """
@@ -163,7 +173,7 @@ class MaterialModel(object):
         self.params = Parameters(self.parameter_names, self.iparray, self.name)
 
         try:
-            self.setup(self.params, depvar, **kwargs)
+            self.setup(self.params, **kwargs)
         except TypeError:
             self.setup()
 
@@ -368,11 +378,11 @@ class MaterialModel(object):
         except TypeError: return self.param_names
 
     @parameter_names.setter
-    def parameter_names(self, n):
+    def parameter_names(self, param_names):
         """Set parameter names for models that set parameter names at run time
 
         """
-        self.param_names = ["PROP{0:02d}".format(i+1) for i in range(n)]
+        self.param_names = [str(p).strip().upper() for p in param_names]
 
     def parameter_name_map(self, name, default=None):
         """Maps name to the index in the UI array"""
@@ -522,16 +532,27 @@ class AbaqusMaterial(MaterialModel):
     W = np.array([1., 1., 1., 2., 2., 2.])
     aba_model = True
     lapack = "lite"
-    def setup(self, props, depvar, **kwargs):
-        self.import_model()
-        if not depvar:
-            depvar = 1
+    def setup(self, props, **kwargs):
+        try:
+            self.import_model()
+        except ImportError:
+            raise ModelNotImportedError(self.name)
+
+        xkeys = lambda n: ["SDV{0}".format(i+1) for i in range(n)]
+        depvar = kwargs.get("depvar") or 0
+        # depvar allowed to be an integer (number of SDVs) or a list (names of
+        # SDVs)
+        try:
+            depvar, sdv_keys = len(depvar), depvar
+        except TypeError:
+            sdv_keys = xkeys(depvar)
+        self.nodepvar = not depvar
         statev = np.zeros(depvar)
-        xkeys = ["SDV{0}".format(i+1) for i in range(depvar)]
-        self.register_xtra_variables(xkeys, statev)
+        self.register_xtra_variables(sdv_keys, statev)
         self.model_setup(**kwargs)
 
     def model_setup(self, *args, **kwargs):
+        """Setup for specific model.  Only used by uanisohyper_inv"""
         pass
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
@@ -555,45 +576,40 @@ class AbaqusMaterial(MaterialModel):
         # abaqus ordering
         stress = stress[[0,1,2,3,5,4]]
         dstran = dstran[[0,1,2,3,5,4]]
+        if self.nodepvar:
+            # f2py does not like empty arrays
+            statev = np.zeros(1)
         stress, statev, ddsdde = self.update_state_umat(
             stress, statev, ddsdde, sse, spd, scd, rpl, ddsddt, drplde, drpldt,
             stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
             ndi, nshr, self.nxtra, self.params, coords, drot, pnewdt, celent,
             dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc)
         if np.any(np.isnan(stress)):
-            self.logger.error("umat stress contains nan's")
+            self.logger.raise_error("umat stress contains nan's")
         stress = stress[[0,1,2,3,5,4]]
+        if self.nodepvar:
+            statev = np.zeros(0)
         return stress, statev, ddsdde
 
 
 # ----------------------------------------- Material Model Factory Method --- #
-def Material(model, parameters=None, depvar=None, constants=None,
-             source_files=None, source_directory=None, initial_temp=None,
-             expansion=None, trs=None, viscoelastic=None, logger=None,
-             rebuild=0, switch=None, fiber_dirs=None):
+def Material(model, parameters, logger=None, initial_temp=None,
+             expansion=None, trs=None, viscoelastic=None, depvar=None,
+             param_names=None, source_files=None, source_directory=None,
+             fiber_dirs=None, rebuild=0, switch=None):
     """Factory method for subclasses of MaterialModel
 
     Parameters
     ----------
     model : str
-        material model name
-    parameters : dict or ndarray or float
-        model parameters. For Abaqus umat models and matmodlab user models,
+        Material model name
+    parameters : dict or ndarray
+        Model parameters. For Abaqus umat models and matmodlab user models,
         parameters is a ndarray of model constants (specified in the order
         expected by the model). For other model types, parameters is a
         dictionary of name:value pairs.
-    depvar : int or None
-        Number of state dependent variables*.
-    constants : int or None
-        Number of parameters*.
-    source_files : list of str or None
-        List of model source files*. Each file name given in source_files must
-        exist. If the optional source_directory is given, source files are
-        looked for in it.
-    source_directory : str or None
-        Directory containing source files*. source_directory is optional, but
-        allows giving source_files as a list of file names only - not fully
-        qualified paths.
+    logger : instance or None
+        A core.logger.Logger instance
     initial_temp : float or None
         Initial temperature. The initial temperature, if given, must be
         consistent with that of the simulation driver. Defaults to 298K if not
@@ -604,14 +620,24 @@ def Material(model, parameters=None, depvar=None, constants=None,
          An instance of a time-temperature shift (TRS) model
     viscoelastic : instance or None
          An instance of a Viscoelastic model.
-    logger : instance or None
-        A core.logger.Logger instance
+    depvar : int or None
+        Number of state dependent variables*.
+    param_names : list or None
+        Parameter names*.  If given, then parameters must be a dict, otherwise,
+        an array as described above.
+    source_files : list of str or None
+        List of model source files*. Each file name given in source_files must
+        exist. If the optional source_directory is given, source files are
+        looked for in it.
+    source_directory : str or None
+        Directory containing source files*. source_directory is optional, but
+        allows giving source_files as a list of file names only - not fully
+        qualified paths.
     rebuild : bool [False]
         Rebuild the material, or not.
     switch : list of tuple of form ("MATX", "MATY") or None
         A list of strings that tell us to use MATY instead of MATX whenever
         MATX is encountered
-
 
     Returns
     -------
@@ -654,7 +680,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         initial_temp = DEFAULT_TEMP
 
     # instantiate the material
-    material = mat_info.mat_class(parameters, constants)
+    material = mat_info.mat_class(parameters, param_names=param_names)
 
     if material.aux_files:
         source_files.extend(material.aux_files)
@@ -683,7 +709,7 @@ def Material(model, parameters=None, depvar=None, constants=None,
         # reload model
         module = load_file(mat_info.file, reload=True)
         mat_class = getattr(module, mat_info.class_name)
-        material = mat_class(parameters, constants)
+        material = mat_class(parameters, param_names=param_names)
 
     # Check to see if any mimicing requests are made.
     # Switch options that are passed take precedence over the rcfile
@@ -712,9 +738,10 @@ def Material(model, parameters=None, depvar=None, constants=None,
         break  # Only swap once
 
     # initialize and set up material
-    material.initialize(depvar, initial_temp, file=mat_info.file, trs=trs,
+    material.initialize(initial_temp, file=mat_info.file, trs=trs,
                         expansion=expansion, viscoelastic=viscoelastic,
-                        logger=logger, fiber_dirs=fiber_dirs)
+                        logger=logger, fiber_dirs=fiber_dirs, depvar=depvar,
+                        param_names=None)
     return material
 
 
@@ -727,15 +754,17 @@ def find_materials():
     rx = re.compile(r"(?:^|[\\b_\\.-])[Mm]at")
     a = ["MaterialModel", "AbaqusMaterial"]
     # gather and verify all files
+    search_dirs = [d for d in MAT_LIB_DIRS]
     if not SUPPRESS_USER_ENV:
         for user_mat in cfgparse("materials"):
-            if user_mat not in MAT_LIB_DIRS:
-                MAT_LIB_DIRS.append(user_mat)
+            user_mat = os.path.realpath(user_mat)
+            if user_mat not in search_dirs:
+                search_dirs.append(user_mat)
 
-    # go through each item in MAT_LIB_DIRS and generate a list of material
+    # go through each item in search_dirs and generate a list of material
     # interface files. if item is a directory gather all files that match rx;
     # if it's a file, add it to the list of material files
-    for item in MAT_LIB_DIRS:
+    for item in search_dirs:
         if os.path.isfile(item):
             d, files = os.path.split(os.path.realpath(item))
             files = [files]

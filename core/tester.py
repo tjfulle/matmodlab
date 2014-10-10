@@ -91,6 +91,7 @@ def main(argv=None):
         # Apply user configurations
         if not SUPPRESS_USER_ENV:
             for user_test in cfgparse("tests"):
+                user_test = os.path.realpath(user_test)
                 if user_test not in sources:
                     sources.append(user_test)
 

@@ -82,11 +82,11 @@ def run_ex2(d=None, v=1, runid=None, test=0):
     analytic_response = np.array(analytic_response)
 
     # set up the driver
-    driver = Driver("Continuum", path=path, logger=logger)
+    driver = Driver("Continuum", path, logger=logger)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y}
-    material = Material("vonmises", parameters=parameters, logger=logger)
+    material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)

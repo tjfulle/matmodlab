@@ -51,12 +51,12 @@ def func(x, *args):
     logger = Logger(logfile=logfile, verbosity=0)
 
     # set up the driver
-    driver = Driver("Continuum", path=path, estar=-.5, step_multiplier=1000,
+    driver = Driver("Continuum", path, estar=-.5, step_multiplier=1000,
                     logger=logger)
 
     # set up the material
     parameters = {"K": x[0], "G": x[1]}
-    material = Material("elastic", parameters=parameters, logger=logger)
+    material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)

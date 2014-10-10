@@ -136,7 +136,7 @@ def compute_elastic_constants(args, disp=0):
 
     lam, G, E, nu, K, H, ko, cl, ct, co, cr, rho = args
 
-    consts = [x for x in args if x]
+    consts = [x for x in args if x is not None]
     nconsts = len(consts)
     if nconsts > 2 and not rho:
         sys.stderr.write("too many nonzero elastic constants sent to {0}"

@@ -1,7 +1,6 @@
 import numpy as np
 from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
-from utils.errors import ModelNotImportedError
 from materials.product import (ABA_IO_F90, DGPADM_F, ABA_TENSALG_F90,
                                ABA_UHYPER_PYF, ABA_UHYPER_JAC_F90)
 mat = None
@@ -18,10 +17,7 @@ class UHyper(AbaqusMaterial):
 
     def import_model(self):
         global mat
-        try:
-            import lib.uhyper as mat
-        except ImportError:
-            raise ModelNotImportedError("uhyper")
+        import lib.uhyper as mat
 
     def update_state_umat(self, stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,

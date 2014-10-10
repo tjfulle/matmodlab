@@ -46,7 +46,7 @@ def run_default(d=None, v=1):
 """
 
     # set up the driver
-    driver = Driver("Continuum", path=path, kappa=0.0, amplitude=1.0,
+    driver = Driver("Continuum", path, kappa=0.0, amplitude=1.0,
                     rate_multiplier=1.0, step_multiplier=1.0, num_io_dumps=20,
                     estar=1.0, tstar=1.0, sstar=1.0, fstar=1.0, efstar=1.0,
                     dstar=1.0, proportional=False, termination_time=None,
@@ -54,7 +54,7 @@ def run_default(d=None, v=1):
 
     # set up the material
     parameters = {"K":1.350E+11, "G":5.300E+10}
-    material = Material("elastic", parameters=parameters, logger=logger)
+    material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -71,11 +71,11 @@ def run_table(d=None, v=1):
     path = """0E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
               1E+00 1E-01 0E+00 0E+00 0E+00 0E+00 0E+00
               2E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00"""
-    driver = Driver("Continuum", path=path, kappa=0.0, path_input="table",
+    driver = Driver("Continuum", path, kappa=0.0, path_input="table",
                     step_multiplier=10.0, cfmt="222222", cols=range(7),
                     tfmt="time", logger=logger)
     parameters = {"K":1.350E+11, "G":5.300E+10}
-    material = Material("elastic", parameters=parameters, logger=logger)
+    material = Material("elastic", parameters, logger=logger)
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
     return
@@ -98,7 +98,7 @@ def run_func(d=None, v=1):
     functions = [f2, f3]
 
     # set up the driver
-    driver = Driver("Continuum", path=path, path_input="function",
+    driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, termination_time=1.8*pi,
                     functions=functions, cfmt="222", logger=logger)
 
@@ -106,7 +106,7 @@ def run_func(d=None, v=1):
     K = 10.e9
     G = 3.75e9
     parameters = {"K":K, "G":G}
-    material = Material("elastic", parameters=parameters, logger=logger)
+    material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)

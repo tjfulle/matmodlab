@@ -172,7 +172,7 @@ def convert_xml_input(files):
         dopts = ", ".join(['{0}={1}'.format(kw, v) for (kw,v) in path_op.items()
                            if not is_default_val(kw, v)])
         path = format_path(path_el)
-        dspec = ('driver = Driver("Continuum", path=path, '
+        dspec = ('driver = Driver("Continuum", path, '
                  'logger=logger, {0})'.format(dopts))
         dspec = textwrap.fill(dspec, width=78, subsequent_indent=" "*20)
 
@@ -206,7 +206,7 @@ def runner(d=None, v=1):
 
     # set up material
     parameters = {3}
-    material = Material("{4}", parameters=parameters, logger=logger)
+    material = Material("{4}", parameters, logger=logger)
 
     # setup simulation
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)

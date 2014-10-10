@@ -70,11 +70,11 @@ def rand_runner(d=None, runid=None, v=1, test=0):
 
     # set up the material
     parameters = {"K": K, "G": G, "A1": A1, "A4": A4}
-    material = Material("pyplastic", parameters=parameters, logger=logger)
+    material = Material("pyplastic", parameters, logger=logger)
 
     # set up the driver
     path, strain = ldpr.gen_path(K, G, A1, A4)
-    driver = Driver("Continuum", path=path, logger=logger)
+    driver = Driver("Continuum", path, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
@@ -143,11 +143,11 @@ def spherical_runner(d=None, v=1, runid=None):
 
     # set up the driver
     path = ldpr.gen_spherical_path(K, MU, RINT, ZINT)
-    driver = Driver("Continuum", path=path, step_multiplier=100, logger=logger)
+    driver = Driver("Continuum", path, step_multiplier=100, logger=logger)
 
     # set up the material
     parameters = {"K": K, "G": MU, "A1": RINT/sqrt(2.0), "A4": RINT/sqrt(6.0)/ZINT}
-    material = Material("pyplastic", parameters=parameters, logger=logger)
+    material = Material("pyplastic", parameters, logger=logger)
 
     # set up and run the model
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)

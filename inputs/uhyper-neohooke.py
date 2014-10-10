@@ -16,12 +16,12 @@ def runner():
     runid = "uhyper-neohooke"
 
     # set up the driver
-    driver = Driver("Continuum", path=path, path_input="function",
+    driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2)
 
     # set up the material
-    constants = [C10, D1]
-    material = Material("uhyper", parameters=constants, constants=2,
+    parameters = [C10, D1]
+    material = Material("uhyper", parameters,
                         source_files=["uhyper.f90"],
                         source_directory="{0}/materials/abaumats".format(ROOT_D))
 

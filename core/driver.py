@@ -29,7 +29,7 @@ class PathDriver(object):
 
 class ContinuumDriver(PathDriver):
     kind = "Continuum"
-    def __init__(self, path=None, path_file=None, path_input="default",
+    def __init__(self, path, path_input="default",
                  kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1.,
                  num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1.,
                  efstar=1., dstar=1., proportional=False, termination_time=None,
@@ -39,19 +39,11 @@ class ContinuumDriver(PathDriver):
         if logger is None:
             logger = Logger()
         self.logger = logger
-
         self.logger.write("setting up the {0} driver".format(self.kind))
 
         self._vars = []
-        if path is None and path_file is None:
-            raise MatModLabError("Expected one of path or path_file")
-        if path is not None and path_file is not None:
-            raise MatModLabError("Expected only one of path or path_file")
-
-        if path_file is not None:
-            if not os.path.isfile(path_file):
-                raise FileNotFoundError(path_file)
-            path = open(path_file).read()
+        self.kappa = kappa
+        self.proportional = proportional
 
         if not isinstance(path, np.ndarray):
             path = [line.split() for line in path.split("\n") if line.split()]
@@ -60,8 +52,6 @@ class ContinuumDriver(PathDriver):
                               termination_time, tfmt, cols, cfmt, skiprows,
                               functions, kappa, estar, tstar, sstar, fstar,
                               efstar, dstar)
-        self.kappa = kappa
-        self.proportional = proportional
         self.itemp = self.path[0][18]
 
         # Register variables specifically needed by driver
@@ -316,8 +306,8 @@ class ContinuumDriver(PathDriver):
 
 
 # --------------------------------------------- The Driver factory method --- #
-def Driver(kind="Continuum", **kwargs):
+def Driver(kind, path, **kwargs):
     for cls in PathDriver.__subclasses__():
         if cls.kind.lower() == kind.lower():
-            return cls(**kwargs)
+            return cls(path, **kwargs)
     raise MatModLabError("{0}: unrecognized driver kind".format(kind))

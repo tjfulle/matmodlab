@@ -11,19 +11,16 @@ path = """
 {0} 2:1.e-1 0 0
 """.format(2*pi)
 
-umat = "umat_neohooke"
-uhyper = "uhyper_neohooke"
-
 class TestUMat(TestBase):
     def __init__(self):
-        self.runid = umat
+        self.runid = "umat_neohooke"
         self.keywords = ["fast", "abaqus", "umat", "neohooke", "feature", "builtin"]
     def run_job(self):
         run_umat(d=self.test_dir, v=0, test=1)
 
 class TestUHyper(TestBase):
     def __init__(self):
-        self.runid = uhyper
+        self.runid = "uhyper_neohooke"
         self.keywords = ["fast", "abaqus", "uhyper", "neohooke", "feature",
                          "builtin"]
     def run_job(self):
@@ -32,7 +29,7 @@ class TestUHyper(TestBase):
 class TestUAnisoHyperInv(TestBase):
     def __init__(self):
         self.disabled = True
-        self.runid = uhyper
+        self.runid = "uanisohyper_inv"
         self.keywords = ["fast", "abaqus", "uanisohyper_inv", "feature", "builtin"]
     def run_job(self):
         run_uanisohyper_inv(d=self.test_dir, v=0, test=1)
@@ -40,34 +37,37 @@ class TestUAnisoHyperInv(TestBase):
 @matmodlab
 def run_umat(d=None, v=1, test=0):
     d = d or os.getcwd()
-    runid = umat
+    runid = "umat_neohooke"
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
-    driver = Driver("Continuum", path=path, path_input="function",
+    driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2,
                     termination_time=1.8*pi, logger=logger)
-    constants = [E, Nu]
-    material = Material("umat", parameters=constants, constants=2,
+    parameters = [E, Nu]
+    depvar = 2
+    material = Material("umat", parameters, logger=logger,
                         source_files=["neohooke.f90"], #rebuild=test,
                         source_directory="{0}/materials/abaumats".format(ROOT_D),
-                        logger=logger)
+                        depvar=depvar)
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
 @matmodlab
 def run_uhyper(d=None, v=1, test=0):
     d = d or os.getcwd()
-    runid = uhyper
+    runid = "uhyper_neohooke"
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
-    driver = Driver("Continuum", path=path, path_input="function",
+    driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2,
                     termination_time=1.8*pi, logger=logger)
-    constants = [C10, D1]
-    material = Material("uhyper", parameters=constants, constants=2,
+    param_names = ["C10", "D1"]
+    parameters = {"C10": C10, "D1": D1}
+    depvar = ["MY_SDV_1", "MY_SDV_2"]
+    material = Material("uhyper", parameters, logger=logger,
                         source_files=["uhyper.f90"], #rebuild=test,
                         source_directory="{0}/materials/abaumats".format(ROOT_D),
-                        logger=logger)
+                        param_names=param_names, depvar=depvar)
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
@@ -77,7 +77,7 @@ def run_uanisohyper_inv(d=None, v=1, test=0):
     runid = "uanisohyper_inv"
     logfile = os.path.join(d, runid + ".log")
     logger = Logger(logfile=logfile, verbosity=v)
-    driver = Driver("Continuum", path=path, path_input="function",
+    driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2,
                     termination_time=1.8*pi, logger=logger)
 
@@ -89,14 +89,14 @@ def run_uanisohyper_inv(d=None, v=1, test=0):
     parameters = np.array([C10, D, K1, K2, Kappa])
     a = np.array([[0.643055,0.76582,0.0], [0.643055,-0.76582,0.0]])
     a = np.array([[0.643055,0.76582,0.0]])
-    material = Material("uanisohyper_inv", parameters=parameters, constants=5,
+    material = Material("uanisohyper_inv", parameters, logger=logger,
                         source_files=["uanisohyper_inv.f"], #rebuild=test,
                         source_directory="{0}/materials/abaumats".format(ROOT_D),
-                        logger=logger, fiber_dirs=a)
+                        fiber_dirs=a)
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
 if __name__ == "__main__":
-    run_umat()
-    run_uhyper()
+    #    run_umat()
+    #     run_uhyper()
     run_uanisohyper_inv()

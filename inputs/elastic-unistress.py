@@ -15,12 +15,12 @@ path = """
 @matmodlab
 def runner():
     # set up the driver
-    driver = Driver(kind="Continuum", kappa=0., tstar=1., sstar=-1e-6, amplitude=1.,
-                    step_multiplier=1000, rate_multiplier=1., path=path)
+    driver = Driver("Continuum", path, kappa=0., tstar=1., sstar=-1e-6,
+                    amplitude=1., step_multiplier=1000, rate_multiplier=1.)
 
     # set up the material
     parameters = {"K": K, "G": G}
-    material = Material("elastic", parameters=parameters)
+    material = Material("elastic", parameters)
 
     runid = "elastic-unistress"
     mps = MaterialPointSimulator(runid, driver, material)
