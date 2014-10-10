@@ -539,7 +539,11 @@ class AbaqusMaterial(MaterialModel):
             raise ModelNotImportedError(self.name)
 
         xkeys = lambda n: ["SDV{0}".format(i+1) for i in range(n)]
-        depvar = kwargs.get("depvar") or 0
+        # depvar must be at least 1 (cannot pass reference to empty list)
+        if hasattr(self, "depvar"):
+            depvar = self.depvar
+        else:
+            depvar = kwargs.get("depvar") or 1
         # depvar allowed to be an integer (number of SDVs) or a list (names of
         # SDVs)
         try:
@@ -687,9 +691,6 @@ def Material(model, parameters, logger=None, initial_temp=None,
 
     if material.source_files:
         source_files.extend(material.source_files)
-
-    if material.depvar:
-        depvar = material.depvar
 
     # Check if model is already built (if applicable)
     if source_files:
