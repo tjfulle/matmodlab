@@ -22,64 +22,60 @@ class TestJ2Plasticity1(TestBase):
     def __init__(self):
         self.runid = RUNID + "1"
         self.keywords = ["fast", "material", "vonmises", "analytic", "material",
-                         "builtin"]
+                         "builtin", "j2"]
         self.base_res = os.path.join(my_dir, "j2_plast.base_dat")
         self.interpolate_diff = True
-    def run_job(self):
-        runner1(d=self.test_dir, v=0, runid=self.runid)
 
 class TestJ2PlasticityIsotropicHardening(TestBase):
     def __init__(self):
         self.runid = RUNID + "_iso_hard"
         self.keywords = ["fast", "material", "vonmises", "analytic", "material",
-                         "hardening", "builtin"]
+                         "hardening", "builtin", "j2"]
         self.base_res = os.path.join(my_dir, "j2_plast_iso_hard.base_dat")
         self.interpolate_diff = True
         self.gen_overlay_if_fail = True
-    def run_job(self):
-        iso_hard_runner(d=self.test_dir, v=0, runid=self.runid)
 
 class TestJ2PlasticityKinematicHardening(TestBase):
     def __init__(self):
         self.runid = RUNID + "_kin_hard"
         self.keywords = ["fast", "material", "vonmises", "analytic", "material",
-                         "hardening", "builtin"]
+                         "hardening", "builtin", "j2"]
         self.base_res = os.path.join(my_dir, "j2_plast_kin_hard.base_dat")
         self.interpolate_diff = True
         self.gen_overlay_if_fail = True
-    def run_job(self):
-        kin_hard_runner(d=self.test_dir, v=0, runid=self.runid)
 
 class TestJ2PlasticityMixedHardening(TestBase):
     def __init__(self):
         self.runid = RUNID + "_mix_hard"
         self.keywords = ["fast", "material", "vonmises", "analytic", "material",
-                         "hardening", "builtin"]
+                         "hardening", "builtin", "j2"]
         self.base_res = os.path.join(my_dir, "j2_plast_mix_hard.base_dat")
         self.interpolate_diff = True
         self.gen_overlay_if_fail = True
-    def run_job(self):
-        mix_hard_runner(d=self.test_dir, v=0, runid=self.runid)
 
 class TestRandomJ2Plasticity1(TestBase):
     def __init__(self):
         self.runid = "rand_" + RUNID
         self.nruns = 10
         self.keywords = ["fast", "random", "material", "plastic", "analytic",
-                         "builtin"]
+                         "builtin", "j2"]
 
     def setup(self,*args,**kwargs):
         self.make_test_dir()
 
     def run(self):
-        logger = Logger(logfile=os.path.join(self.test_dir, self.runid + ".stat"), verbosity=0)
+
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
+
+        logger = Logger(self.runid, filename=self.runid + ".stat")
         logger.write("Running {0:d} realizations".format(self.nruns))
 
         stats = []
         for idx in range(0, self.nruns):
             runid = self.runid + "_{0}".format(idx + 1)
             logger.write("* Spawning {0}".format(runid))
-            stats.append(rand_runner1(d=self.test_dir, v=0, runid=runid))
+            stats.append(rand_runner1(runid=runid))
             logger.write("    Status: {0:s}".format(RES_MAP[stats[-1]]))
 
         # Set the overall status (lowest common denominator)
@@ -90,6 +86,9 @@ class TestRandomJ2Plasticity1(TestBase):
             self.status = DIFFED
 
         logger.write("Overall test status: {0:s}".format(RES_MAP[self.status]))
+
+        os.chdir(cwd)
+
         return self.status
 
 class TestRandomJ2Plasticity2(TestBase):
@@ -97,20 +96,24 @@ class TestRandomJ2Plasticity2(TestBase):
         self.runid = "rand_" + RUNID + "2"
         self.nruns = 10
         self.keywords = ["long", "random", "material", "vonmises", "analytic",
-                         "builtin"]
+                         "builtin", "j2"]
 
     def setup(self,*args,**kwargs):
         self.make_test_dir()
 
     def run(self):
-        logger = Logger(logfile=os.path.join(self.test_dir, self.runid + ".stat"), verbosity=0)
+
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
+
+        logger = Logger(self.runid, filename=self.runid + ".stat")
         logger.write("Running {0:d} realizations".format(self.nruns))
 
         stats = []
         for idx in range(0, self.nruns):
             runid = self.runid + "_{0}".format(idx + 1)
             logger.write("* Spawning {0}".format(runid))
-            stats.append(rand_runner2(d=self.test_dir, v=0, runid=runid, test=1))
+            stats.append(rand_runner2(runid=runid, test=1))
             logger.write("    Status: {0:s}".format(RES_MAP[stats[-1]]))
 
         # Set the overall status (lowest common denominator)
@@ -121,18 +124,19 @@ class TestRandomJ2Plasticity2(TestBase):
             self.status = DIFFED
 
         logger.write("Overall test status: {0:s}".format(RES_MAP[self.status]))
+
+        os.chdir(cwd)
+
         return self.status
 
 
 @matmodlab
-def rand_runner1(d=None, runid=None, v=1, test=0):
+def rand_runner1(*args, **kwargs):
 
-    d = d or os.getcwd()
-    runid = runid or "rand_" + RUNID
-    logfile = os.path.join(d, runid + ".log")
-    solfile = os.path.join(d, runid + ".base_dat")
-    pathfile = os.path.join(d, runid + ".path")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = kwargs.get("runid", "rand_" + RUNID)
+    solfile = runid + ".base_dat"
+    pathfile = runid + ".path"
+    logger = Logger(runid)
     VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
                  "STRAIN_XY", "STRAIN_YZ", "STRAIN_XZ",
                  "STRESS_XX", "STRESS_YY", "STRESS_ZZ",
@@ -168,7 +172,7 @@ def rand_runner1(d=None, runid=None, v=1, test=0):
     driver = Driver("Continuum", path, logger=logger, step_multiplier=100)
 
     # Run the simulation
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
     # check output with analytic
@@ -199,14 +203,12 @@ def rand_runner1(d=None, runid=None, v=1, test=0):
     return stat
 
 @matmodlab
-def rand_runner2(d=None, runid=None, v=1, test=0):
+def rand_runner2(*args, **kwargs):
 
-    d = d or os.getcwd()
-    runid = runid or "rand_" + RUNID + "2"
-    logfile = os.path.join(d, runid + ".log")
-    solfile = os.path.join(d, runid + ".base_dat")
-    pathfile = os.path.join(d, runid + ".path")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = kwargs.get("runid", "rand_" + RUNID + "2")
+    solfile = runid + ".base_dat"
+    pathfile = runid + ".path"
+    logger = Logger(runid)
     VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
                  "STRESS_XX", "STRESS_YY", "STRESS_ZZ"]
 
@@ -242,11 +244,12 @@ def rand_runner2(d=None, runid=None, v=1, test=0):
     material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
-    test  =1
-    if not test: return
+    test = 1
+    if not test:
+        return
 
     # check output with analytic
     logger.write("Comaring outputs")
@@ -278,12 +281,10 @@ def rand_runner2(d=None, runid=None, v=1, test=0):
 
 
 @matmodlab
-def runner1(d=None, v=1, runid=None):
+def run_j2_plasticity1(*args, **kwargs):
 
-    d = d or os.getcwd()
-    runid = runid or RUNID + "1"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = RUNID + "1"
+    logger = Logger(runid)
 
     NU, E, K, G, LAM, Y = j2pr.copper_params()
 
@@ -301,16 +302,14 @@ def runner1(d=None, v=1, runid=None):
     material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 @matmodlab
-def iso_hard_runner(d=None, v=1, runid=None):
+def run_j2_plasticity_iso_hard(*args, **kwargs):
 
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_iso_hard"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = RUNID + "_iso_hard"
+    logger = Logger(runid)
 
     NU, E, K, G, LAM, Y = j2pr.copper_params()
 
@@ -329,17 +328,15 @@ def iso_hard_runner(d=None, v=1, runid=None):
     material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 
 @matmodlab
-def kin_hard_runner(d=None, v=1, runid=None):
+def run_j2_plasticity_kin_hard(*args, **kwargs):
 
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_kin_hard"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = RUNID + "_kin_hard"
+    logger = Logger(runid)
 
     NU, E, K, G, LAM, Y = j2pr.copper_params()
 
@@ -358,17 +355,15 @@ def kin_hard_runner(d=None, v=1, runid=None):
     material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 
 @matmodlab
-def mix_hard_runner(d=None, v=1, runid=None):
+def run_j2_plasticity_mix_hard(*args, **kwargs):
 
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_mix_hard"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = RUNID + "_mix_hard"
+    logger = Logger(runid)
 
     NU, E, K, G, LAM, Y = j2pr.copper_params()
 
@@ -387,7 +382,7 @@ def mix_hard_runner(d=None, v=1, runid=None):
     material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 

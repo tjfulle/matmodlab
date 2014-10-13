@@ -3,10 +3,23 @@ import sys
 import shutil
 import traceback
 import numpy as np
+from contextlib import contextmanager
+
 from utils.exojac import exodiff
 from core.logger import ConsoleLogger
 from utils.misc import fillwithdots, remove
 from core.product import TEST_CONS_WIDTH, TEST_D
+
+
+@contextmanager
+def stdout_redirected(new_stdout):
+    save_stdout = sys.stdout
+    sys.stdout = new_stdout
+    try:
+        yield None
+    finally:
+        sys.stdout = save_stdout
+
 
 PASSED = 0
 DIFFED = 1
@@ -18,10 +31,14 @@ FAILTOL = 1.E-07
 
 NOATTR = -31
 
+RES_MAP = {PASSED: "PASS", DIFFED: "DIFF", FAILED: "FAIL",
+           FAILED_TO_RUN: "FAILED TO RUN", NOT_RUN: "NOT RUN"}
 
 def reqa(it, attr):
     return "    {0}: required attribute '{1}' not defined".format(it, attr)
 
+def result_str(i):
+    return RES_MAP.get(i, "UNKNOWN")
 
 class TestError(Exception):
     pass
@@ -67,19 +84,22 @@ class TestBase(object):
                             "keyword".format(self.name, ", ".join(speeds)))
         self.speed = speed[0]
 
+        self.force_overlay = kwargs.get("overlay", False)
+
         self.module = module
         self.torn_down = 0
         self.status = self.not_run
-        self.disabled = getattr(self, "disabled", False)
-        self.gen_overlay = getattr(self, "gen_overlay", False)
-        self.gen_overlay_if_fail = getattr(self, "gen_overlay_if_fail", False)
         self._no_teardown = False
+
+        self.gen_overlay_if_fail = getattr(self, "gen_overlay_if_fail", False)
+        self.gen_overlay = getattr(self, "gen_overlay", False)
+        self.disabled = getattr(self, "disabled", False)
         self.interp = getattr(self, "interpolate_diff", False)
-        self.force_overlay = kwargs.get("overlay", False)
-        self.dtime = np.nan
-        self.ready = False
 
         self.exofile = None
+
+        self.dtime = np.nan
+        self.ready = False
         self.status = self.not_run
 
         if all(n not in self.keywords for n in ("long", "fast", "medium")):
@@ -89,7 +109,6 @@ class TestBase(object):
         d = os.path.basename(self.d)
         sub_dir = getattr(self, "test_dir_base", d)
         self.test_dir = os.path.join(root_dir, sub_dir, self.name)
-
 
     @property
     def keywords(self):
@@ -170,6 +189,12 @@ class TestBase(object):
         self.exofile = os.path.join(self.test_dir, self.runid + ".exo")
         if not self.base_res:
             self.base_res = os.path.join(self.d, self.runid + ".base_exo")
+
+        func = "run_{0}".format(self.runid)
+        try:
+            getattr(sys.modules[self.module], func)
+        except AttributeError:
+            raise TestError("{0}: missing {1} function".format(self.name, func))
         self.make_test_dir()
         self.ready = True
 
@@ -183,22 +208,33 @@ class TestBase(object):
         if not self.ready:
             raise TestError("{0}: test must be setup first".format(self.name))
 
-        try:
-            self.run_job()
-        except BaseException as e:
-            tb = sys.exc_info()[2]
-            tb_list = traceback.extract_tb(tb)
-            s = " ".join("{0}".format(x) for x in e.args)
-            tb_str = " ".join(traceback.format_list(tb_list)) + "\n" + s
-            raise TestError(tb_str)
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
 
-        if not os.path.isfile(self.exofile):
-            raise TestError("{0}: file not found".format(self.exofile))
+        with open(self.runid + ".con", "w") as fh:
+            with stdout_redirected(fh):
+                try:
+                    func = "run_{0}".format(self.runid)
+                    kwargs = {"d":self.test_dir, "v":0}
+                    getattr(sys.modules[self.module], func)(**kwargs)
+                except BaseException as e:
+                    tb = sys.exc_info()[2]
+                    tb_list = traceback.extract_tb(tb)
+                    s = " ".join("{0}".format(x) for x in e.args)
+                    tb_str = " ".join(traceback.format_list(tb_list)) + "\n" + s
+                    raise TestError(tb_str)
 
-        exodiff_log = os.path.join(self.test_dir, self.runid + ".exodiff.log")
-        self.status = exodiff.exodiff(self.exofile, self.base_res, f=exodiff_log,
-                                      v=0, control_file=self.exodiff,
-                                      interp=self.interp)
+                if not os.path.isfile(self.exofile):
+                    raise TestError("{0}: file not found".format(self.exofile))
+
+                f = self.runid + ".exodiff.log"
+                exodiff_log = os.path.join(self.test_dir, f)
+                self.status = exodiff.exodiff(self.exofile,
+                                              self.base_res, f=exodiff_log,
+                                              v=0, control_file=self.exodiff,
+                                              interp=self.interp)
+        os.chdir(cwd)
+
         return
 
     def tear_down(self, force=0):

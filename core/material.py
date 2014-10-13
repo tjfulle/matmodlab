@@ -152,7 +152,7 @@ class MaterialModel(object):
         self.initialized = True
         self.itemp = DEFAULT_TEMP
         self.initial_stress = np.zeros(6)
-        self.logger = logger or Logger()
+        self.logger = logger or Logger(self.name, filename=None)
         self._file = file
 
         # Do the actual setup
@@ -539,18 +539,13 @@ class AbaqusMaterial(MaterialModel):
             raise ModelNotImportedError(self.name)
 
         xkeys = lambda n: ["SDV{0}".format(i+1) for i in range(n)]
-        # depvar must be at least 1 (cannot pass reference to empty list)
-        if hasattr(self, "depvar"):
-            depvar = self.depvar
-        else:
-            depvar = kwargs.get("depvar") or 1
+        depvar = kwargs.get("depvar") or 0
         # depvar allowed to be an integer (number of SDVs) or a list (names of
         # SDVs)
         try:
             depvar, sdv_keys = len(depvar), depvar
         except TypeError:
             sdv_keys = xkeys(depvar)
-        self.nodepvar = not depvar
         statev = np.zeros(depvar)
         self.register_xtra_variables(sdv_keys, statev)
         self.model_setup(**kwargs)
@@ -580,9 +575,6 @@ class AbaqusMaterial(MaterialModel):
         # abaqus ordering
         stress = stress[[0,1,2,3,5,4]]
         dstran = dstran[[0,1,2,3,5,4]]
-        if self.nodepvar:
-            # f2py does not like empty arrays
-            statev = np.zeros(1)
         stress, statev, ddsdde = self.update_state_umat(
             stress, statev, ddsdde, sse, spd, scd, rpl, ddsddt, drplde, drpldt,
             stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
@@ -591,8 +583,6 @@ class AbaqusMaterial(MaterialModel):
         if np.any(np.isnan(stress)):
             self.logger.raise_error("umat stress contains nan's")
         stress = stress[[0,1,2,3,5,4]]
-        if self.nodepvar:
-            statev = np.zeros(0)
         return stress, statev, ddsdde
 
 
@@ -655,7 +645,7 @@ def Material(model, parameters, logger=None, initial_temp=None,
     if parameters is None:
         raise MatModLabError("{0}: required parameters not given".format(model))
 
-    logger = logger or Logger()
+    logger = logger or Logger("material", filename=None)
 
     # determine which model
     all_mats = find_materials()
@@ -779,8 +769,8 @@ def find_materials():
         files = [f for f in files if f.endswith(".py")]
 
         if not files:
-            ConsoleLogger.write("{0}: no mat files found".format(d),
-                                report_who=1, beg="*** WARNING: ")
+            ConsoleLogger.warn("{0}: no mat files found".format(d),
+                               report_who=1)
 
         # go through files and determine if it's an interface file. if it is,
         # load it and add it to mat_libs

@@ -1,135 +1,144 @@
 import os
 import sys
 import string
+import logging
+
 from core.runtime import opts
 from utils.misc import who_is_calling
+from core.product import SPLASH
 
+def Logger(logger, _cache={}, **kwargs):
+    remove = kwargs.pop("remove_from_cache", None)
+    if remove:
+        # remove logger
+        del _cache[logger]
+        return
 
-std_transform = string.upper
+    # when running tests, permutation, optimization, etc. a parent process
+    # will run many child processes (simulations) and we don't want every
+    # child to log to the console. Parent processes can send in the kwarg
+    # parent_process which will suppress logging to the console (by setting
+    # verbosity=-1) for all loggers set up after it. Logging to file is
+    # unaffected.
+    parent_process = kwargs.pop("parent_process", None)
+    if parent_process is not None:
+        _cache["parent_process"] = 1
+    elif _cache.get("parent_process"):
+        kwargs["verbosity"] = -1
 
-class Logger(object):
-    def __init__(self, logfile=None, verbosity=None, no_fh=0, chatty=0, mode="w"):
-        self.ch = sys.stdout
-        self.eh = sys.stderr
-        self.no_fh = no_fh
-        self.chatty = chatty
-        self._fh = open(os.devnull, "a")
-        self.verbosity = verbosity or opts.verbosity
-        self.assign_logfile(logfile, mode=mode)
+    try:
+        instance = _cache[logger]
+    except KeyError:
+        instance = _Logger(logger, **kwargs)
+        _cache[logger] = instance
+    return instance
+
+class _Logger(object):
+    def __init__(self, name, filename=1, verbosity=1, mode="w", splash=True):
+
+        self.logger_id = name
         self.errors = 0
 
-    @property
-    def verbosity(self):
-        return self._v
+        # set the logging level
+        fhlev = logging.DEBUG
+        chlev = {0: logging.CRITICAL,
+                 1: logging.INFO,
+                 2: logging.DEBUG}.get(abs(verbosity), logging.NOTSET)
 
-    @verbosity.setter
-    def verbosity(self, v):
-        if v is None:
-            v = 1
-        self._v = v
-        if not self._v:
-            self.ch = open(os.devnull, "a")
+        # basic logger
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(chlev)
 
-    @property
-    def logfile(self):
-        return self._logfile
+        # console handler
+        if verbosity < 0:
+            # verbosity less than 0 flags a parent process, we still want to
+            # log, so we send it to a 'console' file
+            ch = logging.FileHandler(name + ".con", mode="w")
+        else:
+            ch = logging.StreamHandler()
+        ch.setLevel(chlev)
+        self.logger.addHandler(ch)
 
-    def assign_logfile(self, filepath, mode="w"):
-        self._logfile = filepath
-        if filepath is not None:
-            self.fh = open(filepath, mode=mode)
+        # file handler.  by default, we add a file handler
+        if filename == 1:
+            filename = name + ".log"
 
-    @property
-    def fh(self):
-        return self._fh
+        if filename:
+            fh = logging.FileHandler(filename, mode="w")
+            fh.setLevel(fhlev)
+            self.logger.addHandler(fh)
 
-    @fh.setter
-    def fh(self, filehandler):
-        if self.no_fh:
-            raise Exception("attempting to add file handler to console logger")
-        try:
-            filehandler.write
-        except AttributeError:
-            raise TypeError("attempting to assign non file handler "
-                            "to logger filehandler")
-        self._fh = filehandler
+        if splash:
+            self.logger.info(SPLASH)
 
-    def log(self, message, beg="", end="\n"):
-        self.write(message, beg=beg, end=end)
-
-    def write(self, message, beg="", end="\n", log_to_eh=0, write_to_console=1,
-              transform=None, report_who=False, who=None):
-        transform = transform or std_transform
-        # look for paths in the message and do not transform therm
+    def write(self, message, beg="", end=None, report_who=False, who=None):
         if report_who:
             who = who_is_calling()
         if who:
             beg = "{0}{1}: ".format(beg, who)
         message = message.rstrip()
-        message = "{0}{1}{2}".format(beg, transform_str(message, transform), end)
+        message = "{0}{1}".format(beg, message)
+        if end is not None:
+            message = "{0}{1}".format(message, end)
+        c = True if end is not None else False
+        continued = {"continued": c}
+        self.logger.info(message, extra=continued)
 
-        # always write to file
-        self.fh.write(message)
-
-        if opts.parent_process_running and not self.chatty:
-            return
-
-        if write_to_console and self.verbosity:
-            # write to console
-            if log_to_eh:
-                self.ch.flush()
-                self.eh.write(message)
-            else:
-                self.ch.write(message)
-
-    def warn(self, message, limit=False, warnings=[0], report_who=None):
-        who = None if not report_who else who_is_calling()
-        message = "*** WARNING: {0}".format(message)
+    def warn(self, message, limit=False, warnings=[0], report_who=None, who=None):
+        if report_who:
+            who = who_is_calling()
+        if who:
+            message = "{0}: {1} ".format(who, message)
+        message = "*** warning: {0}".format(message)
         if limit and warnings[0] > opts.Wlimit:
             return
-        self.write(message, log_to_eh=1, who=who)
+        continued = {"continued": False}
+        self.logger.warn(message, extra=continued)
         warnings[0] += 1
 
-    def raise_error(self, message, raise_error=1, report_caller=1, caller=None,
-                    **kwargs):
+    def info(self, *args, **kwargs):
+        self.write(*args, **kwargs)
+
+    def exception(self, message, caller=None):
         if caller is None:
             caller = who_is_calling()
-        beg = kwargs.get("beg", "*** ERROR: ")
-        if report_caller:
-            conmsg = "{2}{0} ({1})\n"
-        else:
-            conmsg = "{2}{0}\n"
-        transform = kwargs.pop("transform", std_transform)
-        conmsg = conmsg.format(transform_str(message, transform), caller, beg)
-        self.write(conmsg, log_to_eh=1, transform=str, **kwargs)
-        if raise_error > 0:
-            if opts.raise_e:
-                raise Exception(conmsg)
-            else:
-                sys.exit(1)
+        self.raise_error(message, caller=caller)
 
-    def error(self, message, raise_error=0, **kwargs):
+    def raise_error(self, message, caller=None):
+        if caller is None:
+            caller = who_is_calling()
+        self.error(message, caller=caller)
+        if opts.raise_e:
+            raise Exception(message)
+        else:
+            sys.exit(1)
+
+    def error(self, message, caller=None):
         self.errors += 1
-        caller = who_is_calling()
-        self.raise_error(message.rstrip(), raise_error=raise_error,
-                         caller=caller, **kwargs)
+        if caller is None:
+            caller = who_is_calling()
+        message = "*** error: {0}: {1}".format(caller, message)
+        continued = {"continued": False}
+        self.logger.error(message.rstrip(), extra=continued)
 
     def debug(self, message):
-        self.write(message, write_to_console=0)
+        continued = {"continued": False}
+        self.logger.debug(message, extra=continued)
 
     def finish(self):
-        self.eh.flush()
-        self.ch.flush()
-        self.fh.flush()
-        self.fh.close()
+        Logger(self.logger_id, remove_from_cache=1)
 
     def close(self):
         self.finish()
 
 
-def transform_str(s, transform):
-    return " ".join(x if os.path.sep in x else transform(x) for x in s.split(" "))
+def emit(self, record):
+    """Monkey-patch the logging StreamHandler emit function. Allows omiting
+    trailing newline when not wanted"""
+    msg = self.format(record)
+    fs = "%s" if getattr(record, "continued", False) else "%s\n"
+    self.stream.write(fs % msg)
+    self.flush()
 
-
-
-ConsoleLogger = Logger(no_fh=1)
+logging.StreamHandler.emit = emit
+ConsoleLogger = Logger("console", filename=None, splash=False)

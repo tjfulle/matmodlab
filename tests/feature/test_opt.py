@@ -16,14 +16,19 @@ class TestCobyla(TestBase):
         self.make_test_dir()
 
     def run(self):
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
+
         self.status = self.failed_to_run
-        xopt = runner("cobyla", d=self.test_dir, v=0)
+        xopt = runner("cobyla", v=0)
 
         # check error
         err = (xopt - xact) / xact * 100
         err = np.sqrt(np.sum(err ** 2))
         if err < 1.85:
             self.status = self.passed
+
+        os.chdir(cwd)
 
 class TestSimplex(TestBase):
     def __init__(self):
@@ -36,7 +41,7 @@ class TestSimplex(TestBase):
 
     def run(self):
         self.status = self.failed_to_run
-        xopt = runner("simplex", d=self.test_dir, v=0)
+        xopt = runner("simplex", v=0)
 
         # check error
         err = (xopt - xact) / xact * 100
@@ -55,7 +60,7 @@ class TestPowell(TestBase):
 
     def run(self):
         self.status = self.failed_to_run
-        xopt = runner("powell", d=self.test_dir, v=0)
+        xopt = runner("powell", v=0)
 
         # check error
         err = (xopt - xact) / xact * 100
@@ -65,10 +70,11 @@ class TestPowell(TestBase):
 
 def func(x, *args):
 
-    evald, runid = args[:2]
+    runid = args[0]
+    evald = args[-1]
 
-    logfile = os.path.join(evald, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=0)
+    name = "{0}.{1}".format(os.path.basename(evald), runid)
+    logger = Logger(name)
 
     # set up driver
     driver = Driver("Continuum", open(path_file, "r").read(), cols=[0,2,3,4],
@@ -79,17 +85,17 @@ def func(x, *args):
     material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, d=evald, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
     error = my_opt.opt_sig_v_time(mps.exodus_file)
+
     #error = my_opt.opt_pres_v_evol(mps.exodus_file)
     return error
 
 @matmodlab
-def runner(method, d=None, v=1):
+def runner(method, v=1):
 
-    d = d or os.getcwd()
     runid = "opt_{0}".format(method)
 
     # run the optimization job.
@@ -104,7 +110,7 @@ def runner(method, d=None, v=1):
     G = OptimizeVariable("G", 54e9, bounds=(45e9, 57e9))
     xinit = [K, G]
 
-    optimizer = Optimizer(func, xinit, runid, d=d,
+    optimizer = Optimizer(func, xinit, runid,
                           descriptor=["PRES_V_EVOL"], method=method,
                           maxiter=25, tolerance=1.e-4, verbosity=v,
                           funcargs=[runid])

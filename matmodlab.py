@@ -141,10 +141,6 @@ def matmodlab(func):
                 os.remove(os.path.join(PKG_D, "{0}.so".format(name)))
             already_wiped = True
 
-        if clargs.v > 0 and not already_splashed:
-            sys.stdout.write(SPLASH)
-            already_splashed = True
-
         if not opts.Wall:
             warnings.simplefilter("ignore")
 

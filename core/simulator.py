@@ -20,8 +20,8 @@ class MaterialPointSimulator(object):
         """Initialize the MaterialPointSimulator object
 
         """
-        self._vars = []
         self.runid = runid
+        self._vars = []
         self.termination_time = termination_time
 
         # check input
@@ -37,9 +37,10 @@ class MaterialPointSimulator(object):
 	self.title = "matmodlab single element simulation"
         if logger is None:
             logfile = os.path.join(opts.simulation_dir, self.runid + ".log")
-            logger = Logger(logfile=logfile, verbosity=verbosity)
+            logger = Logger(runid, filename=logfile, verbosity=verbosity)
         self.logger = logger
 
+        # unify loggers
         material.logger = self.logger
         driver.logger = self.logger
 
@@ -100,23 +101,23 @@ class MaterialPointSimulator(object):
     def write_summary(self):
         s = "\n   ".join("{0}".format(x) for x in MAT_LIB_DIRS)
         summary = """
-SIMULATION SUMMARY
+Simulation Summary
 ---------- -------
-MATERIAL SEARCH DIRECTORIES:
+Material search directories:
    {6}
-MATERIAL INTERFACE FILE:
+Material interface file:
    {7}
-RUNID: {0}
-DRIVER: {1}
-  NUMBER OF LEGS: {2}
-  TOTAL NUMBER OF STEPS: {8}
-MATERIAL: {3}
-  NUMBER OF PROPS: {4}
-    NUMBER OF SDV: {5}
+Runid: {0}
+Driver: {1}
+  Number of legs: {2}
+  Total number of steps: {8}
+Material: {3}
+  Number of props: {4}
+    Number of sdv: {5}
 """.format(self.runid, self.driver.kind, self.driver.num_leg,
            self.material.name, self.material.num_prop, self.material.num_xtra,
            s, self.material.file, self.driver.num_steps)
-        self.logger.write(summary, transform=str)
+        self.logger.write(summary)
 
     def setup_io(self):
 
@@ -148,7 +149,7 @@ MATERIAL: {3}
         """Run the problem
 
         """
-        self.logger.write("starting calculations...")
+        self.logger.write("Starting calculations...")
         retcode = self.driver.run(self.glob_data, self.elem_data,
                                   self.material, self.exo_db,
                                   termination_time=self.termination_time)
@@ -162,7 +163,7 @@ MATERIAL: {3}
             dt_run = self.timing["end"] - self.timing["start"]
             self.logger.write("...calculations completed ({0:.4f}s)".format(dt_run))
         else:
-            self.logger.error("calculations did not complete", r=0)
+            self.logger.error("Calculations did not complete")
         self.exo_db.finish()
 
         if opts.viz_on_completion:

@@ -1,5 +1,6 @@
 #!/usr/bin/env mmd
 from matmodlab import *
+from core.test import FAILED_TO_RUN, PASSED
 
 path = """
 0 0 222222 0 0 0 0 0 0
@@ -15,16 +16,19 @@ class TestZip(TestBase):
         self.keywords = ["long", "correlations", "zip",
                          "permutation", "builtin", "feature", "builtin"]
 
-    def setup(self,*args,**kwargs):
+    def setup(self, *args, **kwargs):
         self.make_test_dir()
 
     def run(self):
-        self.status = self.failed_to_run
+        self.status = FAILED_TO_RUN
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
         try:
-            runner("zip", d=self.test_dir, v=0)
-            self.status = self.passed
+            runner("zip", v=0)
+            self.status = PASSED
         except BaseException as e:
             raise TestError(e.args[0])
+        os.chdir(cwd)
 
 class TestCombi(TestBase):
     def __init__(self):
@@ -32,23 +36,26 @@ class TestCombi(TestBase):
         self.keywords = ["long", "correlations", "combination",
                          "permutation", "builtin", "feature", "builtin"]
 
-    def setup(self,*args,**kwargs):
+    def setup(self, *args, **kwargs):
         self.make_test_dir()
 
     def run(self):
-        self.status = self.failed_to_run
+        self.status = FAILED_TO_RUN
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
         try:
-            runner("combination", d=self.test_dir, v=0, N=2)
-            self.status = self.passed
+            runner("combination", N=2, v=0)
+            self.status = PASSED
         except BaseException as e:
             raise TestError(e.args[0])
+        os.chdir(cwd)
 
 
 def func(x, *args):
 
-    d, runid = args[:2]
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=0)
+    runid = args[0]
+    d = args[1]
+    logger = Logger(runid)
 
     # set up the driver
     driver = Driver("Continuum", path, estar=-.5, step_multiplier=1000,
@@ -59,24 +66,24 @@ def func(x, *args):
     material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
     pres = mps.extract_from_db(["PRESSURE"])
 
     return np.amax(pres)
 
 @matmodlab
-def runner(method, d=None, v=1, N=3):
-    d = d or os.getcwd()
+def runner(method, N=3, v=1):
+
     runid = "perm_{0}".format(method)
     K = PermutateVariable("K", 125e9, method="weibull", b=14, N=N)
     G = PermutateVariable("G", 45e9, method="percentage", b=10, N=N)
     xinit = [K, G]
     permutator = Permutator(func, xinit, runid, descriptor=["MAX_PRES"],
-                            method=method, correlations=True, d=d, verbosity=v,
-                            funcargs=[runid])
+                            method=method, correlations=True, funcargs=[runid],
+                            verbosity=v)
     permutator.run()
 
 if __name__ == "__main__":
     runner("zip")
-    runner("combination", N=2)
+    #    runner("combination", N=2)

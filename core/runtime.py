@@ -22,11 +22,10 @@ class RuntimeOptions(object):
         self._v = 1
 
         self._nprocs = 1
-        self.mml_running_tests = 0
-        self.mml_running_perm = 0
+        self.do_not_fork = False
 
         self.viz_on_completion = False
-        self._switch = None
+        self._switch = []
         self.rebuild_mat_lib = False
 
         self._sim_dir = os.getcwd()
@@ -87,7 +86,7 @@ class RuntimeOptions(object):
 
     @property
     def nprocs(self):
-        num_procs = 1 if self.mml_running_tests else self._nprocs
+        num_procs = 1 if self.do_not_fork else self._nprocs
         return min(mp.cpu_count(), num_procs)
 
     @nprocs.setter
@@ -102,15 +101,12 @@ class RuntimeOptions(object):
         self._v = int(x)
 
     @property
-    def parent_process_running(self):
-        return any([self.mml_running_tests, self.mml_running_perm])
-
-    @property
     def simulation_dir(self):
         return self._sim_dir
     @simulation_dir.setter
     def simulation_dir(self, x):
         assert os.path.isdir(x)
         self._sim_dir = x
+
 
 opts = RuntimeOptions()

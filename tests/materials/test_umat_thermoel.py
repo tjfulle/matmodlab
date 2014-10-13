@@ -8,15 +8,12 @@ class TestUmatThermoelastic(TestBase):
         self.runid = RUNID
         self.keywords = ["fast", "material", "thermoelastic", "umat",
                          "special_request", "builtin"]
-    def run_job(self):
-        runner(d=self.test_dir, runid=self.runid, v=0, test=1)
 
 @matmodlab
-def runner(d=None, v=1, runid=None, test=0):
-    runid = runid or RUNID
-    d = d or os.getcwd()
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+def run_umat_thermoelastic(*args, **kwargs):
+
+    runid = RUNID
+    logger = Logger(runid)
 
     path = """
     0 0 EEET 0 0 0 298
@@ -40,7 +37,7 @@ def runner(d=None, v=1, runid=None, test=0):
                         initial_temp=298., depvar=12,
                         source_files=["thermoelastic.f90"],
                         source_directory=os.path.join(MAT_D, "abaumats"))
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 if __name__ == "__main__":

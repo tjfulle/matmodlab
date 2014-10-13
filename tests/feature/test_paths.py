@@ -5,31 +5,25 @@ class TestPathCycle(TestBase):
     def __init__(self):
         self.runid = "path_default"
         self.keywords = ["fast", "feature", "path", "builtin"]
-    def run_job(self):
-        run_default(d=self.test_dir, v=0)
 
 class TestPathTable(TestBase):
     def __init__(self):
         self.runid = "path_table"
         self.keywords = ["fast", "feature", "path", "table", "builtin"]
-    def run_job(self):
-        run_table(d=self.test_dir, v=0)
 
 class TestPathFunction(TestBase):
     def __init__(self):
         self.runid = "path_func"
         self.keywords = ["fast", "feature", "path", "function", "builtin"]
-    def run_job(self):
-        run_func(d=self.test_dir, v=0)
-        return
 
 
 @matmodlab
-def run_default(d=None, v=1):
-    d = d or os.getcwd()
+def run_path_default(d=None, v=1):
     runid = "path_default"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    d = d or os.getcwd()
+    d = os.getcwd()
+    v = 1
+    logger = Logger(runid, verbosity=v)
 
     path = """
 0E+00 0 EEEEEE 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
@@ -63,11 +57,12 @@ def run_default(d=None, v=1):
 
 
 @matmodlab
-def run_table(d=None, v=1):
-    d = d or os.getcwd()
+def run_path_table(d=None, v=1):
     runid = "path_table"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    d = d or os.getcwd()
+    d = os.getcwd()
+    v = 1
+    logger = Logger(runid, verbosity=v)
     path = """0E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
               1E+00 1E-01 0E+00 0E+00 0E+00 0E+00 0E+00
               2E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00"""
@@ -82,11 +77,12 @@ def run_table(d=None, v=1):
 
 
 @matmodlab
-def run_func(d=None, v=1):
+def run_path_func(d=None, v=1):
     runid = "path_func"
     d = d or os.getcwd()
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    d = os.getcwd()
+    v = 1
+    logger = Logger(runid, verbosity=v)
 
     path = """
     {0} 2:1.e-1 0 0
@@ -114,4 +110,6 @@ def run_func(d=None, v=1):
     mps.run()
 
 if __name__ == "__main__":
-    run_table()
+    run_path_table()
+    run_path_func()
+    run_path_default()

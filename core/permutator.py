@@ -9,7 +9,7 @@ import numpy as np
 import multiprocessing as mp
 from itertools import izip, product
 
-from core.logger import Logger
+from core.logger import Logger, ConsoleLogger
 from core.runtime import opts
 import utils.mmltab as mmltab
 from utils.errors import MatModLabError
@@ -17,7 +17,6 @@ from utils.errors import MatModLabError
 
 PERM_METHODS = ("zip", "combination", "shotgun", )
 RAND = np.random.RandomState()
-logger = Logger(chatty=1)
 
 class PermutatorState:
     pass
@@ -30,8 +29,6 @@ class Permutator(object):
     def __init__(self, func, xinit, runid, method="zip", correlations=False,
                  verbosity=1, descriptor=None, nprocs=1, funcargs=[], d=None):
         self.runid = runid
-        #self.func = (func.__module__, func.func_name)
-        opts.mml_running_perm = 1
 
         self.func = func
         self.nprocs = nprocs
@@ -47,7 +44,7 @@ class Permutator(object):
         self.funcargs = [x for x in funcargs]
         # funcargs sent to every evaluation with first argument
         # the evaluation directory
-        self.funcargs.insert(0, None)
+        self.funcargs.append(None)
 
         # set up logger
         self.rootd = os.path.join(d or os.getcwd(), runid + ".eval")
@@ -55,8 +52,8 @@ class Permutator(object):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
         logfile = os.path.join(self.rootd, runid + ".log")
-        logger.assign_logfile(logfile)
-        logger.verbosity = verbosity
+        logger = Logger("permutator", filename=logfile, verbosity=verbosity,
+                        parent_process=1)
 
         # check method
         m = method.lower()
@@ -95,21 +92,22 @@ class Permutator(object):
         str_pars = "\n".join("    {0}={1:.2g}".format(name, idata[i][0])
                              for (i, name) in enumerate(self.names))
         summary = """
-summary of permutation job input
+Summary of permutation job input
 ------- -- ----------- --- -----
-runid: {0}
-method: {1}
-number of realizations: {2}
-variables: {3:d}
-starting values:
+Runid: {0}
+Method: {1}
+Number of realizations: {2}
+Variables: {3:d}
+Starting values:
 {4}
 """.format(self.runid, self.method, ps.num_jobs, len(self.names), str_pars)
         logger.write(summary)
 
     def run(self):
 
+        logger = Logger("permutator")
         self.timing["start"] = time.time()
-        logger.write("{0}: starting permutation jobs...".format(self.runid))
+        logger.write("{0}: Starting permutation jobs...".format(self.runid))
         args = [(self.func, x, self.funcargs, i, self.rootd, self.names,
                  self.descriptor, self.tabular)
                  for (i, x) in enumerate(self.data)]
@@ -130,7 +128,7 @@ starting values:
                 logger.error("keyboard interrupt")
                 raise SystemExit("KeyboardInterrupt intercepted")
 
-        logger.write("\npermutation jobs complete")
+        logger.write("\nPermutation jobs complete")
         self.timing["end"] = time.time()
 
         self.finish()
@@ -138,20 +136,22 @@ starting values:
         return
 
     def finish(self):
+        logger = Logger("permutator")
         # write the summary
         self.tabular.close()
 
         if not [x for x in self.statuses if x == 0]:
-            logger.write("{0}: all calculations failed".format(self.runid))
+            logger.write("All calculations failed")
         else:
-            logger.write("{0}: calculations completed ({1:.4f}s)".format(
-                self.runid, self.timing["end"] - self.timing["start"]))
+            dtime = self.timing["end"] - self.timing["start"]
+            logger.write("Calculations completed ({0:.4f}s)".format(dtime))
 
         if self.correlations and [x for x in self.statuses if x == 0]:
-            logger.write("{0}: creating correlation matrix".format(self.runid))
+            logger.write("Creating correlation matrix", end="... ")
             mmltab.correlations(self.tabular._filepath)
-            if not opts.mml_running_tests:
+            if not opts.do_not_fork:
                 mmltab.plot_correlations(self.tabular._filepath)
+            logger.write("done")
 
         # close the log
         logger.finish()
@@ -163,7 +163,7 @@ starting values:
     @staticmethod
     def set_random_seed(seed, seedset=[0]):
         if seedset[0]:
-            logger.warn("random seed already set")
+            ConsoleLogger.warn("random seed already set")
         global RAND
         RAND = np.random.RandomState(seed)
         seedset[0] = 1
@@ -233,6 +233,7 @@ def run_job(args):
     """Run the single permutation job
 
     """
+    logger = Logger("permutator")
     (func, x, funcargs, i, rootd, names, descriptor, tabular) = args
     #func = getattr(sys.modules[func[0]], func[1])
 
@@ -240,7 +241,9 @@ def run_job(args):
     ps.job_num = i + 1
     evald = catd(rootd, ps.job_num)
     os.makedirs(evald)
-    funcargs[0] = evald
+    funcargs[-1] = evald
+    cwd = os.getcwd()
+    os.chdir(evald)
 
     # write the params.in for this run
     parameters = zip(names, x)
@@ -248,18 +251,18 @@ def run_job(args):
         for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
 
-    logger.write("starting job {0}/{1} with {2}".format(ps.job_num, ps.num_jobs,
+    logger.write("Starting job {0}/{1} with {2}".format(ps.job_num, ps.num_jobs,
         ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
 
     try:
         resp = func(x, *funcargs)
-        logger.write("finished job {0}".format(ps.job_num))
+        logger.write("Finished job {0}".format(ps.job_num))
         stat = 0
     except BaseException as e:
         message = " ".join("{0}".format(_) for _ in e.args)
         if hasattr(e, "filename"):
             message = e.filename + ": " + message[1:]
-        logger.error("\nrun {0} failed with the following exception:\n"
+        logger.error("\nRun {0} failed with the following exception:\n"
                      "   {1}".format(ps.job_num, message))
         stat = 1
         resp = [np.nan for _ in range(len(descriptor))]
@@ -275,5 +278,6 @@ def run_job(args):
             response = [(n, resp[i]) for (i, n) in enumerate(descriptor)]
 
     tabular.write_eval_info(ps.job_num, stat, evald, parameters, response)
+    os.chdir(cwd)
 
     return stat

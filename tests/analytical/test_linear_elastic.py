@@ -20,14 +20,18 @@ class TestRandomLinearElastic(TestBase):
         self.make_test_dir()
 
     def run(self):
-        logger = Logger(logfile=os.path.join(self.test_dir, self.runid + ".stat"), verbosity=0)
+
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
+
+        logger = Logger(self.runid, filename=self.runid + ".stat")
         logger.write("Running {0:d} realizations".format(self.nruns))
 
         stats = []
         for idx in range(0, self.nruns):
             runid = self.runid + "_{0}".format(idx + 1)
             logger.write("* Spawning {0}".format(runid))
-            stats.append(runner(d=self.test_dir, v=0, runid=runid))
+            stats.append(runner(d=self.test_dir, runid=runid))
             logger.write("    Status: {0:s}".format(RES_MAP[stats[-1]]))
 
         # Set the overall status (lowest common denominator)
@@ -38,18 +42,24 @@ class TestRandomLinearElastic(TestBase):
             self.status = DIFFED
 
         logger.write("Overall test status: {0:s}".format(RES_MAP[self.status]))
+
+        os.chdir(cwd)
+
         return self.status
 
 
 @matmodlab
-def runner(d=None, runid=None, v=1, test=0):
+def runner(*args, **kwargs):
 
-    d = d or os.getcwd()
-    runid = runid or "rand_" + RUNID
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or "rand_" + RUNID
+
     logfile = os.path.join(d, runid + ".log")
     solfile = os.path.join(d, runid + ".base_dat")
     pathfile = os.path.join(d, runid + ".path")
-    logger = Logger(logfile=logfile, verbosity=v)
+
+    logger = Logger(runid, filename=logfile)
+
     VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
                  "STRAIN_XY", "STRAIN_YZ", "STRAIN_XZ",
                  "STRESS_XX", "STRESS_YY", "STRESS_ZZ",
@@ -85,7 +95,7 @@ def runner(d=None, runid=None, v=1, test=0):
     driver = Driver("Continuum", path, logger=logger)
 
     # Run the simulation
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
     # check output with analytic
@@ -116,11 +126,13 @@ def runner(d=None, runid=None, v=1, test=0):
     return stat
 
 
-def run_biax_strain_ext_stressc(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_biax_strain_ext_stressc"
+def run_biax_strain_ext_stressc(*args, **kwargs):
+
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or RUNID + "_biax_strain_ext_stressc"
+
     logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid, filename=logfile)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
@@ -142,11 +154,12 @@ def run_biax_strain_ext_stressc(d=None, runid=None, v=1):
     mps.run()
 
 
-def run_biax_strain_comp_stressc(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_biax_strain_comp_stressc"
+def run_biax_strain_comp_stressc(*args, **kwargs):
+
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or RUNID + "_biax_strain_comp_stressc"
     logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid, filename=logfile)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
@@ -167,11 +180,12 @@ def run_biax_strain_comp_stressc(d=None, runid=None, v=1):
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
-def run_biax_strain_ext_strainc(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_biax_strain_ext_strainc"
+def run_biax_strain_ext_strainc(*args, **kwargs):
+
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or RUNID + "_biax_strain_ext_strainc"
     logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid, filename=logfile)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
@@ -193,11 +207,12 @@ def run_biax_strain_ext_strainc(d=None, runid=None, v=1):
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
-def run_biax_strain_comp_strainc(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_biax_strain_comp_strainc"
+def run_biax_strain_comp_strainc(*args, **kwargs):
+
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or RUNID + "_biax_strain_comp_strainc"
     logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid, filename=logfile)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
@@ -220,11 +235,12 @@ def run_biax_strain_comp_strainc(d=None, runid=None, v=1):
     mps.run()
 
 
-def run_uniax_strain_comp_strainc(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_uniax_strain_comp_strainc"
+def run_uniax_strain_comp_strainc(*args, **kwargs):
+
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or RUNID + "_uniax_strain_comp_strainc"
     logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid, filename=logfile)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
@@ -246,11 +262,12 @@ def run_uniax_strain_comp_strainc(d=None, runid=None, v=1):
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
-def run_uniax_strain_ext_strainc(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_uniax_strain_ext_strainc"
+def run_uniax_strain_ext_strainc(*args, **kwargs):
+
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or RUNID + "_uniax_strain_ext_strainc"
     logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid, filename=logfile)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
@@ -272,11 +289,12 @@ def run_uniax_strain_ext_strainc(d=None, runid=None, v=1):
     mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
-def run_uniax_strain_comp_stressc(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_uniax_strain_comp_stressc"
+def run_uniax_strain_comp_stressc(*args, **kwargs):
+
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or RUNID + "_uniax_strain_comp_stressc"
     logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid, filename=logfile)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
@@ -298,11 +316,12 @@ def run_uniax_strain_comp_stressc(d=None, runid=None, v=1):
     mps.run()
 
 
-def run_uniax_strain_ext_stressc(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_uniax_strain_ext_stressc"
+def run_uniax_strain_ext_stressc(*args, **kwargs):
+
+    d = kwargs.get("d", os.getcwd())
+    runid = kwargs.get("runid") or RUNID + "_uniax_strain_ext_stressc"
     logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid, filename=logfile)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()

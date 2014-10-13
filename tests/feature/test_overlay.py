@@ -13,10 +13,13 @@ class TestOverlay(TestBase):
         self.keywords = ["long", "overlay", "feature", "function", "builtin"]
         self.base_res = os.path.join(d, "path_func.base_exo")
 
+    def setup(self, *args, **kwargs):
+        self.make_test_dir()
+
     def run(self):
         self.status = self.failed_to_run
         try:
-            runner(d=self.test_dir, v=0)
+            runner()
         except BaseException as e:
             self.status = self.failed
             self.logger.error("{0}: failed with the following "
@@ -33,11 +36,9 @@ class TestOverlay(TestBase):
         return
 
 @matmodlab
-def runner(d=None, v=1):
+def runner():
 
-    d = d or os.getcwd()
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid)
 
     path = """
     {0} 2:1.e-1 0 0
@@ -60,7 +61,7 @@ def runner(d=None, v=1):
     material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
 
     mps.run()
 

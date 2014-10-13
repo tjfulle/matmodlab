@@ -7,14 +7,11 @@ class TestUser(TestBase):
     def __init__(self):
         self.runid = runid
         self.keywords = ["fast", "material", "thermoelastic", "user", "builtin"]
-    def run_job(self):
-        runner(d=self.test_dir, v=0)
 
 @matmodlab
-def runner(d=None, v=1):
-    d = d or os.getcwd()
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+def run_user_thermoelastic(*args, **kwargs):
+
+    logger = Logger(runid)
 
     path = """
     0 0 EEET 0 0 0 298
@@ -23,6 +20,7 @@ def runner(d=None, v=1):
     3 1 ESST 1 0 0 340
     4 1 ESST 0 0 0 375
     """
+
     driver = Driver("Continuum", path, logger=logger)
 
     E0 = 29.E+06
@@ -38,7 +36,7 @@ def runner(d=None, v=1):
                         initial_temp=298., depvar=12,
                         source_files=["thermoelastic.f90"],
                         source_directory=os.path.join(MAT_D, "usermats"))
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 if __name__ == "__main__":

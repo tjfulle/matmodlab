@@ -88,8 +88,8 @@ class FortranExtBuilder(object):
         to_build = [x[0] for x in self.exts_to_build]
         if self._build_blas_lapack and not os.path.isfile(LAPACK_OBJ):
             to_build.insert(0, "blas_lapack-lite")
-        self.logmes("THE FOLLOWING FORTRAN EXTENSION MODULES WILL BE BUILT:\n"
-                    "    {0}".format(",".join(to_build)), transform=str)
+        logger.write("The following fortran extension modules will be built:\n"
+                     "    {0}".format(",".join(to_build)))
 
         if self._build_blas_lapack:
             if not os.path.isfile(LAPACK_OBJ):
@@ -121,16 +121,16 @@ class FortranExtBuilder(object):
         sys.argv.extend("build_ext -i".split())
 
         # build the extension modules with distutils setup
-        self.logmes("building extension module[s]", end="... ")
+        logger.write("building extension module[s]", end="... ")
         f = os.path.join(PKG_D, "build.log") if self.quiet else sys.stdout
         with stdout_redirected(to=f), merged_stderr_stdout():
             setup(**config.todict())
-        self.logmes("done")
+        logger.write("done")
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
         sys.argv = hold
 
         # move files
-        self.logmes("Staging extension module[s]", end="... ")
+        logger.write("Staging extension module[s]", end="... ")
         d = config.package_dir[config.name]
         for mod in glob.glob(d + "/*.so"):
             self.exts_built.append(module_name(mod))
@@ -138,17 +138,12 @@ class FortranExtBuilder(object):
                             if n[0] not in self.exts_built]
         self.ext_modules_built = True
         self.exts_to_build = []
-        self.logmes("done")
+        logger.write("done")
         if self.exts_failed:
             raise ExtModuleNotBuilt("{0}: failed to build".format(
                     ", ".join(self.exts_failed)))
         os.chdir(cwd)
         return
-
-    def logmes(self, message, end="\n", transform=None):
-        """Write message to stdout """
-        if not self.silent:
-            logger.write(message, end=end, transform=transform)
 
     @staticmethod
     def _find_lapack():
@@ -170,7 +165,7 @@ def build_blas_lapack():
     """Build the blas_lapack-lite object
 
     """
-    logger.write("BUILDING blas_lapack-lite", end="... ", transform=str)
+    logger.write("Building blas_lapack-lite", end="... ")
     cmd = [FORT_COMPILER, "-fPIC", "-shared", "-O3", LAPACK, "-o" + LAPACK_OBJ]
     build = subprocess.Popen(cmd, stdout=open(os.devnull, "a"),
                              stderr=subprocess.STDOUT)

@@ -7,7 +7,7 @@ import shutil
 import datetime
 
 from runtime import opts
-from core.logger import Logger
+from core.logger import Logger, ConsoleLogger
 from utils.mmltab import MMLTabularWriter
 from utils.errors import MatModLabError
 
@@ -16,7 +16,6 @@ BIGNUM = 1.E+20
 MAXITER = 50
 TOL = 1.E-06
 OPT_METHODS = ("simplex", "powell", "cobyla",)
-logger = Logger()
 
 class Optimizer(object):
     def __init__(self, func, xinit, runid, method="simplex", verbosity=1, d=None,
@@ -33,9 +32,10 @@ class Optimizer(object):
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
         self.funcargs = [x for x in funcargs]
+
         # funcargs sent to every evaluation with first argument
         # the evaluation directory
-        self.funcargs.insert(0, None)
+        self.funcargs.append(None)
 
         # check method
         m = method.lower()
@@ -44,14 +44,14 @@ class Optimizer(object):
         self.method = m
 
         # set up logger
-        d = d or os.getcwd()
+        d = os.path.realpath(d or os.getcwd())
         self.rootd = os.path.join(d, runid + ".eval")
         if os.path.isdir(self.rootd):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
         logfile = os.path.join(self.rootd, runid + ".log")
-        logger.assign_logfile(logfile)
-        logger.verbosity = verbosity
+        logger = Logger("optimizer", filename=logfile, verbosity=verbosity,
+                        parent_process=1)
 
         # check xinit
         self.names = []
@@ -109,9 +109,10 @@ response descriptors:
 
         """
         import scipy.optimize
+        logger = Logger("optimizer")
 
         self.timing["start"] = time.time()
-        logger.write("{0}: starting optimization jobs...".format(self.runid))
+        logger.write("{0}: Starting optimization jobs...".format(self.runid))
 
         # optimization methods work best with number around 1, here we
         # normalize the optimization variables and save the multiplier to be
@@ -157,7 +158,7 @@ response descriptors:
 
         self.timing["end"] = time.time()
 
-        logger.write("\noptimization jobs complete")
+        logger.write("\nOptimization jobs complete")
 
         self.finish()
 
@@ -165,16 +166,17 @@ response descriptors:
 
     def finish(self):
         """ finish up the optimization job """
+        logger = Logger("optimizer")
         self.tabular.close()
         opt_pars = "\n".join("  {0}={1:12.6E}".format(name, self.xopt[i])
                              for (i, name) in enumerate(self.names))
         opt_time = self.timing["end"] - self.timing["start"]
         summary = """
-summary of optimization results
+Summary of optimization results
 ------- -- ------------ -------
 {0}: calculations completed ({1:.4f}s.)
-iterations: {2}
-optimized parameters
+Iterations: {2}
+Optimized parameters
 {3}
 """.format(self.runid, opt_time, IOPT, opt_pars)
         logger.write(summary)
@@ -208,17 +210,22 @@ def run_job(xcall, *args):
 
     """
     global IOPT
+    logger = Logger("optimizer")
     func, funcargs, rootd, xnames, desc, tabular, xfac = args
 
     IOPT += 1
     evald = catd(rootd, IOPT)
     os.mkdir(evald)
-    funcargs[0] = evald
+
+    cwd = os.getcwd()
+    os.chdir(evald)
+
+    funcargs[-1] = evald
 
     # write the params.in for this run
     x = xcall * xfac
     parameters = zip(xnames, x)
-    with open(os.path.join(evald, "params.in"), "w") as fobj:
+    with open("params.in", "w") as fobj:
         for name, param in parameters:
             fobj.write("{0} = {1: .18f}\n".format(name, param))
 
@@ -240,6 +247,8 @@ def run_job(xcall, *args):
         err = np.nan
 
     tabular.write_eval_info(IOPT, stat, evald, parameters, ((desc[0], err),))
+
+    os.chdir(cwd)
 
     return err
 
@@ -263,12 +272,12 @@ class OptimizeVariable(object):
 
             if bounds[0] > bounds[1]:
                 errors += 1
-                logger.error("{0}: upper bound < lower bound".format(name))
+                ConsoleLogger.error("{0}: upper bound < lower bound".format(name))
 
             if bounds[1] < initial_value < bounds[0]:
                 errors += 1
-                logger.error("{0}: initial value not bracketed "
-                             "by bounds".format(name))
+                ConsoleLogger.error("{0}: initial value not bracketed "
+                                    "by bounds".format(name))
             if errors:
                 raise MatModLabError("stopping due to previous errors")
 

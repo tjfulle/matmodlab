@@ -8,7 +8,8 @@
 """
 from matmodlab import *
 from utils.exojac.exodiff import rms_error
-from core.test import PASSED, DIFFED, FAILED
+from core.test import PASSED, DIFFED, FAILED, result_str
+from core.product import TEST_CONS_WIDTH as W
 
 RUNID = "brannon_leelavanichkul"
 DIFFTOL = 5.E-03
@@ -23,11 +24,16 @@ class TestBrannonLeelavanichkul2(TestBase):
         self.make_test_dir()
 
     def run(self):
-        self.status = run_ex2(d=self.test_dir, v=0, runid=self.runid, test=1)
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
+        status = run_brannon_lellavanichkul_2(test=1)
+        self.status = status
+        os.chdir(cwd)
         return self.status
 
 
-def run_ex2(d=None, v=1, runid=None, test=0):
+@matmodlab
+def run_brannon_lellavanichkul_2(*args, **kwargs):
     """This function generates the analytical solution for example #2 in the
     paper.
 
@@ -37,10 +43,9 @@ def run_ex2(d=None, v=1, runid=None, test=0):
       poisson's ratio = 1/3  (not technically needed for simulation)
 
     """
-    runid = runid or RUNID + "_2"
-    d = d or os.getcwd()
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = RUNID + "_2"
+    name = "job.{0}".format(runid)
+    logger = Logger(name)
 
     # Yield in shear, shear modulus, and poisson_ratio
     Y = 165.0e6
@@ -89,10 +94,11 @@ def run_ex2(d=None, v=1, runid=None, test=0):
     material = Material("vonmises", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
-    if not test: return
+    if not kwargs.get("test"):
+        return
 
     # check output with analytic
     variables = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
@@ -148,4 +154,4 @@ def get_stress_2(t):
 
 
 if __name__ == "__main__":
-    print run_ex2(test=1)
+    run_brannon_lellavanichkul_2()

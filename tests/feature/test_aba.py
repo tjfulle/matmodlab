@@ -15,49 +15,39 @@ class TestUMat(TestBase):
     def __init__(self):
         self.runid = "umat_neohooke"
         self.keywords = ["fast", "abaqus", "umat", "neohooke", "feature", "builtin"]
-    def run_job(self):
-        run_umat(d=self.test_dir, v=0, test=1)
 
 class TestUHyper(TestBase):
     def __init__(self):
         self.runid = "uhyper_neohooke"
         self.keywords = ["fast", "abaqus", "uhyper", "neohooke", "feature",
                          "builtin"]
-    def run_job(self):
-        run_uhyper(d=self.test_dir, v=0, test=1)
 
 class TestUAnisoHyperInv(TestBase):
     def __init__(self):
         self.disabled = True
         self.runid = "uanisohyper_inv"
         self.keywords = ["fast", "abaqus", "uanisohyper_inv", "feature", "builtin"]
-    def run_job(self):
-        run_uanisohyper_inv(d=self.test_dir, v=0, test=1)
 
 @matmodlab
-def run_umat(d=None, v=1, test=0):
-    d = d or os.getcwd()
+def run_umat_neohooke(*args, **kwargs):
     runid = "umat_neohooke"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid)
     driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2,
                     termination_time=1.8*pi, logger=logger)
     parameters = [E, Nu]
     depvar = 2
     material = Material("umat", parameters, logger=logger,
-                        source_files=["neohooke.f90"], #rebuild=test,
+                        source_files=["neohooke.f90"],
                         source_directory="{0}/materials/abaumats".format(ROOT_D),
                         depvar=depvar)
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 @matmodlab
-def run_uhyper(d=None, v=1, test=0):
-    d = d or os.getcwd()
+def run_uhyper_neohooke(*args, **kwargs):
     runid = "uhyper_neohooke"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid)
     driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2,
                     termination_time=1.8*pi, logger=logger)
@@ -65,18 +55,16 @@ def run_uhyper(d=None, v=1, test=0):
     parameters = {"C10": C10, "D1": D1}
     depvar = ["MY_SDV_1", "MY_SDV_2"]
     material = Material("uhyper", parameters, logger=logger,
-                        source_files=["uhyper.f90"], #rebuild=test,
+                        source_files=["uhyper.f90"],
                         source_directory="{0}/materials/abaumats".format(ROOT_D),
                         param_names=param_names, depvar=depvar)
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 @matmodlab
-def run_uanisohyper_inv(d=None, v=1, test=0):
-    d = d or os.getcwd()
+def run_uanisohyper_inv(*args, **kwargs):
     runid = "uanisohyper_inv"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    logger = Logger(runid)
     driver = Driver("Continuum", path, path_input="function",
                     num_steps=200, cfmt="222", functions=f2,
                     termination_time=1.8*pi, logger=logger)
@@ -90,13 +78,13 @@ def run_uanisohyper_inv(d=None, v=1, test=0):
     a = np.array([[0.643055,0.76582,0.0], [0.643055,-0.76582,0.0]])
     a = np.array([[0.643055,0.76582,0.0]])
     material = Material("uanisohyper_inv", parameters, logger=logger,
-                        source_files=["uanisohyper_inv.f"], #rebuild=test,
+                        source_files=["uanisohyper_inv.f"],
                         source_directory="{0}/materials/abaumats".format(ROOT_D),
                         fiber_dirs=a)
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 if __name__ == "__main__":
-    #    run_umat()
-    #     run_uhyper()
+    #    run_umat_neohooke()
+    #     run_uhyper_neohooke()
     run_uanisohyper_inv()

@@ -30,8 +30,8 @@ F_PRODUCT = "product.py"
 
 # --- MATERIAL AND TEST SEARCH DIRECTORIES
 MAT_LIB_DIRS = [MAT_D]
-TEST_DIRS = [os.path.join(TEST_D, d) for d in os.listdir(TEST_D)
-             if os.path.isdir(os.path.join(TEST_D, d))]
+TEST_DIRS = [os.path.join(TEST_D, __d) for __d in os.listdir(TEST_D)
+             if os.path.isdir(os.path.join(TEST_D, __d))]
 
 # User configuration
 f = "matmodlabrc"

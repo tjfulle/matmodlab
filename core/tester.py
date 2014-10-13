@@ -14,22 +14,17 @@ from core.runtime import opts
 from core.logger import Logger
 from core.configurer import cfgparse
 from utils.misc import fillwithdots, remove, load_file
-from core.test import PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN
+from core.test import (PASSED, DIFFED, FAILED, FAILED_TO_RUN, NOT_RUN,
+        RES_MAP, result_str)
 from core.test import TestBase, TestError as TestError
-from core.product import SPLASH, TEST_DIRS, TEST_CONS_WIDTH, SUPPRESS_USER_ENV
+from core.product import TEST_DIRS, TEST_CONS_WIDTH, SUPPRESS_USER_ENV
 
 
 TIMING = []
 E_POST = ".post"
 F_POST = "graphics.html"
-RES_MAP = {PASSED: "PASS", DIFFED: "DIFF", FAILED: "FAIL",
-           FAILED_TO_RUN: "FAILED TO RUN", NOT_RUN: "NOT RUN"}
-ROOT_RES_D = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
-if not os.path.isdir(ROOT_RES_D):
-    os.makedirs(ROOT_RES_D)
-logfile = os.path.join(ROOT_RES_D, "testing.log")
-logger = Logger(logfile=logfile, chatty=1)
 INI, SKIP, DISABLED, BAD, RUN = range(5)
+ROOT_RES_D = os.path.join(os.getcwd(), "TestResults.{0}".format(sys.platform))
 
 prog = "mml test"
 desc = """\
@@ -100,9 +95,6 @@ def main(argv=None):
         overlay=args.overlay, stop_on_bad=not args.X, list_and_stop=args.l)
 
 
-def result_str(i):
-    return RES_MAP.get(i, "UNKNOWN")
-
 def sort_by_time(test):
     return {"long": 0, "medium": 1, "fast": 2}.get(test.speed, 3)
 
@@ -121,7 +113,15 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
         list of test keywords to exclude
 
     """
-    logger.write(SPLASH)
+    if not os.path.isdir(ROOT_RES_D):
+        os.makedirs(ROOT_RES_D)
+
+    cwd = os.getcwd()
+    os.chdir(ROOT_RES_D)
+
+    logfile = os.path.join(ROOT_RES_D, "testing.log")
+    logger = Logger("tester", filename=logfile, parent_process=1)
+    opts.do_not_fork = True
 
     if not tear_down:
         html_summary = True
@@ -135,19 +135,18 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     html_msg = {True: "FOR ALL TESTS",
                 False: "ONLY FOR FAILED TESTS"}[html_summary]
 
-    logger.write("summary of user input")
+    logger.write("Summary of user input")
     s = "\n                ".join("{0}".format(x) for x in sources)
     kw = ", ".join("{0}".format(x) for x in include)
     KW = ", ".join("{0}".format(x) for x in exclude)
-    logger.write(  "  TEST OUTPUT DIRECTORY: {4}"
-                 "\n  TEST SOURCES: {0}"
-                 "\n  KEYWORDS TO INCLUDE: {1}"
-                 "\n  KEYWORDS TO EXCLUDE: {2}"
-                 "\n  NUMBER OF SIMULTANEOUS JOBS: {3}"
-                 "\n  TEAR DOWN OF PASSED TESTS: {5}"
-                 "\n  CREATION OF HTML SUMMARY: {6}".format(
-                     s, kw, KW, nprocs, ROOT_RES_D, tear_down, html_msg),
-                 transform=str)
+    logger.write(  "  Test output directory: {4}"
+                 "\n  Test sources: {0}"
+                 "\n  Keywords to include: {1}"
+                 "\n  Keywords to exclude: {2}"
+                 "\n  Number of simultaneous jobs: {3}"
+                 "\n  Tear down of passed tests: {5}"
+                 "\n  Creation of html summary: {6}".format(
+                     s, kw, KW, nprocs, ROOT_RES_D, tear_down, html_msg))
 
     # gather the tests
     TIMING.append(time.time())
@@ -171,8 +170,8 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     nbad = len(tests[BAD])
 
     # inform how many tests were found, which will be run, etc.
-    logger.write("FOUND {0:d} TESTS IN {1:.2}s".format(
-        ntests, TIMING[-1]-TIMING[0]), transform=str)
+    logger.write("Found {0:d} tests in {1:.2}s".format(
+        ntests, TIMING[-1]-TIMING[0]))
     for key in sorted(tests):
         if key == INI:
             continue
@@ -180,38 +179,35 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
         if not info:
             continue
         if key == RUN:
-            logger.write("  tests to be run ({0:d})".format(len(info)))
+            logger.write("  Tests to be run ({0:d})".format(len(info)))
             string = "\n".join("    {0}".format(test.name) for test in info)
         else:
             string = "\n".join("    {0}".format(name) for name in info)
             if key == BAD:
-                logger.write("  tests that failed to instantiate "
+                logger.write("  Tests that failed to instantiate "
                              "({0:d})".format(nbad))
             elif key == DISABLED:
-                logger.write("  disabled tests ({0:d})".format(ndisabled))
+                logger.write("  Disabled tests ({0:d})".format(ndisabled))
             else:
-                logger.write("  tests filtered out by keyword "
+                logger.write("  Tests filtered out by keyword "
                              "request ({0:d})".format(nskip))
-        logger.write(string, transform=str)
+        logger.write(string)
 
     if list_and_stop:
         return
 
     if not ntests_to_run:
-        logger.write("nothing to do")
+        logger.write("Nothing to do")
         return
 
     if logger.errors and stop_on_bad:
-        logger.error("stopping due to previous errors", beg="", raise_error=True)
+        logger.raise_error("stopping due to previous errors", report_who=0)
 
     # determine number of processors to use
     nprocs = min(min(mp.cpu_count(), nprocs), ntests_to_run)
 
-    # Let everyone know we are running tests
-    opts.mml_running_tests = 1
-
     # run the tests
-    logger.write("\nRUNNING TESTS")
+    logger.write("\nRunning tests")
     if nprocs == 1:
         out = [run_test(test) for test in tests[RUN]]
     else:
@@ -237,7 +233,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     # write out some information
     TIMING.append(time.time())
     dtf = TIMING[-1] - TIMING[0]
-    logger.write("ALL TESTS COMPLETED ({0:.4f}s)".format(dtf), transform=str)
+    logger.write("All tests completed ({0:.4f}s)".format(dtf))
 
     # determine number of passed, failed, etc.
     npass = len([test for test in tests[RUN] if test.status == PASSED])
@@ -246,7 +242,7 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
     ndiff = len([test for test in tests[RUN] if test.status == DIFFED])
     nnr = len([test for test in tests[RUN] if test.status == NOT_RUN])
     nunkn = ntests_to_run - npass - nfail - nftr - ndiff
-    logger.write("\nsummary of completed tests\nran {0:d} tests "
+    logger.write("\nSummary of completed tests\nran {0:d} tests "
                  "in {1:.4f}s".format(ntests_to_run, TIMING[-1]-TIMING[0]))
     logger.write(
         "  {0: 3d} passed\n"
@@ -267,21 +263,21 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
         results_by_module.setdefault(test.module, []).append(s)
         results_by_status.setdefault(S, []).append(test.name)
 
-    logger.write("\ndetail by test module")
+    logger.write("\nDetail by test module")
     for (module, statuses) in results_by_module.items():
-        logger.write("  " + module, transform=str)
+        logger.write("  " + module)
         s = "\n".join("    {0}".format(x) for x in statuses)
-        logger.write(s, transform=str)
+        logger.write(s)
 
-    logger.write("\ndetail by test status")
+    logger.write("\nDetail by test status")
     for (status, name) in results_by_status.items():
         logger.write("  " + status)
         s = "\n".join("    {0}".format(x) for x in name)
-        logger.write(s, transform=str)
+        logger.write(s)
 
     if tear_down:
-        logger.write("\ntearing down passed tests", end=" ")
-        logger.write("(--no-tear-down SUPPRESSES TEAR DOWN)", transform=str)
+        logger.write("\nTearing down passed tests "
+                     "(--no-tear-down suppresses tear down)")
         # tear down indivdual tests
         torn_down = 0
         for test in tests[RUN]:
@@ -297,11 +293,12 @@ def gather_and_run_tests(sources, include, exclude, tear_down=True,
             html_summary = True
 
     if html_summary:
-        logger.write("\nWRITING HTML SUMMARY TO {0}".format(ROOT_RES_D),
-                     transform=str)
+        logger.write("\nWriting html summary to {0}".format(ROOT_RES_D))
         write_html_summary(ROOT_RES_D, tests[RUN])
 
     logger.finish()
+
+    os.chdir(cwd)
 
     return
 
@@ -323,6 +320,7 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **kwargs):
     tests : dict of tests
 
     """
+    logger = Logger("tester")
     logger.write("\ngathering tests")
 
     rx = re.compile(r"(?:^|[\\b_\\.-])[Tt]est")
@@ -385,9 +383,8 @@ def gather_and_filter_tests(sources, root_dir, include, exclude, **kwargs):
             the_test = getattr(module, test)(root_dir, **kwargs)
         except TestError as e:
             name = "{0}.{1}".format(info.module, test)
-            logger.error("THE FOLLOWING ERRORS WERE ENCOUNTERED WHILE INITIALIZING "
-                         "TEST {0}:\n{1}".format(name, e.args[0]),
-                         transform=str)
+            logger.error("The following errors were encountered while initializing "
+                         "test {0}:\n{1}".format(name, e.args[0]))
             tests[BAD].append(name)
             continue
 
@@ -422,16 +419,17 @@ def run_test(test):
     """Run a single test
 
     """
+    logger = Logger("tester")
     W = TEST_CONS_WIDTH
 
     ti = time.time()
-    logger.write(fillwithdots(test.name, "RUNNING", W), transform=str)
+    logger.write(fillwithdots(test.name, "Running", W))
     status = FAILED_TO_RUN
     try:
         test.setup()
     except TestError as e:
-        logger.error("{0}: FAILED TO SETUP WITH THE FOLLOWING "
-                     "ERROR:\n{1}".format(test.name, e.args[0]), transform=str)
+        logger.error("{0}: Failed to setup with the following "
+                     "error:\n{1}".format(test.name, e.args[0]))
         dtime = np.nan
     else:
         try:
@@ -441,12 +439,12 @@ def run_test(test):
         except TestError as e:
             dtime = np.nan
             status = FAILED
-            logger.error("{0}: FAILED TO RUN WITH THE FOLLOWING EXCEPTION:\n"
-                         "{1}".format(test.name, e.args[0]), transform=str)
+            logger.error("{0}: Failed to run with the following exception:\n"
+                         "{1}".format(test.name, e.args[0]))
 
-    line = fillwithdots(test.name, "FINISHED", W)
+    line = fillwithdots(test.name, "Finished", W)
     s = " [{1}] ({0:.1f}s)".format(dtime, result_str(status))
-    logger.write(line + s, transform=str)
+    logger.write(line + s)
 
     return status, dtime
 
@@ -455,6 +453,8 @@ def write_html_summary(root_d, tests):
     """write summary of the results to an html file
 
     """
+    logger = Logger("tester")
+
     # html header
     html = []
     html.append("<html>\n<head>\n<title>Test Results</title>\n</head>\n")
@@ -504,6 +504,7 @@ def test_html_summary(test, root_d):
     # get info from details
     #    if not ran:
     #         return "<ul> <li> {0} </li> </ul>".format(test.name)
+    logger = Logger("tester")
 
     test_dir = test.test_dir
 

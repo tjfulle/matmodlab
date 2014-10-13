@@ -37,7 +37,7 @@ class ContinuumDriver(PathDriver):
                  cols=None, skiprows=0, logger=None):
 
         if logger is None:
-            logger = Logger()
+            logger = Logger("driver", filename=None)
         self.logger = logger
         self.logger.write("setting up the {0} driver".format(self.kind))
 

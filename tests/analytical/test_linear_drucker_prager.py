@@ -18,9 +18,6 @@ class TestSphericalLinearDruckerPrager(TestBase):
         self.interpolate_diff = True
         self.base_res = os.path.join(my_dir, "lin_druck_prag_spher.base_dat")
         self.gen_overlay_if_fail = True
-    def run_job(self):
-        spherical_runner(d=self.test_dir, v=0, runid=self.runid)
-
 
 class TestRandomLinearDruckerPrager(TestBase):
     def __init__(self):
@@ -33,14 +30,15 @@ class TestRandomLinearDruckerPrager(TestBase):
         self.make_test_dir()
 
     def run(self):
-        logger = Logger(logfile=os.path.join(self.test_dir, self.runid + ".stat"), verbosity=0)
+        filename = os.path.join(self.test_dir, self.runid + ".stat")
+        logger = Logger(self.runid, filename=filename)
         logger.write("Running {0:d} realizations".format(self.nruns))
 
         stats = []
         for idx in range(0, self.nruns):
             runid = self.runid + "_{0}".format(idx + 1)
             logger.write("* Spawning {0}".format(runid))
-            stats.append(rand_runner(d=self.test_dir, v=0, runid=runid, test=1))
+            stats.append(rand_runner(d=self.test_dir, runid=runid, test=1))
             logger.write("    Status: {0:s}".format(RES_MAP[stats[-1]]))
 
         # Set the overall status (lowest common denominator)
@@ -55,14 +53,14 @@ class TestRandomLinearDruckerPrager(TestBase):
 
 
 @matmodlab
-def rand_runner(d=None, runid=None, v=1, test=0):
+def rand_runner(d=None, runid=None, test=0):
 
     d = d or os.getcwd()
     runid = runid or RUNID
-    logfile = os.path.join(d, runid + ".log")
     solfile = os.path.join(d, runid + ".base_dat")
-    logger = Logger(logfile=logfile, verbosity=v)
-    logger.write("logfile is: {0}".format(logfile))
+    filename = os.path.join(d, runid + ".log")
+    logger = Logger(runid, filename=filename)
+    logger.write("logfile is: {0}".format(filename))
 
     # Set up the path and random material constants
     nu, E, K, G, LAM = ldpr.gen_rand_elastic_params()
@@ -124,12 +122,10 @@ def rand_runner(d=None, runid=None, v=1, test=0):
 
 
 @matmodlab
-def spherical_runner(d=None, v=1, runid=None):
+def run_linear_drucker_prager_spherical(*args, **kwargs):
 
-    d = d or os.getcwd()
-    runid = runid or RUNID + "_spherical"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = RUNID + "_spherical"
+    logger = Logger(runid)
 
     # Elastic modulii
     LAM = 1.0e9
@@ -150,9 +146,9 @@ def spherical_runner(d=None, v=1, runid=None):
     material = Material("pyplastic", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 
 if __name__ == "__main__":
-    a = spherical_runner()
+    a = run_linear_drucker_prager_spherical()

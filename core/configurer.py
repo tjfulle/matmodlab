@@ -22,7 +22,7 @@ import re
 import sys
 import argparse
 from string import upper
-from core.product import RCFILE
+from core.product import RCFILE, SUPPRESS_USER_ENV
 
 def Bool(it):
     return it.lower() not in ("0", "no", "none", "false")
@@ -138,6 +138,8 @@ def cfgparse(reqopt=None, default=None, _cache=[0]):
 
     config = _cache[0]
     if reqopt is not None:
+        if SUPPRESS_USER_ENV:
+            return default
         return getattr(config, reqopt, default)
 
     return config

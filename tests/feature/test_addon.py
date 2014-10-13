@@ -14,12 +14,10 @@ E = 500
 Nu = .45
 
 @matmodlab
-def runner_visco(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = "visco_neohooke"
+def runner_visco(*args, **kwargs):
 
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = "visco_neohooke"
+    logger = Logger(runid)
 
     driver = Driver("Continuum", PATH, logger=logger, estar=.1)
 
@@ -33,16 +31,14 @@ def runner_visco(d=None, runid=None, v=1):
                         source_files=["neohooke.f90"], initial_temp=75,
                         source_directory=os.path.join(MAT_D, "abaumats"),
                         expansion=expansion, viscoelastic=viscoelastic, trs=trs)
-    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 @matmodlab
-def runner_expansion(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = "expansion_neohooke"
+def runner_expansion(*args, **kwargs):
 
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = "expansion_neohooke"
+    logger = Logger(runid)
 
     driver = Driver("Continuum", PATH, logger=logger, estar=.1)
 
@@ -52,16 +48,14 @@ def runner_expansion(d=None, runid=None, v=1):
                         source_files=["neohooke.f90"], initial_temp=75,
                         source_directory=os.path.join(MAT_D, "abaumats"),
                         expansion=expansion)
-    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 @matmodlab
-def runner_novisco(d=None, runid=None, v=1):
-    d = d or os.getcwd()
-    runid = "novisco_neohooke"
+def runner_novisco(*args, **kwargs):
 
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=v)
+    runid = "novisco_neohooke"
+    logger = Logger(runid)
 
     driver = Driver("Continuum", PATH, logger=logger, estar=.1)
 
@@ -69,7 +63,7 @@ def runner_novisco(d=None, runid=None, v=1):
     material = Material("umat", parameters,
                         source_files=["neohooke.f90"], initial_temp=75,
                         source_directory=os.path.join(MAT_D, "abaumats"))
-    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
 

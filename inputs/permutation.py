@@ -11,9 +11,8 @@ path = """
 
 def func(x, *args):
 
-    d, runid = args[:2]
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(logfile=logfile, verbosity=0)
+    runid, d = args[:2]
+    logger = Logger(runid)
 
     # set up the driver
     driver = Driver("Continuum", path, estar=-.5, step_multiplier=1000,
@@ -24,7 +23,7 @@ def func(x, *args):
     material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
     pres = mps.extract_from_db(["PRESSURE"])
 
