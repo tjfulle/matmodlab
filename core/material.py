@@ -539,7 +539,12 @@ class AbaqusMaterial(MaterialModel):
             raise ModelNotImportedError(self.name)
 
         xkeys = lambda n: ["SDV{0}".format(i+1) for i in range(n)]
-        depvar = kwargs.get("depvar") or 0
+        # depvar must be at least 1 (cannot pass reference to empty list)
+        if hasattr(self, "depvar"):
+            depvar = self.depvar
+        else:
+            depvar = kwargs.get("depvar") or 1
+
         # depvar allowed to be an integer (number of SDVs) or a list (names of
         # SDVs)
         try:
@@ -645,8 +650,6 @@ def Material(model, parameters, logger=None, initial_temp=None,
     if parameters is None:
         raise MatModLabError("{0}: required parameters not given".format(model))
 
-    logger = logger or Logger("material", filename=None)
-
     # determine which model
     all_mats = find_materials()
     mat_name = "_".join(model.split()).lower()
@@ -689,7 +692,7 @@ def Material(model, parameters, logger=None, initial_temp=None,
             remove(so_lib)
             opts.rebuild_mat_lib = False
         if not os.path.isfile(so_lib):
-            logger.write("{0}: rebuilding material library".format(material.name))
+            ConsoleLogger.write("{0}: rebuilding material library".format(material.name))
             import core.builder as bb
             bb.Builder.build_material(material.name, source_files,
                                       lapack=material.lapack,
@@ -713,7 +716,7 @@ def Material(model, parameters, logger=None, initial_temp=None,
         mimic, model = material, new
 
         # Make the request known.
-        logger.warn("requesting that model {0} mimic model {1}".format(
+        ConsoleLogger.warn("requesting that model {0} mimic model {1}".format(
             model, mimic.name))
 
         # Get the new material model
@@ -731,8 +734,8 @@ def Material(model, parameters, logger=None, initial_temp=None,
     # initialize and set up material
     material.initialize(initial_temp, file=mat_info.file, trs=trs,
                         expansion=expansion, viscoelastic=viscoelastic,
-                        logger=logger, fiber_dirs=fiber_dirs, depvar=depvar,
-                        param_names=None)
+                        logger=logger, fiber_dirs=fiber_dirs, depvar=depvar)
+               
     return material
 
 
