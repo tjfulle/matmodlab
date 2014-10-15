@@ -12,7 +12,7 @@ from core.configurer import cfgparse
 from utils.fortran.product import FIO
 from utils.misc import load_file, remove, who_is_calling
 from utils.data_containers import Parameters
-from core.logger import Logger, ConsoleLogger
+from core.logger import Logger
 from materials.product import ABA_MATS, USER_MAT
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 from utils.constants import DEFAULT_TEMP, SET_AT_RUNTIME, ENGW
@@ -128,8 +128,8 @@ class MaterialModel(object):
             idx = self.parameter_name_map(key)
             if idx is None:
                 errors += 1
-                logger.error("{0}: unrecognized parameter "
-                             "for model {1}".format(key, self.name))
+                logger("console").error("{0}: unrecognized parameter "
+                                        "for model {1}".format(key, self.name))
             params[idx] = value
 
         if errors:
@@ -650,6 +650,8 @@ def Material(model, parameters, logger=None, initial_temp=None,
     if parameters is None:
         raise MatModLabError("{0}: required parameters not given".format(model))
 
+    logger = logger or Logger("console")
+
     # determine which model
     all_mats = find_materials()
     mat_name = "_".join(model.split()).lower()
@@ -668,7 +670,7 @@ def Material(model, parameters, logger=None, initial_temp=None,
         for f in source_files:
             if not os.path.isfile(f):
                 errors += 1
-                ConsoleLogger.error("{0}: file not found".format(f))
+                logger.error("{0}: file not found".format(f))
     if errors:
         raise MatModLabError("stopping due to previous errors")
 
@@ -692,7 +694,7 @@ def Material(model, parameters, logger=None, initial_temp=None,
             remove(so_lib)
             opts.rebuild_mat_lib = False
         if not os.path.isfile(so_lib):
-            ConsoleLogger.write("{0}: rebuilding material library".format(material.name))
+            logger.write("{0}: rebuilding material library".format(material.name))
             import core.builder as bb
             bb.Builder.build_material(material.name, source_files,
                                       lapack=material.lapack,
@@ -716,7 +718,7 @@ def Material(model, parameters, logger=None, initial_temp=None,
         mimic, model = material, new
 
         # Make the request known.
-        ConsoleLogger.warn("requesting that model {0} mimic model {1}".format(
+        logger.warn("requesting that model {0} mimic model {1}".format(
             model, mimic.name))
 
         # Get the new material model
@@ -735,7 +737,7 @@ def Material(model, parameters, logger=None, initial_temp=None,
     material.initialize(initial_temp, file=mat_info.file, trs=trs,
                         expansion=expansion, viscoelastic=viscoelastic,
                         logger=logger, fiber_dirs=fiber_dirs, depvar=depvar)
-               
+
     return material
 
 
@@ -743,6 +745,8 @@ def find_materials():
     """Find material models
 
     """
+    logger = Logger("console")
+
     errors = []
     mat_libs = {}
     rx = re.compile(r"(?:^|[\\b_\\.-])[Mm]at")
@@ -766,14 +770,13 @@ def find_materials():
             d = item
             files = [f for f in os.listdir(item) if rx.search(f)]
         else:
-            ConsoleLogger.warn("{0} no such directory or file, skipping".format(d),
+            logger.warn("{0} no such directory or file, skipping".format(d),
                                report_who=1)
             continue
         files = [f for f in files if f.endswith(".py")]
 
         if not files:
-            ConsoleLogger.warn("{0}: no mat files found".format(d),
-                               report_who=1)
+            logger.warn("{0}: no mat files found".format(d), report_who=1)
 
         # go through files and determine if it's an interface file. if it is,
         # load it and add it to mat_libs
@@ -783,11 +786,11 @@ def find_materials():
                 libs = xpyclbr.readmodule(module, [d], ancestors=a)
             except AttributeError as e:
                 errors.append(e.args[0])
-                ConsoleLogger.error(e.args[0])
+                logger.error(e.args[0])
                 continue
             for lib in libs:
                 if lib in mat_libs:
-                    ConsoleLogger.error("{0}: duplicate material".format(lib))
+                    logger.error("{0}: duplicate material".format(lib))
                     errors.append(lib)
                     continue
                 module = load_file(libs[lib].file)

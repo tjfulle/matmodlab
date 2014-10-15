@@ -7,7 +7,17 @@ from core.runtime import opts
 from utils.misc import who_is_calling
 from core.product import SPLASH
 
+_LIST_ = -123
+_SPLASHED_ = -124
+
+def loggers():
+    return Logger(_LIST_)
+
 def Logger(logger, _cache={}, **kwargs):
+
+    if logger == _LIST_:
+        return _cache.keys()
+
     remove = kwargs.pop("remove_from_cache", None)
     if remove:
         # remove logger
@@ -38,6 +48,7 @@ class _Logger(object):
 
         self.logger_id = name
         self.errors = 0
+        self._splashed = not splash
 
         # set the logging level
         fhlev = logging.DEBUG
@@ -69,6 +80,7 @@ class _Logger(object):
             self.logger.addHandler(fh)
 
         if splash:
+            self._splashed = True
             self.logger.info(SPLASH)
 
     def write(self, message, beg="", end=None, report_who=False, who=None):
