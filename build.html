@@ -88,27 +88,29 @@ before proceeding.</p>
 </div>
 <div class="section" id="build">
 <h3>Build<a class="headerlink" href="#build" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre>cd path/to/matmodlab
-mml build
+<p>Building is performed by the <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">build</span></tt> command:</p>
+<div class="highlight-python"><div class="highlight"><pre>usage: mml build [-h] [-v V] [-w] [-W] [-m M [M ...]] [-u]
+
+mml build: build fortran utilities and materials.
+
+optional arguments:
+  -h, --help    show this help message and exit
+  -v V          Verbosity [default: 1]
+  -w            Wipe before building [default: False]
+  -W            Wipe and exit [default: False]
+  -m M [M ...]  Materials to build [default: all]
+  -u            Build auxiliary support files only [default: False]
+</pre></div>
+</div>
+<div class="section" id="example">
+<h4>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-python"><div class="highlight"><pre>mml build
 </pre></div>
 </div>
 <p>This will build the <em>matmodlab</em> Fortran utilities and material libraries. The
 resultant shared object libraries are copied to <tt class="docutils literal"><span class="pre">matmodlab/lib</span></tt>.</p>
 </div>
 </div>
-<div class="section" id="optional-configuration">
-<span id="config"></span><h2>Optional Configuration<a class="headerlink" href="#optional-configuration" title="Permalink to this headline">¶</a></h2>
-<p><em>matmodlab</em> must be configured to be made aware of materials and tests that
-reside outside of <em>matmodlab</em>. Use <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">config</span></tt> to add directories to find
-these materials and tests:</p>
-<div class="highlight-python"><div class="highlight"><pre>mml config --add materials path/to/material
-mml config --add tests path/to/tests
-</pre></div>
-</div>
-<p>On completion of the preceding commands, <em>matmodlab</em> will treat materials and
-tests in <tt class="docutils literal"><span class="pre">path/to/material</span></tt> and <tt class="docutils literal"><span class="pre">path/to/tests</span></tt>, respectively, as built in
-materials and tests.</p>
-<p>See <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">help</span> <span class="pre">config</span></tt> for more configuration options.</p>
 </div>
 <div class="section" id="testing-the-installation">
 <h2>Testing the Installation<a class="headerlink" href="#testing-the-installation" title="Permalink to this headline">¶</a></h2>
@@ -154,14 +156,13 @@ ask help from <a class="reference external" href="mailto:timothy&#46;fuller&#37;
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clparse.html">Command Line Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>

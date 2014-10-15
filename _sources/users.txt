@@ -9,11 +9,11 @@ User's Guide
    quickstart
    conventions
    solmeth
+   tools
    run
    factory
    aba
    addon
-   clparse
    permutate
    config
    post

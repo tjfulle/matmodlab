@@ -76,12 +76,12 @@ material model, parameterized by the bulk modulus <img class="math" src="_images
 
 <span class="c"># setup the material</span>
 <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;K&quot;</span><span class="p">:</span> <span class="mf">135E+09</span><span class="p">,</span> <span class="s">&quot;G&quot;</span><span class="p">:</span> <span class="mf">54E+09</span><span class="p">}</span>
-<span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s">&quot;elastic&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">)</span>
+<span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s">&quot;elastic&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
 
 <span class="c"># set up the deformation path and driver</span>
 <span class="n">path</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;0  0 222  0 0 0</span>
 <span class="s">          1 10 222 .1 0 0&quot;&quot;&quot;</span>
-<span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="s">&quot;Continuum&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+<span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="s">&quot;Continuum&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
 
 <span class="c"># set up the simulator and run</span>
 <span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">material</span><span class="p">)</span>

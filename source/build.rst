@@ -47,33 +47,29 @@ Add ``matmodlab/bin`` to your ``PATH``.
 Build
 -----
 
+Building is performed by the ``mml build`` command::
+
+  usage: mml build [-h] [-v V] [-w] [-W] [-m M [M ...]] [-u]
+
+  mml build: build fortran utilities and materials.
+
+  optional arguments:
+    -h, --help    show this help message and exit
+    -v V          Verbosity [default: 1]
+    -w            Wipe before building [default: False]
+    -W            Wipe and exit [default: False]
+    -m M [M ...]  Materials to build [default: all]
+    -u            Build auxiliary support files only [default: False]
+
+Example
+.......
+
 ::
 
-   cd path/to/matmodlab
-   mml build
-
+  mml build
 
 This will build the *matmodlab* Fortran utilities and material libraries. The
 resultant shared object libraries are copied to ``matmodlab/lib``.
-
-.. _Config:
-
-Optional Configuration
-======================
-
-*matmodlab* must be configured to be made aware of materials and tests that
-reside outside of *matmodlab*. Use ``mml config`` to add directories to find
-these materials and tests::
-
-  mml config --add materials path/to/material
-  mml config --add tests path/to/tests
-
-On completion of the preceding commands, *matmodlab* will treat materials and
-tests in ``path/to/material`` and ``path/to/tests``, respectively, as built in
-materials and tests.
-
-See ``mml help config`` for more configuration options.
-
 
 Testing the Installation
 ========================

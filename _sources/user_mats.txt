@@ -9,7 +9,6 @@ materials:
 
 * ``native`` material models.  See :ref:`native`.
 * Abaqus ``umat`` material models.  See :ref:`abamods`.
-* *matmodlab* ``user`` material models.
 
 .. note:: The source code from user materials is never copied in to *matmodlab*.
 
@@ -28,25 +27,25 @@ following. The ``NativeMaterial`` must be a subclass of
 
    Class defining a native type user material
 
-   .. data:: name
+.. attribute:: NativeMaterial.name
 
-      (required) the name by which it is invoked in the ``Material`` factory method.
+   (required) the name by which it is invoked in the ``Material`` factory method.
 
-   .. data:: source_files
+.. attribute:: NativeMaterial.source_files
 
-      (optional) - list of model (fortran) source files.
+   (optional) - list of model (fortran) source files.
 
-   .. data:: lapack
+.. attribute:: NativeMaterial.lapack
 
-      (optional) - flag to use lapack when building the source files.
+   (optional) - flag to use lapack when building the source files.
 
-   .. method:: NativeMaterial.__init__()
+.. method:: NativeMaterial.__init__()
 
-      Initialize the material.
+   Initialize the material.
 
-   .. method:: setup()
+.. method:: NativeMaterial.setup()
 
-      Checks user input and requests allocation of storage for state dependent variables. By the time ``setup`` is called, the user input parameters have been parsed by the base ``MaterialModel`` class and are stored in the ``params`` attribute.  ``setup`` should check the goodness of the material parameters.
+   Checks user input and requests allocation of storage for state dependent variables. By the time ``setup`` is called, the user input parameters have been parsed by the base ``MaterialModel`` class and are stored in the ``params`` attribute.  ``setup`` should check the goodness of the material parameters.
 
    .. method:: update_state(time, dtime, temp, dtemp, energy, density, F0, F1, strain, dstrain, elec_field, user_field, stress, xtra, last=False)
 
@@ -82,140 +81,19 @@ following. The ``NativeMaterial`` must be a subclass of
       :type xtra: ndarray
       :returns: ``(stress, xtra, stiff)``. The stress, state dependent variables at the end of the step, and the 6x6 material stiffness
 
+Material Interface File
+-----------------------
+
+A material interface file is a python file containing material class
+information. For fortran models, this file acts as a wrapper to the fortran
+model procedures. *matmodlab* finds materials by looking for material
+interface files in ``matmodlab/materials`` and directories in the
+``materials`` section of the configuration file. Material interface files are
+python files whose names match ``(?:^|[\\b_\\.-])[Mm]at``. For Abaqus ``umat``
+models, a material interface is not necessary.
+
+
 ..
-   Each class must define its name (\verb|Material.name|) and an ordered list of
-   material parameter names (\verb|Material.param_names|) as they should appear
-   in the input file. Parameter aliases are supported by specifying a parameter
-   name as a ``:'' separated list of allowed names. The class should not define
-   an \texttt{\uus{}init\uus{}} method and if it does, should call the
-   \texttt{\uus{}init\uus{}} of the base class.
-
-   \begin{interface}
-     \textbf{Material: Interface}
-   \end{interface}
-   \usage{mtl = Material()}
-
-   The following is an example of a \texttt{Material} declaration for the
-   \texttt{Elastic} material model.  Aliases for \texttt{K} are noted.
-   %
-   \begin{example}
-   from materials._material import Material
-   class Elastic(Material)
-       name = "elastic"
-       param_names = ["K:BMOD:B0", "G"]
-   \end{example}
-
-   % ----------------------------------------------------------------------------- %
-   \subsection{Setup the Material}
-   \label{sec:setup-mtl}
-   Each material must provide the method \texttt{setup} that sets up the material
-   model by checking and adjusting the material parameter array, requesting
-   allocation of storage of material variables, and computing and storing the
-   \verb|bulk_modulus| and \verb|shear_modulus| of the material. \verb|setup| is
-   called by the base class method \verb|setup_new_material| that parses and
-   stores the user given parameters in the \verb|Material.params| array.
-
-   \begin{interface}
-     \textbf{Material.setup: Interface}
-   \end{interface}
-   \usage{mtl.setup()}\\[5pt]
-
-   The following is an example of a \texttt{setup} method
-
-   \begin{example}
-   def setup(self):
-       if elastic is None:
-	   raise Error1("elastic model not imported")
-       elastic.elastic_check(self.params, log_error, log_message)
-       K, G = self.params
-       self.bulk_modulus = K
-       self.shear_modulus = G
-   \end{example}
-
-   % ----------------------------------------------------------------------------- %
-   \subsection{Adjust the Initial State}
-   \label{sec:adjust-istate}
-   The method \texttt{adjust\us{}initial\us{}state} adjusts the initial state
-   after the material is setup. Method provided by base class should be adequate
-   for most materials. A material should only overide the base method if
-   absolutely necessary.
-
-   \begin{interface}
-     \textbf{Material.adjust\us{}initial\us{}state: Interface}
-   \end{interface}
-   \usage{mtl.adjust\us{}initial\us{}state(xtra)}\\[5pt]
-   \param{ndarray xtra}{Material variables}
-
-   % ----------------------------------------------------------------------------- %
-   \subsection{Update the Material State}
-   \label{sec:update-state}
-   The material state is updated to the end of the step via the
-   \verb|update_state| method. Each material model must provide its own
-   \verb|update_state| method.
-
-   \begin{interface}
-     \textbf{Material.update\us{}state: Interface}
-   \end{interface}
-   \usage{stress, xtra = mtl.update\us{}state(dt, d, sig, xtra,\\
-     \indent\hspace{3.2in}f, ef, t, rho, tmpr, *args)}\\[5pt]
-   \param{real dt}{timestep size}
-   \param{ndarray d}{rate of deformation}
-   \param{ndarray sig}{stress at beginning of step}
-   \param{ndarray xtra}{extra state variables at beginning of step}
-   \param{ndarray f}{deformation gradient at end of step}
-   \param{ndarray ef}{electric field}
-   \param{real t}{time}
-   \param{real rho}{density at end of step}
-   \param{real tmpr}{temperature at end of step}
-   \param{tuple args}{extra args (not used)}
-   \param{dict kwargs}{extra keyword args (not used)}
-   \param{ndarray stress}{stress at end of step}
-   \param{ndarray xtra}{extra state variables at end of step}
-
-   The following code segment is used by the driver to update the material state
-   \begin{example}
-   args = []
-   sig, xtra = mtl.update_state(dt, d, sig, xtra,
-				f, ef, t, rho, tmpr, *args)
-   \end{example}
-
-   % ----------------------------------------------------------------------------- %
-   \subsection{Example}
-   \label{sec:update-state-ex}
-   The following example demonstrates the implementation of a simple elastic
-   model.
-   \begin{example}
-   import numpy as np
-   from materials._material import Material
-   from core.io import Error1, log_error, log_message
-   try:
-       import lib.elastic as elastic
-   except ImportError:
-       elastic = None
-
-   class Elastic(Material):
-       name = "elastic"
-       param_names = ["K", "G"]
-       def __init__(self):
-	   super(Elastic, self).__init__()
-
-       def setup(self):
-	   if elastic is None:
-	       raise Error1("elastic model not imported")
-	   elastic.elastic_check(self.params, log_error, log_message)
-	   K, G, = self.params
-	   self.bulk_modulus = K
-	   self.shear_modulus = G
-
-       def update_state(self, dt, d, stress, xtra, *args):
-	   elastic.elastic_update_state(dt, self.params, d, stress,
-					log_error, log_message)
-	   return stress, xtra
-
-       def jacobian(self, dt, d, stress, xtra, v):
-	   return self.constant_jacobian(v)
-   \end{example}
-
    % ----------------------------------------------------------------------------- %
    \section{Building and Linking Materials}
    \label{sec:usrbld}
@@ -301,9 +179,6 @@ materials, but adds the following additional requirements:
 
 .. note::
    Only one ``UMAT`` material can be run and exercised at a time.
-
-.. note::
-   *matmodlab* modifies the ``parameters`` array to have length ``constants`` + 1 and appends an extra paramter to its end. This extra parameter can be used as a debug flag.
 
 *matmodlab* implements the following Abaqus utility functions:
 

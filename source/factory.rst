@@ -10,7 +10,7 @@ A material instance is created through the ``Material`` factory method.  Minimal
 
 .. code:: python
 
-   material = Material(mat_name, parameters)
+   material = Material(model, parameters)
 
 The object returned from ``Material`` is an instance of the class defining
 ``model``.
@@ -338,7 +338,7 @@ the factory method requires a unique function ID ``func_id``, function type ``fu
 
 .. code:: python
 
-   func = Function(func_id, func_type, func_expr)
+   func = Function(func_id, func_type, func_defn)
 
 The object returned from ``Function`` is an instance of the class defining
 ``func_type``. At present, ``analytical expression`` and ``piecewise linear``
@@ -367,21 +367,23 @@ The Logger
 
 Logging in *matmodlab* is through the ``Logger`` class.
 
-It is useful to setup and pass the same logger to ``Material``, ``Driver``, and ``MaterialPointSimulator``.  A logger instance is created through the ``Logger`` constructor.  The ``Logger`` constructor requires no arguments to setup
+It is useful to setup and pass the same logger to ``Material``, ``Driver``, and ``MaterialPointSimulator``.  A logger instance is created through the ``Logger`` constructor.  Minimally, the ``Logger`` constructor requires a ``Logger`` name
 
 .. code:: python
 
-   logger = Logger()
+   logger = Logger(name)
 
 The formal parameters to ``Logger`` are
 
-.. class:: Logger(logfile=None, verbosity=1)
+.. class:: Logger(name, filename=1, verbosity=1)
 
    The matmodlab logger.  Logs messages and warnings to the console and/or file
 
-   :param logfile: File name of log file.  If not given, messages are only logged to the console [default: None].
-   :type logfile: str or None
-   :param verbosity: Verbosity.  If verbosity < 1, then messages are only logged to file [default: 1].
+   :param name: The logger name.
+   :type name: str
+   :param filename: File name of log file.  By default, the file name used is name.log.  If None, no file will generated.
+   :type filename: str or None
+   :param verbosity: Verbosity.  =0, logging to file only.
    :type verbosity: int
 
 Logger Methods

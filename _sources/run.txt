@@ -29,12 +29,12 @@ material model, parameterized by the bulk modulus :math:`K` and shear modulus
 
    # setup the material
    parameters = {"K": 135E+09, "G": 54E+09}
-   material = Material("elastic", parameters=parameters)
+   material = Material("elastic", parameters)
 
    # set up the deformation path and driver
    path = """0  0 222  0 0 0
              1 10 222 .1 0 0"""
-   driver = Driver("Continuum", path=path)
+   driver = Driver("Continuum", path)
 
    # set up the simulator and run
    mps = MaterialPointSimulator(runid, driver, material)

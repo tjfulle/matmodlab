@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
     <link rel="up" title="Developers’s Guide" href="dev.html" />
-    <link rel="next" title="Testing" href="test.html" />
+    <link rel="next" title="Regression Testing" href="test.html" />
     <link rel="prev" title="Developers’s Guide" href="dev.html" />
    
   
@@ -40,7 +40,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="test.html" title="Testing"
+          <a href="test.html" title="Regression Testing"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="dev.html" title="Developers’s Guide"
@@ -62,7 +62,6 @@ materials:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">native</span></tt> material models.  See <a class="reference internal" href="#native"><em>Native Material Models</em></a>.</li>
 <li>Abaqus <tt class="docutils literal"><span class="pre">umat</span></tt> material models.  See <a class="reference internal" href="#abamods"><em>Abaqus Materials</em></a>.</li>
-<li><em>matmodlab</em> <tt class="docutils literal"><span class="pre">user</span></tt> material models.</li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -79,36 +78,36 @@ following. The <tt class="docutils literal"><span class="pre">NativeMaterial</sp
 <dt id="NativeMaterial">
 <em class="property">class </em><tt class="descname">NativeMaterial</tt><big>(</big><em>MaterialModel</em><big>)</big><a class="headerlink" href="#NativeMaterial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class defining a native type user material</p>
-<dl class="data">
+</dd></dl>
+
+<dl class="attribute">
 <dt id="NativeMaterial.name">
-<tt class="descname">name</tt><a class="headerlink" href="#NativeMaterial.name" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">NativeMaterial.</tt><tt class="descname">name</tt><a class="headerlink" href="#NativeMaterial.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>(required) the name by which it is invoked in the <tt class="docutils literal"><span class="pre">Material</span></tt> factory method.</p>
 </dd></dl>
 
-<dl class="data">
+<dl class="attribute">
 <dt id="NativeMaterial.source_files">
-<tt class="descname">source_files</tt><a class="headerlink" href="#NativeMaterial.source_files" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">NativeMaterial.</tt><tt class="descname">source_files</tt><a class="headerlink" href="#NativeMaterial.source_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>(optional) - list of model (fortran) source files.</p>
 </dd></dl>
 
-<dl class="data">
+<dl class="attribute">
 <dt id="NativeMaterial.lapack">
-<tt class="descname">lapack</tt><a class="headerlink" href="#NativeMaterial.lapack" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">NativeMaterial.</tt><tt class="descname">lapack</tt><a class="headerlink" href="#NativeMaterial.lapack" title="Permalink to this definition">¶</a></dt>
 <dd><p>(optional) - flag to use lapack when building the source files.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="NativeMaterial.__init__">
-<tt class="descname">__init__</tt><big>(</big><big>)</big><a class="headerlink" href="#NativeMaterial.__init__" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">NativeMaterial.</tt><tt class="descname">__init__</tt><big>(</big><big>)</big><a class="headerlink" href="#NativeMaterial.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize the material.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="NativeMaterial.setup">
-<tt class="descname">setup</tt><big>(</big><big>)</big><a class="headerlink" href="#NativeMaterial.setup" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">NativeMaterial.</tt><tt class="descname">setup</tt><big>(</big><big>)</big><a class="headerlink" href="#NativeMaterial.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks user input and requests allocation of storage for state dependent variables. By the time <tt class="docutils literal"><span class="pre">setup</span></tt> is called, the user input parameters have been parsed by the base <tt class="docutils literal"><span class="pre">MaterialModel</span></tt> class and are stored in the <tt class="docutils literal"><span class="pre">params</span></tt> attribute.  <tt class="docutils literal"><span class="pre">setup</span></tt> should check the goodness of the material parameters.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="NativeMaterial.update_state">
 <tt class="descname">update_state</tt><big>(</big><em>time</em>, <em>dtime</em>, <em>temp</em>, <em>dtemp</em>, <em>energy</em>, <em>density</em>, <em>F0</em>, <em>F1</em>, <em>strain</em>, <em>dstrain</em>, <em>elec_field</em>, <em>user_field</em>, <em>stress</em>, <em>xtra</em>, <em>last=False</em><big>)</big><a class="headerlink" href="#NativeMaterial.update_state" title="Permalink to this definition">¶</a></dt>
@@ -144,6 +143,16 @@ following. The <tt class="docutils literal"><span class="pre">NativeMaterial</sp
 
 </dd></dl>
 
+<div class="section" id="material-interface-file">
+<h3>Material Interface File<a class="headerlink" href="#material-interface-file" title="Permalink to this headline">¶</a></h3>
+<p>A material interface file is a python file containing material class
+information. For fortran models, this file acts as a wrapper to the fortran
+model procedures. <em>matmodlab</em> finds materials by looking for material
+interface files in <tt class="docutils literal"><span class="pre">matmodlab/materials</span></tt> and directories in the
+<tt class="docutils literal"><span class="pre">materials</span></tt> section of the configuration file. Material interface files are
+python files whose names match <tt class="docutils literal"><span class="pre">(?:^|[\\b_\\.-])[Mm]at</span></tt>. For Abaqus <tt class="docutils literal"><span class="pre">umat</span></tt>
+models, a material interface is not necessary.</p>
+</div>
 </div>
 <div class="section" id="abaqus-materials">
 <span id="abamods"></span><h2>Abaqus Materials<a class="headerlink" href="#abaqus-materials" title="Permalink to this headline">¶</a></h2>
@@ -166,10 +175,6 @@ required for the model.</li>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Only one <tt class="docutils literal"><span class="pre">UMAT</span></tt> material can be run and exercised at a time.</p>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last"><em>matmodlab</em> modifies the <tt class="docutils literal"><span class="pre">parameters</span></tt> array to have length <tt class="docutils literal"><span class="pre">constants</span></tt> + 1 and appends an extra paramter to its end. This extra parameter can be used as a debug flag.</p>
 </div>
 <p><em>matmodlab</em> implements the following Abaqus utility functions:</p>
 <ul class="simple">
@@ -223,7 +228,7 @@ required for the model.</li>
 <li class="toctree-l1"><a class="reference internal" href="users.html">User&#8217;s Guide</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="dev.html">Developers&#8217;s Guide</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="">Writing User Material Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="test.html">Regression Testing</a></li>
 </ul>
 </li>
 </ul>
