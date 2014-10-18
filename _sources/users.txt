@@ -15,6 +15,7 @@ User's Guide
    aba
    addon
    permutate
+   optimize
    config
    post
    build
