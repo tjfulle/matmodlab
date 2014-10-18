@@ -20,23 +20,22 @@ parameters ``xinit``, and a ``runid``.
    permutator = Permutator(func, xinit, runid)
 
 ``func`` is called as ``func(x, *args)`` where ``x`` are the current values of
-the permutated variables and ``args`` contains in its first two components::
+the permutated variables and ``args`` contains in its last component::
 
-   dirname, runid = args[:2]
+   dirname = args[-1]
 
-where ``dirname`` is the directory where simulations should be run, and
-``runid`` the current runid.
+where ``dirname`` is the directory where simulations should is to be run.
 
 Permutator Constructor
 ======================
 
 The formal parameters to ``Permutator`` are
 
-.. class:: Permutator(func, xinit, runid, method="zip", correlations=False, verbosity=1, descriptor=None, nprocs=1, funcargs=[], d=None)
+.. class:: Permutator(func, xinit, runid, method="zip", correlations=False, verbosity=1, descriptor=None, nprocs=1, funcargs=None, d=None)
 
    Create a Permutator object
 
-   :parameter func: Function that evaluates a matmodlab simulation
+   :parameter func: Function that evaluates a matmodlab simulation.  Must have signature ``func(x, *args)``, where x are the current values of the permutated variable and funcargs are described below.
    :type callable:
    :parameter xinit: Initial values of simulation parameters.
    :type xinit: List of PermutateVariable objects
@@ -50,8 +49,8 @@ The formal parameters to ``Permutator`` are
    :type descriptor: list of str or None
    :parameter nprocs: Number of simultaneous jobs [default: None]
    :type descriptor: int of None
-   :parameter funcargs: Additional arguments to be sent to func.  Will be appended to the args already passed.
-   :type funcargs: list
+   :parameter funcargs: Additional arguments to be sent to func.  The directory of the current job is appended to the end of funcargs.  If None,
+   :type funcargs: list or None
    :parameter d: Parent directory to run jobs.  If the directory does not exist, it will be created.  If not given, the current directory will be used.
    :type d: str or None
 
@@ -64,8 +63,8 @@ contents::
 
 The ``eval_...`` directory holds the output of the ith job and a ``params.in``
 file with the values of each permutated parameter for that job.
-``mml-tabular.xml`` contains a summary of each job run. ``mml view``
-recognizes ``mml-tabular.xml`` files.
+``mml-evaldb.xml`` contains a summary of each job run. ``mml view``
+recognizes ``mml-evaldb.xml`` files.
 
 PermutateVariable Factory Method
 ================================

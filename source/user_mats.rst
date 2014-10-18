@@ -8,7 +8,7 @@ Writing User Material Models
 materials:
 
 * ``native`` material models.  See :ref:`native`.
-* Abaqus ``umat`` material models.  See :ref:`abamods`.
+* Abaqus ``umat`` material models. See :ref:`aba_mats`
 
 .. note:: The source code from user materials is never copied in to *matmodlab*.
 
@@ -93,119 +93,247 @@ python files whose names match ``(?:^|[\\b_\\.-])[Mm]at``. For Abaqus ``umat``
 models, a material interface is not necessary.
 
 
-..
-   % ----------------------------------------------------------------------------- %
-   \section{Building and Linking Materials}
-   \label{sec:usrbld}
-   *matmodlab* comes with and builds several builtin material models that are
-   specified in \\
-   \verb|$MMLROOT/materials/library/mmats.py|. User materials are
-   found by looking in directories in the \verb|$MMLMTLS| environment variable
-   for a single file \texttt{umat.py}. \texttt{umat.conf} communicates to *matmodlab*
-   information needed to build the material's extension module.
 
-   % ----------------------------------------------------------------------------- %
-   \subsection{Building User Materials}
-   \label{sec:bld-usr}
-   User materials are built %
-   \footnote{Only pure python and fortran models have been implemented.
-     Implementing models in other languages is possible, but would have to be
-     sorted out.}
-   by *matmodlab* using \texttt{numpy}'s distutils.  A
-   material communicates to *matmodlab* information required by distutils back to
-   *matmodlab* through the \texttt{umat.conf} function.
+.. _aba_umat_models:
 
-   % --- makemf API
-   \begin{interface}
-   \textbf{umat.conf: Interface}
-   \end{interface}
-   \usage{name, info = conf(*args)}
+Abaqus umat Material Models
+===========================
 
-   \param{tuple args}{not currently used}
+See :ref:`aba_mats`
 
-   \param{str name}{The name of the material model}
-   \param{dict info}{Information dictionary}
+Building and Linking Materials
+==============================
 
-   % ----------------------------------------------------------------------------- %
-   \subsection{The \texttt{info} Dictionary}
-   \label{sec:infodict}
-   The \texttt{info} dict contains the following keys
-
-   \param{list source\us{}files}{The list of source files to be built.  If the
-     material is a pure python module, specify as \texttt{None}}
-
-   \param{str includ\us{}dir}{Directory to look for includes during compile
-     [default: dirname(interface\us{}file)}
-
-   \param{str interface\us{}file}{Path to the material's interface file}
-
-   \param{str class}{The name of the material model class}
-
-
-   Below is an example of \texttt{umat.conf}
-   \begin{example}
-   D = os.path.dirname(os.path.realpath(__file__))
-
-   def conf(*args):
-       name = "dsf"
-       source_files = [os.path.join(D, f) for f in ("material.F", "material.pyf")]
-       assert all(os.path.isfile(f) for f in source_files)
-       info = {"source_files": source_files, "includ_dir": D,
-	       "interface_file": os.path.join(D, "material.py"),
-	       "class": "MaterialModel"}
-       return name, info
-   \end{example}
-
-.. _abamods:
-
-Abaqus Materials
-================
-
-*matmodlab* can build and exercise Abaqus ``UMAT`` and ``UHYPER`` material
-models. *matmodlab* builds the Abaqus models and calls the ``UMAT`` and
-``UHYPER`` procedures with the same calling arguments as Abaqus. ``UMAT`` and
-``UHYPER`` materials use the same ``Material`` factory method as other
-materials, but adds the following additional requirements:
-
-* ``model="umat"`` or ``model="uhyper"``
-* ``parameters`` must be a ndarray of model constants (specified in the order
-  expected by the model).
-* ``constants`` must be specified and the length of ``parameters`` and
-  ``constants`` must be the same.
-* ``depvar``, if specified, is the number of state dependent variables
-  required for the model.
-* ``source_files`` [optional] List of model source files.  If not specified, *matmodlab* will look for ``umat.[Ff](90)?`` in the current working directory.
-* ``source_directory`` [optional] Directory containing source files.
+*matmodlab* comes with and builds several builtin material models that are
+contained ``matmodlab/materials``. User materials are found by looking for
+material interface files whose names match ``(?:^|[\\b_\\.-])[Mm]at`` and that
+contain a material class subclassing either ``MaterialModel`` or
+``AbaqusMaterial``. Material models implemented in pure python require no
+additional steps to linked to *matmodlab*. Models implemented in Fortran will
+need to be built by *matmodlab* and are built using numpy's distutils and f2py.
 
 .. note::
-   Only one ``UMAT`` material can be run and exercised at a time.
 
-*matmodlab* implements the following Abaqus utility functions:
+   Only pure python and Fortran models have been implemented.
 
-* ``XIT``.  Stops calculations immediately.
-* ``STDB_ABQERR``.  Message passing interface from material model to host code.
+Building Material Models Implemented in Fortran
+-----------------------------------------------
 
-Consult the Abaqus documentation for more information.
+*matmodlab* must be able to find, compile, and link the Fortran source files.
+For Abaqus umats, this is done by passing a list of source file names to the
+``Material`` factory method, see :ref:`aba_mats`. Native materials communicate
+information regarding source file locations through the ``source_files`` class
+attribute.
 
-Examples
-========
+f2py Signature File
+...................
 
-Two parameter Neo-Hookean nonlinear elastic model implemented as a ``UMAT``.
+Signature files are hybrid fortran/python files generated by f2py that
+communicate information about procedures contained in Fortran source files.
+See the `Signature file documentation
+<http://docs.scipy.org/doc/numpy-dev/f2py/signature-file.html>`_ for more
+information.
 
-.. code::
+Lapack
+......
 
-   E = 200
-   nu = .333
-   material = Material("umat", parameters=[E, nu], constants=2,
-                        source_files=["neohooke.f90"], rebuild=test,
-                        source_directory="{0}/abaumats".format(MAT_D))
+If a material requires lapack, set the ``lapack`` class attribute to
+``'lite'`` for a stripped down version of lapack built by *matmodlab* or
+``True`` to link to the system's lapack. If set to ``True`` and distutils is
+unable to find lapack on your system the material may still build, but will
+fail at run time.
 
-Two parameter Neo-Hookean nonlinear elastic model implemented as a ``UHYPER``.
+Communicating Information from Fortran Materials to the Logger
+==============================================================
 
-.. code::
+All materials are linked against a *matmodlab* utility library containing the
+following utility procedures. Utility procedures that communicate information
+back to the *matmodlab* logger must have implement callback functions in the
+material's f2py signature file for the information to get back to *matmodlab*.
+See :ref:`sig_file` for an example of how to setup the callbacks.
 
-   C10 = 200
-   D1 = 1E-05
-   material = Material("uhyper", parameters=[C10, D1], constants=2,
-                       source_files=["uhyper.f90"],
-                       source_directory="{0}/abaumats".format(MAT_D))
+logmes
+------
+
+``logmes`` communicates information to the simulation logger.
+
+.. code:: fortran
+
+   subroutine logmes(message)
+     character*120, intent(in) :: message
+
+bombed
+------
+
+``bombed`` communicates information to the simulation logger and ends the
+simulation.
+
+.. code:: fortran
+
+   subroutine bombed(message)
+     character*120, intent(in) :: message
+
+faterr
+------
+
+``faterr`` communicates information to the simulation logger and ends the
+simulation.
+
+.. code:: fortran
+
+   subroutine faterr(caller, message)
+     character*8, intent(in) :: caller
+     character*120, intent(in) :: message
+
+Example
+=======
+
+The following is an elastic material model implemented as a Native material.
+
+Interface File
+--------------
+
+``mat_hooke.py``::
+
+  from core.material import MaterialModel
+  mat = None
+
+  class Elastic(MaterialModel):
+      source_files = ["hooke.f90", "hooke.pyf"]
+
+      def __init__(self):
+          name = "hooke"
+          self.param_names = ["E", "NU"]
+
+      def setup(self):
+          global mat
+          try:
+	      import lib.hooke as mat
+          except ImportError:
+              raise ModelNotImportedError("elastic")
+          comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
+          mat.hooke_check(self.params, *comm)
+
+      def hooke_update_state(self, time, dtime, temp, dtemp, energy,
+              rho, F0, F, stran, d, elec_field, user_field, stress,
+              xtra, **kwargs):
+          comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
+	  ddsdde = np.zeros((6,6), order="F")
+          mat.update_state(dtime, self.params, d, stress, ddsdde, *comm)
+          return stress, xtra, ddsdde
+
+Fortran Source File
+-------------------
+
+``hooke.f90``::
+
+  subroutine hooke_check(nui, ui)
+    implicit none
+    integer, intent(in) :: nui
+    real(8), intent(in) :: ui(nui)
+    real(8) :: k, g, nu
+    k = ui(1)
+    g = ui(2)
+    if (k < 0.0) call bombed("bulk modulus must be positive")
+    if (g < 0.0) call bombed("shear modulus must be positive")
+    nu = (3. * k - 2. * g) / (6. * k + 2. * g)
+    if (nu > .5) call faterr(iam, "Poisson's ratio > .5")
+    if (nu < -1.) call faterr(iam, "Poisson's ratio < -1.")
+    if(nu < 0.) call logmes("#---- WARNING: negative Poisson's ratio")
+  end subroutine hooke_check
+
+  subroutine hooke_update_state(dtime, ui, d, stress, ddsdde)
+    implicit none
+    integer, intent(in) :: nui
+    real(kind=rk), intent(in) :: dtime, ui(nui), d(6)
+    real(kind=rk), intent(inout) :: stress(6), ddsdde(6,6)
+    real(8) :: de(6), de_iso(6), de_dev(6), k, g, nu, c1, c2, c3
+    k = ui(1)
+    g = ui(2)
+    de = d * dtime
+    dstress = 0.; de_iso = 0.
+    de_iso(1:3) = sum(de(1:3)) / 3.
+    de_dev = de - de_iso
+    dstress = 3. * k * de_iso + 2. * g * de_dev
+    stress = stress + dstress
+
+    ! Material stiffness
+    ddsdde = 0.
+    nu = (3. * k - 2. * g) / (2. * 3. * k + 2. * g)
+    c1 = (1. - nu) / (1. + nu)
+    c2 = nu / (1. + nu)
+
+    ! set diagonal
+    do i = 1, 3
+      ddsdde(i, i) = 3. * k * c1
+    end do
+    do i = 3, 6
+      ddsdde(i, i) = 2. * g
+    end do
+
+    ! off diagonal
+    c3 = 3. * k * c2
+                       ddsdde(1, 2) = c3; ddsdde(1, 3) = c3
+    ddsdde(2, 1) = c3;                    ddsdde(1, 3) = c3
+    ddsdde(3, 1) = c3; ddsdde(3, 2) = c3
+
+  end subroutine hooke_update_state
+
+.. _sig_file:
+
+Signature File
+--------------
+
+Signature files are generated by f2py and modified to include the
+``mml__user__routines`` module to pass information regarding the utility
+routines from *matmodlab* to Fortran procedures.
+
+``hooke.pyf``::
+
+  python module mml__user__routines
+      interface mml_user_interface
+          subroutine log_message(message)
+              intent(callback) log_message
+              character*(*) :: message
+          end subroutine log_message
+          subroutine log_warning(message)
+              intent(callback) log_warning
+              character*(*) :: message
+          end subroutine log_warning
+          subroutine log_error(message)
+              intent(callback) log_error
+              character*(*) :: message
+          end subroutine log_error
+      end interface mml_user_interface
+  end python module mml__user__routines
+
+  python module hooke ! in
+  interface  ! in :hooke
+     subroutine hooke_check(nui, ui)
+       use mml__user__routines
+       intent(callback) log_message
+       external log_message
+       intent(callback) log_warning
+       external log_warning
+       intent(callback) log_error
+       external log_error
+       integer, intent(in) :: nui
+       real(kind=8) dimension(nui),intent(inout) :: ui
+     end subroutine hooke_check
+     subroutine hooke_update_state(dt,nui,ui,d,stress,ddsdde)
+       use mml__user__routines
+       intent(callback) log_message
+       external log_message
+       intent(callback) log_warning
+       external log_warning
+       intent(callback) log_error
+       external log_error
+       real(kind=8) intent(in) :: dt
+       integer, intent(in) :: nui
+       real(kind=8) dimension(nui),intent(in) :: ui
+       real(kind=8) dimension(6),intent(in) :: d
+       real(kind=8) dimension(6),intent(inout) :: stress
+       real(kind=8) dimension(6,6),intent(inout) :: ddsdde
+     end subroutine hooke_update_state
+  end interface
+  end python module hooke
