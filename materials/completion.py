@@ -75,40 +75,43 @@ def complete_properties(parameters, propmap):
     ----------
     parameters : ndarray
         Array of material parameters
-    propmap : dict
+    propmap : list
         Mapping of property to parameter
 
     """
     if not propmap:
         return
 
+    # convert propmap to dict
+    propmap = dict([(x, i) for (i, x) in enumerate(propmap) if x is not None])
+
     # check if any hyperelastic parameters are given and, if so, compute
     # equivalent linear elastic parameters
     if EC_C10 in propmap and EC_SHEAR not in propmap:
-        c10 = parameters[propmap.index(EC_C10)]
+        c10 = parameters[propmap[EC_C10]]
         if EC_C01 in propmap:
-            c01 = parameters[propmap.index(EC_C01)]
+            c01 = parameters[propmap[EC_C01]]
         else:
             c01 = 0.
         g = 2. * (c10 + c01)
-        propmap.append(EC_SHEAR)
+        propmap[EC_SHEAR] = len(parameters)
         parameters = np.append(parameters, g)
 
     if EC_D1 in propmap and EC_BULK not in propmap:
-        k = 2. / parameters[propmap.index(EC_D1)]
-        propmap.append(EC_BULK)
+        k = 2. / parameters[propmap[EC_D1]]
+        propmap[EC_BULK] = len(parameters)
         parameters = np.append(parameters, k)
 
     # prepopulate the completion mapping with properties already specified by
     # the material model. save the elastic constants in their own list
     completion = {}
     elas = [None] * 12
-    for (i, idx) in enumerate(propmap):
-        if idx is None:
+    for (key, idx) in propmap.items():
+        if key is None:
             continue
-        completion[idx] = parameters[i]
-        if idx <= DENSITY:
-            elas[idx] = parameters[i]
+        completion[key] = parameters[idx]
+        if key <= DENSITY:
+            elas[key] = parameters[idx]
 
     # complete the elastic constants
     completion.update(compute_elastic_constants(elas, disp=1))

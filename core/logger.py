@@ -9,11 +9,15 @@ from core.product import SPLASH
 
 _LIST_ = -123
 _SPLASHED_ = -124
+CONSOLE = "console"
 
 def loggers():
     return Logger(_LIST_)
 
-def Logger(logger, _cache={}, **kwargs):
+def Logger(logger=None, _cache={}, **kwargs):
+
+    if logger is None:
+        logger = CONSOLE
 
     if logger == _LIST_:
         return _cache.keys()
@@ -44,11 +48,11 @@ def Logger(logger, _cache={}, **kwargs):
     return instance
 
 class _Logger(object):
+    _splashed = [False]
     def __init__(self, name, filename=1, verbosity=1, mode="w", splash=True):
 
         self.logger_id = name
         self.errors = 0
-        self._splashed = not splash
 
         # set the logging level
         fhlev = logging.DEBUG
@@ -79,11 +83,16 @@ class _Logger(object):
             fh.setLevel(fhlev)
             self.logger.addHandler(fh)
 
-        if splash:
-            self._splashed = True
-            self.logger.info(SPLASH)
+        for handler in self.logger.handlers:
+            # do our best to only splash to screen once
+            if "stderr" in str(handler.stream) and not splash:
+                continue
+            elif "stderr" in str(handler.stream) and self._splashed[0]:
+                continue
+            handler.stream.write(SPLASH + "\n")
+            self._splashed[0] = True
 
-    def write(self, message, beg="", end=None, report_who=False, who=None):
+    def info(self, message, beg="", end=None, report_who=False, who=None):
         if report_who:
             who = who_is_calling()
         if who:
@@ -108,8 +117,8 @@ class _Logger(object):
         self.logger.warn(message, extra=continued)
         warnings[0] += 1
 
-    def info(self, *args, **kwargs):
-        self.write(*args, **kwargs)
+    def write(self, *args, **kwargs):
+        self.info(*args, **kwargs)
 
     def exception(self, message, caller=None):
         if caller is None:
@@ -153,4 +162,4 @@ def emit(self, record):
     self.flush()
 
 logging.StreamHandler.emit = emit
-ConsoleLogger = Logger("console", filename=None, splash=False)
+ConsoleLogger = Logger(CONSOLE, filename=None, splash=False)

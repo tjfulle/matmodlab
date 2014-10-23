@@ -1,5 +1,6 @@
 #!/usr/bin/env mmd
 from matmodlab import *
+from materials.product import F_MTL_PARAM_DB
 
 class TestPathCycle(TestBase):
     def __init__(self):
@@ -99,9 +100,7 @@ def run_path_func(d=None, v=1):
                     functions=functions, cfmt="222", logger=logger)
 
     # set up the material
-    K = 10.e9
-    G = 3.75e9
-    parameters = {"K":K, "G":G}
+    parameters = {"material": "Test Material", "mat_db": F_MTL_PARAM_DB}
     material = Material("elastic", parameters, logger=logger)
 
     # set up and run the model

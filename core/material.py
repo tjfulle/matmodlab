@@ -10,13 +10,14 @@ import utils.xpyclbr as xpyclbr
 import utils.mmlabpack as mmlabpack
 from core.configurer import cfgparse
 from utils.fortran.product import FIO
+from utils.mtldb import read_params_from_db
 from utils.misc import load_file, remove, who_is_calling
 from utils.data_containers import Parameters
 from core.logger import Logger
-from materials.product import ABA_MATS, USER_MAT
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 from utils.constants import DEFAULT_TEMP, SET_AT_RUNTIME, ENGW
 from core.product import MAT_LIB_DIRS, PKG_D, SUPPRESS_USER_ENV
+from materials.product import ABA_MATS, USER_MAT, F_MTL_PARAM_DB
 np.set_printoptions(precision=2)
 
 
@@ -128,9 +129,13 @@ class MaterialModel(object):
             idx = self.parameter_name_map(key)
             if idx is None:
                 errors += 1
-                logger("console").error("{0}: unrecognized parameter "
+                Logger("console").error("{0}: unrecognized parameter "
                                         "for model {1}".format(key, self.name))
-            params[idx] = value
+            try:
+                params[idx] = float(value)
+            except ValueError:
+                errors += 1
+                Logger("console").error("parameter {0} must be a float".format(key))
 
         if errors:
             raise MatModLabError("stopping due to previous errors")
@@ -649,19 +654,24 @@ def Material(model, parameters, logger=None, initial_temp=None,
     """
     if parameters is None:
         raise MatModLabError("{0}: required parameters not given".format(model))
-
     logger = logger or Logger("console")
 
     # determine which model
     all_mats = find_materials()
-    mat_name = "_".join(model.split()).lower()
-    mat_info = all_mats.get(mat_name)
+    mat_model = "_".join(model.split()).lower()
+    mat_info = all_mats.get(mat_model)
     if mat_info is None:
         raise MatModelNotFoundError(model)
 
+    # determine if
+    if "material" in parameters:
+        mat_name = parameters.pop("material")
+        mat_db = parameters.pop("mat_db", F_MTL_PARAM_DB)
+        parameters.update(read_params_from_db(mat_name, mat_model, mat_db))
+
     errors = 0
     source_files = source_files or []
-    if mat_name in ABA_MATS + USER_MAT:
+    if mat_model in ABA_MATS + USER_MAT:
         if not source_files:
             raise MatModLabError("{0}: requires source_files".format(model))
         if source_directory is not None:
@@ -722,8 +732,8 @@ def Material(model, parameters, logger=None, initial_temp=None,
             model, mimic.name))
 
         # Get the new material model
-        mat_name = "_".join(model.split()).lower()
-        mat_info = all_mats.get(mat_name)
+        mat_model = "_".join(model.split()).lower()
+        mat_info = all_mats.get(mat_model)
         if mat_info is None:
             raise MatModelNotFoundError(model)
 

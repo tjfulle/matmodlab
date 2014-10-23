@@ -3,6 +3,9 @@ from utils.fortran.product import DGPADM_F, FIO
 from core.product import MAT_D
 D = os.path.join(MAT_D, "src")
 
+F_MTL_PARAM_DB = os.path.join(MAT_D, "db/material_properties.db")
+assert os.path.isfile(F_MTL_PARAM_DB)
+
 # Auxiliary files
 ABA_UANISOHYPER_JAC_F90 = os.path.join(D, "uanisohyper_inv_jac.f90")
 ABA_UHYPER_JAC_F90 = os.path.join(D, "uhyper_jac.f90")

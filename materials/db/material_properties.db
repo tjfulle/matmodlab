@@ -234,4 +234,28 @@
       </Model>
     </MaterialModels>
   </Material>
+  <Material name="Test Material">
+    <MaterialProperties>
+      <Property name="BULK_MODULUS"
+		desc="bulk modulus"
+		units="PRESSURE_UNITS"
+		value="10.0E+09"/>
+      <Property name="SHEAR_MODULUS"
+		desc="shear modulus"
+		units="PRESSURE_UNITS"
+		value="3.75E+09"/>
+      <Property name="SHEAR_STRENGTH"
+		desc="shear strength"
+		units="PRESSURE_UNITS"
+		value="241E+06"/>
+    </MaterialProperties>
+    <MaterialModels>
+      <Model name="elastic">
+	<Parameters K="BULK_MODULUS" G="SHEAR_MODULUS"/>
+      </Model>
+      <Model name="plastic">
+	<Parameters K="BULK_MODULUS" G="SHEAR_MODULUS" Y="SHEAR_STRENGTH"/>
+      </Model>
+    </MaterialModels>
+  </Material>
 </Materials>

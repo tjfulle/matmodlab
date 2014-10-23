@@ -2,14 +2,11 @@ import os
 import sys
 import xml.dom.minidom as xdom
 
-from materials.info import F_MTL_PARAM_DB
+from materials.product import F_MTL_PARAM_DB
+from core.logger import ConsoleLogger as logger
 
 
-def log_error(m):
-    sys.stderr.write("*** error: {0}\n".format(m))
-
-
-def read_all_material_params_from_db(mdlname, dbfile=None):
+def read_all_material_params_from_db(mod_name, dbfile=None):
     materials = {}
     if dbfile is None:
         dbfile = F_MTL_PARAM_DB
@@ -17,19 +14,19 @@ def read_all_material_params_from_db(mdlname, dbfile=None):
 
     # check if material in database
     for material in doc.getElementsByTagName("Material"):
-        mtlname = material.getAttribute("name")
-        params = read_material_params_from_db(mtlname, mdlname, dbfile, error=0)
+        mat_name = material.getAttribute("name")
+        params = read_material_params_from_db(mat_name, mod_name, dbfile, error=0)
         if params is not None:
-            materials[mtlname] = params
+            materials[mat_name] = params
     return materials
 
 
-def read_material_params_from_db(matname, mdlname, dbfile, error=1):
+def read_params_from_db(mat_name, mod_name, dbfile, error=1):
     """Read the material parameters from the specified database file
 
     """
     if not os.path.isfile(dbfile):
-        log_error("{0}: material db file not found".format(dbfile))
+        logger.raise_error("{0}: material db file not found".format(dbfile))
         return
 
     doc = xdom.parse(dbfile)
@@ -38,12 +35,13 @@ def read_material_params_from_db(matname, mdlname, dbfile, error=1):
     defined = []
     for material in doc.getElementsByTagName("Material"):
         defined.append(material.getAttribute("name"))
-        if defined[-1] == matname:
-            matname = defined[-1]
+        if defined[-1] == mat_name:
+            mat_name = defined[-1]
             break
     else:
-        log_error("{0}: material not defined in database, defined "
-                  "materials are:\n  {1}".format(matname, ", ".join(defined)))
+        args = (mat_name, ", ".join(defined))
+        logger.raise_error("{0}: material not defined in database, defined "
+                           "materials are:\n  {1}".format(*args))
         return
 
     # check if material defines parameters for requested model
@@ -53,14 +51,14 @@ def read_material_params_from_db(matname, mdlname, dbfile, error=1):
         missing_tag(tag)
         return
     for model in el[0].getElementsByTagName("Model"):
-        if mdlname in [model.getAttribute(s) for s in ("name", "short_name")]:
-            mdlname = model.getAttribute("name")
+        if mod_name in [model.getAttribute(s) for s in ("name", "short_name")]:
+            mod_name = model.getAttribute("name")
             # model now is the correct Model element
             break
     else:
         if error:
-            log_error("material {0} does not define parameters "
-                      "for model {1}".format(matname, mdlname))
+            logger.raise_error("material {0} does not define parameters "
+                               "for model {1}".format(mat_name, mod_name))
         return
 
     # get the material properties
@@ -94,4 +92,5 @@ def read_material_params_from_db(matname, mdlname, dbfile, error=1):
 
 
 def missing_tag(tag, filepath):
-    log_error("{0}: expected {0} tag".format(tag, os.path.basename(filepath)))
+    args = (tag, os.path.basename(filepath))
+    logger.raise_error("{0}: expected {0} tag".format(*args))
