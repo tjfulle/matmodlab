@@ -272,7 +272,7 @@ class Plot2D(HasTraits):
                     entry = "({0}) {1}{2}".format(fnam, yname, variables)
                 else:
                     entry = "{0} {1}".format(yname, variables)
-                color = get_color()
+                color = get_color(rand=True)
                 ls = LS[(d + i) % len(LS)]
                 self.create_plot(x, y, color, ls, entry)
                 XY_DATA.append(Namespace(key=fnam, xname=xname, x=x,
@@ -299,7 +299,7 @@ class Plot2D(HasTraits):
                         # legend entry
                         entry = "({0}) {1}".format(fnam, head[yo_idx])
                         _i = d + len(self.plot_data) + 3
-                        color = get_color()
+                        color = get_color(rand=True)
                         ls = LS[(d + ii) % len(LS)]
                         self.create_plot(xo, yo, color, ls, entry)
                         XY_DATA.append(Namespace(key=fnam, xname=xname, x=xo,
