@@ -1,5 +1,6 @@
 import numpy as np
 from utils.errors import MatModLabError
+from core.logger import logmes, logwrn, bombed
 
 visco = None
 
@@ -66,7 +67,7 @@ class Viscoelastic(object):
             self.params[1] = trs_model.wlf_coeffs[1] # C2
             self.params[2] = trs_model.temp_ref # REF TEMP
 
-        comm = (logger.write, logger.warn, logger.raise_error)
+        comm = (logmes, logwrn, bombed, (self.logger.logger_id,))
         visco.propcheck(self.params, *comm)
 
         return keys, idata
@@ -84,12 +85,12 @@ class Viscoelastic(object):
         return self.Goo
 
     def initialize(self, logger, X):
-        comm = (logger.write, logger.warn, logger.raise_error)
+        comm = (logmes, logwrn, bombed, (self.logger.logger_id,))
         visco.viscoini(self.params, X, *comm)
         return X
 
     def update_state(self, logger, time, dtime, temp, dtemp, statev, F, sig):
-        comm = (logger.write, logger.warn, logger.raise_error)
+        comm = (logmes, logwrn, bombed, (self.logger.logger_id,))
         cfac = np.zeros(2)
         sig, cfac = visco.viscorelax(dtime, time, temp, dtemp, self.params,
                                      F.reshape(3,3), statev, sig, *comm)

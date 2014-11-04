@@ -3,6 +3,7 @@ from core.product import MAT_D
 from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
 from utils.errors import ModelNotImportedError
+from core.logger import logmes, logwrn, bombed
 
 mat = None
 
@@ -26,8 +27,9 @@ class UserMat(AbaqusMaterial):
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc):
         """update the material state"""
-        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
+        lid = self.logger.logger_id
+        extra = (len(params), (lid,), (lid,), (lid,))
         mat.user_mat(stress, statev, ddsdde,
             stran, dstran, time, dtime, temp, dtemp,
-            nxtra, params, dfgrd0, dfgrd1, *comm)
+            nxtra, params, dfgrd0, dfgrd1, logmes, logwrn, bombed, *extra)
         return stress, statev, ddsdde

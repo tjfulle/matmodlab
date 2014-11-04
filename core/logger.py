@@ -118,6 +118,8 @@ class _Logger(object):
         warnings[0] += 1
 
     def write(self, *args, **kwargs):
+        if not args:
+            args = ("",)
         self.info(*args, **kwargs)
 
     def exception(self, message, caller=None):
@@ -163,3 +165,29 @@ def emit(self, record):
 
 logging.StreamHandler.emit = emit
 ConsoleLogger = Logger(CONSOLE, filename=None, splash=False)
+
+# THe following functions are for proper Fortran callbacks to the logger.
+# Fortran callbacks don't work for class member functions, so we set up
+# wrappers to the logger functions
+def _getlogger(logger_id=None):
+    l = loggers()
+    if logger_id is not None and logger_id in l:
+        return Logger(logger_id)
+    if len(l) == 1:
+        # only the console logger is set up
+        return Logger(l[0])
+    return Logger([x for x in l if x != "console"][0])
+
+def logmes(message, logger_id=None):
+    l = _getlogger(logger_id)
+    l.info(message)
+def logwrn(message, logger_id=None):
+    l = _getlogger(logger_id)
+    l.warn(message)
+def faterr(message, logger_id=None, err=[0]):
+    l = _getlogger(logger_id)
+    l.error(message)
+    err[0] += 1
+def bombed(message, logger_id=None):
+    l = _getlogger(logger_id)
+    l.raise_error(message)

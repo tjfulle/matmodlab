@@ -1,6 +1,7 @@
 from materials.product import ABA_IO_F90, ABA_UMAT_PYF
 from core.material import AbaqusMaterial
 from utils.constants import SET_AT_RUNTIME
+from core.logger import logmes, logwrn, bombed
 
 mat = None
 
@@ -23,10 +24,12 @@ class UMat(AbaqusMaterial):
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc):
         """update the material state"""
+        lid = self.logger.logger_id
+        extra = (len(ddsddt), len(params), (lid,), (lid,), (lid,))
         mat.umat(stress, statev, ddsdde,
             sse, spd, scd, rpl, ddsddt, drplde, drpldt, stran, dstran,
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
-            dfgrd1, noel, npt, layer, kspt, kstep, kinc, self.logger.write,
-            self.logger.warn, self.logger.raise_error)
+            dfgrd1, noel, npt, layer, kspt, kstep, kinc, logmes, logwrn,
+            bombed, **extra)
         return stress, statev, ddsdde

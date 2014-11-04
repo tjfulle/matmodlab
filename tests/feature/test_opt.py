@@ -27,7 +27,6 @@ class TestCobyla(TestBase):
         err = np.sqrt(np.sum(err ** 2))
         if err < 1.85:
             self.status = self.passed
-
         os.chdir(cwd)
 
 class TestSimplex(TestBase):
@@ -40,6 +39,9 @@ class TestSimplex(TestBase):
         self.make_test_dir()
 
     def run(self):
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
+
         self.status = self.failed_to_run
         xopt = runner("simplex", v=0)
 
@@ -48,6 +50,8 @@ class TestSimplex(TestBase):
         err = np.sqrt(np.sum(err ** 2))
         if err < .002:
             self.status = self.passed
+
+        os.chdir(cwd)
 
 class TestPowell(TestBase):
     def __init__(self):
@@ -59,6 +63,9 @@ class TestPowell(TestBase):
         self.make_test_dir()
 
     def run(self):
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
+
         self.status = self.failed_to_run
         xopt = runner("powell", v=0)
 
@@ -67,6 +74,8 @@ class TestPowell(TestBase):
         err = np.sqrt(np.sum(err ** 2))
         if err < .0002:
             self.status = self.passed
+
+        os.chdir(cwd)
 
 def func(x, *args):
 
@@ -119,6 +128,6 @@ def runner(method, v=1):
     return xopt
 
 if __name__ == "__main__":
-    runner("cobyla")
+    #runner("cobyla")
     runner("simplex")
-    runner("powell")
+    #runner("powell")

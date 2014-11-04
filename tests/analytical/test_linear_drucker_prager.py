@@ -30,6 +30,9 @@ class TestRandomLinearDruckerPrager(TestBase):
         self.make_test_dir()
 
     def run(self):
+        cwd = os.getcwd()
+        os.chdir(self.test_dir)
+
         filename = os.path.join(self.test_dir, self.runid + ".stat")
         logger = Logger(self.runid, filename=filename)
         logger.write("Running {0:d} realizations".format(self.nruns))
@@ -49,6 +52,7 @@ class TestRandomLinearDruckerPrager(TestBase):
             self.status = DIFFED
 
         logger.write("Overall test status: {0:s}".format(RES_MAP[self.status]))
+        os.chdir(cwd)
         return self.status
 
 

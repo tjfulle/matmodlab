@@ -103,11 +103,11 @@ class MaterialPointSimulator(object):
         summary = """
 Simulation Summary
 ---------- -------
+Runid: {0}
 Material search directories:
    {6}
 Material interface file:
    {7}
-Runid: {0}
 Driver: {1}
   Number of legs: {2}
   Total number of steps: {8}

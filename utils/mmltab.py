@@ -134,13 +134,14 @@ def read_mml_evaldb(filepath):
     runid = root.getAttribute("runid")
 
     sources = []
-    parameters = []
-    responses = []
+    parameters = {}
+    responses = {}
     for evaluation in root.getElementsByTagName(U_EVAL):
         n = evaluation.getAttribute(U_EVAL_N)
         d = os.path.join(dirname, evaluation.getAttribute(U_EVAL_D))
-        sources.append(os.path.join(d, "{0}.exo".format(runid)))
-        assert os.path.isfile(sources[-1])
+        source = os.path.realpath(os.path.join(d, "{0}.exo".format(runid)))
+        sources.append(source)
+        assert os.path.isfile(source)
 
         # get parameters
         nparams = evaluation.getElementsByTagName(U_PARAMS)[0]
@@ -148,7 +149,7 @@ def read_mml_evaldb(filepath):
         for (name, value) in nparams.attributes.items():
             enames.append(name)
             evars.append(float(value))
-        parameters.append(zip(enames, evars))
+        parameters[source] = zip(enames, evars)
 
         # get responses
         nresponses = evaluation.getElementsByTagName(U_RESP)
@@ -157,24 +158,27 @@ def read_mml_evaldb(filepath):
             for (name, value) in nresponses[0].attributes.items():
                 rnames.append(name)
                 rvars.append(float(value))
-            responses.append(zip(rnames, rvars))
+            responses[source] = zip(rnames, rvars)
 
     return sources, parameters, responses
 
-
 def read_mml_evaldb_nd(filepath):
     sources, parameters, responses = read_mml_evaldb(filepath)
-    head = [x[0] for x in parameters[0]]
-    head.extend([x[0] for x in responses[0]])
+    head = [x[0] for x in parameters[sources[0]]]
+    resp = responses.get(sources[0])
+    if resp:
+        head.extend([x[0] for x in resp])
     data = []
-    for (i, p) in enumerate(parameters):
-        r = responses[i]
+    for source in sources:
+        r = responses.get(source)
+        if r is None:
+            continue
+        p = parameters[source]
         line = [x[1] for x in p]
         line.extend([x[1] for x in r])
         data.append(line)
     data = np.array(data)
-    return head, data, len(responses[0])
-
+    return head, data, len(responses[sources[0]])
 
 def correlations(filepath):
     title = "CORRELATIONS AMONG INPUT AND OUTPUT VARIABLES CREATED BY MMD"

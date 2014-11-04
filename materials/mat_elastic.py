@@ -1,6 +1,8 @@
 import os
+import sys
 from core.product import MAT_D
 from core.material import MaterialModel
+from core.logger import logmes, logwrn, bombed
 from utils.errors import ModelNotImportedError
 from materials.completion import EC_BULK, EC_SHEAR
 
@@ -9,6 +11,7 @@ mat = None
 d = os.path.join(MAT_D, "src")
 f1 = os.path.join(d, "elastic.f90")
 f2 = os.path.join(d, "elastic.pyf")
+
 
 class Elastic(MaterialModel):
     name = "elastic"
@@ -26,7 +29,8 @@ class Elastic(MaterialModel):
             import lib.elastic as mat
         except ImportError:
             raise ModelNotImportedError("elastic")
-        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
+        comm = (logmes, logwrn, bombed, (self.logger.logger_id,),
+                (self.logger.logger_id,), (self.logger.logger_id,))
         mat.elastic_check(self.params, *comm)
 
     def mimicking(self, mat_mimic):
@@ -66,6 +70,8 @@ class Elastic(MaterialModel):
             Updated extra variables
 
         """
-        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
-        mat.elastic_update_state(dtime, self.params, d, stress, *comm)
+        lid = self.logger.logger_id
+        extra = ((lid,), (lid,), (lid,))
+        mat.elastic_update_state(dtime, self.params, d, stress,
+                                 logmes, logwrn, bombed, *extra)
         return stress, xtra, self.constant_jacobian

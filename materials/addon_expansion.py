@@ -1,5 +1,6 @@
 import numpy as np
 from utils.errors import MatModLabError
+from core.logger import logmes, logwrn, bombed
 
 xpansion = None
 
@@ -23,7 +24,7 @@ class Expansion(object):
                                  "lib/expansion.so not imported")
 
     def update_state(self, logger, temp, dtemp, F, kappa):
-        comm = (logger.write, logger.warn, logger.raise_error)
+        comm = (logmes, logwrn, bombed, (self.logger.logger_id,))
         Fm, Em = xpansion.mechdef(self.data, temp, dtemp, kappa, F, *comm)
         return Fm, Em
 

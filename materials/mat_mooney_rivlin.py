@@ -3,6 +3,7 @@ import numpy as np
 from core.product import MAT_D
 import utils.mmlabpack as mmlabpack
 from core.material import MaterialModel
+from core.logger import logmes, logwrn, bombed
 from utils.errors import ModelNotImportedError
 from materials.completion import EC_C10, EC_C01, EC_NU, TEMP0
 
@@ -34,14 +35,6 @@ class MooneyRivlin(MaterialModel):
             raise ModelNotImportedError("mooney_rivlin")
         return
 
-    #    def set_constant_jacobian(self):
-        #     Vij = mmlabpack.asarray(np.eye(3), 6)
-        #     T0 = 298. if not self.params["T0"] else self.params["T0"]
-        #     Rij = np.eye(3)
-        # comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
-        #     _, ddsdde = mat.mnrv_mat(self.params, Rij, Vij, *comm)
-        #     return ddsdde
-
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):
         """ update the material state based on current state and stretch """
@@ -50,7 +43,9 @@ class MooneyRivlin(MaterialModel):
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
         Rij = np.reshape(np.dot(mmlabpack.inv(Vij), Fij), (9,))
         Vij = mmlabpack.asarray(Vij, 6)
-        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
-        sig, ddsdde = mat.mnrv_mat(self.params, Rij, Vij, *comm)
+        lid = self.logger.logger_id
+        extra = (len(self.params), (lid,), (lid,), (lid,))
+        sig, ddsdde = mat.mnrv_mat(self.params, Rij, Vij,
+                                   logmes, logwrn, bombed, *extra)
 
         return np.reshape(sig, (6,)), np.reshape(xtra, (self.nxtra,)), ddsdde

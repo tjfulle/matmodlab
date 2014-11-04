@@ -3,6 +3,7 @@ from core.product import MAT_D
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
 from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B
+from core.logger import logmes, logwrn, bombed
 
 d = os.path.join(MAT_D, "src")
 f1 = os.path.join(d, "plastic.f90")
@@ -25,8 +26,9 @@ class Plastic(MaterialModel):
             import lib.plastic as mat
         except ImportError:
             raise ModelNotImportedError("plastic")
-        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
-        mat.plastic_check(self.params, *comm)
+        lid = self.logger.logger_id
+        extra = ((lid,), (lid,), (lid,))
+        mat.plastic_check(self.params, logmes, logwrn, bombed, *extra)
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, xtra, **kwargs):
@@ -55,6 +57,8 @@ class Plastic(MaterialModel):
             Updated extra variables
 
         """
-        comm = (self.logger.write, self.logger.warn, self.logger.raise_error)
-        mat.plastic_update_state(dtime, self.params, d, stress, *comm)
+        lid = self.logger.logger_id
+        extra = ((lid,), (lid,), (lid,))
+        mat.plastic_update_state(dtime, self.params, d, stress,
+                                 logmes, logwrn, bombed, *extra)
         return stress, xtra, None

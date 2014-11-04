@@ -3,8 +3,11 @@ import sys
 import math
 import random
 import argparse
+import warnings
 import linecache
 import numpy as np
+
+warnings.simplefilter("ignore")
 
 # chaco and traits imports are in the enthought directory in EPD/Canopy
 try:
@@ -39,10 +42,10 @@ LDICT = {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan,
 GDICT = {"__builtins__": None}
 EPSILON = np.finfo(np.float).eps
 
-LS = ['solid', 'dot dash', 'dash', 'dot', 'long dash']
+LS = ['solid', 'dot dash', 'dash', 'long dash'] # , 'dot']
 F_EVALDB = "mml-evaldb.xml"
-XY_DATA = None
 SCALE = True
+RAND_COLOR = True
 
 
 class Namespace(object):
@@ -56,6 +59,23 @@ class Namespace(object):
     def items(self):
         return self.__dict__.items()
 
+class Logger:
+    errors = 0
+    def __init__(self):
+        self.ch = sys.stdout
+
+    def write(self, message):
+        self.ch.write(message + "\n")
+
+    def info(message):
+        self.write("plot2d: {0}".format(message))
+
+    def error(message, stop=0):
+        self.write("*** plot2d: error: {0}".format(message))
+        if stop:
+            sys.exit(1)
+        self.errors += 1
+logger = Logger()
 
 def get_color(i=0, rand=False, _i=[0], reset=False):
     c = ["Blue", "Red", "Purple", "Green", "Orange", "HotPink", "Cyan",
@@ -76,31 +96,102 @@ def get_color(i=0, rand=False, _i=[0], reset=False):
 
 
 def main(argv=None):
+    global RAND_COLOR
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
+    parser.add_argument("--no-rand", default=False, action="store_true")
     parser.add_argument("sources", nargs="+")
     args = parser.parse_args(argv)
+    RAND_COLOR = not args.no_rand
     sources = []
     for source in args.sources:
         if source.rstrip(os.path.sep).endswith(".eval"):
             source = os.path.join(source, F_EVALDB)
         if not os.path.isfile(source):
-            logerr("{0}: no such file".format(source))
+            logger.error("{0}: no such file".format(source))
             continue
         sources.append(os.path.realpath(source))
-    if logerr():
-        stop("*** error: stopping due to previous errors")
+    if logger.errors:
+        logger.error("stopping due to previous errors", stop=1)
 
     create_model_plot(sources)
+
+class _SingleFileData:
+    def __init__(self, filepath, legend_info=None):
+        self.name = os.path.splitext(os.path.basename(filepath))[0]
+        self.source = filepath
+        self.legend_info = legend_info
+        names, self.data = loadcontents(filepath)
+
+        # data contains columns of data
+        self.pv = dict([(s.upper(), i) for (i, s) in enumerate(names)])
+
+    def __call__(self, name, time=None):
+        j = self.pv.get(name.upper())
+        if j is None:
+            return
+        data = self.data[:, j]
+        if time is None:
+            return data
+        i = np.argmin(np.abs(time - self.data[:, self.pv["TIME"]]))
+        return data[i]
+
+    def legend(self, name):
+        if name.upper() not in self.pv:
+            return
+        legend = name.upper()
+        if self.legend_info:
+            legend += " ({0})".format(self.legend_info)
+        return legend
+
+    @property
+    def plotable_vars(self):
+        return sorted(self.pv.keys(), key=lambda k: self.pv[k])
+
+class FileData:
+    def __init__(self, files, legend_info=None):
+        self.pv = []
+        self.data = []
+        for f in files:
+            li = None if legend_info is None else legend_info[f]
+            fd = _SingleFileData(f, legend_info=li)
+            self.data.append(fd)
+            self.pv.extend([x for x in fd.plotable_vars if x not in self.pv])
+
+    def __iter__(self):
+        return self.data.__iter__()
+
+    def __getitem__(self, i):
+        return self.data[i]
+
+    def __len__(self):
+        return self.data.__len__()
+
+    def __nonzero__(self):
+        return bool(self.data)
+
+    def add(self, filename):
+        self.data.append(_SingleFileData(filename))
+
+    def remove(self, filename):
+        for (i, d) in enumerate(self.data):
+            if d.source == filename:
+                break
+        else:
+            i = None
+        if i is not None:
+            self.data.pop(i)
+
+    @property
+    def plotable_vars(self):
+        return self.pv
 
 
 class Plot2D(HasTraits):
     container = Instance(Plot)
-    plot_info = Dict(Int, Dict(Str, List(Str)))
-    plot_data = List(Array)
-    overlay_headers = Dict(Str, List(Str))
-    overlay_plot_data = Dict(Str, Array)
+    file_data = Instance(FileData)
+    overlay_file_data = Instance(FileData)
     variables = List(Str)
     plot_indices = List(Int)
     x_idx = Int
@@ -133,21 +224,23 @@ class Plot2D(HasTraits):
         self.x_idx = 0
         self.y_idx = 0
         self._refresh = 1
-        self.runs_shown = [True] * len(self.variables)
+        self.plotable_vars = self.file_data.plotable_vars
+        self.runs_shown = [True] * len(self.plotable_vars)
         self.x_scale, self.y_scale = 1., 1.
         pass
 
     @on_trait_change('Time')
     def change_data_markers(self):
-        ti = self.find_time_index()
-        for d in range(len(self.plot_data)):
+        xname = self.plotable_vars[self.x_idx]
+        for (d, pd) in enumerate(self.file_data):
             if d not in self.time_data_labels:
                 continue
 
-            for i, y_idx in enumerate(self.plot_indices):
+            for (i, y_idx) in enumerate(self.plot_indices):
+                yname = self.plotable_vars[y_idx]
                 self.time_data_labels[d][i].data_point = (
-                    self.plot_data[d][ti, self.x_idx] * self.x_scale,
-                    self.plot_data[d][ti, y_idx] * self.y_scale)
+                    pd(xname, self.Time) * self.x_scale,
+                    pd(yname, self.Time) * self.y_scale)
 
         self.container.invalidate_and_redraw()
         return
@@ -157,11 +250,6 @@ class Plot2D(HasTraits):
                          bgcolor="white", use_backbuffer=True,
             border_visible=True)
         return container
-
-    def find_time_index(self):
-        list_of_diffs = [abs(x - self.Time) for x in self.plot_data[0][:, 0]]
-        tdx = list_of_diffs.index(min(list_of_diffs))
-        return tdx
 
     def change_axis(self, index):
         """Change the x-axis of the current plot
@@ -182,8 +270,8 @@ class Plot2D(HasTraits):
 
     def create_data_label(self, xp, yp, d, di):
         nform = "[%(x).5g, %(y).5g]"
-        if self.nfiles() - 1 or self.overlay_plot_data:
-            lform = "({0}) {1}".format(self.get_file_name(d), nform)
+        if self.nfiles - 1 or self.overlay_file_data:
+            lform = "({0}) {1}".format(self.file_data[d].name, nform)
         else:
             lform = nform
         label = DataLabel(component=self.container, data_point=(xp, yp),
@@ -199,116 +287,101 @@ class Plot2D(HasTraits):
         self.container.overlays.append(label)
         return
 
-    def create_plot(self, x, y, c, ls, plot_name):
+    def create_plot(self, x, y, c, ls, plot_name, lw=2.0):
         self.container.data.set_data("x " + plot_name, x)
         self.container.data.set_data("y " + plot_name, y)
         self.container.plot(
             ("x " + plot_name, "y " + plot_name),
-            line_width=2.0, name=plot_name,
+            line_width=lw, name=plot_name,
             color=c, bgcolor="white", border_visible=True, line_style=ls)
         self._refresh = 0
         return
 
     def change_plot(self, indices, x_scale=None, y_scale=None):
-        global XY_DATA
         self.plot_indices = indices
         self.container = self.create_container()
-        self.high_time = float(max(self.plot_data[0][:, 0]))
-        self.low_time = float(min(self.plot_data[0][:, 0]))
+        self.high_time = float(max(self.file_data[0]("TIME")))
+        self.low_time = float(min(self.file_data[0]("TIME")))
         self.container.data = ArrayPlotData()
         self.time_data_labels = {}
         if len(indices) == 0:
             return
         self._refresh = 1
-        XY_DATA = []
         x_scale, y_scale = self.get_axis_scales(x_scale, y_scale)
 
         # loop through plot data and plot it
         overlays_plotted = False
         fnams = []
-        for d in range(len(self.plot_data)):
+        for (d, pd) in enumerate(self.file_data):
 
-            if not self.runs_shown[d]:
-                continue
-
-            # The legend entry for each file is one of the following forms:
-            #   1) [file basename] VAR
-            #   2) [file basename:] VAR variables
-            # depending on if variabes were perturbed for this run.
-            variables = self.variables[d]
-            if len(variables) > 30:
-                variables = ", ".join(variables.split(",")[:-1])
-            if variables:
-                variables = ": {0}".format(variables)
+            xname = self.plotable_vars[self.x_idx]
+            self.y_idx = indices[0]
 
             self.time_data_labels[d] = []
-            ti = self.find_time_index()
-            mheader = self._mheader()
-            xname = mheader[self.x_idx]
-            self.y_idx = getidx(mheader, mheader[indices[0]])
 
             # indices is an integer list containing the columns of the data to
             # be plotted. The indices are wrt to the FIRST file in parsed, not
             # necessarily the same for every file. Here, we loop through the
             # indices, determine the name from the first file's header and
             # find the x and y index in the file of interest
-            fnam, header = self.get_info(d)
+            fnam = pd.name
+            header = pd.plotable_vars
             if fnam in fnams:
                 fnam += "-{0}".format(len(fnams))
             fnams.append(fnam)
             get_color(reset=1)
             for i, idx in enumerate(indices):
-                yname = mheader[idx]
 
-                # get the indices for this file
-                xp_idx = getidx(header, xname)
-                yp_idx = getidx(header, yname)
-                if xp_idx is None or yp_idx is None:
+                yname = self.plotable_vars[idx]
+
+                # get the data
+                x = pd(xname)
+                y = pd(yname)
+
+                if x is None or y is None:
                     continue
 
-                x = self.plot_data[d][:, xp_idx] * x_scale
-                y = self.plot_data[d][:, yp_idx] * y_scale
-                if self.nfiles() - 1 or self.overlay_plot_data:
-                    entry = "({0}) {1}{2}".format(fnam, yname, variables)
+                x *= x_scale
+                y *= y_scale
+
+                legend = pd.legend(yname)
+                if self.nfiles - 1 or self.overlay_file_data:
+                    entry = "({0}) {1}".format(fnam, legend)
                 else:
-                    entry = "{0} {1}".format(yname, variables)
-                color = get_color(rand=True)
+                    entry = legend
+
+                color = get_color(rand=RAND_COLOR)
                 ls = LS[(d + i) % len(LS)]
                 self.create_plot(x, y, color, ls, entry)
-                XY_DATA.append(Namespace(key=fnam, xname=xname, x=x,
-                                         yname=yname, y=y, lw=1))
 
                 # create point marker
-                xp = self.plot_data[d][ti, xp_idx] * x_scale
-                yp = self.plot_data[d][ti, yp_idx] * y_scale
+                xp = pd(xname, self.Time) * x_scale
+                yp = pd(yname, self.Time) * y_scale
+                yp_idx = pd.plotable_vars.index(yname)
                 self.create_data_label(xp, yp, d, yp_idx)
 
-                if not overlays_plotted:
+                if not overlays_plotted and self.overlay_file_data:
                     # plot the overlay data
                     overlays_plotted = True
                     ii = i + 1
-                    for fnam, head in self.overlay_headers.items():
+                    for od in self.overlay_file_data:
                         # get the x and y indeces corresponding to what is
                         # being plotted
-                        xo_idx = getidx(head, xname)
-                        yo_idx = getidx(head, yname)
-                        if xo_idx is None or yo_idx is None:
+                        xo = od(xname)
+                        yo = od(yname)
+                        if xo is None or yo is None:
                             continue
-                        xo = self.overlay_plot_data[fnam][:, xo_idx] * x_scale
-                        yo = self.overlay_plot_data[fnam][:, yo_idx] * y_scale
+
                         # legend entry
-                        entry = "({0}) {1}".format(fnam, head[yo_idx])
-                        _i = d + len(self.plot_data) + 3
-                        color = get_color(rand=True)
-                        ls = LS[(d + ii) % len(LS)]
-                        self.create_plot(xo, yo, color, ls, entry)
-                        XY_DATA.append(Namespace(key=fnam, xname=xname, x=xo,
-                                                 yname=yname, y=yo, lw=3))
+                        entry = "({0}) {1}".format(od.name, yname)
+                        color = get_color(rand=RAND_COLOR)
+                        ls = "dot" #LS[(d + ii) % len(LS)]
+                        self.create_plot(xo, yo, color, ls, entry, lw=1.0)
                         ii += 1
                         continue
 
         add_default_grids(self.container)
-        add_default_axes(self.container, htitle=mheader[self.x_idx])
+        add_default_axes(self.container, htitle=self.plotable_vars[self.x_idx])
 
         self.container.index_range.tight_bounds = False
         self.container.index_range.refresh()
@@ -328,56 +401,27 @@ class Plot2D(HasTraits):
         self.container.invalidate_and_redraw()
         return
 
-    def _mheader(self):
-        """Returns the "master" header - the header of the first file
-
-        Returns
-        -------
-        header : list
-        """
-        return self.get_info(0)[1]
-
     def min_x(self):
-        return np.amin(self.plot_data[0][:, self.x_idx])
+        return np.amin(self.file_data[0](self.plotable_vars[self.x_idx]))
 
     def max_x(self):
-        return np.amax(self.plot_data[0][:, self.x_idx])
+        return np.amax(self.file_data[0](self.plotable_vars[self.x_idx]))
 
     def abs_max_x(self):
-        return np.amax(np.abs(self.plot_data[0][:, self.x_idx]))
+        return np.amax(np.abs(self.file_data[0](self.plotable_vars[self.x_idx])))
 
     def min_y(self):
-        return np.amin(self.plot_data[0][:, self.y_idx])
+        return np.amin(self.file_data[0](self.plotable_vars[self.y_idx]))
 
     def max_y(self):
-        return np.amax(self.plot_data[0][:, self.y_idx])
+        return np.amax(self.file_data[0](self.plotable_vars[self.y_idx]))
 
     def abs_max_y(self):
-        return np.amax(np.abs(self.plot_data[0][:, self.y_idx]))
+        return np.amax(np.abs(self.file_data[0](self.plotable_vars[self.y_idx])))
 
-    def get_info(self, i):
-        """Return the info for index i
-
-        Parameters
-        ----------
-        i : int
-            The location in self.plot_info
-
-        Returns
-        -------
-        fnam : str
-            the file name
-        header : list
-            the file header
-
-        """
-        return self.plot_info[i].items()[0]
-
-    def get_file_name(self, i):
-        return self.get_info(i)[0]
-
+    @property
     def nfiles(self):
-        return len(self.plot_info)
+        return len(self.file_data)
 
     def get_axis_scales(self, x_scale, y_scale):
         """Get/Set the scales for the x and y axis
@@ -521,7 +565,6 @@ class MultiSelect(HasPrivateTraits):
 class ModelPlot(HasStrictTraits):
 
     Plot_Data = Instance(Plot2D)
-    plot_info = Dict(Int, Dict(Str, List(Str)))
     Multi_Select = Instance(MultiSelect)
     Change_Axis = Instance(ChangeAxis)
     Reset_Zoom = Button('Reset Zoom')
@@ -532,39 +575,24 @@ class ModelPlot(HasStrictTraits):
     X_Scale = String("1.0")
     Y_Scale = String("1.0")
     Single_Select_Overlay_Files = Instance(SingleSelectOverlayFiles)
-    filepaths = List(String)
-    file_variables = List(String)
+    file_data = Instance(FileData)
 
     def __init__(self, **traits):
         """Put together information to be sent to Plot2D information
         needed:
 
-        plot_info : dict
-           {0: {file_0: header_0}}
-           {1: {file_1: header_1}}
-           ...
-           {n: {file_n: header_n}}
         variables : list
            list of variables that changed from one simulation to another
         x_idx : int
            column containing x variable to be plotted
 
         """
-
         HasStrictTraits.__init__(self, **traits)
-        fileinfo = get_sorted_fileinfo(self.filepaths)
-        data = []
-        for idx, (fnam, fhead, fdata) in enumerate(fileinfo):
-            if idx == 0: mheader = fhead
-            self.plot_info[idx] = {fnam: fhead}
-            data.append(fdata)
-
-        self.Plot_Data = Plot2D(
-            plot_data=data, variables=self.file_variables,
-            x_idx=0, plot_info=self.plot_info)
-        self.Multi_Select = MultiSelect(choices=mheader, plot=self.Plot_Data)
+        self.Plot_Data = Plot2D(file_data=self.file_data, x_idx=0)
+        self.Multi_Select = MultiSelect(choices=self.file_data.plotable_vars,
+                                        plot=self.Plot_Data)
         self.Change_Axis = ChangeAxis(
-            Plot_Data=self.Plot_Data, headers=mheader)
+            Plot_Data=self.Plot_Data, headers=self.file_data.plotable_vars)
         self.Single_Select_Overlay_Files = SingleSelectOverlayFiles(choices=[])
         pass
 
@@ -656,25 +684,26 @@ class ModelPlot(HasStrictTraits):
         self.reload_data()
 
     def reload_data(self):
-        fileinfo = get_sorted_fileinfo(self.filepaths)
-        data = []
-        for idx, (fnam, fhead, fdata) in enumerate(fileinfo):
-            if idx == 0: mheader = fhead
-            self.plot_info[idx] = {fnam: fhead}
-            data.append(fdata)
-        self.Plot_Data.plot_data = data
-        self.Plot_Data.plot_info = self.plot_info
-        self.Multi_Select.choices = mheader
-        self.Change_Axis.headers = mheader
+        filepaths = [d.source for d in self.Plot_Data.file_data]
+        file_data = FileData(filepaths)
+        self.Plot_Data.file_data = file_data
+        self.Multi_Select.choices = file_data.plotable_vars
+        self.Change_Axis.headers = file_data.plotable_vars
         self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
 
     def _Print_to_PDF_fired(self):
         import matplotlib.pyplot as plt
-        if not XY_DATA:
+        if not self.Plot_Data.plot_indices:
             return
 
+        data = self.Plot_Data.file_data
+        indices = self.Plot_Data.plot_indices
+
+        xname = self.Plot_Data.plotable_vars[self.Plot_Data.x_idx]
+        yname = self.Plot_Data.plotable_vars[self.Plot_Data.y_idx]
+
         # get the maximum of Y for normalization
-        ymax = max(np.amax(np.abs(xyd.y)) for xyd in XY_DATA)
+        ymax = max(np.amax(np.abs(d(yname))) for d in data)
 
         # setup figure
         plt.figure(0)
@@ -682,19 +711,33 @@ class ModelPlot(HasStrictTraits):
         plt.clf()
 
         # plot y value for each plot on window
+        if self.Plot_Data.overlay_file_data:
+            # plot the overlay data
+            for od in self.Plot_Data.overlay_file_data:
+                # get the x and y indeces corresponding to what is
+                # being plotted
+                xo = od(xname)
+                yo = od(yname)
+                if xo is None or yo is None:
+                    continue
+                # legend entry
+                label = od.name + ":" + yname if len(indices) > 1 else yname
+                plt.plot(xo, yo, label=label, lw=3)
+
         ynames = []
-        for xyd in sorted(XY_DATA, key=lambda x: x.lw, reverse=True):
-            label = xyd.key + ":" + xyd.yname if len(XY_DATA) > 1 else xyd.yname
-            ynames.append(xyd.yname)
+        for d in data:
+            label = d.name + ":" + yname if len(indices) > 1 else yname
+            ynames.append(yname)
             if SCALE:
-                plt.plot(xyd.x, xyd.y / ymax, label=label, lw=xyd.lw)
+                plt.plot(d(xname), d(yname) / ymax, label=label, lw=1)
             else:
-                plt.plot(xyd.x, xyd.y, label=label, lw=xyd.lw)
+                plt.plot(d(xname), d(yname), label=label, lw=1)
+
         yname = common_prefix(ynames)
-        plt.xlabel(xyd.xname)
+        plt.xlabel(xname)
         plt.ylabel(yname)
         plt.legend(loc="best")
-        plt.savefig("{0}-vs-{1}.pdf".format(yname, xyd.xname))
+        plt.savefig("{0}-vs-{1}.pdf".format(yname, xname))
 
     def _Close_Overlay_fired(self):
         if self.Single_Select_Overlay_Files.selected:
@@ -702,8 +745,8 @@ class ModelPlot(HasStrictTraits):
                 self.Single_Select_Overlay_Files.selected)
             self.Single_Select_Overlay_Files.choices.remove(
                 self.Single_Select_Overlay_Files.selected)
-            del self.Plot_Data.overlay_plot_data[
-                self.Single_Select_Overlay_Files.selected]
+            self.Plot_Data.overlay_file_data.remove(
+                self.Single_Select_Overlay_Files.selected)
             if not self.Single_Select_Overlay_Files.choices:
                 self.Single_Select_Overlay_Files.selected = ""
             else:
@@ -717,35 +760,19 @@ class ModelPlot(HasStrictTraits):
         dialog.open()
         info = {}
         if dialog.return_code == pyOK:
-            for eachfile in dialog.paths:
-                try:
-                    fhead, fdata = loadcontents(eachfile)
-                except:
-                    logmes("{0}: Error reading overlay data".format(eachfile))
-                    continue
-                fnam = os.path.basename(eachfile)
-                self.Plot_Data.overlay_plot_data[fnam] = fdata
-                self.Plot_Data.overlay_headers[fnam] = fhead
-                self.Single_Select_Overlay_Files.choices.append(fnam)
-                continue
+            if not self.Plot_Data.overlay_file_data:
+                self.Plot_Data.overlay_file_data = FileData(dialog.paths)
+                for d in self.Plot_Data.overlay_file_data:
+                    self.Single_Select_Overlay_Files.choices.append(d.name)
+            else:
+                for eachfile in dialog.paths:
+                    self.Plot_Data.overlay_file_data.add(eachfile)
+                    name = self.Plot_Data.overlay_file_data[-1].name
+                    self.Single_Select_Overlay_Files.choices.append(name)
             self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
         return
 
-
-def create_view(window_name):
-    view = View(HSplit(
-        VGroup(
-            Item('Multi_Select', show_label=False, width=224,
-                        height=H-200, springy=True, resizable=True),
-            Item('Change_Axis', show_label=False), ),
-        Item('Plot_Data', show_label=False, width=W-300, height=H-100,
-                    springy=True, resizable=True)),
-                       style='custom', width=W, height=H,
-                       resizable=True, title=window_name)
-    return view
-
-
-def create_model_plot(sources, handler=None, metadata=None):
+def create_model_plot(sources, handler=None):
     """Create the plot window
 
     Parameters
@@ -758,32 +785,30 @@ def create_model_plot(sources, handler=None, metadata=None):
     def genrunid(path):
         return os.path.splitext(os.path.basename(path))[0]
 
-    if metadata is not None:
-        stop("*** error: call create_view directly")
-        metadata.plot.configure_traits(view=view)
-        return
-
     if [source for source in sources if F_EVALDB in os.path.basename(source)]:
         if len(sources) > 1:
-            stop("*** error: only one source allowed with {0}".format(F_EVALDB))
+            logger.error("only one source allowed with {0}".format(F_EVALDB),
+                         stop=1)
         source = sources[0]
         if not os.path.isfile(source):
-            stop("*** error: {0}: no such file".format(source))
+            logger.error("{0}: no such file".format(source), stop=1)
         filepaths, variables = readtabular(source)
+        file_data = FileData(filepaths, legend_info=variables)
         runid = genrunid(filepaths[0])
 
     else:
         filepaths = []
         for source in sources:
             if not os.path.isfile(source):
-                logerr("{0}: {1}: no such file".format(iam, source))
+                logger.error("{0}: {1}: no such file".format(iam, source))
                 continue
             filepaths.append(source)
-        if logerr():
-            stop("***error: stopping due to previous errors")
+        if logger.errors:
+            logger.error("stopping due to previous errors", stop=1)
         variables = [""] * len(filepaths)
         runid = ("Material Model Laboratory" if len(filepaths) > 1
                  else genrunid(filepaths[0]))
+        file_data = FileData(filepaths)
 
     view = View(HSplit(
         VGroup(
@@ -812,33 +837,9 @@ def create_model_plot(sources, handler=None, metadata=None):
         style='custom', width=W, height=H,
         resizable=True, title=runid)
 
-    main_window = ModelPlot(filepaths=filepaths, file_variables=variables)
+    main_window = ModelPlot(file_data=file_data)
     main_window.configure_traits(view=view, handler=handler)
     return main_window
-
-
-def getidx(a, name, comments="#"):
-    """Return the index for name in a"""
-    try:
-        return [x.lower() for x in a if x != comments].index(name.lower())
-    except ValueError:
-        return None
-
-
-def stop(message):
-    raise SystemExit(message)
-
-
-def logmes(message):
-    sys.stdout.write("plot2d: {0}\n".format(message))
-
-
-def logerr(message=None, errors=[0]):
-    if message is None:
-        return errors[0]
-    sys.stderr.write("*** {0}: error: {1}\n".format(EXE, message))
-    errors[0] += 1
-
 
 def readtabular(source):
     """Read in the mml-tabular.dat file
@@ -846,8 +847,8 @@ def readtabular(source):
     """
     from utils.mmltab import read_mml_evaldb
     sources, paraminfo, _ = read_mml_evaldb(source)
-    for (i, info) in enumerate(paraminfo):
-        paraminfo[i] = ", ".join("{0}={1:.2g}".format(n, v) for (n, v) in info)
+    for (key, info) in paraminfo.items():
+        paraminfo[key] = ", ".join("{0}={1:.2g}".format(n, v) for (n, v) in info)
     return sources, paraminfo
 
 
@@ -896,29 +897,11 @@ def loadtxt(f, skiprows=0, comments="#"):
         if len(line) < ncols:
             break
         if len(line) > ncols:
-            stop("*** {0}: error: {1}: inconsistent data in row {1}".format(
-                EXE, os.path.basename(f), iline))
+            logger.error("{0}: inconsistent data in row {1}".format(
+                os.path.basename(f), iline), stop=1)
         lines.append(line)
     return np.array(lines)
 
-
-def get_sorted_fileinfo(filepaths):
-    """Sort the fileinfo based on length of header in each file in filepaths so
-    that the file with the longest header is first
-
-    """
-    fileinfo = []
-    for filepath in filepaths:
-        fnam = os.path.basename(filepath)
-        fhead, fdata = loadcontents(filepath)
-        if not np.any(fdata):
-            logerr("No data found in {0}".format(filepath))
-            continue
-        fileinfo.append((fnam, fhead, fdata))
-        continue
-    if logerr():
-        stop("***error: stopping due to previous errors")
-    return sorted(fileinfo, key=lambda x: len(x[1]), reverse=True)
 
 
 def common_prefix(strings):
