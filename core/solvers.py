@@ -162,13 +162,14 @@ def _newton(material, t, dt, temp, dtemp, kappa, f0, farg, stran, darg,
                                 "Jacobian: {0} ({1:.2f})".format(negevals, t))
         try:
             d[v] -= np.linalg.solve(Jsub, sigerr) / dt
+            
 
         except LinAlgError:
             d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
             logger.warn("using least squares approximation to "
                         "matrix inverse", limit=True)
 
-        if (depsmag(d) > depsmax):
+        if (depsmag(d) > depsmax or  np.any(np.isnan(d)) or np.any(np.isinf(d))):
             # increment too large
             return None
 
