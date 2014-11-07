@@ -45,7 +45,6 @@ EPSILON = np.finfo(np.float).eps
 LS = ['solid', 'dot dash', 'dash', 'long dash'] # , 'dot']
 F_EVALDB = "mml-evaldb.xml"
 SCALE = True
-RAND_COLOR = True
 
 
 class Namespace(object):
@@ -96,14 +95,11 @@ def get_color(i=0, rand=False, _i=[0], reset=False):
 
 
 def main(argv=None):
-    global RAND_COLOR
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument("--no-rand", default=False, action="store_true")
     parser.add_argument("sources", nargs="+")
     args = parser.parse_args(argv)
-    RAND_COLOR = not args.no_rand
     sources = []
     for source in args.sources:
         if source.rstrip(os.path.sep).endswith(".eval"):
@@ -204,19 +200,23 @@ class Plot2D(HasTraits):
     x_scale = Float
     y_scale = Float
     _line_style_index = Int
+    rand = Bool
+    show_legend = Bool
 
     traits_view = View(
-        Group(
-            Item('container', editor=ComponentEditor(size=SIZE),
-                        show_label=False),
-            Item('Time', editor=RangeEditor(low_name='low_time',
-                                                          high_name='high_time',
-                                                          format='%.1f',
-                                                          label_width=28,
-                                                          mode='auto')),
+        Group(Item('container', editor=ComponentEditor(size=SIZE),
+                   show_label=False),
+              VGroup(
+                  Item('Time',
+                       editor=RangeEditor(low_name='low_time',
+                                          high_name='high_time',
+                                          format='%.1f',
+                                          #label_width=28,
+                                          mode='auto'),
+                       show_label=False),
+                  label="Time", show_border=True),
             orientation="vertical"),
-        resizable=True,
-        width=SIZE[0], height=SIZE[1] + 100)
+        resizable=True, width=SIZE[0], height=SIZE[1] + 100)
 
     def __init__(self, **traits):
         HasTraits.__init__(self, **traits)
@@ -227,6 +227,8 @@ class Plot2D(HasTraits):
         self.plotable_vars = self.file_data.plotable_vars
         self.runs_shown = [True] * len(self.plotable_vars)
         self.x_scale, self.y_scale = 1., 1.
+        self.rand = False
+        self.show_legend = True
         pass
 
     @on_trait_change('Time')
@@ -246,9 +248,9 @@ class Plot2D(HasTraits):
         return
 
     def create_container(self):
-        container = Plot(padding=80, fill_padding=True,
+        container = Plot(padding=75, fill_padding=True,
                          bgcolor="white", use_backbuffer=True,
-            border_visible=True)
+                         border_visible=True)
         return container
 
     def change_axis(self, index):
@@ -287,12 +289,12 @@ class Plot2D(HasTraits):
         self.container.overlays.append(label)
         return
 
-    def create_plot(self, x, y, c, ls, plot_name, lw=2.0):
-        self.container.data.set_data("x " + plot_name, x)
-        self.container.data.set_data("y " + plot_name, y)
+    def create_plot(self, x, y, c, ls, yvar_name, lw=2.0):
+        self.container.data.set_data("x " + yvar_name, x)
+        self.container.data.set_data("y " + yvar_name, y)
         self.container.plot(
-            ("x " + plot_name, "y " + plot_name),
-            line_width=lw, name=plot_name,
+            ("x " + yvar_name, "y " + yvar_name),
+            line_width=lw, name=yvar_name,
             color=c, bgcolor="white", border_visible=True, line_style=ls)
         self._refresh = 0
         return
@@ -350,7 +352,7 @@ class Plot2D(HasTraits):
                 else:
                     entry = legend
 
-                color = get_color(rand=RAND_COLOR)
+                color = get_color(rand=self.rand)
                 ls = LS[(d + i) % len(LS)]
                 self.create_plot(x, y, color, ls, entry)
 
@@ -374,18 +376,17 @@ class Plot2D(HasTraits):
 
                         # legend entry
                         entry = "({0}) {1}".format(od.name, yname)
-                        color = get_color(rand=RAND_COLOR)
+                        color = get_color(rand=self.rand)
                         ls = "dot" #LS[(d + ii) % len(LS)]
                         self.create_plot(xo, yo, color, ls, entry, lw=1.0)
                         ii += 1
                         continue
 
         add_default_grids(self.container)
-        add_default_axes(self.container, htitle=self.plotable_vars[self.x_idx])
 
-        self.container.index_range.tight_bounds = False
+        self.container.index_range.tight_bounds = True
         self.container.index_range.refresh()
-        self.container.value_range.tight_bounds = False
+        self.container.value_range.tight_bounds = True
         self.container.value_range.refresh()
 
         self.container.tools.append(PanTool(self.container))
@@ -396,26 +397,45 @@ class Plot2D(HasTraits):
         dragzoom = DragZoom(self.container, drag_button="right")
         self.container.tools.append(dragzoom)
 
-        self.container.legend.visible = True
+        self.container.legend.visible = self.show_legend
+
+        def tickfmt(val, label):
+            m = self.max_y if label == "y" else self.max_x
+            if m > 1000:
+                s = "{0:.4e}".format(val)
+                s = s.split("e")
+                s[0] = s[0].rstrip("0").rstrip(".")
+                return "e".join(s)
+            return "{0:f}".format(val).rstrip("0").rstrip(".")
+
+        self.container.x_axis.tick_label_formatter = lambda x, y="x": tickfmt(x, y)
+        self.container.y_axis.tick_label_formatter = lambda x, y="y": tickfmt(x, y)
+        self.container.x_axis.title = self.plotable_vars[self.x_idx]
 
         self.container.invalidate_and_redraw()
         return
 
+    @property
     def min_x(self):
         return np.amin(self.file_data[0](self.plotable_vars[self.x_idx]))
 
+    @property
     def max_x(self):
         return np.amax(self.file_data[0](self.plotable_vars[self.x_idx]))
 
+    @property
     def abs_max_x(self):
         return np.amax(np.abs(self.file_data[0](self.plotable_vars[self.x_idx])))
 
+    @property
     def min_y(self):
         return np.amin(self.file_data[0](self.plotable_vars[self.y_idx]))
 
+    @property
     def max_y(self):
         return np.amax(self.file_data[0](self.plotable_vars[self.y_idx]))
 
+    @property
     def abs_max_y(self):
         return np.amax(np.abs(self.file_data[0](self.plotable_vars[self.y_idx])))
 
@@ -474,9 +494,8 @@ class ChangeAxis(HasStrictTraits):
         ms = SingleSelect(choices=self.headers, plot=self.Plot_Data)
         ms.configure_traits(handler=ChangeAxisHandler())
 
-    view = View(Item('Change_X_Axis',
-                                   enabled_when='Change_X_Axis_Enabled==True',
-                                   show_label=False))
+    view = View(Item('Change_X_Axis', enabled_when='Change_X_Axis_Enabled==True',
+                     show_label=False))
 
 
 class SingleSelectAdapter(TabularAdapter):
@@ -570,6 +589,8 @@ class ModelPlot(HasStrictTraits):
     Reset_Zoom = Button('Reset Zoom')
     Reload_Data = Button('Reload Data')
     Print_to_PDF = Button('Print to PDF')
+    Random_Colors = Bool
+    Show_Legend = Bool
     Load_Overlay = Button('Open Overlay')
     Close_Overlay = Button('Close Overlay')
     X_Scale = String("1.0")
@@ -594,6 +615,8 @@ class ModelPlot(HasStrictTraits):
         self.Change_Axis = ChangeAxis(
             Plot_Data=self.Plot_Data, headers=self.file_data.plotable_vars)
         self.Single_Select_Overlay_Files = SingleSelectOverlayFiles(choices=[])
+        self.Random_Colors = False
+        self.Show_Legend = True
         pass
 
     def _Reset_Zoom_fired(self):
@@ -625,11 +648,11 @@ class ModelPlot(HasStrictTraits):
         if not scale:
             scale = self.X_Scale = "1.0"
         if scale == "max":
-            scale = str(self.Plot_Data.max_x())
+            scale = str(self.Plot_Data.max_x)
         elif scale == "min":
-            scale = str(self.Plot_Data.min_x())
+            scale = str(self.Plot_Data.min_x)
         elif scale == "normalize":
-            _max = self.Plot_Data.abs_max_x()
+            _max = self.Plot_Data.abs_max_x
             _max = 1. if _max < EPSILON else _max
             scale = str(1. / _max)
         try:
@@ -666,11 +689,11 @@ class ModelPlot(HasStrictTraits):
         if not scale:
             scale = self.Y_Scale = "1.0"
         if scale == "max":
-            scale = str(self.Plot_Data.max_y())
+            scale = str(self.Plot_Data.max_y)
         elif scale == "min":
-            scale = str(self.Plot_Data.min_y())
+            scale = str(self.Plot_Data.min_y)
         elif scale == "normalize":
-            _max = self.Plot_Data.abs_max_y()
+            _max = self.Plot_Data.abs_max_y
             _max = 1. if _max < EPSILON else _max
             scale = str(1. / _max)
         try:
@@ -690,6 +713,18 @@ class ModelPlot(HasStrictTraits):
         self.Multi_Select.choices = file_data.plotable_vars
         self.Change_Axis.headers = file_data.plotable_vars
         self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
+
+    def _Random_Colors_fired(self):
+        self.Plot_Data.rand = not self.Plot_Data.rand
+        return
+        self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
+
+    def _Show_Legend_fired(self, *args):
+        if self.Plot_Data.container is None:
+            return
+        self.Plot_Data.show_legend = not self.Plot_Data.show_legend
+        self.Plot_Data.container.legend.visible = self.Plot_Data.show_legend
+        self.Plot_Data.container.invalidate_and_redraw()
 
     def _Print_to_PDF_fired(self):
         import matplotlib.pyplot as plt
@@ -810,13 +845,22 @@ def create_model_plot(sources, handler=None):
                  else genrunid(filepaths[0]))
         file_data = FileData(filepaths)
 
+    ww = 100
+    hh = 50
     view = View(HSplit(
         VGroup(
             Item('Multi_Select', show_label=False),
-            Item('Change_Axis', show_label=False),
-            Item('Reset_Zoom', show_label=False),
-            Item('Reload_Data', show_label=False),
-            Item('Print_to_PDF', show_label=False),
+            Item('_'),
+            VGroup(HGroup(
+                Item('Random_Colors', style="simple"),
+                Item('_'),
+                Item('Show_Legend', style="simple", label="Legend")),
+                VGrid(
+                    Item('Change_Axis', show_label=False),
+                    Item('Reset_Zoom', style="simple", show_label=False),
+                    Item('Reload_Data', style="simple", show_label=False),
+                    Item('Print_to_PDF', style="simple", show_label=False)),
+                label="Options", show_border=True),
             VGroup(
                 HGroup(Item("X_Scale", label="X Scale",
                                           editor=TextEditor(
@@ -824,15 +868,18 @@ def create_model_plot(sources, handler=None):
                               Item("Y_Scale", label="Y Scale",
                                           editor=TextEditor(
                                               multi_line=False))),
-                show_border=True),
+                show_border=True, label="Scaling"),
             VGroup(
                 HGroup(
-                    Item('Load_Overlay', show_label=False, springy=True),
+                    Item('Load_Overlay', style="simple",
+                         show_label=False, springy=True),
                     Item(
-                        'Close_Overlay', show_label=False, springy=True),),
+                        'Close_Overlay', style="simple",
+                        show_label=False, springy=True),),
                 Item('Single_Select_Overlay_Files', show_label=False,
-                            resizable=False), show_border=True)),
-        Item('Plot_Data', show_label=False, width=W-300, height=H-100,
+                            resizable=True), show_border=True,
+                            label="Overlay Files")),
+        Item('Plot_Data', show_label=False, width=W-ww, height=H-hh,
                     springy=True, resizable=True)),
         style='custom', width=W, height=H,
         resizable=True, title=runid)
