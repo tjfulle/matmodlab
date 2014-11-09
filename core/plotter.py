@@ -149,11 +149,13 @@ class FileData:
     def __init__(self, files, legend_info=None):
         self.pv = []
         self.data = []
+        self.files = []
         for f in files:
             li = None if legend_info is None else legend_info[f]
             fd = _SingleFileData(f, legend_info=li)
             self.data.append(fd)
             self.pv.extend([x for x in fd.plotable_vars if x not in self.pv])
+            self.files.append(f)
 
     def __iter__(self):
         return self.data.__iter__()
@@ -172,7 +174,7 @@ class FileData:
 
     def remove(self, filename):
         for (i, d) in enumerate(self.data):
-            if d.source == filename:
+            if filename in (d.source, d.name):
                 break
         else:
             i = None
@@ -195,7 +197,7 @@ class Plot2D(HasTraits):
     Time = Float
     high_time = Float
     low_time = Float
-    time_data_labels = Dict(Int, List)
+    time_data_labels = Dict(Tuple, List)
     runs_shown = List(Bool)
     x_scale = Float
     y_scale = Float
@@ -235,14 +237,28 @@ class Plot2D(HasTraits):
     def change_data_markers(self):
         xname = self.plotable_vars[self.x_idx]
         for (d, pd) in enumerate(self.file_data):
-            if d not in self.time_data_labels:
+            if (pd.name, d) not in self.time_data_labels:
                 continue
 
             for (i, y_idx) in enumerate(self.plot_indices):
                 yname = self.plotable_vars[y_idx]
-                self.time_data_labels[d][i].data_point = (
+                self.time_data_labels[(pd.name, d)][i].data_point = (
                     pd(xname, self.Time) * self.x_scale,
                     pd(yname, self.Time) * self.y_scale)
+
+        if self.overlay_file_data:
+            # plot the overlay data
+            for (d, od) in enumerate(self.overlay_file_data):
+                # get the x and y indeces corresponding to what is
+                # being plotted
+                if (od.name, d) not in self.time_data_labels:
+                    continue
+
+                for (i, y_idx) in enumerate(self.plot_indices):
+                    yname = self.plotable_vars[y_idx]
+                    self.time_data_labels[(od.name, d)][i].data_point = (
+                        od(xname, self.Time) * self.x_scale,
+                        od(yname, self.Time) * self.y_scale)
 
         self.container.invalidate_and_redraw()
         return
@@ -270,10 +286,10 @@ class Plot2D(HasTraits):
         self.change_plot(self.plot_indices)
         return
 
-    def create_data_label(self, xp, yp, d, di):
+    def create_data_label(self, xp, yp, d, di, name):
         nform = "[%(x).5g, %(y).5g]"
         if self.nfiles - 1 or self.overlay_file_data:
-            lform = "({0}) {1}".format(self.file_data[d].name, nform)
+            lform = "({0}) {1}".format(name, nform)
         else:
             lform = nform
         label = DataLabel(component=self.container, data_point=(xp, yp),
@@ -284,8 +300,7 @@ class Plot2D(HasTraits):
                           marker_color=tuple(COLOR_PALETTE[(d + di) % 10]),
                           marker_line_color="transparent",
                           marker="diamond", arrow_visible=False)
-
-        self.time_data_labels[d].append(label)
+        self.time_data_labels[(name, d)].append(label)
         self.container.overlays.append(label)
         return
 
@@ -319,7 +334,7 @@ class Plot2D(HasTraits):
             xname = self.plotable_vars[self.x_idx]
             self.y_idx = indices[0]
 
-            self.time_data_labels[d] = []
+            self.time_data_labels[(pd.name, d)] = []
 
             # indices is an integer list containing the columns of the data to
             # be plotted. The indices are wrt to the FIRST file in parsed, not
@@ -360,13 +375,13 @@ class Plot2D(HasTraits):
                 xp = pd(xname, self.Time) * x_scale
                 yp = pd(yname, self.Time) * y_scale
                 yp_idx = pd.plotable_vars.index(yname)
-                self.create_data_label(xp, yp, d, yp_idx)
+                self.create_data_label(xp, yp, d, yp_idx, pd.name)
 
                 if not overlays_plotted and self.overlay_file_data:
                     # plot the overlay data
                     overlays_plotted = True
                     ii = i + 1
-                    for od in self.overlay_file_data:
+                    for (dd, od) in enumerate(self.overlay_file_data):
                         # get the x and y indeces corresponding to what is
                         # being plotted
                         xo = od(xname)
@@ -379,6 +394,14 @@ class Plot2D(HasTraits):
                         color = get_color(rand=self.rand)
                         ls = "dot" #LS[(d + ii) % len(LS)]
                         self.create_plot(xo, yo, color, ls, entry, lw=1.0)
+
+                        # create point marker
+                        self.time_data_labels[(od.name, dd)] = []
+                        xp = od(xname, self.Time) * x_scale
+                        yp = od(yname, self.Time) * y_scale
+                        yp_idx = od.plotable_vars.index(yname)
+                        self.create_data_label(xp, yp, dd, yp_idx, od.name)
+
                         ii += 1
                         continue
 
