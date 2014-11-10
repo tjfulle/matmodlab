@@ -213,7 +213,7 @@ class Plot2D(HasTraits):
                   Item('Time',
                        editor=RangeEditor(low_name='low_time',
                                           high_name='high_time',
-                                          format='%.1f',
+                                          format='%.3f',
                                           #label_width=28,
                                           mode='auto'),
                        show_label=False),
