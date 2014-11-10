@@ -34,7 +34,7 @@ H = 700
 W = int(r * H)
 
 EXE = "plot2d"
-Change_X_Axis_Enabled = True
+change_xaxis_enabled = True
 LDICT = {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan,
          "asin": math.asin, "acos": math.acos,
          "atan": math.atan, "atan2": math.atan2, "pi": math.pi,
@@ -45,19 +45,7 @@ EPSILON = np.finfo(np.float).eps
 
 LS = ['solid', 'dot dash', 'dash', 'long dash'] # , 'dot']
 F_EVALDB = "mml-evaldb.xml"
-SCALE = True
 
-
-class Namespace(object):
-    def __init__(self, **kwargs):
-        for (k, v) in kwargs.items():
-            setattr(self, k, v)
-    def __repr__(self):
-        string = ", ".join("{0}={1}".format(k, repr(v)) for (k, v) in
-                           self.__dict__.items())
-        return "Namespace({0})".format(string)
-    def items(self):
-        return self.__dict__.items()
 
 class Logger:
     errors = 0
@@ -200,8 +188,8 @@ class Plot2D(HasTraits):
     low_time = Float
     time_data_labels = Dict(Tuple, List)
     runs_shown = List(Bool)
-    x_scale = Float
-    y_scale = Float
+    xscale = Float
+    yscale = Float
     _line_style_index = Int
     rand = Bool
     show_legend = Bool
@@ -229,7 +217,7 @@ class Plot2D(HasTraits):
         self._refresh = 1
         self.plotable_vars = self.file_data.plotable_vars
         self.runs_shown = [True] * len(self.plotable_vars)
-        self.x_scale, self.y_scale = 1., 1.
+        self.xscale, self.yscale = 1., 1.
         self.rand = False
         self.show_legend = True
         pass
@@ -244,8 +232,8 @@ class Plot2D(HasTraits):
             for (i, y_idx) in enumerate(self.plot_indices):
                 yname = self.plotable_vars[y_idx]
                 self.time_data_labels[(pd.name, d)][i].data_point = (
-                    pd(xname, self.Time) * self.x_scale,
-                    pd(yname, self.Time) * self.y_scale)
+                    pd(xname, self.Time) * self.xscale,
+                    pd(yname, self.Time) * self.yscale)
 
         if self.overlay_file_data:
             # plot the overlay data
@@ -258,8 +246,8 @@ class Plot2D(HasTraits):
                 for (i, y_idx) in enumerate(self.plot_indices):
                     yname = self.plotable_vars[y_idx]
                     self.time_data_labels[(od.name, d)][i].data_point = (
-                        od(xname, self.Time) * self.x_scale,
-                        od(yname, self.Time) * self.y_scale)
+                        od(xname, self.Time) * self.xscale,
+                        od(yname, self.Time) * self.yscale)
 
         self.container.invalidate_and_redraw()
         return
@@ -315,7 +303,7 @@ class Plot2D(HasTraits):
         self._refresh = 0
         return
 
-    def change_plot(self, indices, x_scale=None, y_scale=None):
+    def change_plot(self, indices, xscale=None, yscale=None):
         self.plot_indices = indices
         self.container = self.create_container()
         self.high_time = float(max(self.file_data[0]("TIME")))
@@ -325,7 +313,7 @@ class Plot2D(HasTraits):
         if len(indices) == 0:
             return
         self._refresh = 1
-        x_scale, y_scale = self.get_axis_scales(x_scale, y_scale)
+        xscale, yscale = self.get_axis_scales(xscale, yscale)
 
         # loop through plot data and plot it
         overlays_plotted = False
@@ -359,8 +347,8 @@ class Plot2D(HasTraits):
                 if x is None or y is None:
                     continue
 
-                x *= x_scale
-                y *= y_scale
+                x *= xscale
+                y *= yscale
 
                 legend = pd.legend(yname)
                 if self.nfiles - 1 or self.overlay_file_data:
@@ -373,8 +361,8 @@ class Plot2D(HasTraits):
                 self.create_plot(x, y, color, ls, entry)
 
                 # create point marker
-                xp = pd(xname, self.Time) * x_scale
-                yp = pd(yname, self.Time) * y_scale
+                xp = pd(xname, self.Time) * xscale
+                yp = pd(yname, self.Time) * yscale
                 yp_idx = pd.plotable_vars.index(yname)
                 self.create_data_label(xp, yp, d, yp_idx, pd.name)
 
@@ -398,8 +386,8 @@ class Plot2D(HasTraits):
 
                         # create point marker
                         self.time_data_labels[(od.name, dd)] = []
-                        xp = od(xname, self.Time) * x_scale
-                        yp = od(yname, self.Time) * y_scale
+                        xp = od(xname, self.Time) * xscale
+                        yp = od(yname, self.Time) * yscale
                         yp_idx = od.plotable_vars.index(yname)
                         self.create_data_label(xp, yp, dd, yp_idx, od.name)
 
@@ -467,58 +455,58 @@ class Plot2D(HasTraits):
     def nfiles(self):
         return len(self.file_data)
 
-    def get_axis_scales(self, x_scale, y_scale):
+    def get_axis_scales(self, xscale, yscale):
         """Get/Set the scales for the x and y axis
 
         Parameters
         ----------
-        x_scale : float, optional
-        y_scale : float, optional
+        xscale : float, optional
+        yscale : float, optional
 
         Returns
         -------
-        x_scale : float
-        y_scale : float
+        xscale : float
+        yscale : float
 
         """
-        # get/set x_scale
-        if x_scale is None:
-            x_scale = self.x_scale
+        # get/set xscale
+        if xscale is None:
+            xscale = self.xscale
         else:
-            self.x_scale = x_scale
+            self.xscale = xscale
 
-        # get/set y_scale
-        if y_scale is None:
-            y_scale = self.y_scale
+        # get/set yscale
+        if yscale is None:
+            yscale = self.yscale
         else:
-            self.y_scale = y_scale
+            self.yscale = yscale
 
-        return x_scale, y_scale
+        return xscale, yscale
 
 
 class ChangeAxisHandler(Handler):
 
     def closed(self, info, is_ok):
-        global Change_X_Axis_Enabled
-        Change_X_Axis_Enabled = True
+        global change_xaxis_Enabled
+        change_xaxis_enabled = True
 
 
 class ChangeAxis(HasStrictTraits):
 
-    Change_X_Axis = Button('Change X-axis')
-    Plot_Data = Instance(Plot2D)
+    change_xaxis = Button('Change X-axis')
+    plot2d = Instance(Plot2D)
     headers = List(Str)
 
     def __init__(self, **traits):
         HasStrictTraits.__init__(self, **traits)
 
-    def _Change_X_Axis_fired(self):
-        global Change_X_Axis_Enabled
-        Change_X_Axis_Enabled = False
-        ms = SingleSelect(choices=self.headers, plot=self.Plot_Data)
+    def _change_xaxis_fired(self):
+        global change_xaxis_enabled
+        change_xaxis_enabled = False
+        ms = SingleSelect(choices=self.headers, plot=self.plot2d)
         ms.configure_traits(handler=ChangeAxisHandler())
 
-    view = View(Item('Change_X_Axis', enabled_when='Change_X_Axis_Enabled==True',
+    view = View(Item('change_xaxis', enabled_when='change_xaxis_enabled==True',
                      show_label=False))
 
 
@@ -607,19 +595,19 @@ class MultiSelect(HasPrivateTraits):
 
 class ModelPlot(HasStrictTraits):
 
-    Plot_Data = Instance(Plot2D)
-    Multi_Select = Instance(MultiSelect)
-    Change_Axis = Instance(ChangeAxis)
-    Reset_Zoom = Button('Reset Zoom')
-    Reload_Data = Button('Reload Data')
-    Print_Screen = Button('Print Screen')
-    Random_Colors = Bool
-    Show_Legend = Bool
-    Load_Overlay = Button('Open Overlay')
-    Close_Overlay = Button('Close Overlay')
-    X_Scale = String("1.0")
-    Y_Scale = String("1.0")
-    Single_Select_Overlay_Files = Instance(SingleSelectOverlayFiles)
+    plot2d = Instance(Plot2D)
+    multi_select = Instance(MultiSelect)
+    change_axis = Instance(ChangeAxis)
+    reset_zoom = Button('Reset Zoom')
+    reload_data = Button('Reload Data')
+    print_Screen = Button('Print Screen')
+    rand_colors = Bool
+    show_legend = Bool
+    load_overlay = Button('Open Overlay')
+    close_overlay = Button('Close Overlay')
+    xscale = String("1.0")
+    yscale = String("1.0")
+    ss_overlay_files = Instance(SingleSelectOverlayFiles)
     file_data = Instance(FileData)
 
     def __init__(self, **traits):
@@ -633,20 +621,20 @@ class ModelPlot(HasStrictTraits):
 
         """
         HasStrictTraits.__init__(self, **traits)
-        self.Plot_Data = Plot2D(file_data=self.file_data, x_idx=0)
-        self.Multi_Select = MultiSelect(choices=self.file_data.plotable_vars,
-                                        plot=self.Plot_Data)
-        self.Change_Axis = ChangeAxis(
-            Plot_Data=self.Plot_Data, headers=self.file_data.plotable_vars)
-        self.Single_Select_Overlay_Files = SingleSelectOverlayFiles(choices=[])
-        self.Random_Colors = False
-        self.Show_Legend = True
+        self.plot2d = Plot2D(file_data=self.file_data, x_idx=0)
+        self.multi_select = MultiSelect(choices=self.file_data.plotable_vars,
+                                        plot=self.plot2d)
+        self.change_axis = ChangeAxis(
+            plot2d=self.plot2d, headers=self.file_data.plotable_vars)
+        self.ss_overlay_files = SingleSelectOverlayFiles(choices=[])
+        self.rand_colors = False
+        self.show_legend = True
         pass
 
-    def _Reset_Zoom_fired(self):
-        self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
+    def _reset_zoom_fired(self):
+        self.plot2d.change_plot(self.plot2d.plot_indices)
 
-    def _X_Scale_changed(self, scale):
+    def _xscale_changed(self, scale):
         """Detect if the x-axis scale was changed and let the plotter know
 
         Parameters
@@ -670,23 +658,23 @@ class ModelPlot(HasStrictTraits):
         """
         scale = scale.strip()
         if not scale:
-            scale = self.X_Scale = "1.0"
+            scale = self.xscale = "1.0"
         if scale == "max":
-            scale = str(self.Plot_Data.max_x)
+            scale = str(self.plot2d.max_x)
         elif scale == "min":
-            scale = str(self.Plot_Data.min_x)
+            scale = str(self.plot2d.min_x)
         elif scale == "normalize":
-            _max = self.Plot_Data.abs_max_x
+            _max = self.plot2d.abs_max_x
             _max = 1. if _max < EPSILON else _max
             scale = str(1. / _max)
         try:
             scale = float(eval(scale, GDICT, LDICT))
         except:
             return
-        self.Plot_Data.change_plot(self.Plot_Data.plot_indices, x_scale=scale)
+        self.plot2d.change_plot(self.plot2d.plot_indices, xscale=scale)
         return
 
-    def _Y_Scale_changed(self, scale):
+    def _yscale_changed(self, scale):
         """Detect if the y-axis scale was changed and let the plotter know
 
         Parameters
@@ -711,88 +699,88 @@ class ModelPlot(HasStrictTraits):
         """
         scale = scale.strip()
         if not scale:
-            scale = self.Y_Scale = "1.0"
+            scale = self.yscale = "1.0"
         if scale == "max":
-            scale = str(self.Plot_Data.max_y)
+            scale = str(self.plot2d.max_y)
         elif scale == "min":
-            scale = str(self.Plot_Data.min_y)
+            scale = str(self.plot2d.min_y)
         elif scale == "normalize":
-            _max = self.Plot_Data.abs_max_y
+            _max = self.plot2d.abs_max_y
             _max = 1. if _max < EPSILON else _max
             scale = str(1. / _max)
         try:
             scale = float(eval(scale, GDICT, LDICT))
         except:
             return
-        self.Plot_Data.change_plot(self.Plot_Data.plot_indices, y_scale=scale)
+        self.plot2d.change_plot(self.plot2d.plot_indices, yscale=scale)
         return
 
-    def _Reload_Data_fired(self):
-        self.reload_data()
+    def _reload_data_fired(self):
+        self._reload_data()
 
-    def reload_data(self):
-        filepaths = [d.source for d in self.Plot_Data.file_data]
+    def _reload_data(self):
+        filepaths = [d.source for d in self.plot2d.file_data]
         file_data = FileData(filepaths)
-        self.Plot_Data.file_data = file_data
-        self.Multi_Select.choices = file_data.plotable_vars
-        self.Change_Axis.headers = file_data.plotable_vars
-        self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
+        self.plot2d.file_data = file_data
+        self.multi_select.choices = file_data.plotable_vars
+        self.change_axis.headers = file_data.plotable_vars
+        self.plot2d.change_plot(self.plot2d.plot_indices)
 
-    def _Random_Colors_fired(self):
-        self.Plot_Data.rand = not self.Plot_Data.rand
+    def _rand_colors_fired(self):
+        self.plot2d.rand = not self.plot2d.rand
         return
-        self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
+        self.plot2d.change_plot(self.plot2d.plot_indices)
 
-    def _Show_Legend_fired(self, *args):
-        if self.Plot_Data.container is None:
+    def _show_legend_fired(self, *args):
+        if self.plot2d.container is None:
             return
-        self.Plot_Data.show_legend = not self.Plot_Data.show_legend
-        self.Plot_Data.container.legend.visible = self.Plot_Data.show_legend
-        self.Plot_Data.container.invalidate_and_redraw()
+        self.plot2d.show_legend = not self.plot2d.show_legend
+        self.plot2d.container.legend.visible = self.plot2d.show_legend
+        self.plot2d.container.invalidate_and_redraw()
 
-    def _Print_Screen_fired(self):
-        if not self.Plot_Data.plot_indices:
+    def _print_Screen_fired(self):
+        if not self.plot2d.plot_indices:
             return
         now = datetime.datetime.now()
         f = "Screen Print {0}.png".format(now.strftime("%Y-%m-%d %H:%M:%S"))
-        width, height = self.Plot_Data.container.outer_bounds
-        self.Plot_Data.container.do_layout(force=True)
+        width, height = self.plot2d.container.outer_bounds
+        self.plot2d.container.do_layout(force=True)
         gc = PlotGraphicsContext((width, height), dpi=72)
-        gc.render_component(self.Plot_Data.container)
+        gc.render_component(self.plot2d.container)
         gc.save(f)
         return
 
-    def _Close_Overlay_fired(self):
-        if self.Single_Select_Overlay_Files.selected:
-            index = self.Single_Select_Overlay_Files.choices.index(
-                self.Single_Select_Overlay_Files.selected)
-            self.Single_Select_Overlay_Files.choices.remove(
-                self.Single_Select_Overlay_Files.selected)
-            self.Plot_Data.overlay_file_data.remove(
-                self.Single_Select_Overlay_Files.selected)
-            if not self.Single_Select_Overlay_Files.choices:
-                self.Single_Select_Overlay_Files.selected = ""
+    def _close_overlay_fired(self):
+        if self.ss_overlay_files.selected:
+            index = self.ss_overlay_files.choices.index(
+                self.ss_overlay_files.selected)
+            self.ss_overlay_files.choices.remove(
+                self.ss_overlay_files.selected)
+            self.plot2d.overlay_file_data.remove(
+                self.ss_overlay_files.selected)
+            if not self.ss_overlay_files.choices:
+                self.ss_overlay_files.selected = ""
             else:
-                if index >= len(self.Single_Select_Overlay_Files.choices):
-                    index = len(self.Single_Select_Overlay_Files.choices) - 1
-                self.Single_Select_Overlay_Files.selected = self.Single_Select_Overlay_Files.choices[index]
-            self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
+                if index >= len(self.ss_overlay_files.choices):
+                    index = len(self.ss_overlay_files.choices) - 1
+                self.ss_overlay_files.selected = self.ss_overlay_files.choices[index]
+            self.plot2d.change_plot(self.plot2d.plot_indices)
 
-    def _Load_Overlay_fired(self):
+    def _load_overlay_fired(self):
         dialog = FileDialog(action="open")
         dialog.open()
         info = {}
         if dialog.return_code == pyOK:
-            if not self.Plot_Data.overlay_file_data:
-                self.Plot_Data.overlay_file_data = FileData(dialog.paths)
-                for d in self.Plot_Data.overlay_file_data:
-                    self.Single_Select_Overlay_Files.choices.append(d.name)
+            if not self.plot2d.overlay_file_data:
+                self.plot2d.overlay_file_data = FileData(dialog.paths)
+                for d in self.plot2d.overlay_file_data:
+                    self.ss_overlay_files.choices.append(d.name)
             else:
                 for eachfile in dialog.paths:
-                    self.Plot_Data.overlay_file_data.add(eachfile)
-                    name = self.Plot_Data.overlay_file_data[-1].name
-                    self.Single_Select_Overlay_Files.choices.append(name)
-            self.Plot_Data.change_plot(self.Plot_Data.plot_indices)
+                    self.plot2d.overlay_file_data.add(eachfile)
+                    name = self.plot2d.overlay_file_data[-1].name
+                    self.ss_overlay_files.choices.append(name)
+            self.plot2d.change_plot(self.plot2d.plot_indices)
         return
 
 def create_model_plot(sources, handler=None):
@@ -837,37 +825,36 @@ def create_model_plot(sources, handler=None):
     hh = 50
     view = View(HSplit(
         VGroup(
-            Item('Multi_Select', show_label=False),
+            Item('multi_select', show_label=False),
             Item('_'),
             VGroup(HGroup(
-                Item('Random_Colors', style="simple"),
+                Item('rand_colors', style="simple", label="Random Colors"),
                 Item('_'),
-                Item('Show_Legend', style="simple", label="Legend")),
+                Item('show_legend', style="simple", label="Legend")),
                 VGrid(
-                    Item('Change_Axis', show_label=False),
-                    Item('Reset_Zoom', style="simple", show_label=False),
-                    Item('Reload_Data', style="simple", show_label=False),
-                    Item('Print_Screen', style="simple", show_label=False)),
+                    Item('change_axis', show_label=False),
+                    Item('reset_zoom', style="simple", show_label=False),
+                    Item('reload_data', style="simple", show_label=False),
+                    Item('print_Screen', style="simple", show_label=False)),
                 label="Options", show_border=True),
             VGroup(
-                HGroup(Item("X_Scale", label="X Scale",
+                HGroup(Item("xscale", label="X Scale",
                                           editor=TextEditor(
                                               multi_line=False)),
-                              Item("Y_Scale", label="Y Scale",
+                              Item("yscale", label="Y Scale",
                                           editor=TextEditor(
                                               multi_line=False))),
                 show_border=True, label="Scaling"),
             VGroup(
                 HGroup(
-                    Item('Load_Overlay', style="simple",
+                    Item('load_overlay', style="simple",
                          show_label=False, springy=True),
                     Item(
-                        'Close_Overlay', style="simple",
+                        'close_overlay', style="simple",
                         show_label=False, springy=True),),
-                Item('Single_Select_Overlay_Files', show_label=False,
-                            resizable=True), show_border=True,
-                            label="Overlay Files")),
-        Item('Plot_Data', show_label=False, width=W-ww, height=H-hh,
+                Item('ss_overlay_files', show_label=False, resizable=True),
+                show_border=True, label="Overlay Files")),
+        Item('plot2d', show_label=False, width=W-ww, height=H-hh,
                     springy=True, resizable=True)),
         style='custom', width=W, height=H,
         resizable=True, title=runid)
