@@ -3,6 +3,7 @@ import sys
 import math
 import random
 import argparse
+import datetime
 import warnings
 import linecache
 import numpy as np
@@ -611,7 +612,7 @@ class ModelPlot(HasStrictTraits):
     Change_Axis = Instance(ChangeAxis)
     Reset_Zoom = Button('Reset Zoom')
     Reload_Data = Button('Reload Data')
-    Print_to_PDF = Button('Print to PDF')
+    Print_Screen = Button('Print Screen')
     Random_Colors = Bool
     Show_Legend = Bool
     Load_Overlay = Button('Open Overlay')
@@ -749,53 +750,17 @@ class ModelPlot(HasStrictTraits):
         self.Plot_Data.container.legend.visible = self.Plot_Data.show_legend
         self.Plot_Data.container.invalidate_and_redraw()
 
-    def _Print_to_PDF_fired(self):
-        import matplotlib.pyplot as plt
+    def _Print_Screen_fired(self):
         if not self.Plot_Data.plot_indices:
             return
-
-        data = self.Plot_Data.file_data
-        indices = self.Plot_Data.plot_indices
-
-        xname = self.Plot_Data.plotable_vars[self.Plot_Data.x_idx]
-        yname = self.Plot_Data.plotable_vars[self.Plot_Data.y_idx]
-
-        # get the maximum of Y for normalization
-        ymax = max(np.amax(np.abs(d(yname))) for d in data)
-
-        # setup figure
-        plt.figure(0)
-        plt.cla()
-        plt.clf()
-
-        # plot y value for each plot on window
-        if self.Plot_Data.overlay_file_data:
-            # plot the overlay data
-            for od in self.Plot_Data.overlay_file_data:
-                # get the x and y indeces corresponding to what is
-                # being plotted
-                xo = od(xname)
-                yo = od(yname)
-                if xo is None or yo is None:
-                    continue
-                # legend entry
-                label = od.name + ":" + yname if len(indices) > 1 else yname
-                plt.plot(xo, yo, label=label, lw=3)
-
-        ynames = []
-        for d in data:
-            label = d.name + ":" + yname if len(indices) > 1 else yname
-            ynames.append(yname)
-            if SCALE:
-                plt.plot(d(xname), d(yname) / ymax, label=label, lw=1)
-            else:
-                plt.plot(d(xname), d(yname), label=label, lw=1)
-
-        yname = common_prefix(ynames)
-        plt.xlabel(xname)
-        plt.ylabel(yname)
-        plt.legend(loc="best")
-        plt.savefig("{0}-vs-{1}.pdf".format(yname, xname))
+        now = datetime.datetime.now()
+        f = "Screen Print {0}.png".format(now.strftime("%Y-%m-%d %H:%M:%S"))
+        width, height = self.Plot_Data.container.outer_bounds
+        self.Plot_Data.container.do_layout(force=True)
+        gc = PlotGraphicsContext((width, height), dpi=72)
+        gc.render_component(self.Plot_Data.container)
+        gc.save(f)
+        return
 
     def _Close_Overlay_fired(self):
         if self.Single_Select_Overlay_Files.selected:
@@ -882,7 +847,7 @@ def create_model_plot(sources, handler=None):
                     Item('Change_Axis', show_label=False),
                     Item('Reset_Zoom', style="simple", show_label=False),
                     Item('Reload_Data', style="simple", show_label=False),
-                    Item('Print_to_PDF', style="simple", show_label=False)),
+                    Item('Print_Screen', style="simple", show_label=False)),
                 label="Options", show_border=True),
             VGroup(
                 HGroup(Item("X_Scale", label="X Scale",
