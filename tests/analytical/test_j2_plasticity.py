@@ -387,4 +387,7 @@ def run_j2_plasticity_mix_hard(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    a = mix_hard_runner()
+    run_j2_plasticity_mix_hard()
+    run_j2_plasticity_kin_hard()
+    run_j2_plasticity_iso_hard()
+    run_j2_plasticity1()

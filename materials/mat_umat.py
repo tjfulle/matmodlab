@@ -31,5 +31,5 @@ class UMat(AbaqusMaterial):
             time, dtime, temp, dtemp, predef, dpred, cmname, ndi, nshr,
             nxtra, params, coords, drot, pnewdt, celent, dfgrd0,
             dfgrd1, noel, npt, layer, kspt, kstep, kinc, logmes, logwrn,
-            bombed, **extra)
+            bombed, *extra)
         return stress, statev, ddsdde
