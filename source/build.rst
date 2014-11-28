@@ -19,7 +19,8 @@ and the Apple Mac OSX 10.9 operating systems. It is unknown whether or not
 Required Software
 =================
 
-*matmodlab* requires the following software installed for your platform:
+*matmodlab* requires the following software installed for your platform for
+material model evaluation:
 
 #) `Python 2.7 <http://www.python.org/>`_ or newer
 
@@ -27,9 +28,19 @@ Required Software
 
 #) `SciPy 0.1 <http://www.scipy.org/>`_ or newer
 
+To use the visualization utility the following python packages are required:
+
+#) `Chaco <http://code.enthought.com/projects/chaco/>`_
+
+#) `Traits <http://code.enthought.com/projects/traits/>`_
+
+#) `TraitsUI <http://code.enthought.com/projects/traits_ui/>`_
+
 The required software may be obtained in several ways, though all development
-has been made using the Annoconda `<http://www.continuum.io>`_ and Enthought
-Canopy `<http://www.enthought.com>`_ Python Distributions.
+has been made using the Annoconda `<http://www.continuum.io>`_ Python
+Distribution, Enthought Canopy `<http://www.enthought.com>`_ Python
+Distribution, and the python distributions available through the Debian
+package manager.
 
 .. _installation:
 

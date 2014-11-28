@@ -40,6 +40,10 @@ material model, parameterized by the bulk modulus :math:`K` and shear modulus
    mps = MaterialPointSimulator(runid, driver, material)
    mps.run()
 
+To automatically launch the visualization utility add the following line::
+
+  mps.visualize_results()
+
 Executing::
 
   mml run runid.py
