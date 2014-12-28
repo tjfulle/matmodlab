@@ -57,8 +57,8 @@
             
   <div class="section" id="quick-start-guide">
 <h1>Quick Start Guide<a class="headerlink" href="#quick-start-guide" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="setup-and-build">
-<h2>Setup and Build<a class="headerlink" href="#setup-and-build" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="setup-and-build-method-1">
+<h2>Setup and Build, Method 1<a class="headerlink" href="#setup-and-build-method-1" title="Permalink to this headline">¶</a></h2>
 <p>Build <em>matmodlab</em>.  See <a class="reference internal" href="build.html#building"><em>Building</em></a> for more details.</p>
 <ul>
 <li><p class="first">Download <em>matmodlab</em></p>
@@ -70,6 +70,24 @@
 mml build
 </pre></div>
 </div>
+</li>
+</ul>
+</div>
+<div class="section" id="setup-and-build-method-2">
+<h2>Setup and Build, Method 2<a class="headerlink" href="#setup-and-build-method-2" title="Permalink to this headline">¶</a></h2>
+<p>If only the python functionality of <em>matmodlab</em> is desired, no building is
+required.</p>
+<ul>
+<li><p class="first">Download <em>matmodlab</em></p>
+</li>
+<li><p class="first">When using <em>matmodlab</em> simply ensure that your working directory is
+<tt class="docutils literal"><span class="pre">MML_ROOT</span></tt> and run <em>matmodlab</em> by invoking the regular Python interpreter:</p>
+<div class="highlight-python"><div class="highlight"><pre>python mml_input.py
+</pre></div>
+</div>
+</li>
+<li><p class="first">Notice: without adding <tt class="docutils literal"><span class="pre">MML_ROOT/bin</span></tt> to the <tt class="docutils literal"><span class="pre">PATH</span></tt> the regular <tt class="docutils literal"><span class="pre">mml</span></tt>
+command will not be available.</p>
 </li>
 </ul>
 </div>
@@ -131,14 +149,14 @@ log file. See <tt class="docutils literal"><span class="pre">mml</span> <span cl
 <li class="toctree-l2 current"><a class="current reference internal" href="">Quick Start Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clparse.html">Command Line Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>
@@ -169,7 +187,7 @@ log file. See <tt class="docutils literal"><span class="pre">mml</span> <span cl
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |

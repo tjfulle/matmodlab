@@ -24,14 +24,14 @@ procedures from Python is made possible by the ``f2py`` module, standard in
 Numpy, that compiles and creates Python shared object libraries from Fortran
 sources.
 
-Output files from *matmodlab* simulations are in the ExodusII_
-database format, devloped at Sandia National Labs for storing finite element
-simulation data. Since *matmodlab* is designed to be used by material model
-developers, it is expected that the typical user will want access to *all*
-available output from a material model, thus all simulation data is written to
-the output database. ExodusII database files can be visualized with the
-*matmodlab* visualization utility, in addition to other visualization
-packages such as ParaView_
+Output files from *matmodlab* simulations are either tabular text files or,
+by default, in the ExodusII_ database format, developed at Sandia National Labs
+for storing finite element simulation data. Since *matmodlab* is designed to
+be used by material model developers, it is expected that the typical user will
+want access to *all* available output from a material model, thus all
+simulation data is written to the output database. ExodusII database files can
+be visualized with the *matmodlab* visualization utility, in addition to other
+visualization packages such as ParaView_.
 
 *matmodlab* is free software released under the MIT License.
 
@@ -39,7 +39,7 @@ packages such as ParaView_
 Why a Single Element Driver?
 ============================
 
-Due to their complexity, it is often over kill to use a finite element code
+Due to their complexity, it is often over-kill to use a finite element code
 for constitutive model development. In addition, features such as artificial
 viscosity can mask the actual material response from constitutive model
 development. Single element drivers allow the constituive model developer to
@@ -61,8 +61,9 @@ constitutive model driver) are
     quickly any time the model is changed.
 
   * Specific features of a material model may be exercised easily by the model
-    developer by prescribing strains, strain rates, stresses, stress rates, and
-    deformation gradients as functions of time.
+    developer by prescribing strains, strain rates, stresses, stress rates,
+    electric fields, temperatures, and deformation gradients as functions of
+    time.
 
 Why Python?
 ===========
@@ -71,7 +72,7 @@ Python is an interpreted, high level object oriented language. It allows for
 writing programs rapidly and, because it is an interpreted language, does not
 require a compiling step. While this might make programs written in python slower
 than those written in a compiled language, modern packages and computers make the
-speed up difference between python and a compiled language for single element
+speed-up difference between python and a compiled language for single element
 problems almost insignificant.
 
 For numeric computations, the `NumPy <http://www.numpy.org>`_ and `SciPy
@@ -107,7 +108,7 @@ models through prescribed stress and strain paths, but also lacked many of the
 IO features of the *MED*. And so, for some time I used both the *MED* and
 *MMD* drivers in applications that suited their respective strengths. After
 some time using both drivers, I decided to combine the best features of each
-in to my own driver. Both the *MED* and *MMD* drivers were written in Fortran
+into my own driver. Both the *MED* and *MMD* drivers were written in Fortran
 and I decided to write the new driver in Python so that I could leverage the
 large number of builtin libraries. The Numpy and Scipy Python libraries would
 be used for handling most number crunching. The new driver came to be known as

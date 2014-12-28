@@ -26,7 +26,7 @@
     <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
     <link rel="up" title="User’s Guide" href="users.html" />
     <link rel="next" title="Factory Methods" href="factory.html" />
-    <link rel="prev" title="Solution Method" href="solmeth.html" />
+    <link rel="prev" title="Command Line Tools" href="tools.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -43,7 +43,7 @@
           <a href="factory.html" title="Factory Methods"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="solmeth.html" title="Solution Method"
+          <a href="tools.html" title="Command Line Tools"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li>
           <li><a href="users.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
@@ -68,8 +68,8 @@ including</p>
 <p>each of these factory methods is exposed to the simulation script&#8217;s namespace.
 Consider, for example, the following input, contained in <tt class="docutils literal"><span class="pre">runid.py</span></tt>, in
 which a material whose constitutive response is defined by the <tt class="docutils literal"><span class="pre">elastic</span></tt>
-material model, parameterized by the bulk modulus <img class="math" src="_images/math/9dcd0137ac9bf6bebbd9cd0bb350faae304a74bc.png" alt="K"/> and shear modulus
-<img class="math" src="_images/math/35fad2302b4254f53d7219798c2d19154deddf6c.png" alt="G"/>, that is driven through a path of uniaxial strain</p>
+material model, parameterized by the bulk modulus <img class="math" src="_images/math/28e12d2720cc078751d18750cc049641decfeb83.png" alt="K"/> and shear modulus
+<img class="math" src="_images/math/a5109da9e4732ebd187f3edc5d67d4178a2ccf09.png" alt="G"/>, that is driven through a path of uniaxial strain</p>
 <div class="code highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="n">runid</span> <span class="o">=</span> <span class="s">&quot;elastic_uniaxial_strain&quot;</span>
@@ -86,6 +86,10 @@ material model, parameterized by the bulk modulus <img class="math" src="_images
 <span class="c"># set up the simulator and run</span>
 <span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">material</span><span class="p">)</span>
 <span class="n">mps</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To automatically launch the visualization utility add the following line:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mps</span><span class="o">.</span><span class="n">visualize_results</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Executing:</p>
@@ -126,14 +130,14 @@ runid.exo         runid.log         runid.py
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Running a Simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clparse.html">Command Line Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>
@@ -164,7 +168,7 @@ runid.exo         runid.log         runid.py
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |

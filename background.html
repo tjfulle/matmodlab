@@ -75,18 +75,18 @@ Fortran for its speed and ubiquity in scientific computing. Calling Fortran
 procedures from Python is made possible by the <tt class="docutils literal"><span class="pre">f2py</span></tt> module, standard in
 Numpy, that compiles and creates Python shared object libraries from Fortran
 sources.</p>
-<p>Output files from <em>matmodlab</em> simulations are in the <a class="reference internal" href="#exodusii">ExodusII</a>
-database format, devloped at Sandia National Labs for storing finite element
-simulation data. Since <em>matmodlab</em> is designed to be used by material model
-developers, it is expected that the typical user will want access to <em>all</em>
-available output from a material model, thus all simulation data is written to
-the output database. ExodusII database files can be visualized with the
-<em>matmodlab</em> visualization utility, in addition to other visualization
-packages such as <a class="reference internal" href="#paraview">ParaView</a></p>
+<p>Output files from <em>matmodlab</em> simulations are either tabular text files or,
+by default, in the <a class="reference internal" href="#exodusii">ExodusII</a> database format, developed at Sandia National Labs
+for storing finite element simulation data. Since <em>matmodlab</em> is designed to
+be used by material model developers, it is expected that the typical user will
+want access to <em>all</em> available output from a material model, thus all
+simulation data is written to the output database. ExodusII database files can
+be visualized with the <em>matmodlab</em> visualization utility, in addition to other
+visualization packages such as <a class="reference internal" href="#paraview">ParaView</a>.</p>
 <p><em>matmodlab</em> is free software released under the MIT License.</p>
 <div class="section" id="why-a-single-element-driver">
 <h2>Why a Single Element Driver?<a class="headerlink" href="#why-a-single-element-driver" title="Permalink to this headline">¶</a></h2>
-<p>Due to their complexity, it is often over kill to use a finite element code
+<p>Due to their complexity, it is often over-kill to use a finite element code
 for constitutive model development. In addition, features such as artificial
 viscosity can mask the actual material response from constitutive model
 development. Single element drivers allow the constituive model developer to
@@ -105,8 +105,9 @@ finite element code.</li>
 <li>Specific material benchmarks may be developed and automatically run
 quickly any time the model is changed.</li>
 <li>Specific features of a material model may be exercised easily by the model
-developer by prescribing strains, strain rates, stresses, stress rates, and
-deformation gradients as functions of time.</li>
+developer by prescribing strains, strain rates, stresses, stress rates,
+electric fields, temperatures, and deformation gradients as functions of
+time.</li>
 </ul>
 </div></blockquote>
 </div>
@@ -116,7 +117,7 @@ deformation gradients as functions of time.</li>
 writing programs rapidly and, because it is an interpreted language, does not
 require a compiling step. While this might make programs written in python slower
 than those written in a compiled language, modern packages and computers make the
-speed up difference between python and a compiled language for single element
+speed-up difference between python and a compiled language for single element
 problems almost insignificant.</p>
 <p>For numeric computations, the <a class="reference external" href="http://www.numpy.org">NumPy</a> and <a class="reference external" href="http://www.scipy.org">SciPy</a> modules allow programs written in Python to leverage
 a large set of numerical routines provided by <tt class="docutils literal"><span class="pre">LAPACK</span></tt>, <tt class="docutils literal"><span class="pre">BLASPACK</span></tt>,
@@ -147,7 +148,7 @@ models through prescribed stress and strain paths, but also lacked many of the
 IO features of the <em>MED</em>. And so, for some time I used both the <em>MED</em> and
 <em>MMD</em> drivers in applications that suited their respective strengths. After
 some time using both drivers, I decided to combine the best features of each
-in to my own driver. Both the <em>MED</em> and <em>MMD</em> drivers were written in Fortran
+into my own driver. Both the <em>MED</em> and <em>MMD</em> drivers were written in Fortran
 and I decided to write the new driver in Python so that I could leverage the
 large number of builtin libraries. The Numpy and Scipy Python libraries would
 be used for handling most number crunching. The new driver came to be known as
@@ -246,7 +247,7 @@ programing techniques are also not described.</p>
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |

@@ -65,19 +65,19 @@
 <h2>Vector Storage<a class="headerlink" href="#vector-storage" title="Permalink to this headline">¶</a></h2>
 <p>Vector components are stored as</p>
 <div class="math">
-<p><img src="_images/math/affb96e6cc9662507912386f7166d7be41f83c93.png" alt="\Tensor{v}{}{}{} = \{v_x, v_y, v_z\}"/></p>
+<p><img src="_images/math/058724338ad54b91d73e50b4a1409eacd40f17a6.png" alt="\Tensor{v}{}{}{} = \{v_x, v_y, v_z\}"/></p>
 </div></div>
 <div class="section" id="tensor-storage">
 <h2>Tensor Storage<a class="headerlink" href="#tensor-storage" title="Permalink to this headline">¶</a></h2>
 <p>In general, second-order symmetric tensors are stored as 6x1 arrays with the
 following ordering</p>
 <div class="math" id="equation-order-symtens">
-<p><span class="eqno">(1)</span><img src="_images/math/c3d89350785edaa146f7abc50739d952b8f2939d.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{yz}, A_{xz}\}"/></p>
+<p><span class="eqno">(1)</span><img src="_images/math/fa0ef3d2c440c7e2d595f1c8b46a1c959378d0ee.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{yz}, A_{xz}\}"/></p>
 </div><p>Tensor components are used for all second-order symmetric tensors.</p>
 <p>Nonsymmetric, Second-order tensors are stored as 9x1 arrays in row major
 ordering, i.e.,</p>
 <div class="math">
-<p><img src="_images/math/cf545e25a0be10e51ad618576a3e894ec003a160.png" alt="\BB = \{A_{xx}, A_{xy}, A_{xz},
+<p><img src="_images/math/0cf4655e7e81d60ffbddf8f97c57d73265ca16dc.png" alt="\BB = \{A_{xx}, A_{xy}, A_{xz},
         A_{yx}, A_{yy}, A_{yz},
         A_{zx}, A_{zy}, A_{zz}\}"/></p>
 </div><div class="section" id="abaqus-materials">
@@ -87,7 +87,7 @@ tensors are modified when the material is called to be consistent with
 Abaqus/Standard.   i.e., the second-order tensor in <a href="#equation-order-symtens">(1)</a> is
 passed to an Abaqus material as</p>
 <div class="math">
-<p><img src="_images/math/1c2e4e7577b5ae251cecaa5febf59a587230c1b2.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{xz}, A_{yz}\}"/></p>
+<p><img src="_images/math/4fbd287e6f7f924a6d5b3346681d9c4cd1742fc7.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{xz}, A_{yz}\}"/></p>
 </div><p>Also consistent with Abaqus conventions, the shear components of strain-like tensors are sent to the material model as engineering strains.</p>
 <p>Nonsymmetric, Second-order tensors are sent as 3x3 matrices.</p>
 </div>
@@ -154,14 +154,14 @@ and sections.</p>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Conventions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clparse.html">Command Line Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>
@@ -192,7 +192,7 @@ and sections.</p>
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |

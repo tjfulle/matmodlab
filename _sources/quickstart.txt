@@ -2,8 +2,9 @@
 Quick Start Guide
 #################
 
-Setup and Build
-===============
+
+Setup and Build, Method 1
+=========================
 
 Build *matmodlab*.  See :ref:`Building` for more details.
 
@@ -13,6 +14,23 @@ Build *matmodlab*.  See :ref:`Building` for more details.
 
    cd path/to/matmodlab
    mml build
+
+
+Setup and Build, Method 2
+=========================
+
+If only the python functionality of *matmodlab* is desired, no building is
+required.
+
+* Download *matmodlab*
+
+* When using *matmodlab* simply ensure that your working directory is
+  ``MML_ROOT`` and run *matmodlab* by invoking the regular Python interpreter::
+
+    python mml_input.py
+
+* Notice: without adding ``MML_ROOT/bin`` to the ``PATH`` the regular ``mml``
+  command will not be available.
 
 Prepare Input
 =============

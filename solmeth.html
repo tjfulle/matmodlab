@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
     <link rel="up" title="User’s Guide" href="users.html" />
-    <link rel="next" title="Running a Simulation" href="run.html" />
+    <link rel="next" title="Command Line Tools" href="tools.html" />
     <link rel="prev" title="Conventions" href="conventions.html" />
    
   
@@ -40,7 +40,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="run.html" title="Running a Simulation"
+          <a href="tools.html" title="Command Line Tools"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="conventions.html" title="Conventions"
@@ -85,36 +85,36 @@ production in the interior plus flux through the boundary</em></p>
 <ul>
 <li><p class="first">Conservation of mass</p>
 <div class="math">
-<p><img src="_images/math/1aeb7a9ecc7ac43ff840bf0ee08b801877300a48.png" alt="\dDensity + \Density\Del\DotProd\dDisplacement = 0"/></p>
+<p><img src="_images/math/5a872e411aed1dc10f5d9cc6b237a845d2b0c4a6.png" alt="\dDensity + \Density\Del\DotProd\dDisplacement = 0"/></p>
 </div></li>
 <li><p class="first">Conservtion of momentum per unit volume</p>
 <div class="math">
-<p><img src="_images/math/36d575dd1dcbd2ae9397558b01f0d81a73e1b194.png" alt="\Density\Der{}{t}\dDisplacement =
+<p><img src="_images/math/562ed80fbdf91c3ca4e1a8079984b2eb84be6336.png" alt="\Density\Der{}{t}\dDisplacement =
 \underset{\text{internal forces}}{\boxed{\Del\DotProd\Stress}} +
 \underset{\text{body forces}}{\boxed{\BodyForce}}"/></p>
 </div></li>
 <li><p class="first">Conservation of energy per unit volume</p>
 <div class="math">
-<p><img src="_images/math/bc05f6299a62768a7e908cc89e62a10c211d5dcf.png" alt="\Density\Der{}{t}\Energy =
+<p><img src="_images/math/3be3802edd7ab2102e93334def620b83d4de55a3.png" alt="\Density\Der{}{t}\Energy =
 \underset{\text{heat source}}{\boxed{\Density s}} +
 \underset{\text{strain energy}}{\boxed{\Stress\DDotProd\dStrain}} +
 \underset{\text{heat flux}}{\boxed{\Del\DotProd\HeatFlux}}"/></p>
 </div></li>
 </ul>
-<p>where <img class="math" src="_images/math/a34535b0a943d4576da1485700d50cb3eec78aa1.png" alt="\Displacement"/> is the displacement, <img class="math" src="_images/math/858f446e275534dbabef1260ddba1b2eabcb18fb.png" alt="\Density"/> the mass
-density, <img class="math" src="_images/math/37eae74ebab0f2aedbbfa4e78e29dd1f986a66f1.png" alt="\Stress"/> the stress, <img class="math" src="_images/math/814511d889146ee5778d911cf17516401740655a.png" alt="\dStrain"/> the rate of strain,
-<img class="math" src="_images/math/43a803358575ad04dbb0315643120e3e5dde728b.png" alt="\BodyForce"/> the body force per unit volume, <img class="math" src="_images/math/9b6cce941ec75ad68a9913af703f15fe17fa0ad5.png" alt="\HeatFlux"/> the heat
-flux, <img class="math" src="_images/math/141c07bbb8275a861badadcbf9f71eca6c77f85a.png" alt="s"/> the heat source, and <img class="math" src="_images/math/b1aa9007313f70d85d8d063159c1c77b559c0008.png" alt="\Energy"/> is the internal energy
+<p>where <img class="math" src="_images/math/0c4feae755836b3a3ae882ca760771047dac2acb.png" alt="\Displacement"/> is the displacement, <img class="math" src="_images/math/a98ad391c19faf621cea06a12b9c41d78b63c94a.png" alt="\Density"/> the mass
+density, <img class="math" src="_images/math/385394e17fd7fbf1795d55ce1b4c3c880bb79941.png" alt="\Stress"/> the stress, <img class="math" src="_images/math/55c3641b21e66b9475e78b2c147ae67b872f619e.png" alt="\dStrain"/> the rate of strain,
+<img class="math" src="_images/math/09d9123b7d9600349c3462e5a1928f1efd864a0a.png" alt="\BodyForce"/> the body force per unit volume, <img class="math" src="_images/math/425aa36c0f7123db9555a0d0473136b1893da6af.png" alt="\HeatFlux"/> the heat
+flux, <img class="math" src="_images/math/59274f0a34fcd12b6ceca319478a1a0fcadf9f06.png" alt="s"/> the heat source, and <img class="math" src="_images/math/272df5eacb59927a1490f433377412aa67b3f39d.png" alt="\Energy"/> is the internal energy
 per unit mass.</p>
 <p>In solid mechanics, mass is conserved trivially, and many problems are
 adiabatic or isotrhermal, so that only the momentum balance is explicitly
 solved</p>
 <div class="math" id="equation-mbal">
-<p><span class="eqno">(1)</span><img src="_images/math/36d575dd1dcbd2ae9397558b01f0d81a73e1b194.png" alt="\Density\Der{}{t}\dDisplacement =
+<p><span class="eqno">(1)</span><img src="_images/math/562ed80fbdf91c3ca4e1a8079984b2eb84be6336.png" alt="\Density\Der{}{t}\dDisplacement =
 \underset{\text{internal forces}}{\boxed{\Del\DotProd\Stress}} +
 \underset{\text{body forces}}{\boxed{\BodyForce}}"/></p>
 </div><p>The balance of linear momentum is the continuum mechanics generalization of
-Newton&#8217;s second law <img class="math" src="_images/math/7fc2938aa130a76fe8e7239f29ccd2413a397ee2.png" alt="F=ma"/>.</p>
+Newton&#8217;s second law <img class="math" src="_images/math/a520871cf4d2a5c6aa125a79c22f7fb2e9984be4.png" alt="F=ma"/>.</p>
 <p>The first term on the RHS of <a href="#equation-mbal">(1)</a> represents the internal forces, which
 arise in the medium to resist imposed deformation. This resistance is a
 fundamental response of matter and is given by the divergence of the stress
@@ -122,7 +122,7 @@ field.</p>
 <p>The balance of linear momentum represents an initial boundary value problem
 for applications of interest in solid dynamics:</p>
 <div class="math" id="equation-ibvp">
-<p><span class="eqno">(2)</span><img src="_images/math/d01bfa647e8953d5189d6d0d227c509ba980dac1.png" alt="\begin{aligned}
+<p><span class="eqno">(2)</span><img src="_images/math/21d0c7c34d1ec202e283a2f603c8a6bae138708e.png" alt="\begin{aligned}
   \Density\Der{}{t}\dDisplacement = \Del\DotProd\Stress + \BodyForce&amp;
   &amp;&amp;\quad\text{in }\Omega \\
   \Displacement = \Displacement_0&amp; &amp;&amp;\quad\text{on }\Gamma_0 \\
@@ -136,10 +136,10 @@ for applications of interest in solid dynamics:</p>
 <span id="femeth"></span><h3>The Finite Element Method<a class="headerlink" href="#the-finite-element-method" title="Permalink to this headline">¶</a></h3>
 <p>The form of the momentum equation in <a href="#equation-ibvp">(2)</a> is termed the <strong>strong</strong> form.
 The strong form of the initial BVP problem can also be expressed in the weak
-form by introducing a test function <img class="math" src="_images/math/d27f9f3ed7199f16b996b296980ccfdaa14112bb.png" alt="\Tensor{w}{}{}"/> and integrating
+form by introducing a test function <img class="math" src="_images/math/c4449b2db478371fb90666ba121457193b019b52.png" alt="\Tensor{w}{}{}"/> and integrating
 over space</p>
 <div class="math" id="equation-ibvp-1">
-<p><span class="eqno">(3)</span><img src="_images/math/863a6ad36d8be327a34669ca72c8486d8df08a7f.png" alt="\begin{aligned}
+<p><span class="eqno">(3)</span><img src="_images/math/0e34f7e16c22e7cdbe8cdbed16d35384ae66c166.png" alt="\begin{aligned}
     \int_{\Omega}\Tensor{w}{}{}\DotProd\left(
       \Del\DotProd\Stress + \BodyForce - \Density\Der{}{t}\dDisplacement
     \right)\,d\Omega&amp; &amp;&amp;\quad \forall \Tensor{w}{}{} \\
@@ -152,7 +152,7 @@ over space</p>
 </div><p>Integrating <a href="#equation-ibvp-1">(3)</a> by parts allows the traction boundary conditions to
 be incorporated in to the governing equations</p>
 <div class="math" id="equation-weak">
-<p><span class="eqno">(4)</span><img src="_images/math/8bad7b401ed94c42dd590c4a376cedc7454daea2.png" alt="\begin{aligned}
+<p><span class="eqno">(4)</span><img src="_images/math/14d4d5f14cec09f5988a3ed880b3189383357ad7.png" alt="\begin{aligned}
     \int_{\Omega}\Density\Tensor{w}{}{}\DotProd\Acceleration +
     \Stress\DDotProd\Del\Tensor{w}{}{}\,d\Omega
     = \int_{\Omega}\Tensor{w}{}{}\DotProd\BodyForce\,d\Omega +
@@ -168,19 +168,19 @@ be incorporated in to the governing equations</p>
 IBVP as a integro-differential equation and eliminates singularities that may
 arise in the strong form. Traction boundary conditions are incorporated in the
 governing equations. The weak form forms the basis for finite element methods.</p>
-<p>In the finite element method, forms of <img class="math" src="_images/math/d27f9f3ed7199f16b996b296980ccfdaa14112bb.png" alt="\Tensor{w}{}{}"/> are assumed in
-subdomains (elements) in <img class="math" src="_images/math/da27da5fc16fc119f77067e4662121b0fecf334e.png" alt="\Omega"/> and displacements are sought such that
-the force imbalance <img class="math" src="_images/math/fa8b469f14e028fc7e71cdb2d24986d6e9af5f8a.png" alt="R"/> is minimized:</p>
+<p>In the finite element method, forms of <img class="math" src="_images/math/c4449b2db478371fb90666ba121457193b019b52.png" alt="\Tensor{w}{}{}"/> are assumed in
+subdomains (elements) in <img class="math" src="_images/math/a12d13c328f5a491bbd9da1de6284c0f78ecf504.png" alt="\Omega"/> and displacements are sought such that
+the force imbalance <img class="math" src="_images/math/76dfe3eedd5f6f83a86f7f737f0e297a73d28c50.png" alt="R"/> is minimized:</p>
 <div class="math" id="equation-resid">
-<p><span class="eqno">(5)</span><img src="_images/math/de24b51b7e535e422841f68e1f8a0819d1c018bd.png" alt="R = \int_{\Omega}\Tensor{w}{}{}\DotProd\BodyForce\,d\Omega +
+<p><span class="eqno">(5)</span><img src="_images/math/428dce0ed94fb2735d28929e59da185f7d5c1fe5.png" alt="R = \int_{\Omega}\Tensor{w}{}{}\DotProd\BodyForce\,d\Omega +
 \int_{\Gamma}\Tensor{w}{}{}\DotProd\Traction\,d\Gamma_{t} -
  \int_{\Omega}\Density\Tensor{w}{}{}\DotProd\Acceleration +
         \Stress\DDotProd\Del\Tensor{w}{}{}\,d\Omega"/></p>
 </div><p>The equations of motion as described in <a href="#equation-resid">(5)</a> are not closed, but
-require relationships relating <img class="math" src="_images/math/37eae74ebab0f2aedbbfa4e78e29dd1f986a66f1.png" alt="\Stress"/> to <img class="math" src="_images/math/a34535b0a943d4576da1485700d50cb3eec78aa1.png" alt="\Displacement"/></p>
+require relationships relating <img class="math" src="_images/math/385394e17fd7fbf1795d55ce1b4c3c880bb79941.png" alt="\Stress"/> to <img class="math" src="_images/math/0c4feae755836b3a3ae882ca760771047dac2acb.png" alt="\Displacement"/></p>
 <p class="centered">
-<strong>Constitutive model <img class="math" src="_images/math/6f4d1323f2d0afff363087977a663097f80b13f0.png" alt="\longrightarrow"/> relationship between
-<img class="math" src="_images/math/37eae74ebab0f2aedbbfa4e78e29dd1f986a66f1.png" alt="\Stress"/> and <img class="math" src="_images/math/a34535b0a943d4576da1485700d50cb3eec78aa1.png" alt="\Displacement"/></strong></p><p>In the typical finite element procedure, the host finite element code passes
+<strong>Constitutive model <img class="math" src="_images/math/d2c89b47d0120fe605e30e0155144852e553a4dc.png" alt="\longrightarrow"/> relationship between
+<img class="math" src="_images/math/385394e17fd7fbf1795d55ce1b4c3c880bb79941.png" alt="\Stress"/> and <img class="math" src="_images/math/0c4feae755836b3a3ae882ca760771047dac2acb.png" alt="\Displacement"/></strong></p><p>In the typical finite element procedure, the host finite element code passes
 to the constitutive routine the stress and material state at the beginning of
 a finite step (in time) and kinematic quantities at the end of the step. The
 constitutive routine is responsible for updating the stress to the end of the
@@ -205,8 +205,8 @@ the beginning of each step and advancing kinematic quantities to the step&#8217;
 end, <em>matmodlab</em> retrieves updated kinematic quantities from user defined
 tables and/or functions.</p>
 <p>The path through which a material is exercised is defined by piecewise
-continuous &#8220;legs&#8221; in which components of the &#8220;control type&#8221; <img class="math" src="_images/math/c4d5709ae148de97db9b320ca3e6ff90d993c63b.png" alt="c_{i}"/> are
-specified at discrete points in time, shown in <a class="reference internal" href="#figure-1">Figure 1</a>. The <img class="math" src="_images/math/c4d5709ae148de97db9b320ca3e6ff90d993c63b.png" alt="c_{i}"/>
+continuous &#8220;legs&#8221; in which components of the &#8220;control type&#8221; <img class="math" src="_images/math/ba6b592d380d22cc58949bbc832cfde12e5733b0.png" alt="c_{i}"/> are
+specified at discrete points in time, shown in <a class="reference internal" href="#figure-1">Figure 1</a>. The <img class="math" src="_images/math/ba6b592d380d22cc58949bbc832cfde12e5733b0.png" alt="c_{i}"/>
 are used to obtain a sequence of piecewise constant strain rates that are used
 to advance the kinematic state. Supported control types are strain, strain
 rate, stress, stress rate, deformation gradient, displacement, and velocity.
@@ -218,17 +218,17 @@ unit cube centered at the coordinate origin.</p>
 </div>
 <p>The components of strain are defined by</p>
 <div class="math">
-<p><img src="_images/math/b6760c94e549d4ce5dd0639f492d63e7ab7f5a03.png" alt="\Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)"/></p>
-</div><p>where <img class="math" src="_images/math/b9d83ce97f7307c534f8e331535890e55456bdf1.png" alt="\RightStretch"/> is the right Cauchy stretch tensor, defined by the
-polar decomposition of the deformation gradient <img class="math" src="_images/math/5e1f14d91355837599cfe9c6e4a089e3ff6df02e.png" alt="\DefGrad =
-\Rotation\DotProd\RightStretch"/>, and <img class="math" src="_images/math/73de11675304a824068cd40da89cd3e936e54757.png" alt="\kappa"/> is a user specified
+<p><img src="_images/math/5a7fabf3081139167a0125c0cf59989486ca4a51.png" alt="\Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)"/></p>
+</div><p>where <img class="math" src="_images/math/a54278f49300702962970443e21a486c4c7b6c86.png" alt="\RightStretch"/> is the right Cauchy stretch tensor, defined by the
+polar decomposition of the deformation gradient <img class="math" src="_images/math/0203c3346c36ee566557cd0edf8b59e64c5fb7f5.png" alt="\DefGrad =
+\Rotation\DotProd\RightStretch"/>, and <img class="math" src="_images/math/eb1506566a234cc3c10753e279bba3e2617d1e80.png" alt="\kappa"/> is a user specified
 &#8220;Seth-Hill&#8221; parameter that controls the strain definition. Choosing
-<img class="math" src="_images/math/bbf57ba1ed09e08bb768338820a6d3e5e2a4b4fd.png" alt="\kappa=2"/> gives the Lagrange strain, which might be useful when testing
-models cast in a reference coordinate system. The choice <img class="math" src="_images/math/9139762a5b0c1cddc264982f680c61247b22d7b9.png" alt="\kappa=1"/>,
+<img class="math" src="_images/math/78e58bf07c5e01f2312c8a6602490bf0c3b34050.png" alt="\kappa=2"/> gives the Lagrange strain, which might be useful when testing
+models cast in a reference coordinate system. The choice <img class="math" src="_images/math/415275c5b454217ad80e51ef50962aba2583975b.png" alt="\kappa=1"/>,
 which gives the engineering strain, is convenient when driving a problem over
-the same strain path as was used in an experiment. The choice <img class="math" src="_images/math/ddc65ccf9f4fef9864140c1e7d08e40cf32efa02.png" alt="\kappa=0"/>
+the same strain path as was used in an experiment. The choice <img class="math" src="_images/math/c356dc1e6408f1321a56c268c8bc53e3559c75ad.png" alt="\kappa=0"/>
 corresponds to the logarithmic (Hencky) strain. Common values of
-<img class="math" src="_images/math/73de11675304a824068cd40da89cd3e936e54757.png" alt="\kappa"/> and the associated names for each (there is some ambiguity in
+<img class="math" src="_images/math/eb1506566a234cc3c10753e279bba3e2617d1e80.png" alt="\kappa"/> and the associated names for each (there is some ambiguity in
 the names) are listed in <a class="reference internal" href="#table-1">Table 1</a></p>
 <table border="1" class="docutils" id="table-1">
 <colgroup>
@@ -236,7 +236,7 @@ the names) are listed in <a class="reference internal" href="#table-1">Table 1</
 <col width="62%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head"><img class="math" src="_images/math/73de11675304a824068cd40da89cd3e936e54757.png" alt="\kappa"/></th>
+<tr class="row-odd"><th class="head"><img class="math" src="_images/math/eb1506566a234cc3c10753e279bba3e2617d1e80.png" alt="\kappa"/></th>
 <th class="head">Name(s)</th>
 </tr>
 </thead>
@@ -258,16 +258,16 @@ the names) are listed in <a class="reference internal" href="#table-1">Table 1</
 </tr>
 </tbody>
 </table>
-<p>The volumetric strain <img class="math" src="_images/math/af6478609682547da690d59994be567f9afdab7e.png" alt="\Strain[v]"/> is defined</p>
+<p>The volumetric strain <img class="math" src="_images/math/6aa50269ce068f1bf7b95b2168c6c69f28a2cf4a.png" alt="\Strain[v]"/> is defined</p>
 <div class="math" id="equation-volstrain">
-<p><span class="eqno">(6)</span><img src="_images/math/19e028ccbe500d5366a5a691cb3b5d574ec11b63.png" alt="\Strain[v] =
+<p><span class="eqno">(6)</span><img src="_images/math/b8f18d1736744648ba521efb212d329f0ac001b0.png" alt="\Strain[v] =
 \begin{cases}
     \OneOver{\kappa}\left(\Jacobian^{\kappa} - 1\right)
     &amp; \text{if }\kappa \ne 0 \\
     \ln{\Jacobian} &amp; \text{if }\kappa = 0
 \end{cases}"/></p>
-</div><p>where the Jacobian <img class="math" src="_images/math/6f73434d8fdc58707acc52ab7069ba40a187b627.png" alt="\Jacobian"/> is the determinant of the deformation gradient.</p>
-<p>Each leg in the control table, from time <img class="math" src="_images/math/c0d5f4a8345540b6da199cbae13947c64b1fbcc1.png" alt="t=0"/> to <img class="math" src="_images/math/4d67f093b8f737aec9148caf6f23d8b612096ed6.png" alt="t=t_f"/> is
+</div><p>where the Jacobian <img class="math" src="_images/math/956c88805df5c6a7c6825bb62b4647372275f1e0.png" alt="\Jacobian"/> is the determinant of the deformation gradient.</p>
+<p>Each leg in the control table, from time <img class="math" src="_images/math/dedcd3799e4009abf7424d79deda328c5f82fe21.png" alt="t=0"/> to <img class="math" src="_images/math/fdb498ec8477897f1c09e95e6629e444beb95774.png" alt="t=t_f"/> is
 subdivided into a user-specified number of steps and the material model
 evaluated at each step. When volumetric strain, deformation gradient,
 displacement, or velocity are specified for a leg, <em>matmodlab</em> internally
@@ -280,23 +280,23 @@ distance between the prescribed stress component and model response.</p>
 prescribed stress is an iterative scheme employing a multidimensional Newton&#8217;s
 method that satisfies</p>
 <div class="math">
-<p><img src="_images/math/3ed627a26eaa7cb734ff63f9a7477d6b871e2207.png" alt="\Stress\left(\dStrain\,[\text{v}]\right) = \PrescStress"/></p>
-</div><p>where, <img class="math" src="_images/math/9e80f88db4146ee2c1d558aeba1f0274e6c77199.png" alt="\text{v}"/> is a vector subscript array containing the components
-for which stresses (or stress rates) are prescribed, and <img class="math" src="_images/math/58cfe599a3aade007da65617ea65d4564a642e56.png" alt="\PrescStress"/>
+<p><img src="_images/math/5c63f5c7079a17318611f72f258a19d86f170ec0.png" alt="\Stress\left(\dStrain\,[\text{v}]\right) = \PrescStress"/></p>
+</div><p>where, <img class="math" src="_images/math/f308fb78b18ae9b9ee843e188bb4e91fddb43330.png" alt="\text{v}"/> is a vector subscript array containing the components
+for which stresses (or stress rates) are prescribed, and <img class="math" src="_images/math/95264ede528aa5b589beb1a7642270d05ed4e132.png" alt="\PrescStress"/>
 are the components of prescribed stress.</p>
 <p>Each iteration begins by determining the submatrix of the material stiffness</p>
 <div class="math">
-<p><img src="_images/math/a4a99c83b544462b3bbedd17b9b35e37cc50fa54.png" alt="\Stiffness_{\text{v}} = \Stiffness\,[\text{v}, \text{v}]"/></p>
-</div><p>where <img class="math" src="_images/math/4fd520dd470a22cb8e4b9101681b185d1ccadf64.png" alt="\Stiffness"/> is the full stiffness matrix
-<img class="math" src="_images/math/b5988f4a5e4c3ea3f272302519e3cda99904e0ce.png" alt="\Stiffness=d\Stress/d\Strain"/>. The value of
-<img class="math" src="_images/math/f8ed994a8dce77259359f86eb8484f444b9fbb05.png" alt="\dStrain\,[\text{v}]"/> is then updated according to</p>
+<p><img src="_images/math/c5cabb20679404e2e128f7aa211f9fd5df6d9ffb.png" alt="\Stiffness_{\text{v}} = \Stiffness\,[\text{v}, \text{v}]"/></p>
+</div><p>where <img class="math" src="_images/math/51e21742efbfe13f23d3e8b4b004836f3a4ba207.png" alt="\Stiffness"/> is the full stiffness matrix
+<img class="math" src="_images/math/db5474903faed1225d80fa9a462d51742665c73c.png" alt="\Stiffness=d\Stress/d\Strain"/>. The value of
+<img class="math" src="_images/math/db895293cf7d6e7b1ca1b27b3ca0aa3ec8629a76.png" alt="\dStrain\,[\text{v}]"/> is then updated according to</p>
 <div class="math">
-<p><img src="_images/math/3d9db81c51505186132a68d8d30e3890f1e7a2e7.png" alt="\dStrain\,[\text{v}] =
+<p><img src="_images/math/38f0eaf1e8146c4707aa235d11bbee9cc72f6200.png" alt="\dStrain\,[\text{v}] =
     \dStrain\,[\text{v}] -
     \Stiffness_{\text{v}}\DDotProd\Stress^{*}(\dStrain\,[\text{v}])/dt"/></p>
 </div><p>where</p>
 <div class="math">
-<p><img src="_images/math/8750bba74ab4ca319c179ae713e3214efd67db4e.png" alt="\Stress^{*}(\dStrain\,[\text{v}]) = \Stress(\dStrain\,[\text{v}])
+<p><img src="_images/math/df572715db1a4726ecf8129ed02784d319fa7767.png" alt="\Stress^{*}(\dStrain\,[\text{v}]) = \Stress(\dStrain\,[\text{v}])
                                   - \PrescStress"/></p>
 </div><p>The Newton procedure will converge for valid stress states. However, it is
 possible to prescribe invalid stress state, e.g. a stress state beyond the
@@ -367,14 +367,14 @@ easily transitioned to them.  <a href="#id3"><span class="problematic" id="id4">
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clparse.html">Command Line Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>
@@ -405,7 +405,7 @@ easily transitioned to them.  <a href="#id3"><span class="problematic" id="id4">
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |
