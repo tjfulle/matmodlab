@@ -15,20 +15,22 @@ NOT_SAME = 2
 
 
 class Logger(object):
-    def __init__(self, f, v=1):
-        self.fh = open(f, "w")
-        self.ch = None if not v else sys.stdout
+    def __init__(self, f=None, v=1):
+        self.handlers = []
+        if f is not None:
+            self.handlers.append(open(f, "w"))
+        if v:
+            self.handlers.append(sys.stdout)
     def info(self, message, end="\n"):
-        self.write(message, end=end)
-    def warning(self, message):
-        self.write("*** warning: {0}".format(message))
+        self._write(message, end=end)
+    def warn(self, message):
+        self._write("*** warning: {0}".format(message))
     def error(self, message):
-        self.write("*** error: {0}".format(message))
-    def write(self, string, end="\n"):
+        self._write("*** error: {0}".format(message))
+    def _write(self, string, end="\n"):
         message = string.upper() + end
-        self.fh.write(message)
-        if self.ch:
-            self.ch.write(message)
+        for h in self.handlers:
+            h.write(message)
 
 DIFFTOL = 1.E-06
 FAILTOL = 1.E-04
@@ -47,14 +49,20 @@ def main(argv=None):
     parser.add_argument("--interp", default=False, action="store_true",
         help=("Interpolate variabes through time to compute error "
               "[default: %(default)s]."))
+    parser.add_argument("--plot", default=False, action="store_true",
+        help=("Plot file variables that diff [default: %(default)s]."))
     parser.add_argument("source1")
     parser.add_argument("source2")
     args = parser.parse_args(argv)
+    if args.plot:
+        return plot_files(args.source1, args.source2)
+
     return exodiff(args.source1, args.source2, control_file=args.f,
                    interp=args.interp)
 
 
-def exodiff(source1, source2, control_file=None, interp=False, f=None, d=None, v=1):
+def exodiff(source1, source2, control_file=None, interp=False, f=None,
+            d=None, v=1):
     d = d or os.getcwd()
     if not f:
         f = os.path.join(d, "exodiff.log")
@@ -190,13 +198,13 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, logger, interp=False
         try:
             i1 = head1.index(var)
         except ValueError:
-            logger.warning("{0}: not in File1\n".format(var))
+            logger.warn("{0}: not in File1\n".format(var))
             continue
 
         try:
             i2 = head2.index(var)
         except ValueError:
-            logger.warning("{0}: not in File2\n".format(var))
+            logger.warn("{0}: not in File2\n".format(var))
             continue
 
         d1 = afloor(data1[:, i1], floor)
@@ -219,7 +227,7 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, logger, interp=False
 
         elif nrms < ftol:
             logger.info(" diff")
-            logger.warning("File1.{0} ~= File2.{0}".format(var))
+            logger.warn("File1.{0} ~= File2.{0}".format(var))
             status.append(DIFF)
             bad[1].append(var)
 
@@ -241,6 +249,59 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, logger, interp=False
 
     return max(status)
 
+
+def plot_files(source1, source2):
+    import matplotlib.pyplot as plt
+    cwd = os.getcwd()
+    logger = Logger()
+    head1, data1 = loadcontents(source1, logger)
+    head2, data2 = loadcontents(source2, logger)
+    label1 = os.path.splitext(os.path.basename(source1))[0]
+    label2 = os.path.splitext(os.path.basename(source2))[0]
+
+    # Compare times first
+    try:
+        time1 = data1[:, head1.index("TIME")]
+    except:
+        logger.error("TIME not in File1")
+        return NOT_SAME
+    try:
+        time2 = data2[:, head2.index("TIME")]
+    except:
+        logger.error("TIME not in File2")
+        return NOT_SAME
+
+    head2 = dict([(v, i) for (i, v) in enumerate(head2)])
+
+    ti = time.time()
+
+    aspect_ratio = 4. / 3.
+    plots = []
+    for (col, yvar) in enumerate(head1):
+        if yvar == "TIME":
+            continue
+        col2 = head2.get(yvar)
+        if col2 is None:
+            continue
+
+        name = "{0}_vs_TIME.png".format(yvar)
+        filename = os.path.join(cwd, name)
+
+        y1 = data1[:, col]
+        y2 = data2[:, col2]
+
+        plt.clf()
+        plt.cla()
+        plt.xlabel("TIME")
+        plt.ylabel(yvar)
+        plt.plot(time2, y2, ls="-", lw=4, c="orange", label=label2)
+        plt.plot(time1, y1, ls="-", lw=2, c="green", label=label1)
+        plt.legend(loc="best")
+        plt.gcf().set_size_inches(aspect_ratio * 5, 5.)
+        plt.savefig(filename, dpi=100)
+        plots.append(filename)
+
+    return
 
 def rms_error(t1, d1, t2, d2, disp=1):
     """Compute the RMS and normalized RMS error
