@@ -4,10 +4,10 @@ import numpy as np
 from numpy.linalg import solve, lstsq
 
 from core.logger import Logger
+from core.legs import LegRepository
 from utils.variable import Variable
 from utils.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
 from utils.errors import FileNotFoundError, MatModLabError
-from utils.dparse import read_path
 from core.runtime import opts
 from utils.constants import NSYMM, NTENS, I9
 from materials.completion import EC_BULK
@@ -47,12 +47,13 @@ class ContinuumDriver(PathDriver):
 
         if not isinstance(path, np.ndarray):
             path = [line.split() for line in path.split("\n") if line.split()]
-        self.path = read_path("continuum", path_input, path, num_steps, amplitude,
+        self.legs = LegRepository.from_path("continuum", path_input, path,
+                              num_steps, amplitude,
                               rate_multiplier, step_multiplier, num_io_dumps,
                               termination_time, tfmt, cols, cfmt, skiprows,
                               functions, kappa, estar, tstar, sstar, fstar,
                               efstar, dstar)
-        self.itemp = self.path[0][18]
+        self.itemp = self.legs.values()[0].temp
 
         # Register variables specifically needed by driver
         self.register_variable("STRESS", VAR_SYMTENSOR)
@@ -92,11 +93,11 @@ class ContinuumDriver(PathDriver):
 
     @property
     def num_leg(self):
-        return len(self.path)
+        return len(self.legs)
 
     @property
     def num_steps(self):
-        return int(sum([x[1] for x in self.path]))
+        return int(sum([x.num_steps for x in self.legs.values()]))
 
     def run(self, glob_data, elem_data, material, out_db,
             termination_time=None):
@@ -114,7 +115,6 @@ class ContinuumDriver(PathDriver):
             != 0 -> fail
 
         """
-        legs = self.path[0:]
         kappa = self.kappa
 
         # initial leg
@@ -143,10 +143,10 @@ class ContinuumDriver(PathDriver):
         vdum = np.zeros(NSYMM, dtype=np.int)
 
         # Process each leg
-        nlegs = len(legs)
-        lsl = len(str(nlegs))
+        lsl = len(str(self.num_leg))
         start_leg = 0
-        for (ileg, leg) in enumerate(legs):
+
+        for (ileg, leg) in self.legs.items():
             leg_num = start_leg + ileg
             tleg[0] = tleg[1]
             temp[0] = temp[1]
@@ -154,14 +154,14 @@ class ContinuumDriver(PathDriver):
             if nv:
                 sigdum[0, v] = sigspec[1]
 
-            tleg[1] = leg[0]
-            nsteps = leg[1]
-            control = leg[2:8]
-            c = leg[8:14]
-            ndumps = leg[14]
-            ef = leg[15:18]
-            temp[1] = leg[18]
-            ufield = leg[19:]
+            tleg[1] = leg.termination_time
+            nsteps = leg.num_steps
+            control = leg.control
+            c = leg.components
+            ndumps = leg.num_dumps
+            ef = leg.efield
+            temp[1] = leg.temp
+            ufield = leg.user_field
 
             delt = tleg[1] - tleg[0]
             if delt == 0.:
