@@ -61,6 +61,13 @@ On completion of the preceding commands, *matmodlab* will treat materials and
 tests in ``path/to/material`` and ``path/to/tests``, respectively, as built in
 materials and tests.
 
+There is also functionality for host-specific configurations. For example::
+
+  mml config --add nprocs:host1 6
+  mml config --add nprocs 2
+
+The commands are not order dependent. This will make *matmodlab* run with 6 processors on host1 and with 2 processors on any other machine.
+
 Example
 -------
 
