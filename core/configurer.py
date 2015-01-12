@@ -102,6 +102,17 @@ def cfgparse(reqopt=None, default=None, _cache=[0]):
         # string is a line from the config file.
         a = _cfgparse(RCFILE)
 
+        # Check for host-specific configure options and remove un-needed.
+        # The syntax is [option:hostname]
+        uname = os.uname()[1].lower()
+        for key in a.keys():
+            if ":" not in key:
+                continue
+            if uname == key[key.index(":")+1:].lower():
+                a[key[:key.index(":")]] = a.pop(key)
+            else:
+                a.pop(key)
+
         # parse list-of-string options (default empty list)
         for (opt, info) in options.items():
             cfgopt = a.pop(opt, info["default"])
@@ -191,17 +202,21 @@ def cfgedit(filename, add=None, delete=None):
     if add is not None:
         key = add[0].lower().strip()
         val = [x.strip() for x in add[1:] if x.split()]
-        if key not in options:
+
+        # allow for the option of host-specific settings  "key:host"
+        check_key = key if ":" not in key else key[:key.index(":")]
+
+        if check_key not in options:
             raise SystemExit("*** error: mml config: {0}: not a matmodlab "
                              "option".format(key))
 
         # dumb check to see if it is a file path
-        if options[key]["type"] == ListOfFiles:
+        if options[check_key]["type"] == ListOfFiles:
             for (i, v) in enumerate(val):
                 if os.path.sep in v:
                     val[i] = os.path.realpath(os.path.expanduser(v))
 
-        if key == "switch":
+        if check_key == "switch":
             try:
                 old, new = val
             except ValueError:
@@ -213,7 +228,7 @@ def cfgedit(filename, add=None, delete=None):
 
         write("writing the following options to {0}:".format(filename))
         write("  {0}: {1}".format(key, val))
-        if options[key]["N"] == "?":
+        if options[check_key]["N"] == "?":
             # 0 or 1 option
             a[key] = [val]
         else:
