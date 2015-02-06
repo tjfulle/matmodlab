@@ -49,6 +49,13 @@ The formal parameters to ``Material`` are
    :type switch: tuple or None
    :rtype: MaterialModel instance
 
+Material Database
+~~~~~~~~~~~~~~~~~
+
+Set a material parameter key to "material" with value being the name of a
+material and the parameters dictionary will be updated with parameters from a
+material database file.
+
 The Driver Factory Method
 -------------------------
 

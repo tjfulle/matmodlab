@@ -52,7 +52,13 @@ passed to an Abaqus material as
 
    \AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{xz}, A_{yz}\}
 
-Also consistent with Abaqus conventions, the shear components of strain-like tensors are sent to the material model as engineering strains.
+Also consistent with Abaqus conventions, the shear components of strain-like
+tensors are sent to the material model as engineering strains, i.e.
+
+.. math::
+
+   \Strain = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, 2\epsilon_{xy}, 2\epsilon_{xz}, 2\epsilon_{yz}\}
+           = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, \gamma_{xy}, \gamma_{xz}, \gamma_{yz}\}
 
 Nonsymmetric, Second-order tensors are sent as 3x3 matrices.
 

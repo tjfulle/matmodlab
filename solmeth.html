@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
     <link rel="up" title="User’s Guide" href="users.html" />
-    <link rel="next" title="Running a Simulation" href="run.html" />
+    <link rel="next" title="Command Line Tools" href="tools.html" />
     <link rel="prev" title="Conventions" href="conventions.html" />
    
   
@@ -40,7 +40,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="run.html" title="Running a Simulation"
+          <a href="tools.html" title="Command Line Tools"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="conventions.html" title="Conventions"
@@ -274,26 +274,27 @@ displacement, or velocity are specified for a leg, <em>matmodlab</em> internally
 determines the corresponding strain components. If a component of stress is
 specified, <em>matmodlab</em> determines the strain increment that minimizes the
 distance between the prescribed stress component and model response.</p>
-<div class="section" id="strain-rate-from-prescribed-stress">
-<span id="sig2d"></span><h3>Strain Rate from Prescribed Stress<a class="headerlink" href="#strain-rate-from-prescribed-stress" title="Permalink to this headline">¶</a></h3>
-<p>The approach to determining unknown components of the strain rate from the
-prescribed stress is an iterative scheme employing a multidimensional Newton&#8217;s
-method that satisfies</p>
+<div class="section" id="stress-control">
+<span id="id3"></span><h3>Stress Control<a class="headerlink" href="#stress-control" title="Permalink to this headline">¶</a></h3>
+<p>Stress control is accomplished through an iterative scheme that seeks to
+determine the unkown strain rates, <img class="math" src="_images/math/f8ed994a8dce77259359f86eb8484f444b9fbb05.png" alt="\dStrain\,[\text{v}]"/>, that satisfy</p>
 <div class="math">
 <p><img src="_images/math/3ed627a26eaa7cb734ff63f9a7477d6b871e2207.png" alt="\Stress\left(\dStrain\,[\text{v}]\right) = \PrescStress"/></p>
 </div><p>where, <img class="math" src="_images/math/9e80f88db4146ee2c1d558aeba1f0274e6c77199.png" alt="\text{v}"/> is a vector subscript array containing the components
-for which stresses (or stress rates) are prescribed, and <img class="math" src="_images/math/58cfe599a3aade007da65617ea65d4564a642e56.png" alt="\PrescStress"/>
-are the components of prescribed stress.</p>
-<p>Each iteration begins by determining the submatrix of the material stiffness</p>
+for which stresses are prescribed, and <img class="math" src="_images/math/58cfe599a3aade007da65617ea65d4564a642e56.png" alt="\PrescStress"/> are the components
+of prescribed stress.</p>
+<p>The approach is an iterative scheme employing a multidimensional Newton&#8217;s
+method. Each iteration begins by determining the submatrix of the material
+stiffness</p>
 <div class="math">
 <p><img src="_images/math/a4a99c83b544462b3bbedd17b9b35e37cc50fa54.png" alt="\Stiffness_{\text{v}} = \Stiffness\,[\text{v}, \text{v}]"/></p>
 </div><p>where <img class="math" src="_images/math/4fd520dd470a22cb8e4b9101681b185d1ccadf64.png" alt="\Stiffness"/> is the full stiffness matrix
 <img class="math" src="_images/math/b5988f4a5e4c3ea3f272302519e3cda99904e0ce.png" alt="\Stiffness=d\Stress/d\Strain"/>. The value of
 <img class="math" src="_images/math/f8ed994a8dce77259359f86eb8484f444b9fbb05.png" alt="\dStrain\,[\text{v}]"/> is then updated according to</p>
 <div class="math">
-<p><img src="_images/math/3d9db81c51505186132a68d8d30e3890f1e7a2e7.png" alt="\dStrain\,[\text{v}] =
-    \dStrain\,[\text{v}] -
-    \Stiffness_{\text{v}}\DDotProd\Stress^{*}(\dStrain\,[\text{v}])/dt"/></p>
+<p><img src="_images/math/2a9e49461161467e5102a790569a790215ab35df.png" alt="\dStrain_{n+1}\,[\text{v}] =
+    \dStrain_{n}\,[\text{v}] -
+    \Stiffness_{\text{v}}^{-1}\DDotProd\Stress^{*}(\dStrain_{n}\,[\text{v}])/dt"/></p>
 </div><p>where</p>
 <div class="math">
 <p><img src="_images/math/8750bba74ab4ca319c179ae713e3214efd67db4e.png" alt="\Stress^{*}(\dStrain\,[\text{v}]) = \Stress(\dStrain\,[\text{v}])
@@ -304,6 +305,164 @@ material&#8217;s elastic limit. In these cases, the Newton procedure may not
 converge to within the acceptable tolerance and a Nelder-Mead simplex method
 is used as a back up procedure. A warning is logged in these cases.</p>
 </div>
+<div class="section" id="the-material-stiffness">
+<span id="id4"></span><h3>The Material Stiffness<a class="headerlink" href="#the-material-stiffness" title="Permalink to this headline">¶</a></h3>
+<p>As seen in <a class="reference internal" href="#stress-control">Stress Control</a>, the material tangent stiffness matrix, commonly referred
+to as the material&#8217;s &#8220;Jacobian&#8221;, plays an integral roll in the solution of the
+inverse stress problem (determining strains as a function of prescribed
+stress). Similarly, the Jacobian plays a role in implicit finite element
+methods. In general, the Jacobian is a fourth order tensor in <img class="math" src="_images/math/0ed7a872ce09207dba4026f88f8a4919f51bd6dd.png" alt="\R{3}"/>
+with 81 independent components. Casting the stress and strain second order
+tensors in <img class="math" src="_images/math/0ed7a872ce09207dba4026f88f8a4919f51bd6dd.png" alt="\R{3}"/> as first order tensors in <img class="math" src="_images/math/0bb6a96ed6f706be3c4d883d82ab0b29f7f17aab.png" alt="\R{9}"/> and the
+Jacobian as a second order tensor in <img class="math" src="_images/math/0bb6a96ed6f706be3c4d883d82ab0b29f7f17aab.png" alt="\R{9}"/>, the stress/strain relation
+in <a class="reference internal" href="#stress-control">Stress Control</a> can be written in matrix form as</p>
+<div class="math">
+<p><img src="_images/math/51faebb9d2313b225658d93d498ad74153beef5c.png" alt="\begin{Bmatrix}
+  \dStress[11] \\
+  \dStress[22] \\
+  \dStress[33] \\
+  \dStress[12] \\
+  \dStress[23] \\
+  \dStress[13] \\
+  \dStress[21] \\
+  \dStress[32] \\
+  \dStress[31]
+\end{Bmatrix} =
+\begin{bmatrix}
+  C_{1111} &amp; C_{1122} &amp; C_{1133} &amp; C_{1112} &amp; C_{1123} &amp; C_{1113} &amp; C_{1121} &amp; C_{1132} &amp; C_{1131} \\
+  C_{2211} &amp; C_{2222} &amp; C_{2233} &amp; C_{2212} &amp; C_{2223} &amp; C_{2213} &amp; C_{2221} &amp; C_{2232} &amp; C_{2231} \\
+  C_{3311} &amp; C_{3322} &amp; C_{3333} &amp; C_{3312} &amp; C_{3323} &amp; C_{3313} &amp; C_{3321} &amp; C_{3332} &amp; C_{3331} \\
+  C_{1211} &amp; C_{1222} &amp; C_{1233} &amp; C_{1212} &amp; C_{1223} &amp; C_{1213} &amp; C_{1221} &amp; C_{1232} &amp; C_{1231} \\
+  C_{2311} &amp; C_{2322} &amp; C_{2333} &amp; C_{2312} &amp; C_{2323} &amp; C_{2313} &amp; C_{2321} &amp; C_{2332} &amp; C_{2331} \\
+  C_{1311} &amp; C_{1322} &amp; C_{1333} &amp; C_{1312} &amp; C_{1323} &amp; C_{1313} &amp; C_{1321} &amp; C_{1332} &amp; C_{1331} \\
+  C_{2111} &amp; C_{2122} &amp; C_{2133} &amp; C_{2212} &amp; C_{2123} &amp; C_{2213} &amp; C_{2121} &amp; C_{2132} &amp; C_{2131} \\
+  C_{3211} &amp; C_{3222} &amp; C_{3233} &amp; C_{3212} &amp; C_{3223} &amp; C_{3213} &amp; C_{3221} &amp; C_{3232} &amp; C_{3231} \\
+  C_{3111} &amp; C_{3122} &amp; C_{3133} &amp; C_{3312} &amp; C_{3123} &amp; C_{3113} &amp; C_{3121} &amp; C_{3132} &amp; C_{3131}
+\end{bmatrix}
+\begin{Bmatrix}
+  \dStrain[11] \\
+  \dStrain[22] \\
+  \dStrain[33] \\
+  \dStrain[12] \\
+  \dStrain[23] \\
+  \dStrain[13] \\
+  \dStrain[21] \\
+  \Strain[32] \\
+  \dStrain[31]
+\end{Bmatrix}"/></p>
+</div><p>Due to the symmetries of the stiffness and strain tensors (<img class="math" src="_images/math/d75746a82a7b3f08d9244f33901f82aab66cbb41.png" alt="\Stiffness[ijkl]=\Stiffness[ijlk]"/>, <img class="math" src="_images/math/a354eaa0590b527eb8e37fd8273408c92bcd0150.png" alt="\dStrain[ij]=\dStrain[ji]"/>), the expression above can be simplified by removing the last three columns of <img class="math" src="_images/math/4fd520dd470a22cb8e4b9101681b185d1ccadf64.png" alt="\Stiffness"/>:</p>
+<div class="math">
+<p><img src="_images/math/77fdfa140739b82971188e307242d4dea78673af.png" alt="\begin{Bmatrix}
+  \dStress[11] \\
+  \dStress[22] \\
+  \dStress[33] \\
+  \dStress[12] \\
+  \dStress[23] \\
+  \dStress[13] \\
+  \dStress[21] \\
+  \dStress[32] \\
+  \dStress[31]
+\end{Bmatrix} =
+\begin{bmatrix}
+  C_{1111} &amp; C_{1122} &amp; C_{1133} &amp; C_{1112} &amp; C_{1123} &amp; C_{1113} \\
+  C_{2211} &amp; C_{2222} &amp; C_{2233} &amp; C_{2212} &amp; C_{2223} &amp; C_{2213} \\
+  C_{3311} &amp; C_{3322} &amp; C_{3333} &amp; C_{3312} &amp; C_{3323} &amp; C_{3313} \\
+  C_{1211} &amp; C_{1222} &amp; C_{1233} &amp; C_{1212} &amp; C_{1223} &amp; C_{1213} \\
+  C_{2311} &amp; C_{2322} &amp; C_{2333} &amp; C_{2312} &amp; C_{2323} &amp; C_{2313} \\
+  C_{1311} &amp; C_{1322} &amp; C_{1333} &amp; C_{1312} &amp; C_{1323} &amp; C_{1313} \\
+  C_{2111} &amp; C_{2122} &amp; C_{2133} &amp; C_{2212} &amp; C_{2123} &amp; C_{2213} \\
+  C_{3211} &amp; C_{3222} &amp; C_{3233} &amp; C_{3212} &amp; C_{3223} &amp; C_{3213} \\
+  C_{3111} &amp; C_{3122} &amp; C_{3133} &amp; C_{3112} &amp; C_{3123} &amp; C_{3113}
+\end{bmatrix}
+\begin{Bmatrix}
+  \dStrain[11] \\
+  \dStrain[22] \\
+  \dStrain[33] \\
+  2\dStrain[12] \\
+  2\dStrain[23] \\
+  2\dStrain[13]
+\end{Bmatrix}"/></p>
+</div><p>Considering the symmetry of the stress tensor (<img class="math" src="_images/math/27563a5739360dbc2edd49eb6f0400545e97e5f4.png" alt="\dStress[ij]=\dStress[ji]"/>) and the major symmetry of <img class="math" src="_images/math/4fd520dd470a22cb8e4b9101681b185d1ccadf64.png" alt="\Stiffness"/> (<img class="math" src="_images/math/0844c53f82e921a06ca477a4083346d2883a40b5.png" alt="\Stiffness[ijkl]=\Stiffness[klij]"/>), the final three rows of <img class="math" src="_images/math/4fd520dd470a22cb8e4b9101681b185d1ccadf64.png" alt="\Stiffness"/> may also be ommitted, resulting in the symmetric form</p>
+<div class="math">
+<p><img src="_images/math/e5dd7246c83a5692b2e4204df9fd636cd8b63388.png" alt="\begin{Bmatrix}
+  \Stress[11] \\
+  \Stress[22] \\
+  \Stress[33] \\
+  \Stress[12] \\
+  \Stress[23] \\
+  \Stress[13]
+\end{Bmatrix} =
+\begin{bmatrix}
+  C_{1111} &amp; C_{1122} &amp; C_{1133} &amp; C_{1112} &amp; C_{1123} &amp; C_{1113} \\
+           &amp; C_{2222} &amp; C_{2233} &amp; C_{2212} &amp; C_{2223} &amp; C_{2213} \\
+           &amp;          &amp; C_{3333} &amp; C_{3312} &amp; C_{3323} &amp; C_{3313} \\
+           &amp;          &amp;          &amp; C_{1212} &amp; C_{1223} &amp; C_{1213} \\
+           &amp;          &amp;          &amp;          &amp; C_{2323} &amp; C_{2313} \\
+ symm      &amp;          &amp;          &amp;          &amp;          &amp; C_{1313} \\
+\end{bmatrix}
+\begin{Bmatrix}
+  \Strain[11] \\
+  \Strain[22] \\
+  \Strain[33] \\
+  2\Strain[12] \\
+  2\Strain[23] \\
+  2\Strain[13]
+\end{Bmatrix}"/></p>
+</div><p>Letting <img class="math" src="_images/math/a37b5525b46d63a7e8749d6ad1b7d049324e48b8.png" alt="\{\dStress[1],\dStress[2],\dStress[3], \dStress[4], \dStress[5], \dStress[6]\}= \{\dStress[11],\dStress[22],\dStress[33], \dStress[12],\dStress[23],\dStress[13]\}"/> and <img class="math" src="_images/math/dfd85ed7eaed36de60ae3c97cf136ab603805040.png" alt="\{\dStrain[1],\dStrain[2],\dStrain[3], \dStrain[4], \dStrain[5], \dStrain[6]\}= \{\dStrain[11],\dStrain[22],\dStrain[33],2\dStrain[12],2\dStrain[23],2\dStrain[13]\}"/>, the above stress-strain relationship is re-written as</p>
+<div class="math">
+<p><img src="_images/math/4fb834fe5ce4e4bd218f1469a4ae1d6b8bbfe0d6.png" alt="\begin{Bmatrix}
+  \dStress[1] \\
+  \dStress[2] \\
+  \dStress[3] \\
+  \dStress[4] \\
+  \dStress[5] \\
+  \dStress[6]
+\end{Bmatrix} =
+\begin{bmatrix}
+  C_{11} &amp; C_{12} &amp; C_{13} &amp; C_{14} &amp; C_{15} &amp; C_{16} \\
+         &amp; C_{22} &amp; C_{23} &amp; C_{24} &amp; C_{25} &amp; C_{26} \\
+         &amp;        &amp; C_{33} &amp; C_{34} &amp; C_{35} &amp; C_{36} \\
+         &amp;        &amp;        &amp; C_{44} &amp; C_{45} &amp; C_{46} \\
+         &amp;        &amp;        &amp;        &amp; C_{55} &amp; C_{56} \\
+ symm    &amp;        &amp;        &amp;        &amp;        &amp; C_{66} \\
+\end{bmatrix}
+\begin{Bmatrix}
+  \dStrain[1] \\
+  \dStrain[2] \\
+  \dStrain[3] \\
+  \dStrain[4] \\
+  \dStrain[5] \\
+  \dStrain[6]
+\end{Bmatrix}"/></p>
+</div><p>As expressed, the components of <img class="math" src="_images/math/814511d889146ee5778d911cf17516401740655a.png" alt="\dStrain"/> and <img class="math" src="_images/math/892b28a5b8ea5747e4bc526069321ccf6a15fd02.png" alt="\dStress"/> are first order tensors and <img class="math" src="_images/math/4fd520dd470a22cb8e4b9101681b185d1ccadf64.png" alt="\Stiffness"/> is a second order tensor in <img class="math" src="_images/math/ce80c62ce89a1a71ba0fbbcaf1a9e7208ebeb9dc.png" alt="\R{6}"/>, respectively.</p>
+<div class="section" id="alternative-representations-of-tensors-in">
+<h4>Alternative Representations of Tensors in <img class="math" src="_images/math/ce80c62ce89a1a71ba0fbbcaf1a9e7208ebeb9dc.png" alt="\R{6}"/><a class="headerlink" href="#alternative-representations-of-tensors-in" title="Permalink to this headline">¶</a></h4>
+<p>The representation of symmetric tensors at the end of <a class="reference internal" href="#the-material-stiffness">The Material
+Stiffness</a> is known as the &#8220;Voight&#8221; representation. The shear strain
+components <img class="math" src="_images/math/95d893a436959e74c6d1cce17da6ac20a3041453.png" alt="\dStrain[I]=2\dStrain[ij], \ I=4,5,6, \ ij=12,23,13"/> are
+known as the engineering shear strains (in contrast to <img class="math" src="_images/math/86a2d482c938a31dcfd1ea46128592e7cd28d372.png" alt="\dStrain[ij], \
+ij=12,23,13"/> which are known as the tensor components). An advantage of the
+Voight representation is that the scalar product
+<img class="math" src="_images/math/9eb0ebd8312a873e9b108f08be3357a6a166b415.png" alt="\Stress[ij]\dStrain[ij]=\Stress[I]\dStrain[I]"/> is preserved and the
+components of the stiffness tensor are unchanged in <img class="math" src="_images/math/ce80c62ce89a1a71ba0fbbcaf1a9e7208ebeb9dc.png" alt="\R{6}"/>. However,
+one must take care to account for the factor of 2 in the engineering shear
+strain components.</p>
+<p>Alternatively, one can express symmetric second order tensors with their
+&#8220;Mandel&#8221; components
+<img class="math" src="_images/math/39f453147c82aa35ad5a8fab33545ed36cdd85aa.png" alt="\{\AA[1],\AA[2],\AA[3],\AA[4],\AA[5],\AA[6]\}=\{\AA[11],\AA[22],\AA[33],
+\sqrt{2}\AA[12],\sqrt{2}\AA[23],\sqrt{2}\AA[13]\}"/>.  Representing both the stress and strain with their Mandel representation also preserves the scalar product, without having to treat the components of stress and strain differently (at the expense of carrying around the factor of <img class="math" src="_images/math/f3102350fa62c322d1df6f23f909f463e34d0c63.png" alt="\sqrt{2}"/> in the off-diagonal components of both).  The Mandel representation has the advantage that its basis in <img class="math" src="_images/math/ce80c62ce89a1a71ba0fbbcaf1a9e7208ebeb9dc.png" alt="\R{6}"/> is orthonormal, whereas the basis for the Voight representation is only orthogonal.  If Mandel components are used, the components of the stiffness must be modified as</p>
+<div class="math">
+<p><img src="_images/math/b96bbe463b5c6d8e021b26c4cf78f6e723c9452a.png" alt="\Stiffness =
+\begin{bmatrix}
+  C_{11} &amp; C_{12} &amp; C_{13} &amp; \sqrt{2}C_{14}   &amp; \sqrt{2}C_{15} &amp; \sqrt{2}C_{16} \\
+         &amp; C_{22} &amp; C_{23} &amp; \sqrt{2}C_{24}   &amp; \sqrt{2}C_{25} &amp; \sqrt{2}C_{26} \\
+         &amp;        &amp; C_{33} &amp; \sqrt{2}C_{34}   &amp; \sqrt{2}C_{35} &amp; \sqrt{2}C_{36} \\
+         &amp;        &amp;        &amp; 2C_{44}          &amp; 2C_{45}        &amp; 2C_{46} \\
+         &amp;        &amp;        &amp;                  &amp; 2C_{55}        &amp; 2C_{56} \\
+ symm    &amp;        &amp;        &amp;                  &amp;                &amp; 2C_{66} \\
+\end{bmatrix}"/></p>
+</div></div>
+</div>
 </div>
 <div class="section" id="supported-drivers">
 <h2>Supported Drivers<a class="headerlink" href="#supported-drivers" title="Permalink to this headline">¶</a></h2>
@@ -313,7 +472,7 @@ is used as a back up procedure. A warning is logged in these cases.</p>
 of material models encountered in continuum mechanics, with an emphasis on
 solid materials. The solution method is similar to that of many finite element
 codes, so that material models developed and tested in <em>matmodlab</em> can be
-easily transitioned to them.  <a href="#id3"><span class="problematic" id="id4">`finish_me`_</span></a></p>
+easily transitioned to them.  <a href="#id5"><span class="problematic" id="id6">`finish_me`_</span></a></p>
 <div class="section" id="mechanical">
 <h4>Mechanical<a class="headerlink" href="#mechanical" title="Permalink to this headline">¶</a></h4>
 <p><strong>Direct</strong></p>
@@ -367,14 +526,14 @@ easily transitioned to them.  <a href="#id3"><span class="problematic" id="id4">
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="factory.html">Factory Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="clparse.html">Command Line Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>
@@ -405,7 +564,7 @@ easily transitioned to them.  <a href="#id3"><span class="problematic" id="id4">
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |

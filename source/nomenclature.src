@@ -434,7 +434,6 @@
   \ifthenelse{\equal{#1}{}}{%
     \Tensor{\DevStressSym}{}{}}{%
     \DevStressSym\mathsub{#1}}}
-\newcommand{\ShearStress}{\tau}
 
 % -- back stress
 \newcommand{\BackStress}[1][]{%
@@ -521,6 +520,15 @@
   \ifthenelse{\equal{#1}{}}{%
     \Tensor[\bar]{\StrainSym}{}{}}{%
     \bar{\StrainSym}\mathsub{#1}}}
+
+\newcommand{\ShearStrain}[1][]{%
+  \ifthenelse{\equal{#1}{}}{%
+    \Tensor{\gamma}{}{}}{%
+    \gamma\mathsub{#1}}}
+\newcommand{\ShearStress}[1][]{%
+  \ifthenelse{\equal{#1}{}}{%
+    \Tensor{\tau}{}{}}{%
+    \tau\mathsub{#1}}}
 
 % -- general strain
 \newcommand{\GenStrain}[1][]{%
@@ -1154,9 +1162,9 @@
 % --- Misc tensors
 \renewcommand{\aa}{\Tensor{a}{}{}}
 \newcommand{\bb}{\Tensor{b}{}{}}
-\renewcommand{\AA}{\Tensor{A}{}{}}
-\newcommand{\BB}{\Tensor{B}{}{}}
-\renewcommand{\CC}{\Tensor{C}{}{}}
+\renewcommand{\AA}[1][]{\ifthenelse{\equal{#1}{}}{\Tensor{A}{}{}}{A\mathsub{#1}}}
+\newcommand{\BB}[1][]{\ifthenelse{\equal{#1}{}}{\Tensor{B}{}{}}{B\mathsub{#1}}}
+\renewcommand{\CC}[1][]{\ifthenelse{\equal{#1}{}}{\Tensor{C}{}{}}{C\mathsub{#1}}}
 \newcommand{\GG}{\Tensor{G}{}{}}
 \newcommand{\HH}{\Tensor{H}{}{}}
 \newcommand{\AAAA}{\Tensor{\mathbb{A}}{}{}}

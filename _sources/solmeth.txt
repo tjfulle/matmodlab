@@ -270,24 +270,26 @@ determines the corresponding strain components. If a component of stress is
 specified, *matmodlab* determines the strain increment that minimizes the
 distance between the prescribed stress component and model response.
 
-.. _sig2d:
+.. _Stress Control:
 
-Strain Rate from Prescribed Stress
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The approach to determining unknown components of the strain rate from the
-prescribed stress is an iterative scheme employing a multidimensional Newton's
-method that satisfies
+Stress Control
+~~~~~~~~~~~~~~
+
+Stress control is accomplished through an iterative scheme that seeks to
+determine the unkown strain rates, :math:`\dStrain\,[\text{v}]`, that satisfy
 
 .. math::
 
    \Stress\left(\dStrain\,[\text{v}]\right) = \PrescStress
 
 where, :math:`\text{v}` is a vector subscript array containing the components
-for which stresses (or stress rates) are prescribed, and :math:`\PrescStress`
-are the components of prescribed stress.
+for which stresses are prescribed, and :math:`\PrescStress` are the components
+of prescribed stress.
 
-Each iteration begins by determining the submatrix of the material stiffness
+The approach is an iterative scheme employing a multidimensional Newton's
+method. Each iteration begins by determining the submatrix of the material
+stiffness
 
 .. math::
 
@@ -299,9 +301,9 @@ where :math:`\Stiffness` is the full stiffness matrix
 
 .. math::
 
-   \dStrain\,[\text{v}] =
-       \dStrain\,[\text{v}] -
-       \Stiffness_{\text{v}}\DDotProd\Stress^{*}(\dStrain\,[\text{v}])/dt
+   \dStrain_{n+1}\,[\text{v}] =
+       \dStrain_{n}\,[\text{v}] -
+       \Stiffness_{\text{v}}^{-1}\DDotProd\Stress^{*}(\dStrain_{n}\,[\text{v}])/dt
 
 where
 
@@ -315,6 +317,183 @@ possible to prescribe invalid stress state, e.g. a stress state beyond the
 material's elastic limit. In these cases, the Newton procedure may not
 converge to within the acceptable tolerance and a Nelder-Mead simplex method
 is used as a back up procedure. A warning is logged in these cases.
+
+.. _The Material Stiffness:
+
+The Material Stiffness
+~~~~~~~~~~~~~~~~~~~~~~
+
+As seen in `Stress Control`_, the material tangent stiffness matrix, commonly referred
+to as the material's "Jacobian", plays an integral roll in the solution of the
+inverse stress problem (determining strains as a function of prescribed
+stress). Similarly, the Jacobian plays a role in implicit finite element
+methods. In general, the Jacobian is a fourth order tensor in :math:`\R{3}`
+with 81 independent components. Casting the stress and strain second order
+tensors in :math:`\R{3}` as first order tensors in :math:`\R{9}` and the
+Jacobian as a second order tensor in :math:`\R{9}`, the stress/strain relation
+in `Stress Control`_ can be written in matrix form as
+
+.. math::
+
+   \begin{Bmatrix}
+     \dStress[11] \\
+     \dStress[22] \\
+     \dStress[33] \\
+     \dStress[12] \\
+     \dStress[23] \\
+     \dStress[13] \\
+     \dStress[21] \\
+     \dStress[32] \\
+     \dStress[31]
+   \end{Bmatrix} =
+   \begin{bmatrix}
+     C_{1111} & C_{1122} & C_{1133} & C_{1112} & C_{1123} & C_{1113} & C_{1121} & C_{1132} & C_{1131} \\
+     C_{2211} & C_{2222} & C_{2233} & C_{2212} & C_{2223} & C_{2213} & C_{2221} & C_{2232} & C_{2231} \\
+     C_{3311} & C_{3322} & C_{3333} & C_{3312} & C_{3323} & C_{3313} & C_{3321} & C_{3332} & C_{3331} \\
+     C_{1211} & C_{1222} & C_{1233} & C_{1212} & C_{1223} & C_{1213} & C_{1221} & C_{1232} & C_{1231} \\
+     C_{2311} & C_{2322} & C_{2333} & C_{2312} & C_{2323} & C_{2313} & C_{2321} & C_{2332} & C_{2331} \\
+     C_{1311} & C_{1322} & C_{1333} & C_{1312} & C_{1323} & C_{1313} & C_{1321} & C_{1332} & C_{1331} \\
+     C_{2111} & C_{2122} & C_{2133} & C_{2212} & C_{2123} & C_{2213} & C_{2121} & C_{2132} & C_{2131} \\
+     C_{3211} & C_{3222} & C_{3233} & C_{3212} & C_{3223} & C_{3213} & C_{3221} & C_{3232} & C_{3231} \\
+     C_{3111} & C_{3122} & C_{3133} & C_{3312} & C_{3123} & C_{3113} & C_{3121} & C_{3132} & C_{3131}
+   \end{bmatrix}
+   \begin{Bmatrix}
+     \dStrain[11] \\
+     \dStrain[22] \\
+     \dStrain[33] \\
+     \dStrain[12] \\
+     \dStrain[23] \\
+     \dStrain[13] \\
+     \dStrain[21] \\
+     \Strain[32] \\
+     \dStrain[31]
+   \end{Bmatrix}
+
+Due to the symmetries of the stiffness and strain tensors (:math:`\Stiffness[ijkl]=\Stiffness[ijlk]`, :math:`\dStrain[ij]=\dStrain[ji]`), the expression above can be simplified by removing the last three columns of :math:`\Stiffness`:
+
+.. math::
+
+   \begin{Bmatrix}
+     \dStress[11] \\
+     \dStress[22] \\
+     \dStress[33] \\
+     \dStress[12] \\
+     \dStress[23] \\
+     \dStress[13] \\
+     \dStress[21] \\
+     \dStress[32] \\
+     \dStress[31]
+   \end{Bmatrix} =
+   \begin{bmatrix}
+     C_{1111} & C_{1122} & C_{1133} & C_{1112} & C_{1123} & C_{1113} \\
+     C_{2211} & C_{2222} & C_{2233} & C_{2212} & C_{2223} & C_{2213} \\
+     C_{3311} & C_{3322} & C_{3333} & C_{3312} & C_{3323} & C_{3313} \\
+     C_{1211} & C_{1222} & C_{1233} & C_{1212} & C_{1223} & C_{1213} \\
+     C_{2311} & C_{2322} & C_{2333} & C_{2312} & C_{2323} & C_{2313} \\
+     C_{1311} & C_{1322} & C_{1333} & C_{1312} & C_{1323} & C_{1313} \\
+     C_{2111} & C_{2122} & C_{2133} & C_{2212} & C_{2123} & C_{2213} \\
+     C_{3211} & C_{3222} & C_{3233} & C_{3212} & C_{3223} & C_{3213} \\
+     C_{3111} & C_{3122} & C_{3133} & C_{3112} & C_{3123} & C_{3113}
+   \end{bmatrix}
+   \begin{Bmatrix}
+     \dStrain[11] \\
+     \dStrain[22] \\
+     \dStrain[33] \\
+     2\dStrain[12] \\
+     2\dStrain[23] \\
+     2\dStrain[13]
+   \end{Bmatrix}
+
+Considering the symmetry of the stress tensor (:math:`\dStress[ij]=\dStress[ji]`) and the major symmetry of :math:`\Stiffness` (:math:`\Stiffness[ijkl]=\Stiffness[klij]`), the final three rows of :math:`\Stiffness` may also be ommitted, resulting in the symmetric form
+
+.. math::
+
+   \begin{Bmatrix}
+     \Stress[11] \\
+     \Stress[22] \\
+     \Stress[33] \\
+     \Stress[12] \\
+     \Stress[23] \\
+     \Stress[13]
+   \end{Bmatrix} =
+   \begin{bmatrix}
+     C_{1111} & C_{1122} & C_{1133} & C_{1112} & C_{1123} & C_{1113} \\
+              & C_{2222} & C_{2233} & C_{2212} & C_{2223} & C_{2213} \\
+              &          & C_{3333} & C_{3312} & C_{3323} & C_{3313} \\
+              &          &          & C_{1212} & C_{1223} & C_{1213} \\
+              &          &          &          & C_{2323} & C_{2313} \\
+    symm      &          &          &          &          & C_{1313} \\
+   \end{bmatrix}
+   \begin{Bmatrix}
+     \Strain[11] \\
+     \Strain[22] \\
+     \Strain[33] \\
+     2\Strain[12] \\
+     2\Strain[23] \\
+     2\Strain[13]
+   \end{Bmatrix}
+
+Letting :math:`\{\dStress[1],\dStress[2],\dStress[3], \dStress[4], \dStress[5], \dStress[6]\}= \{\dStress[11],\dStress[22],\dStress[33], \dStress[12],\dStress[23],\dStress[13]\}` and :math:`\{\dStrain[1],\dStrain[2],\dStrain[3], \dStrain[4], \dStrain[5], \dStrain[6]\}= \{\dStrain[11],\dStrain[22],\dStrain[33],2\dStrain[12],2\dStrain[23],2\dStrain[13]\}`, the above stress-strain relationship is re-written as
+
+.. math::
+
+   \begin{Bmatrix}
+     \dStress[1] \\
+     \dStress[2] \\
+     \dStress[3] \\
+     \dStress[4] \\
+     \dStress[5] \\
+     \dStress[6]
+   \end{Bmatrix} =
+   \begin{bmatrix}
+     C_{11} & C_{12} & C_{13} & C_{14} & C_{15} & C_{16} \\
+            & C_{22} & C_{23} & C_{24} & C_{25} & C_{26} \\
+            &        & C_{33} & C_{34} & C_{35} & C_{36} \\
+            &        &        & C_{44} & C_{45} & C_{46} \\
+            &        &        &        & C_{55} & C_{56} \\
+    symm    &        &        &        &        & C_{66} \\
+   \end{bmatrix}
+   \begin{Bmatrix}
+     \dStrain[1] \\
+     \dStrain[2] \\
+     \dStrain[3] \\
+     \dStrain[4] \\
+     \dStrain[5] \\
+     \dStrain[6]
+   \end{Bmatrix}
+
+As expressed, the components of :math:`\dStrain` and :math:`\dStress` are first order tensors and :math:`\Stiffness` is a second order tensor in :math:`\R{6}`, respectively.
+
+Alternative Representations of Tensors in :math:`\R{6}`
+.......................................................
+
+The representation of symmetric tensors at the end of `The Material
+Stiffness`_ is known as the "Voight" representation. The shear strain
+components :math:`\dStrain[I]=2\dStrain[ij], \ I=4,5,6, \ ij=12,23,13` are
+known as the engineering shear strains (in contrast to :math:`\dStrain[ij], \
+ij=12,23,13` which are known as the tensor components). An advantage of the
+Voight representation is that the scalar product
+:math:`\Stress[ij]\dStrain[ij]=\Stress[I]\dStrain[I]` is preserved and the
+components of the stiffness tensor are unchanged in :math:`\R{6}`. However,
+one must take care to account for the factor of 2 in the engineering shear
+strain components.
+
+Alternatively, one can express symmetric second order tensors with their
+"Mandel" components
+:math:`\{\AA[1],\AA[2],\AA[3],\AA[4],\AA[5],\AA[6]\}=\{\AA[11],\AA[22],\AA[33],
+\sqrt{2}\AA[12],\sqrt{2}\AA[23],\sqrt{2}\AA[13]\}`.  Representing both the stress and strain with their Mandel representation also preserves the scalar product, without having to treat the components of stress and strain differently (at the expense of carrying around the factor of :math:`\sqrt{2}` in the off-diagonal components of both).  The Mandel representation has the advantage that its basis in :math:`\R{6}` is orthonormal, whereas the basis for the Voight representation is only orthogonal.  If Mandel components are used, the components of the stiffness must be modified as
+
+.. math::
+
+   \Stiffness =
+   \begin{bmatrix}
+     C_{11} & C_{12} & C_{13} & \sqrt{2}C_{14}   & \sqrt{2}C_{15} & \sqrt{2}C_{16} \\
+            & C_{22} & C_{23} & \sqrt{2}C_{24}   & \sqrt{2}C_{25} & \sqrt{2}C_{26} \\
+            &        & C_{33} & \sqrt{2}C_{34}   & \sqrt{2}C_{35} & \sqrt{2}C_{36} \\
+            &        &        & 2C_{44}          & 2C_{45}        & 2C_{46} \\
+            &        &        &                  & 2C_{55}        & 2C_{56} \\
+    symm    &        &        &                  &                & 2C_{66} \\
+   \end{bmatrix}
 
 Supported Drivers
 -----------------
