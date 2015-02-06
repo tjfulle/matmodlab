@@ -7,6 +7,8 @@ import shutil
 import warnings
 import subprocess
 
+from os.path import isfile, realpath, dirname, join, splitext, basename, isdir
+
 # distutils
 import numpy as np
 from numpy.distutils.misc_util import Configuration
@@ -14,7 +16,7 @@ from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
 from utils.misc import remove, stdout_redirected, merged_stderr_stdout
-from core.product import FC, PKG_D, FFLAGS
+from core.product import FC, PKG_D, FFLAGS, PYEXE
 from core.logger import ConsoleLogger as logger
 from utils.fortran.product import LAPACK, LAPACK_OBJ, MMLABPACK
 
@@ -34,8 +36,8 @@ class FortranExtBuilder(object):
             fc = FC
         if not fc:
             raise FortranNotFoundError("no fortran compiler found")
-        fc = os.path.realpath(fc)
-        if not os.path.isfile(fc):
+        fc = realpath(fc)
+        if not isfile(fc):
             raise FortranNotFoundError("{0}: fortran compiler "
                                        "not found".format(fc))
 
@@ -77,6 +79,13 @@ class FortranExtBuilder(object):
         if idirs:
             options["include_dirs"] = idirs
 
+        # Explicitly add this python distributions lib directory. This
+        # shouldn't be necessary, but on some RHEL systems I have found that
+        # it is
+        d = realpath(join(dirname(PYEXE), "../lib"))
+        assert isdir(d)
+        options["library_dirs"] = [d]
+
         self.exts_to_build.append((name, sources, options))
         return
 
@@ -86,13 +95,13 @@ class FortranExtBuilder(object):
             return
 
         to_build = [x[0] for x in self.exts_to_build]
-        if self._build_blas_lapack and not os.path.isfile(LAPACK_OBJ):
+        if self._build_blas_lapack and not isfile(LAPACK_OBJ):
             to_build.insert(0, "blas_lapack-lite")
         logger.write("The following fortran extension modules will be built:\n"
                      "    {0}".format(",".join(to_build)))
 
         if self._build_blas_lapack:
-            if not os.path.isfile(LAPACK_OBJ):
+            if not isfile(LAPACK_OBJ):
                 stat = build_blas_lapack()
                 if stat != 0:
                     logger.error("failed to build blas_lapack, dependent "
@@ -122,7 +131,7 @@ class FortranExtBuilder(object):
 
         # build the extension modules with distutils setup
         logger.write("building extension module[s]", end="... ")
-        f = os.path.join(PKG_D, "build.log") if self.quiet else sys.stdout
+        f = join(PKG_D, "build.log") if self.quiet else sys.stdout
         with stdout_redirected(to=f), merged_stderr_stdout():
             setup(**config.todict())
         logger.write("done")
@@ -158,7 +167,7 @@ class FortranExtBuilder(object):
 
 
 def module_name(filepath):
-    return os.path.splitext(os.path.basename(filepath))[0]
+    return splitext(basename(filepath))[0]
 
 
 def build_blas_lapack():

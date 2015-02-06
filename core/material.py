@@ -42,7 +42,6 @@ class MaterialModel(object):
 
     """
     __metaclass__ = MetaClass
-    W = np.ones(6)
     name = None
     lapack = None
     aux_files = None
@@ -352,8 +351,6 @@ class MaterialModel(object):
             Dp = d.copy()
             Dp[v[i]] = d[v[i]] + (deps / dtime) / 2.
             Fp, Ep = mmlabpack.update_deformation(dtime, 0., F, Dp)
-            Dp *= self.W
-            Ep *= self.W
             sigp = stress.copy()
             xtrap = xtra.copy()
             sigp = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
@@ -363,15 +360,13 @@ class MaterialModel(object):
             Dm = d.copy()
             Dm[v[i]] = d[v[i]] - (deps / dtime) / 2.
             Fm, Em = mmlabpack.update_deformation(dtime, 0., F, Dm)
-            Dm *= self.W
-            Em *= self.W
             sigm = stress.copy()
             xtram = xtra.copy()
             sigm = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
                       F0, Fm, Em, Dm, elec_field, user_field, sigm, xtram, disp=3)
 
             # compute component of jacobian
-            Jsub[i, :] = (sigp[v] - sigm[v]) / deps / self.W[v]
+            Jsub[i, :] = (sigp[v] - sigm[v]) / deps
 
             continue
 
@@ -534,7 +529,6 @@ class MaterialModel(object):
 
 
 class AbaqusMaterial(MaterialModel):
-    W = np.array([1., 1., 1., 2., 2., 2.])
     aba_model = True
     lapack = "lite"
     def setup(self, props, **kwargs):
@@ -567,6 +561,7 @@ class AbaqusMaterial(MaterialModel):
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, user_field, stress, statev, **kwargs):
         # abaqus defaults
+        w = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
         cmname = "{0:8s}".format("umat")
         dfgrd0 = np.reshape(F0, (3, 3), order="F")
         dfgrd1 = np.reshape(F, (3, 3), order="F")
@@ -580,11 +575,14 @@ class AbaqusMaterial(MaterialModel):
         drot = np.eye(3)
         ndi = nshr = 3
         sse = spd = scd = rpl = drpldt = celent = pnewdt = 0.
-        noel = npt = layer = kspt = kstep = kinc = 1
+        noel = npt = layer = kspt = kinc = 1
+        kstep = 1
         time = np.array([time,time])
         # abaqus ordering
         stress = stress[[0,1,2,3,5,4]]
-        dstran = dstran[[0,1,2,3,5,4]]
+        # abaqus passes engineering strain
+        dstran = dstran[[0,1,2,3,5,4]] * w
+        stran = stran[[0,1,2,3,5,4]] * w
         stress, statev, ddsdde = self.update_state_umat(
             stress, statev, ddsdde, sse, spd, scd, rpl, ddsddt, drplde, drpldt,
             stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
@@ -593,6 +591,7 @@ class AbaqusMaterial(MaterialModel):
         if np.any(np.isnan(stress)):
             self.logger.raise_error("umat stress contains nan's")
         stress = stress[[0,1,2,3,5,4]]
+        stran = stran[[0,1,2,3,5,4]] / w
         return stress, statev, ddsdde
 
 
