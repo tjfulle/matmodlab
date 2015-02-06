@@ -160,7 +160,7 @@ class TestBase(object):
     @exodiff.setter
     def exodiff(self, exodiff):
         if not os.path.isfile(exodiff):
-            raise TestError("{0}: exodiff file not found".format(self.name))
+            raise TestError("{0}: exodiff file '{1}' not found".format(self.runid, exodiff))
         self._exodiff = exodiff
 
     @property

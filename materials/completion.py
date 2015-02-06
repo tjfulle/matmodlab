@@ -1,4 +1,5 @@
 from math import sin, cos
+import numpy as np
 from utils.constants import TOOR3, ROOT3
 from utils.elas import compute_elastic_constants, NAME_MAP
 

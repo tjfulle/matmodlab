@@ -239,7 +239,7 @@ def run_job(xcall, *args):
         stat = 0
     except BaseException as e:
         message = " ".join("{0}".format(_) for _ in e.args)
-        if hasattr(e, "filename"):
+        if hasattr(e, "filename") and type(e.filename) is str:
             message = e.filename + ": " + message[1:]
         logger.error("\nrun {0} failed with the following exception:\n"
                      "   {1}".format(IOPT, message))

@@ -122,7 +122,8 @@ def convert_rxml_input(f, disp=1):
     fileroot = os.path.splitext(filename)[0]
     runid = fileroot.replace("-", "_")
 
-    lines = open(f).read()
+    with open(f) as F:
+        lines = F.read()
 
     # start processing file
     doc = xdom.parseString(lines)
@@ -153,7 +154,8 @@ def convert_xml_input(files):
         fileroot = os.path.splitext(filename)[0]
         runid = fileroot.replace("-", "_")
 
-        lines = open(f).read()
+        with open(f) as F:
+            lines = F.read()
 
         # preprocess all lines
         lines = preprocess_input(lines)

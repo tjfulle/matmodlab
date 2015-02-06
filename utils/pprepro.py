@@ -48,7 +48,8 @@ usage: pprepro.py <file>"""
     filepath = argv[0]
     if not os.path.isfile(filepath):
         sys.exit("{0}: no such file".format(filepath))
-    lines = find_and_make_subs(open(filepath, "r").read(), disp=MAGIC)
+    with open(filepath, "r") as F:
+        lines = find_and_make_subs(F.read(), disp=MAGIC)
     stream = sys.stdout
     for line in lines.split("\n"):
         stream.write(line + "\n")
@@ -259,7 +260,8 @@ def find_and_fill_includes(lines):
             name = href.group("href").strip()
             fpath = os.path.realpath(os.path.expanduser(name))
             try:
-                fill = open(fpath, "r").read()
+                with open(fpath, "r") as F:
+                    fill = F.read()
             except IOError:
                 raise SystemExit("{0}: include not found".format(repr(name)))
         else:
