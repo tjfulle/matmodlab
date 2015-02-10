@@ -56,7 +56,7 @@ class TestJ2PlasticityMixedHardening(TestBase):
 class TestRandomJ2Plasticity1(TestBase):
     def __init__(self):
         self.runid = "rand_" + RUNID
-        self.nruns = 10
+        self.nruns = 3
         self.keywords = ["fast", "random", "material", "plastic", "analytic",
                          "builtin", "j2"]
 
@@ -94,7 +94,7 @@ class TestRandomJ2Plasticity1(TestBase):
 class TestRandomJ2Plasticity2(TestBase):
     def __init__(self):
         self.runid = "rand_" + RUNID + "2"
-        self.nruns = 10
+        self.nruns = 3
         self.keywords = ["long", "random", "material", "vonmises", "analytic",
                          "builtin", "j2"]
 

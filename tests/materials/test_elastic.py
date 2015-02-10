@@ -4,18 +4,21 @@ from matmodlab import *
 class TestElasticUnistrain(TestBase):
     def __init__(self):
         self.runid = "elastic_unistrain"
+        self.interpolate_diff = True
         self.keywords = ["fast", "material", "elastic", "uniaxial_strain",
                          "builtin"]
 
 class TestElasticUnistrainStressc(TestBase):
     def __init__(self):
         self.runid = "elastic_unistrain_stressc"
+        self.interpolate_diff = True
         self.keywords = ["fast", "material", "elastic", "uniaxial_strain", "stress",
                          "builtin"]
 
 class TestElasticUnistress(TestBase):
     def __init__(self):
         self.runid = "elastic_unistress"
+        self.interpolate_diff = True
         self.keywords = ["fast", "material", "elastic", "uniaxial_strain",
                          "builtin"]
 
@@ -37,7 +40,7 @@ def run_elastic_unistrain(*args, **kwargs):
     """
 
     # set up the driver
-    driver = Driver("Continuum", path, step_multiplier=1000.0, num_io_dumps=20,
+    driver = Driver("Continuum", path, step_multiplier=50.0, num_io_dumps=20,
                     estar=-0.5, logger=logger)
 
     # set up the material
@@ -63,8 +66,7 @@ def run_elastic_unistrain_stressc(*args, **kwargs):
     3 1 444 -7490645504 -3739707392 -3739707392
     4 1 444 0 0 0
     """
-    driver = Driver("Continuum", path, step_multiplier=100.0, num_io_dumps=20,
-                    logger=logger)
+    driver = Driver("Continuum", path, step_multiplier=250.0, logger=logger)
     parameters = {"K":K, "G":G}
     material = Material("elastic", parameters, logger=logger)
     mps = MaterialPointSimulator(runid, driver, material, logger=logger)
@@ -85,8 +87,8 @@ def run_elastic_unistress(*args, **kwargs):
     3 1 444 1 0 0
     4 1 444 0 0 0
     """
-    driver = Driver("Continuum", path, sstar=-1e-6,
-                    step_multiplier=1000, logger=logger)
+    driver = Driver("Continuum", path, sstar=-1e6,
+                    step_multiplier=50, logger=logger)
     parameters = {"K": K, "G": G}
     material = Material("elastic", parameters, logger=logger)
     mps = MaterialPointSimulator(runid, driver, material, logger=logger)

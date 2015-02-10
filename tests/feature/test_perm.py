@@ -58,7 +58,7 @@ def func(x, *args):
     logger = Logger(runid)
 
     # set up the driver
-    driver = Driver("Continuum", path, estar=-.5, step_multiplier=1000,
+    driver = Driver("Continuum", path, estar=-.5, step_multiplier=50,
                     logger=logger)
 
     # set up the material
