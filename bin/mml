@@ -109,9 +109,13 @@ def main(argv=None):
 
     # first argument should be a file name, otherwise, positional arguments
     # will be interpreted by the python executable and not mml
-    if not isfile(argv[0]):
+    filename = argv[0]
+    if not isfile(filename):
+        filename = filename.rstrip(".") + ".py"
+    if not isfile(filename):
         sys.exit("*** error: mml run: {0}: expected first argument to be "
                  "a file name".format(argv[0]))
+    argv[0] = filename
 
     command = "{0} {1}".format(sys.executable, " ".join(argv))
 

@@ -40,6 +40,9 @@ class DataContainer(object):
     def __setitem__(self, ix, val):
         self.data[ix] = val
 
+    def __contains__(self, name):
+        return name.upper() in self._IX
+
     def update(self, **kwargs):
         for (kw, val) in kwargs.items():
             kw = kw.upper()
@@ -51,6 +54,22 @@ class DataContainer(object):
     def reshape(self, shape):
         return self.data.reshape(shape)
 
+    def todict(self):
+        d = {}
+        for (kw, slc) in self._IX.items():
+            d[kw] = self.data[slc]
+        return d
+
+    def get(self, name):
+        return self.data[self._IX[name.upper()]]
+
+    def summary(self, indent=""):
+        summ = []
+        for name in sorted(self._IX):
+            value = self.get(name)
+            summ.append("{0}{1} = {2}".format(indent, name, value))
+        summ = "\n".join(summ)
+        return summ
 
 class _Parameter(object):
     def __init__(self, name, value, index):
@@ -91,7 +110,7 @@ class Parameters(np.ndarray):
         return obj
 
     def __str__(self):
-        string = " ".join("{0}={1:.2f}".format(n, self[i]) for (i, n) in
+        string = ", ".join("{0}={1:.2f}".format(n, self[i]) for (i, n) in
                           enumerate(self.names))
         return "Parameters({0})".format(string)
 

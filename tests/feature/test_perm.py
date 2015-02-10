@@ -76,8 +76,8 @@ def func(x, *args):
 def runner(method, N=3, v=1):
 
     runid = "perm_{0}".format(method)
-    K = PermutateVariable("K", 125e9, method="weibull", b=14, N=N)
-    G = PermutateVariable("G", 45e9, method="percentage", b=10, N=N)
+    K = PermutateVariable("K", 125e9, b=14, N=N, method="weibull")
+    G = PermutateVariable("G", 45e9, b=10, N=N, method="percentage")
     xinit = [K, G]
     permutator = Permutator(func, xinit, runid, descriptor=["MAX_PRES"],
                             method=method, correlations=True, funcargs=[runid],

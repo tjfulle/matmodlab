@@ -34,10 +34,14 @@ class Permutator(object):
         self.nprocs = nprocs
         self.correlations = correlations
 
-        if not isinstance(descriptor, (list, tuple)):
-            descriptor = [descriptor]
-        self.descriptor = descriptor
-        self.nresp = len(descriptor)
+        if descriptor is None:
+            self.descriptor = None
+            self.nresp = 0
+        else:
+            if not isinstance(descriptor, (list, tuple)):
+                descriptor = [descriptor]
+            self.descriptor = descriptor
+            self.nresp = len(descriptor)
 
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
@@ -193,7 +197,7 @@ class _PermutateVariable(object):
     def method(self):
         return self._m
 
-def PermutateVariable(name, init, method="list", b=None, N=10):
+def PermutateVariable(name, init, b=None, N=10, method="list"):
     """PermutateVariable factory method
 
     """

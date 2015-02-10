@@ -99,7 +99,7 @@ class ContinuumDriver(PathDriver):
     def num_steps(self):
         return int(sum([x.num_steps for x in self.legs.values()]))
 
-    def run(self, glob_data, elem_data, material, out_db,
+    def run(self, glob_data, elem_data, material, out_db, bp,
             termination_time=None):
         """Process the deformation path
 
@@ -292,6 +292,9 @@ class ContinuumDriver(PathDriver):
                         self.logger.warn("leg: {0}, prescribed stress error: "
                                          "{1: .5f}. consider increasing number of "
                                          "steps".format(ileg, sigerr))
+
+                if bp:
+                    bp.eval(time, glob_data, elem_data)
 
                 if termination_time is not None and time >= termination_time:
                     self.ran = True

@@ -93,10 +93,18 @@ def main(argv=None):
     for source in args.sources:
         if source.rstrip(os.path.sep).endswith(".eval"):
             source = os.path.join(source, F_EVALDB)
-        if not os.path.isfile(source):
-            logger.error("{0}: no such file".format(source))
-            continue
-        sources.append(os.path.realpath(source))
+        filename = os.path.realpath(source)
+        if not os.path.isfile(filename):
+            # check for known extensions
+            filename = filename.rstrip(".")
+            for ext in (".exo", ".e", ".base_exo", ".dat", ".out"):
+                if os.path.isfile(filename + ext):
+                    filename = filename + ext
+                    break
+            else:
+                logger.error("{0}: no such file".format(source))
+                continue
+        sources.append(filename)
     if logger.errors:
         logger.error("stopping due to previous errors", stop=1)
 
