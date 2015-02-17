@@ -14,19 +14,19 @@ path = """
 @matmodlab
 def runner():
     runid = "uhyper-neohooke"
+    mps = MaterialPointSimulator("uhyper-neohooke")
 
     # set up the driver
-    driver = Driver("Continuum", path, path_input="function",
-                    num_steps=200, cfmt="222", functions=f2)
+    mps.Driver("Continuum", path, path_input="function",
+               num_steps=200, cfmt="222", functions=f2)
 
     # set up the material
     parameters = [C10, D1]
-    material = Material("uhyper", parameters,
-                        source_files=["uhyper.f90"],
-                        source_directory="{0}/materials/abaumats".format(ROOT_D))
+    mps.Material("uhyper", parameters,
+                 source_files=["uhyper.f90"],
+                 source_directory="{0}/materials/abaumats".format(ROOT_D))
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material)
     mps.run()
 
 runner()

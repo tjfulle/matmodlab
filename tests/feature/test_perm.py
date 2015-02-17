@@ -51,25 +51,23 @@ class TestCombi(TestBase):
         os.chdir(cwd)
 
 
-def func(x, *args):
+def func(x, xnames, d, runid, *args):
 
-    runid = args[0]
-    d = args[1]
-    logger = Logger(runid)
+    # setup the simulator
+    mps = MaterialPointSimulator(runid)
 
-    # set up the driver
-    driver = Driver("Continuum", path, estar=-.5, step_multiplier=50,
-                    logger=logger)
+    # its driver...
+    mps.Driver("Continuum", path, estar=-.5, step_multiplier=50)
 
-    # set up the material
-    parameters = {"K": x[0], "G": x[1]}
-    material = Material("elastic", parameters, logger=logger)
+    # its material...
+    parameters = dict(zip(xnames, x))
+    mps.Material("elastic", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    # and run it
     mps.run()
-    pres = mps.extract_from_db(["PRESSURE"])
 
+    # objective
+    pres = mps.extract_from_db(["PRESSURE"])
     return np.amax(pres)
 
 @matmodlab
@@ -79,7 +77,7 @@ def runner(method, N=3, v=1):
     K = PermutateVariable("K", 125e9, b=14, N=N, method="weibull")
     G = PermutateVariable("G", 45e9, b=10, N=N, method="percentage")
     xinit = [K, G]
-    permutator = Permutator(func, xinit, runid, descriptor=["MAX_PRES"],
+    permutator = Permutator(runid, func, xinit, descriptor=["MAX_PRES"],
                             method=method, correlations=True, funcargs=[runid],
                             verbosity=v)
     permutator.run()

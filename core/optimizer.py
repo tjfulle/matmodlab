@@ -18,7 +18,7 @@ TOL = 1.E-06
 OPT_METHODS = ("simplex", "powell", "cobyla",)
 
 class Optimizer(object):
-    def __init__(self, func, xinit, runid, method="simplex", verbosity=1, d=None,
+    def __init__(self, runid, func, xinit, method="simplex", verbosity=1, d=None,
                  maxiter=MAXITER, tolerance=TOL, descriptor=None, funcargs=[]):
         opts.raise_e = True
         self.runid = runid
@@ -32,10 +32,6 @@ class Optimizer(object):
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
         self.funcargs = [x for x in funcargs]
-
-        # funcargs sent to every evaluation with first argument
-        # the evaluation directory
-        self.funcargs.append(None)
 
         # check method
         m = method.lower()
@@ -137,7 +133,7 @@ response descriptors:
                 continue
             cons = lcons + ucons
 
-        args = (self.func, self.funcargs, self.rootd, self.names,
+        args = (self.func, self.funcargs, self.rootd, self.runid, self.names,
                 self.descriptor, self.tabular, xfac)
 
         if self.method == "simplex":
@@ -211,7 +207,7 @@ def run_job(xcall, *args):
     """
     global IOPT
     logger = Logger("optimizer")
-    func, funcargs, rootd, xnames, desc, tabular, xfac = args
+    func, funcargs, rootd, runid, xnames, desc, tabular, xfac = args
 
     IOPT += 1
     evald = catd(rootd, IOPT)
@@ -219,8 +215,6 @@ def run_job(xcall, *args):
 
     cwd = os.getcwd()
     os.chdir(evald)
-
-    funcargs[-1] = evald
 
     # write the params.in for this run
     x = xcall * xfac
@@ -234,7 +228,7 @@ def run_job(xcall, *args):
         end="... ")
 
     try:
-        err = func(x, *funcargs)
+        err = func(x, xnames, evald, runid, *funcargs)
         logger.write("done (error={0:.4e})".format(err))
         stat = 0
     except BaseException as e:

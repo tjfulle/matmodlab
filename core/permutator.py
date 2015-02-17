@@ -26,7 +26,7 @@ ps.job_num = 0
 
 
 class Permutator(object):
-    def __init__(self, func, xinit, runid, method="zip", correlations=False,
+    def __init__(self, runid, func, xinit, method="zip", correlations=False,
                  verbosity=1, descriptor=None, nprocs=1, funcargs=[], d=None):
         self.runid = runid
 
@@ -43,12 +43,10 @@ class Permutator(object):
             self.descriptor = descriptor
             self.nresp = len(descriptor)
 
+        # funcargs sent to every evaluation
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
         self.funcargs = [x for x in funcargs]
-        # funcargs sent to every evaluation with first argument
-        # the evaluation directory
-        self.funcargs.append(None)
 
         # set up logger
         self.rootd = os.path.join(d or os.getcwd(), runid + ".eval")
@@ -112,8 +110,8 @@ Starting values:
         logger = Logger("permutator")
         self.timing["start"] = time.time()
         logger.write("{0}: Starting permutation jobs...".format(self.runid))
-        args = [(self.func, x, self.funcargs, i, self.rootd, self.names,
-                 self.descriptor, self.tabular)
+        args = [(self.func, x, self.funcargs, i, self.rootd, self.runid,
+                 self.names, self.descriptor, self.tabular)
                  for (i, x) in enumerate(self.data)]
         nprocs = max(self.nprocs, opts.nprocs)
         nprocs = min(min(mp.cpu_count(), nprocs), len(self.data))
@@ -238,14 +236,13 @@ def run_job(args):
 
     """
     logger = Logger("permutator")
-    (func, x, funcargs, i, rootd, names, descriptor, tabular) = args
+    (func, x, funcargs, i, rootd, runid, names, descriptor, tabular) = args
     #func = getattr(sys.modules[func[0]], func[1])
 
     job_num = i + 1
     ps.job_num = i + 1
     evald = catd(rootd, ps.job_num)
     os.makedirs(evald)
-    funcargs[-1] = evald
     cwd = os.getcwd()
     os.chdir(evald)
 
@@ -259,7 +256,7 @@ def run_job(args):
         ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)))
 
     try:
-        resp = func(x, *funcargs)
+        resp = func(x, names, evald, runid, *funcargs)
         logger.write("Finished job {0}".format(ps.job_num))
         stat = 0
     except BaseException as e:
@@ -269,7 +266,10 @@ def run_job(args):
         logger.error("\nRun {0} failed with the following exception:\n"
                      "   {1}".format(ps.job_num, message))
         stat = 1
-        resp = [np.nan for _ in range(len(descriptor))]
+        try:
+            resp = [np.nan for _ in range(len(descriptor))]
+        except TypeError:
+            resp = None
 
     response = None
     if descriptor is not None:

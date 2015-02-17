@@ -11,7 +11,7 @@ def runner():
     {0} 2:1.e-1 0 0
     """.format(2*pi)
 
-    runid = "functions"
+    mps = MaterialPointSimulator("functions")
 
     a = np.array([[0., 2.], [1., 3.], [2., 4.]])
     f2 = Function(2, "analytic_expression", lambda t: np.sin(t))
@@ -19,19 +19,17 @@ def runner():
     functions = [f2, f3]
 
     # set up the driver
-    driver = Driver("Continuum", path, path_input="function",
-                    num_steps=200, functions=functions, cfmt="222")
+    mps.Driver("Continuum", path, path_input="function",
+               num_steps=200, functions=functions, cfmt="222")
 
     # set up the material
     parameters = {"K": K, "G": G}
-    material = Material("elastic", parameters)
+    mps.Material("elastic", parameters)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material)
     mps.run()
 
     mps.dump(variables=["STRESS", "STRAIN"], format="ascii", step=1, ffmt="12.6E")
-
 
 if __name__ == "__main__":
     runner()

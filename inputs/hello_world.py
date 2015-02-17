@@ -7,13 +7,15 @@ path = """
 1 25 SEE  1.0e6  0.0  0.0
 """
 
+# set up the simulation
+mps = MaterialPointSimulator("hello_world")
+
 # set up the driver
-driver = Driver("Continuum", path)
+mps.Driver("Continuum", path=path)
 
 # set up the material
 parameters = {"K": 1.35e11, "G": 5.3e10}
-material = Material("elastic", parameters)
+mps.Material("elastic", parameters)
 
-# set up and run the model
-mps = MaterialPointSimulator("hello_world", driver, material)
+# run the simulation
 mps.run()

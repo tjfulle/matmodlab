@@ -24,8 +24,11 @@ class Expansion(object):
                                  "lib/expansion.so not imported")
 
     def update_state(self, logger, temp, dtemp, F, kappa):
-        comm = (logmes, logwrn, bombed, (self.logger.logger_id,))
-        Fm, Em = xpansion.mechdef(self.data, temp, dtemp, kappa, F, *comm)
+        lid = logger.logger_id
+        ex = ((lid,), (lid,), (lid,))
+        n = len(self.data)
+        Fm, Em = xpansion.mechdef(self.data, temp, dtemp, kappa, F,
+                                  logmes, logwrn, bombed, n, *ex)
         return Fm, Em
 
     @property

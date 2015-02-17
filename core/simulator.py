@@ -6,17 +6,16 @@ import numpy as np
 from core.runtime import opts
 from core.logger import Logger
 from utils.exomgr import ExodusII
-from core.driver import PathDriver
+from core.driver import PathDriver, Driver
 from core.product import MAT_LIB_DIRS
-from core.material import MaterialModel
+from core.material import MaterialModel, Material
 from utils.errors import MatModLabError
 from utils.data_containers import DataContainer
 from utils.variable import Variable, VAR_SCALAR
 from utils.constants import DEFAULT_TEMP
 
 class MaterialPointSimulator(object):
-    def __init__(self, runid, driver=None, material=None,
-                 termination_time=None, verbosity=1, d=None, logger=None):
+    def __init__(self, runid, termination_time=None, verbosity=1, d=None):
         """Initialize the MaterialPointSimulator object
 
         """
@@ -25,19 +24,15 @@ class MaterialPointSimulator(object):
         self.termination_time = termination_time
         self.bp = None
 
+        self._material = None
+        self._driver = None
+
         # setup IO
         opts.simulation_dir = d or os.getcwd()
 	self.title = "matmodlab single element simulation"
-        if logger is None:
-            logfile = os.path.join(opts.simulation_dir, self.runid + ".log")
-            logger = Logger(runid, filename=logfile, verbosity=verbosity)
+        logfile = os.path.join(opts.simulation_dir, self.runid + ".log")
+        logger = Logger(runid, filename=logfile, verbosity=verbosity)
         self.logger = logger
-
-        # assignment must come after logger assignment above
-        if driver is not None:
-            self.driver = driver
-        if material is not None:
-            self.material = material
 
     def register_variable(self, var_name, var_type):
         self._vars.append(Variable(var_name, var_type))
@@ -52,37 +47,42 @@ class MaterialPointSimulator(object):
 
     @property
     def driver(self):
-        try:
-            return self._driver
-        except AttributeError:
-            return
+        return self._driver
 
     @driver.setter
-    def driver(self, driver):
-        if not isinstance(driver, PathDriver):
-            raise MatModLabError("driver must be instance of Driver")
-        self._driver = driver
-        self._driver.logger = self.logger
+    def driver(self, value):
+        if not isinstance(value, PathDriver):
+            raise MatModLabError("material must be an instance of PathDriver")
+        self._driver = value
 
-    def assign_driver(self, driver):
-        self.driver = driver
+    def Driver(self, kind="Continuum", path=None, **kwargs):
+        """Method that delays the instantiation of the material model
+
+        """
+        def fun(**kwds):
+            kwargs["logger"] = self.logger
+            return Driver(kind, path, **kwargs)
+        self._driver = fun
 
     @property
     def material(self):
-        try:
-            return self._material
-        except AttributeError:
-            return
+        return self._material
 
     @material.setter
-    def material(self, material):
-        if not isinstance(material, MaterialModel):
-            raise MatModLabError("material must be instance of Material")
-        self._material = material
-        self._material.logger = self.logger
+    def material(self, value):
+        if not isinstance(value, MaterialModel):
+            raise MatModLabError("material must be an instance of MaterialModel")
+        self._material = value
 
-    def assign_material(self, material):
-        self.material = material
+    def Material(self, model, parameters, **kwargs):
+        """Method that delays the instantiation of the material model
+
+        """
+        def fun(**kwds):
+            kwargs["logger"] = self.logger
+            kwargs.update(**kwds)
+            return Material(model, parameters, **kwargs)
+        self._material = fun
 
     @property
     def variables(self):
@@ -113,8 +113,20 @@ Material: {3}
         """Last items to set up before running
 
         """
-        assert self.driver, "driver not assigned"
-        assert self.material, "material not assigned"
+        # set up the driver and material
+        if not self.driver: raise MatModLabError("no driver assigned")
+        try: self.driver = self.driver()
+        except TypeError: pass
+
+        if not self.material: raise MatModLabError("no material assigned")
+        try: self.material = self.material(initial_temp=self.driver.initial_temp)
+        except TypeError: pass
+
+        if abs(self.driver.initial_temp - self.material.initial_temp) > 1.e-12:
+            raise MatModLabError("driver initial temperature != "
+                                 "material initial temperature")
+
+        # Exodus database setup
         self.exo_db = ExodusII(self.runid, d=opts.simulation_dir)
         self.exo_file = self.exo_db.filepath
 
@@ -140,11 +152,6 @@ Material: {3}
                 self.elem_vars.extend(d.keys)
                 elem_data.append((d.name, d.keys, d.initial_value))
         self.elem_data = DataContainer(elem_data)
-
-        # synchronize temperatures
-        if abs(self.driver.initial_temp - self.material.initial_temp) > 1.e-12:
-            raise MatModLabError("inconsistent initial temperatures in "
-                                 "driver and material")
 
         # set up timing
         self.timing = {}

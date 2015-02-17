@@ -46,6 +46,9 @@ EPSILON = np.finfo(np.float).eps
 LS = ['solid', 'dot dash', 'dash', 'long dash'] # , 'dot']
 F_EVALDB = "mml-evaldb.xml"
 
+def Ones(n):
+    return [1. for _ in range(n)]
+
 
 class Logger:
     errors = 0
@@ -196,8 +199,8 @@ class Plot2D(HasTraits):
     low_time = Float
     time_data_labels = Dict(Tuple, List)
     runs_shown = List(Bool)
-    xscale = Float
-    yscale = Float
+    xscale = List(Float)
+    yscale = List(Float)
     _line_style_index = Int
     rand = Bool
     show_legend = Bool
@@ -225,10 +228,44 @@ class Plot2D(HasTraits):
         self._refresh = 1
         self.plotable_vars = self.file_data.plotable_vars
         self.runs_shown = [True] * len(self.plotable_vars)
-        self.xscale, self.yscale = 1., 1.
+        self.xscale = Ones(len(self.plotable_vars))
+        self.yscale = Ones(len(self.plotable_vars))
         self.rand = False
         self.show_legend = True
         pass
+
+    def set_scale(self, scale, real=1., i=None, string=None):
+        if string is not None:
+            for (i, v) in enumerate(self.plotable_vars):
+                data = self.file_data[0](v)
+                if string[:4] == "norm":
+                    _max = np.amax(np.abs(data))
+                    _max = 1. if _max < EPSILON else _max
+                    a = 1. / _max
+                elif string == "max":
+                    a = np.amax(data)
+                elif string == "min":
+                    a = np.amin(data)
+                else:
+                    try:
+                        a = float(eval(string, GDICT, LDICT))
+                    except NameError:
+                        a = scale[i]
+                scale[i] = a
+
+        elif i is None:
+            scale = [real for _ in len(self.plotable_vars)]
+
+        else:
+            scale[i] = real
+
+        return
+
+    def set_xscale(self, real=1., i=None, string=None):
+        self.set_scale(self.xscale, real=real, i=i, string=string)
+
+    def set_yscale(self, real=1., i=None, string=None):
+        self.set_scale(self.yscale, real=real, i=i, string=string)
 
     @on_trait_change('Time')
     def change_data_markers(self):
@@ -240,8 +277,8 @@ class Plot2D(HasTraits):
             for (i, y_idx) in enumerate(self.plot_indices):
                 yname = self.plotable_vars[y_idx]
                 self.time_data_labels[(pd.name, d)][i].data_point = (
-                    pd(xname, self.Time) * self.xscale,
-                    pd(yname, self.Time) * self.yscale)
+                    pd(xname, self.Time) * self.xscale[self.x_idx],
+                    pd(yname, self.Time) * self.yscale[y_idx])
 
         if self.overlay_file_data:
             # plot the overlay data
@@ -254,8 +291,8 @@ class Plot2D(HasTraits):
                 for (i, y_idx) in enumerate(self.plot_indices):
                     yname = self.plotable_vars[y_idx]
                     self.time_data_labels[(od.name, d)][i].data_point = (
-                        od(xname, self.Time) * self.xscale,
-                        od(yname, self.Time) * self.yscale)
+                        od(xname, self.Time) * self.xscale[self.x_idx],
+                        od(yname, self.Time) * self.yscale[y_idx])
 
         self.container.invalidate_and_redraw()
         return
@@ -311,7 +348,7 @@ class Plot2D(HasTraits):
         self._refresh = 0
         return
 
-    def change_plot(self, indices, xscale=None, yscale=None):
+    def change_plot(self, indices):
         self.plot_indices = indices
         self.container = self.create_container()
         self.high_time = float(max(self.file_data[0]("TIME")))
@@ -321,7 +358,6 @@ class Plot2D(HasTraits):
         if len(indices) == 0:
             return
         self._refresh = 1
-        xscale, yscale = self.get_axis_scales(xscale, yscale)
 
         # loop through plot data and plot it
         overlays_plotted = False
@@ -349,14 +385,11 @@ class Plot2D(HasTraits):
                 yname = self.plotable_vars[idx]
 
                 # get the data
-                x = pd(xname)
-                y = pd(yname)
-
-                if x is None or y is None:
+                if pd(xname) is None or pd(yname) is None:
                     continue
 
-                x *= xscale
-                y *= yscale
+                x = pd(xname) * self.xscale[self.x_idx]
+                y = pd(yname) * self.yscale[idx]
 
                 legend = pd.legend(yname)
                 if self.nfiles - 1 or self.overlay_file_data:
@@ -369,8 +402,8 @@ class Plot2D(HasTraits):
                 self.create_plot(x, y, color, ls, entry)
 
                 # create point marker
-                xp = pd(xname, self.Time) * xscale
-                yp = pd(yname, self.Time) * yscale
+                xp = pd(xname, self.Time) * self.xscale[self.x_idx]
+                yp = pd(yname, self.Time) * self.yscale[idx]
                 yp_idx = pd.plotable_vars.index(yname)
                 self.create_data_label(xp, yp, d, yp_idx, pd.name)
 
@@ -394,8 +427,8 @@ class Plot2D(HasTraits):
 
                         # create point marker
                         self.time_data_labels[(od.name, dd)] = []
-                        xp = od(xname, self.Time) * xscale
-                        yp = od(yname, self.Time) * yscale
+                        xp = od(xname, self.Time) * self.xscale[self.x_idx]
+                        yp = od(yname, self.Time) * self.yscale[idx]
                         yp_idx = od.plotable_vars.index(yname)
                         self.create_data_label(xp, yp, dd, yp_idx, od.name)
 
@@ -463,39 +496,10 @@ class Plot2D(HasTraits):
     def nfiles(self):
         return len(self.file_data)
 
-    def get_axis_scales(self, xscale, yscale):
-        """Get/Set the scales for the x and y axis
-
-        Parameters
-        ----------
-        xscale : float, optional
-        yscale : float, optional
-
-        Returns
-        -------
-        xscale : float
-        yscale : float
-
-        """
-        # get/set xscale
-        if xscale is None:
-            xscale = self.xscale
-        else:
-            self.xscale = xscale
-
-        # get/set yscale
-        if yscale is None:
-            yscale = self.yscale
-        else:
-            self.yscale = yscale
-
-        return xscale, yscale
-
-
 class ChangeAxisHandler(Handler):
 
     def closed(self, info, is_ok):
-        global change_xaxis_Enabled
+        global change_xaxis_enabled
         change_xaxis_enabled = True
 
 
@@ -667,19 +671,8 @@ class ModelPlot(HasStrictTraits):
         scale = scale.strip()
         if not scale:
             scale = self.xscale = "1.0"
-        if scale == "max":
-            scale = str(self.plot2d.max_x)
-        elif scale == "min":
-            scale = str(self.plot2d.min_x)
-        elif scale == "normalize":
-            _max = self.plot2d.abs_max_x
-            _max = 1. if _max < EPSILON else _max
-            scale = str(1. / _max)
-        try:
-            scale = float(eval(scale, GDICT, LDICT))
-        except:
-            return
-        self.plot2d.change_plot(self.plot2d.plot_indices, xscale=scale)
+        self.plot2d.set_xscale(string=scale)
+        self.plot2d.change_plot(self.plot2d.plot_indices)
         return
 
     def _yscale_changed(self, scale):
@@ -708,19 +701,8 @@ class ModelPlot(HasStrictTraits):
         scale = scale.strip()
         if not scale:
             scale = self.yscale = "1.0"
-        if scale == "max":
-            scale = str(self.plot2d.max_y)
-        elif scale == "min":
-            scale = str(self.plot2d.min_y)
-        elif scale == "normalize":
-            _max = self.plot2d.abs_max_y
-            _max = 1. if _max < EPSILON else _max
-            scale = str(1. / _max)
-        try:
-            scale = float(eval(scale, GDICT, LDICT))
-        except:
-            return
-        self.plot2d.change_plot(self.plot2d.plot_indices, yscale=scale)
+        self.plot2d.set_yscale(string=scale)
+        self.plot2d.change_plot(self.plot2d.plot_indices)
         return
 
     def _reload_data_fired(self):
@@ -736,8 +718,8 @@ class ModelPlot(HasStrictTraits):
 
     def _rand_colors_fired(self):
         self.plot2d.rand = not self.plot2d.rand
-        return
         self.plot2d.change_plot(self.plot2d.plot_indices)
+        return
 
     def _show_legend_fired(self, *args):
         if self.plot2d.container is None:
@@ -838,7 +820,8 @@ def create_model_plot(sources, handler=None):
             VGroup(HGroup(
                 Item('rand_colors', style="simple", label="Random Colors"),
                 Item('_'),
-                Item('show_legend', style="simple", label="Legend")),
+                Item('show_legend', style="simple", label="Legend"),
+                Item('_'),),
                 VGrid(
                     Item('change_axis', show_label=False),
                     Item('reset_zoom', style="simple", show_label=False),

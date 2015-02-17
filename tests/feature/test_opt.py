@@ -77,24 +77,19 @@ class TestPowell(TestBase):
 
         os.chdir(cwd)
 
-def func(x, *args):
+def func(x, xnames, evald, runid, *args):
 
-    runid = args[0]
-    evald = args[-1]
-
-    name = "{0}.{1}".format(os.path.basename(evald), runid)
-    logger = Logger(name)
+    mps = MaterialPointSimulator(runid)
 
     # set up driver
-    driver = Driver("Continuum", open(path_file, "r").read(), cols=[0,2,3,4],
-                    cfmt="222", tfmt="time", path_input="table", logger=logger)
+    mps.Driver("Continuum", open(path_file, "r").read(), cols=[0,2,3,4],
+               cfmt="222", tfmt="time", path_input="table")
 
     # set up material
-    parameters = {"K": x[0], "G": x[1]}
-    material = Material("elastic", parameters, logger=logger)
+    parameters = dict(zip(xnames, x))
+    mps.Material("elastic", parameters)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
     error = my_opt.opt_sig_v_time(mps.exodus_file)
@@ -119,10 +114,9 @@ def runner(method, v=1):
     G = OptimizeVariable("G", 54e9, bounds=(45e9, 57e9))
     xinit = [K, G]
 
-    optimizer = Optimizer(func, xinit, runid,
+    optimizer = Optimizer(runid, func, xinit,
                           descriptor=["PRES_V_EVOL"], method=method,
-                          maxiter=25, tolerance=1.e-4, verbosity=v,
-                          funcargs=[runid])
+                          maxiter=25, tolerance=1.e-4, verbosity=v)
     optimizer.run()
     xopt = optimizer.xopt
     return xopt

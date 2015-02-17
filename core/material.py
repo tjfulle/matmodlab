@@ -65,6 +65,7 @@ class MaterialModel(object):
 
         parameters = args[0]
         self._param_name_map = {}
+        self._initial_temp = None
 
         if self.name is None:
             raise MatModLabError("material did not define name attribute")
@@ -141,38 +142,37 @@ class MaterialModel(object):
 
         return params
 
-    def initialize(self, initial_temp, file=None, trs=None,
+    def initialize(self, initial_temp=None, file=None, trs=None,
                    expansion=None, viscoelastic=None, logger=None, **kwargs):
         if not self.pre_initialized:
             raise MatModLabError("material not pre-initialized")
 
         self._vars = []
-        self.visco_model = None
-        self.expansion_model = None
+        self.visco_model = viscoelastic
+        self.expansion_model = expansion
+        self.trs_model = trs
         self.J0 = None
         self.nxtra = 0
-        self.initial_state = np.zeros(self.nxtra)
+        self.xinit = np.zeros(self.nxtra)
         self.xkeys = []
         self.initialized = True
-        self.itemp = DEFAULT_TEMP
+        self.initial_temp = initial_temp
         self.initial_stress = np.zeros(6)
         self.logger = logger or Logger(self.name, filename=None)
         self._file = file
 
-        # Do the actual setup
-        self._setup(initial_temp, expansion, trs, viscoelastic, **kwargs)
+        self._setup(**kwargs)
         self._initialize()
 
     def mimicking(self, mat_mimic):
         raise NotImplementedError("mimicking not supported by "
                                   "{0}".format(self.name))
 
-    def _setup(self, initial_temp, expansion, viscoelastic, trs, **kwargs):
+    def _setup(self, **kwargs):
         """Set up the new material
 
         """
         self.logger.write("setting up {0} material".format(self.name))
-        self.initial_temp = initial_temp
         self.iparams = Parameters(self.parameter_names, self.iparray, self.name)
         self.params = Parameters(self.parameter_names, self.iparray, self.name)
 
@@ -181,13 +181,11 @@ class MaterialModel(object):
         except TypeError:
             self.setup()
 
-        if viscoelastic is not None:
-            self.visco_model = viscoelastic
-            vk, vd = self.visco_model.setup(self.logger, trs_model=trs)
+        if self.visco_model is not None:
+            vk, vd = self.visco_model.setup(self.logger, trs_model=self.trs_model)
             self.augment_xtra(vk, vd)
 
-        if expansion is not None:
-            self.expansion_model = expansion
+        if self.expansion_model is not None:
             self.expansion_model.setup()
 
         self.register_variable("XTRA", VAR_ARRAY, keys=self.xkeys,
@@ -220,11 +218,12 @@ class MaterialModel(object):
 
     @property
     def initial_temp(self):
-        return self.itemp
+        return self._initial_temp
 
     @initial_temp.setter
     def initial_temp(self, value):
-        self.itemp = value
+        if value is not None:
+            self._initial_temp = value
 
     def register_variable(self, var_name, var_type, keys=None, ivals=None):
         if keys is not None:
@@ -483,22 +482,6 @@ class MaterialModel(object):
             # initialize the visco variables
             xtra[N:] = self.visco_model.initialize(self.logger, xtra[N:])
 
-        time, dtime = 0., 1.
-        temp, dtemp = self.initial_temp, 0.
-        stress = self.initial_stress
-        F0 = Eye(9)
-        F = Eye(9)
-        stran = np.zeros(6)
-        d = np.zeros(6)
-        elec_field = np.zeros(3)
-        user_field = None
-        kappa = 0
-        sigini, xinit, ddsdde = self.compute_updated_state(time, dtime, temp,
-            dtemp, kappa, F0, F, stran, d, elec_field, user_field, stress, xtra)
-
-        self.initial_state = xinit
-        self.initial_stress = sigini
-
     @property
     def initial_state(self):
         return self.xinit
@@ -532,6 +515,12 @@ class AbaqusMaterial(MaterialModel):
     aba_model = True
     lapack = "lite"
     def setup(self, props, **kwargs):
+        """Setup the material model.
+
+        Checks properties, assigns storage for state variables, initializes
+        all quantities.
+
+        """
         try:
             self.import_model()
         except ImportError:
@@ -550,8 +539,38 @@ class AbaqusMaterial(MaterialModel):
             depvar, sdv_keys = len(depvar), depvar
         except TypeError:
             sdv_keys = xkeys(depvar)
+
+        # call model with zero state to get initial state variables
         statev = np.zeros(depvar)
-        self.register_xtra_variables(sdv_keys, statev)
+        time, dtime = 0., 1.
+        temp, dtemp = self.initial_temp, 0.
+        stress = self.initial_stress
+        F0 = Eye(9)
+        F = Eye(9)
+        stran = np.zeros(6)
+        d = np.zeros(6)
+        elec_field = np.zeros(3)
+        user_field = None
+        kappa = 0
+        energy = 1.
+        rho = 1.
+        sigini, xinit, ddsdde = self.update_state(time, dtime, temp, dtemp,
+            energy, rho, F0, F, stran, d, elec_field, user_field, stress,
+            statev, nxtra=depvar)
+
+        # Do the property completion
+        C = isotropic_part(ddsdde)
+        lame = C[0,1]
+        mu = C[5,5] / 2.
+        a = np.array([mu, lame])
+        b = [EC_LAME, EC_SHEAR]
+        self.completions = complete_properties(a, b)
+
+        # set initial values of state variables
+        self.initial_state = xinit
+        self.register_xtra_variables(sdv_keys, xinit)
+
+        # additional set up
         self.model_setup(**kwargs)
 
     def model_setup(self, *args, **kwargs):
@@ -559,8 +578,9 @@ class AbaqusMaterial(MaterialModel):
         pass
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
-        stran, d, elec_field, user_field, stress, statev, **kwargs):
+        stran, d, elec_field, user_field, stress, statev, nxtra=None, **kwargs):
         # abaqus defaults
+        N = nxtra or self.nxtra
         w = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
         cmname = "{0:8s}".format("umat")
         dfgrd0 = np.reshape(F0, (3, 3), order="F")
@@ -574,8 +594,10 @@ class AbaqusMaterial(MaterialModel):
         coords = np.zeros(3, order="F")
         drot = np.eye(3)
         ndi = nshr = 3
-        sse = spd = scd = rpl = drpldt = celent = pnewdt = 0.
+        spd = scd = rpl = drpldt = pnewdt = 0.
         noel = npt = layer = kspt = kinc = 1
+        sse = mmlabpack.ddot(stress, stran) / rho
+        celent = 1.
         kstep = 1
         time = np.array([time,time])
         # abaqus ordering
@@ -586,7 +608,7 @@ class AbaqusMaterial(MaterialModel):
         stress, statev, ddsdde = self.update_state_umat(
             stress, statev, ddsdde, sse, spd, scd, rpl, ddsddt, drplde, drpldt,
             stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
-            ndi, nshr, self.nxtra, self.params, coords, drot, pnewdt, celent,
+            ndi, nshr, N, self.params, coords, drot, pnewdt, celent,
             dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc)
         if np.any(np.isnan(stress)):
             self.logger.raise_error("umat stress contains nan's")

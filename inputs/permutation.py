@@ -9,35 +9,30 @@ path = """
 4 1 222222 0 0 0 0 0 0
 """
 
-def func(x, *args):
+def func(x, xnames, d, runid, *args):
 
-    runid, d = args[:2]
-    logger = Logger(runid)
+    mps = MaterialPointSimulator(runid)
 
     # set up the driver
-    driver = Driver("Continuum", path, estar=-.5, step_multiplier=1000,
-                    logger=logger)
+    mps.Driver("Continuum", path, estar=-.5, step_multiplier=10)
 
     # set up the material
-    parameters = {"K": x[0], "G": x[1]}
-    material = Material("elastic", parameters, logger=logger)
+    parameters = dict(zip(xnames, x))
+    mps.Material("elastic", parameters)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
-    pres = mps.extract_from_db(["PRESSURE"])
 
+    pres = mps.extract_from_db(["PRESSURE"])
     return np.amax(pres)
 
 @matmodlab
 def runner():
-
-    runid = "permutation"
     K = PermutateVariable("K", 125e9, method="weibull", b=14, N=3)
     G = PermutateVariable("G", 45e9, method="percentage", b=10, N=3)
     xinit = [K, G]
-    permutator = Permutator(func, xinit, runid=runid, descriptor=["MAX_PRES"],
-                            method="zip", correlations=True, funcargs=[runid])
+    permutator = Permutator("permutation", func, xinit, method="zip",
+                            descriptor=["MAX_PRES"], correlations=True)
     permutator.run()
 
 runner()

@@ -11,8 +11,6 @@ class TestUser(TestBase):
 @matmodlab
 def run_user_thermoelastic(*args, **kwargs):
 
-    logger = Logger(runid)
-
     path = """
     0 0 EEET 0 0 0 298
     1 1 ESST 1 0 0 300
@@ -21,23 +19,19 @@ def run_user_thermoelastic(*args, **kwargs):
     4 1 ESST 0 0 0 375
     """
 
-    driver = Driver("Continuum", path, logger=logger)
+    mps = MaterialPointSimulator(runid)
+    mps.Driver("Continuum", path)
 
-    E0 = 29.E+06
-    NU0 = .33
-    T0 = 295.E+00
-    T1 = 295.E+00
-    E1 = 23.E+06
-    NU1 = .33
-    TI = 298.
-    ALPHA = 0
+    E0, NU0, T0 = 29.E+06, .33, 295.E+00
+    E1, NU1, T1 = 23.E+06, .33, 295.E+00
+    TI, ALPHA = 298., 0
     parameters = np.array([E0, NU0, T0, E1, NU1, T1, ALPHA, TI])
-    material = Material("user", parameters,
-                        initial_temp=298., depvar=12,
-                        source_files=["thermoelastic.f90"],
-                        source_directory=os.path.join(MAT_D, "usermats"))
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    mps.Material("user", parameters,
+                 initial_temp=298., depvar=12,
+                 source_files=["thermoelastic.f90"],
+                 source_directory=os.path.join(MAT_D, "usermats"))
+
     mps.run()
 
 if __name__ == "__main__":
-    runner()
+    run_user_thermoelastic()
