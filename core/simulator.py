@@ -230,11 +230,11 @@ Material: {3}
     def exodus_file(self):
         return self.exo_file
 
-    def break_point(self, condition):
+    def break_point(self, condition, xit=0):
         """Define a break point for the simulation
 
         """
-        self.bp = BreakPoint(condition, self)
+        self.bp = BreakPoint(condition, self, xit=xit)
 
     def check_break_points(self):
         if not self.bp:
@@ -251,9 +251,10 @@ class BreakPointError(Exception):
         super(BreakPointError, self).__init__("{0}: not a valid conditon".format(c))
 
 class BreakPoint:
-    def __init__(self, condition, mps):
+    def __init__(self, condition, mps, xit=0):
         self._condition = condition
         self.mps = mps
+        self.xit = xit
         self.condition, self.names = self.parse_condition(condition)
 
     @staticmethod
@@ -306,6 +307,11 @@ class BreakPoint:
         condition = self.condition.format(**kwds)
         if not eval(condition):
             return
+
+        if self.xit:
+            self.mps.driver.ran = "broke"
+            self.mps.finish()
+            sys.exit(0)
 
         # Break condition met.  Enter the UI
         self.ui(condition, time, glob_data, elem_data)
