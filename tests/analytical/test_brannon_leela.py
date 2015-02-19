@@ -43,9 +43,10 @@ def run_brannon_lellavanichkul_2(*args, **kwargs):
       poisson's ratio = 1/3  (not technically needed for simulation)
 
     """
-    runid = RUNID + "_2"
-    name = "job.{0}".format(runid)
-    logger = Logger(name)
+    runid = "job.{0}_2".format(RUNID)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid)
 
     # Yield in shear, shear modulus, and poisson_ratio
     Y = 165.0e6
@@ -87,14 +88,13 @@ def run_brannon_lellavanichkul_2(*args, **kwargs):
     analytic_response = np.array(analytic_response)
 
     # set up the driver
-    driver = Driver("Continuum", path, logger=logger)
+    mps.Driver("Continuum", path)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y}
-    material = Material("vonmises", parameters, logger=logger)
+    mps.Material("vonmises", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    # run the model
     mps.run()
 
     if not kwargs.get("test"):

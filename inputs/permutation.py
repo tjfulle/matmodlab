@@ -32,7 +32,7 @@ def runner():
     G = PermutateVariable("G", 45e9, method="percentage", b=10, N=3)
     xinit = [K, G]
     permutator = Permutator("permutation", func, xinit, method="zip",
-                            descriptor=["MAX_PRES"], correlations=True)
+                            descriptors=["MAX_PRES"], correlations=True)
     permutator.run()
 
 runner()

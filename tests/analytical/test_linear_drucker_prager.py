@@ -62,9 +62,10 @@ def rand_runner(d=None, runid=None, test=0):
     d = d or os.getcwd()
     runid = runid or RUNID
     solfile = os.path.join(d, runid + ".base_dat")
-    filename = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=filename)
-    logger.write("logfile is: {0}".format(filename))
+
+    # set up the model
+    mps = MaterialPointSimulator(runid, d=d)
+    mps.logger.write("logfile is: {0}".format(filename))
 
     # Set up the path and random material constants
     nu, E, K, G, LAM = ldpr.gen_rand_elastic_params()
@@ -72,22 +73,21 @@ def rand_runner(d=None, runid=None, test=0):
 
     # set up the material
     parameters = {"K": K, "G": G, "A1": A1, "A4": A4}
-    material = Material("pyplastic", parameters, logger=logger)
+    mps.Material("pyplastic", parameters)
 
     # set up the driver
     path, strain = ldpr.gen_path(K, G, A1, A4)
-    driver = Driver("Continuum", path, logger=logger)
+    mps.Driver("Continuum", path)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
 
     if not test: return
 
     # check output with analytic
-    logger.write("Comaring outputs")
-    logger.write("  DIFFTOL = {0:.5e}".format(DIFFTOL))
-    logger.write("  FAILTOL = {0:.5e}".format(FAILTOL))
+    mps.logger.write("Comaring outputs")
+    mps.logger.write("  DIFFTOL = {0:.5e}".format(DIFFTOL))
+    mps.logger.write("  FAILTOL = {0:.5e}".format(FAILTOL))
 
     # check output with analytic
     VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
@@ -95,13 +95,13 @@ def rand_runner(d=None, runid=None, test=0):
     simulate_response = mps.extract_from_db(VARIABLES, t=1)
     analytic_response = ldpr.gen_analytic_solution(K, G, A1, A4, strain)
 
-    logger.write("Writing analytical solution to {0}".format(solfile))
+    mps.logger.write("Writing analytical solution to {0}".format(solfile))
     with open(solfile, 'w') as f:
         headers = ["TIME"] + VARIABLES
         f.write("".join(["{0:>20s}".format(_) for _ in headers]) + "\n")
         for row in analytic_response:
             f.write("".join(["{0:20.10e}".format(_) for _ in row]) + "\n")
-    logger.write("  Writing is complete")
+    mps.logger.write("  Writing is complete")
 
     T = analytic_response[:, 0]
     t = simulate_response[:, 0]
@@ -111,15 +111,15 @@ def rand_runner(d=None, runid=None, test=0):
         X = analytic_response[:, col]
         x = simulate_response[:, col]
         nrms = rms_error(T, X, t, x, disp=0)
-        logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
+        mps.logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
         if nrms < DIFFTOL:
-            logger.write("    PASS")
+            mps.logger.write("    PASS")
             continue
         elif nrms < FAILTOL and stat is PASSED:
-            logger.write("    DIFF")
+            mps.logger.write("    DIFF")
             stat = DIFFED
         else:
-            logger.write("    FAIL")
+            mps.logger.write("    FAIL")
             stat = FAILED
 
     return stat
@@ -129,7 +129,9 @@ def rand_runner(d=None, runid=None, test=0):
 def run_linear_drucker_prager_spherical(*args, **kwargs):
 
     runid = RUNID + "_spherical"
-    logger = Logger(runid)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid)
 
     # Elastic modulii
     LAM = 1.0e9
@@ -143,14 +145,13 @@ def run_linear_drucker_prager_spherical(*args, **kwargs):
 
     # set up the driver
     path = ldpr.gen_spherical_path(K, MU, RINT, ZINT)
-    driver = Driver("Continuum", path, step_multiplier=100, logger=logger)
+    mps.Driver("Continuum", path, step_multiplier=100)
 
     # set up the material
     parameters = {"K": K, "G": MU, "A1": RINT/sqrt(2.0), "A4": RINT/sqrt(6.0)/ZINT}
-    material = Material("pyplastic", parameters, logger=logger)
+    mps.Material("pyplastic", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    # run the model
     mps.run()
 
 

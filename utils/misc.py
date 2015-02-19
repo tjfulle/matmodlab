@@ -6,9 +6,27 @@ import inspect
 import importlib
 from select import select
 from contextlib import contextmanager
-from os.path import splitext, split, dirname, isfile, sep, basename, exists
+from os.path import splitext, split, dirname, isfile, sep, basename, \
+    exists, isdir, join
 from core.product import ROOT_D
 from core.runtime import opts
+
+def backup(src, mv=0):
+    """Create a backup of d"""
+    assert exists(src)
+    d, base = split(src)
+    for i in range(100):
+        dst = join(d, "{0}.{1}".format(base, i+1))
+        if not exists(dst):
+            break
+    else:
+        sys.exit("maximum number of backups reached")
+    if mv:
+        shutil.move(src, dst)
+    elif isdir(src):
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy(src, dst)
 
 def whoami():
     """ return name of calling function """

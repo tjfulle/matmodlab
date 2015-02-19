@@ -1,10 +1,11 @@
 import os
 import sys
 import time
-import subprocess
-import numpy as np
 import shutil
 import datetime
+import traceback
+import subprocess
+import numpy as np
 
 from runtime import opts
 from core.logger import Logger, ConsoleLogger
@@ -231,12 +232,11 @@ def run_job(xcall, *args):
         err = func(x, xnames, evald, runid, *funcargs)
         logger.write("done (error={0:.4e})".format(err))
         stat = 0
-    except BaseException as e:
-        message = " ".join("{0}".format(_) for _ in e.args)
-        if hasattr(e, "filename") and type(e.filename) is str:
-            message = e.filename + ": " + message[1:]
-        logger.error("\nrun {0} failed with the following exception:\n"
-                     "   {1}".format(IOPT, message))
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        logger.error("\nRun {0} failed with the following "
+                     "exception:\n".format(IOPT))
+        traceback.print_exception(exc_type, exc_value, exc_traceback, file=logger)
         stat = 1
         err = np.nan
 

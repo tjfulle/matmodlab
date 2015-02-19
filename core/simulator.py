@@ -115,12 +115,10 @@ Material: {3}
         """
         # set up the driver and material
         if not self.driver: raise MatModLabError("no driver assigned")
-        try: self.driver = self.driver()
-        except TypeError: pass
+        self.driver = self.driver()
 
         if not self.material: raise MatModLabError("no material assigned")
-        try: self.material = self.material(initial_temp=self.driver.initial_temp)
-        except TypeError: pass
+        self.material = self.material(initial_temp=self.driver.initial_temp)
 
         if abs(self.driver.initial_temp - self.material.initial_temp) > 1.e-12:
             raise MatModLabError("driver initial temperature != "
@@ -251,7 +249,10 @@ Material: {3}
                 self.logger.error("break point variable {0} not a "
                                   "simulation variable".format(name))
         if self.logger.errors:
-            self.logger.raise_error("stopping due to previous errors")
+            raise MatModLabError("stopping due to previous errors")
+
+def cprint(string):
+    sys.stderr.write(string + "\n")
 
 class BreakPointError(Exception):
     def __init__(self, c):
@@ -262,9 +263,13 @@ class BreakPoint:
         self._condition = condition
         self.mps = mps
         self.condition, self.names = self.parse_condition(condition)
+        self.first = 1
 
     @staticmethod
     def parse_condition(condition):
+        """Parse the original condition given in the input file
+
+        """
         from StringIO import StringIO
         from tokenize import generate_tokens
         from token import NUMBER, OP, NAME, ENDMARKER
@@ -305,6 +310,9 @@ class BreakPoint:
         return condition, names
 
     def eval(self, time, glob_data, elem_data):
+        """Evaluate the break condition
+
+        """
         if not self.condition:
             return
         kwds = {"TIME": time}
@@ -339,12 +347,17 @@ SUMMARY OF ELEMENT DATA
     def ui(self, condition, time, glob_data, elem_data):
         self.summary = self.generate_summary(time, glob_data, elem_data)
 
-        print self.manpage(condition)
+        if self.first:
+            cprint(self.manpage(condition, time))
+            self.first = 0
+        else:
+            cprint("BREAK CONDITION {0} ({1}) "
+                   "MET AT TIME={2}".format(self._condition, condition, time))
+
         while 1:
             resp = raw_input("mml > ").lower().split()
 
             if not resp:
-                print self.manpage(condition)
                 continue
 
             if resp[0] == "c":
@@ -352,7 +365,7 @@ SUMMARY OF ELEMENT DATA
                 return
 
             if resp[0] == "h":
-                print self.manpage(condition)
+                cprint(self.manpage(condition, time))
                 continue
 
             if resp[0] == "s":
@@ -362,7 +375,7 @@ SUMMARY OF ELEMENT DATA
                 try:
                     name, value = resp[1:]
                 except ValueError:
-                    print "***error: must specify 'set name value'"
+                    cprint("***error: must specify 'set name value'")
                     continue
                 key = name.upper()
                 value = eval(value)
@@ -374,14 +387,14 @@ SUMMARY OF ELEMENT DATA
                     idx = self.mps.material.parameter_names.index(key)
                     self.mps.material.params[idx] = value
                 else:
-                    print "  {0}: not valid variable/parameter".format(item)
+                    cprint("  {0}: not valid variable/parameter".format(item))
                     continue
                 continue
 
             if resp[0] == "p":
                 toprint = resp[1:]
                 if not toprint:
-                    print self.summary
+                    cprint(self.summary)
                     continue
 
                 for item in toprint:
@@ -405,9 +418,9 @@ SUMMARY OF ELEMENT DATA
                         idx = self.mps.material.parameter_names.index(name)
                         value = self.mps.material.params[idx]
                     else:
-                        print "  {0}: not valid variable".format(item)
+                        cprint("  {0}: not valid variable".format(item))
                         continue
-                    print "  {0} = {1}".format(name, value)
+                    cprint("  {0} = {1}".format(name, value))
                 continue
 
             if resp[0] == "q":
@@ -416,12 +429,12 @@ SUMMARY OF ELEMENT DATA
                 sys.exit(0)
 
             else:
-                print "{0}: unrecognized command".format(" ".join(resp))
+                cprint("{0}: unrecognized command".format(" ".join(resp)))
 
-    def manpage(self, condition):
+    def manpage(self, condition, time):
         page = """
 
-BREAK CONDITION {0} ({1}) MET
+BREAK CONDITION {0} ({1}) MET AT TIME={2}
 
 SYNOPSIS OF COMMANDS
     c
@@ -454,5 +467,5 @@ EXAMPLES
       set K 100
       c
 
-    """.format(self._condition, condition)
+    """.format(self._condition, condition, time)
         return page

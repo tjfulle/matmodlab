@@ -53,12 +53,10 @@ def runner(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or "rand_" + RUNID
+    mps = MaterialPointSimulator(runid, d=d)
 
-    logfile = os.path.join(d, runid + ".log")
     solfile = os.path.join(d, runid + ".base_dat")
     pathfile = os.path.join(d, runid + ".path")
-
-    logger = Logger(runid, filename=logfile)
 
     VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
                  "STRAIN_XY", "STRAIN_YZ", "STRAIN_XZ",
@@ -78,30 +76,29 @@ def runner(*args, **kwargs):
     # Write the path to a file (just in case)
     with open(pathfile, 'w') as f:
         f.write(path)
-    logger.write("Path written to {0}".format(pathfile))
+    mps.logger.write("Path written to {0}".format(pathfile))
 
     # Write the analytic solution for visualization comparison
-    logger.write("Writing analytical solution to {0}".format(solfile))
+    mps.logger.write("Writing analytical solution to {0}".format(solfile))
     with open(solfile, 'w') as f:
         headers = ["TIME"] + VARIABLES
         f.write("".join(["{0:>20s}".format(_) for _ in headers]) + "\n")
         for row in analytic_response:
             f.write("".join(["{0:20.10e}".format(_) for _ in row]) + "\n")
-    logger.write("  Writing is complete")
+    mps.logger.write("  Writing is complete")
 
     # set up the material and driver
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
-    driver = Driver("Continuum", path, logger=logger)
+    mps.Material("pyelastic", parameters)
+    mps.Driver("Continuum", path)
 
     # Run the simulation
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
     # check output with analytic
-    logger.write("Comaring outputs")
-    logger.write("  DIFFTOL = {0:.5e}".format(DIFFTOL))
-    logger.write("  FAILTOL = {0:.5e}".format(FAILTOL))
+    mps.logger.write("Comaring outputs")
+    mps.logger.write("  DIFFTOL = {0:.5e}".format(DIFFTOL))
+    mps.logger.write("  FAILTOL = {0:.5e}".format(FAILTOL))
 
     simulate_response = mps.extract_from_db(VARIABLES, t=1)
 
@@ -113,15 +110,15 @@ def runner(*args, **kwargs):
         X = analytic_response[:, col]
         x = simulate_response[:, col]
         nrms = rms_error(T, X, t, x, disp=0)
-        logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
+        mps.logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
         if nrms < DIFFTOL:
-            logger.write("    PASS")
+            mps.logger.write("    PASS")
             continue
         elif nrms < FAILTOL and stat is PASSED:
-            logger.write("    DIFF")
+            mps.logger.write("    DIFF")
             stat = DIFFED
         else:
-            logger.write("    FAIL")
+            mps.logger.write("    FAIL")
             stat = FAILED
     return stat
 
@@ -130,14 +127,12 @@ def run_biax_strain_ext_stressc(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or RUNID + "_biax_strain_ext_stressc"
-
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=logfile)
+    mps = MaterialPointSimulator(runid, d=d)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
+    mps.Material("pyelastic", parameters)
 
     # set up the driver
     path = """
@@ -147,10 +142,9 @@ def run_biax_strain_ext_stressc(*args, **kwargs):
       3 1 444444 11230352666.666668 11230352666.666668  7479414666.666667 0 0 0
       4 1 444444           0.0                0.0                0.0      0 0 0
       """
-    driver = Driver("Continuum", path, logger=logger, step_multiplier=50)
+    mps.Driver("Continuum", path, step_multiplier=50)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
 
 
@@ -158,13 +152,14 @@ def run_biax_strain_comp_stressc(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or RUNID + "_biax_strain_comp_stressc"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=logfile)
+
+    # set up and the model
+    mps = MaterialPointSimulator(runid, d=d)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
+    mps.Material("pyelastic", parameters)
 
     # set up the driver
     path = """
@@ -174,23 +169,23 @@ def run_biax_strain_comp_stressc(*args, **kwargs):
       3 1 444444 -11230352666.666668 -11230352666.666668  -7479414666.666667 0 0 0
       4 1 444444            0.0                 0.0                 0.0      0 0 0
       """
-    driver = Driver("Continuum", path, logger=logger, step_multiplier=50)
+    mps.Driver("Continuum", path, step_multiplier=50)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
 
 def run_biax_strain_ext_strainc(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or RUNID + "_biax_strain_ext_strainc"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=logfile)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid, d=d)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
+    mps.Material("pyelastic", parameters)
 
     # set up the driver
     path = """
@@ -200,24 +195,23 @@ def run_biax_strain_ext_strainc(*args, **kwargs):
       3 1 222222 1 1 0 0 0 0
       4 1 222222 0 0 0 0 0 0
       """
-    driver = Driver("Continuum", path, logger=logger, estar=.5,
-                    step_multiplier=50)
+    mps.Driver("Continuum", path, estar=.5, step_multiplier=50)
 
     # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
     mps.run()
 
 def run_biax_strain_comp_strainc(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or RUNID + "_biax_strain_comp_strainc"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=logfile)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid, d=d)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
+    mps.Material("pyelastic", parameters, logger=logger)
 
     # set up the driver
     path = """
@@ -227,11 +221,9 @@ def run_biax_strain_comp_strainc(*args, **kwargs):
       3 1 222222 1 1 0 0 0 0
       4 1 222222 0 0 0 0 0 0
       """
-    driver = Driver("Continuum", path, logger=logger, estar=-.5,
-                    step_multiplier=50)
+    mps.Driver("Continuum", path, estar=-.5, step_multiplier=50)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
 
 
@@ -239,13 +231,14 @@ def run_uniax_strain_comp_strainc(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or RUNID + "_uniax_strain_comp_strainc"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=logfile)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid, d=d)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
+    mps.Material("pyelastic", parameters)
 
     # set up the driver
     path = """
@@ -255,24 +248,23 @@ def run_uniax_strain_comp_strainc(*args, **kwargs):
       3 1 222222 1 0 0 0 0 0
       4 1 222222 0 0 0 0 0 0
       """
-    driver = Driver("Continuum", path, logger=logger, estar=-.5,
-                    step_multiplier=50)
+    mps.Driver("Continuum", path, estar=-.5, step_multiplier=50)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
 
 def run_uniax_strain_ext_strainc(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or RUNID + "_uniax_strain_ext_strainc"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=logfile)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid, d=d)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
+    mps.Material("pyelastic", parameters)
 
     # set up the driver
     path = """
@@ -282,24 +274,23 @@ def run_uniax_strain_ext_strainc(*args, **kwargs):
       3 1 222222 1 0 0 0 0 0
       4 1 222222 0 0 0 0 0 0
       """
-    driver = Driver("Continuum", path, logger=logger, estar=.5,
-                    step_multiplier=50)
+    mps.Driver("Continuum", path, estar=.5, step_multiplier=50)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
 
 def run_uniax_strain_comp_stressc(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or RUNID + "_uniax_strain_comp_stressc"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=logfile)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid, d=d)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
+    mps.Material("pyelastic", parameters)
 
     # set up the driver
     path = """
@@ -309,10 +300,9 @@ def run_uniax_strain_comp_stressc(*args, **kwargs):
       3 1 444444  -7490645333.333334 -3739707333.3333335 -3739707333.3333335 0 0 0
       4 1 444444            0.0                 0.0                 0.0      0 0 0
       """
-    driver = Driver("Continuum", path, logger=logger, step_multiplier=50)
+    mps.Driver("Continuum", path, step_multiplier=50)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
 
 
@@ -320,13 +310,14 @@ def run_uniax_strain_ext_stressc(*args, **kwargs):
 
     d = kwargs.get("d", os.getcwd())
     runid = kwargs.get("runid") or RUNID + "_uniax_strain_ext_stressc"
-    logfile = os.path.join(d, runid + ".log")
-    logger = Logger(runid, filename=logfile)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid, d=d)
 
     # set up the material
     NU, E, K, G, LAM = ler.const_elast_params()
     parameters = {"K": K, "G": G}
-    material = Material("pyelastic", parameters, logger=logger)
+    mps.Material("pyelastic", parameters)
 
     # set up the driver
     path = """
@@ -336,10 +327,9 @@ def run_uniax_strain_ext_stressc(*args, **kwargs):
       3 1 444444  7490645333.333334 3739707333.3333335 3739707333.3333335 0 0 0
       4 1 444444           0.0               0.0                0.0       0 0 0
       """
-    driver = Driver("Continuum", path, logger=logger, step_multiplier=50)
+    mps.Driver("Continuum", path, step_multiplier=50)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
 
 if __name__ == "__main__":

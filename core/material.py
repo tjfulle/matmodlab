@@ -18,7 +18,6 @@ from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
 from utils.constants import DEFAULT_TEMP, SET_AT_RUNTIME, ENGW
 from core.product import MAT_LIB_DIRS, PKG_D, SUPPRESS_USER_ENV
 from materials.product import ABA_MATS, USER_MAT, F_MTL_PARAM_DB
-np.set_printoptions(precision=2)
 
 
 class MetaClass(type):
@@ -599,7 +598,7 @@ class AbaqusMaterial(MaterialModel):
         sse = mmlabpack.ddot(stress, stran) / rho
         celent = 1.
         kstep = 1
-        time = np.array([time,time])
+        time = np.array([time, time])
         # abaqus ordering
         stress = stress[[0,1,2,3,5,4]]
         # abaqus passes engineering strain
@@ -721,9 +720,10 @@ def Material(model, parameters, logger=None, initial_temp=None,
     # Check if model is already built (if applicable)
     if source_files:
         so_lib = os.path.join(PKG_D, material.name + ".so")
-        if rebuild or opts.rebuild_mat_lib:
+        rebuild = rebuild or opts.rebuild_mat_lib
+        if rebuild and material.name not in opts.rebuild_mat_lib:
             remove(so_lib)
-            opts.rebuild_mat_lib = False
+            opts.rebuild_mat_lib.append(material.name)
         if not os.path.isfile(so_lib):
             logger.write("{0}: rebuilding material library".format(material.name))
             import core.builder as bb

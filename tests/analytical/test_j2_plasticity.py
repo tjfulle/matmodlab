@@ -136,7 +136,9 @@ def rand_runner1(*args, **kwargs):
     runid = kwargs.get("runid", "rand_" + RUNID)
     solfile = runid + ".base_dat"
     pathfile = runid + ".path"
-    logger = Logger(runid)
+
+    mps = MaterialPointSimulator(runid)
+
     VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
                  "STRAIN_XY", "STRAIN_YZ", "STRAIN_XZ",
                  "STRESS_XX", "STRESS_YY", "STRESS_ZZ",
@@ -155,30 +157,29 @@ def rand_runner1(*args, **kwargs):
     # Write the path to a file (just in case)
     with open(pathfile, 'w') as f:
         f.write(path)
-    logger.write("Path written to {0}".format(pathfile))
+    mps.logger.write("Path written to {0}".format(pathfile))
 
     # Write the analytic solution for visualization comparison
-    logger.write("Writing analytical solution to {0}".format(solfile))
+    mps.logger.write("Writing analytical solution to {0}".format(solfile))
     with open(solfile, 'w') as f:
         headers = ["TIME"] + VARIABLES
         f.write("".join(["{0:>20s}".format(_) for _ in headers]) + "\n")
         for row in analytic_response:
             f.write("".join(["{0:20.10e}".format(_) for _ in row]) + "\n")
-    logger.write("  Writing is complete")
+    mps.logger.write("  Writing is complete")
 
     # set up the material and driver
     parameters = {"K": K, "G": G, "A1": Y_SHEAR}
-    material = Material("pyplastic", parameters, logger=logger)
-    driver = Driver("Continuum", path, logger=logger, step_multiplier=100)
+    mps.Material("pyplastic", parameters)
+    mps.Driver("Continuum", path, step_multiplier=100)
 
     # Run the simulation
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
     mps.run()
 
     # check output with analytic
-    logger.write("Comaring outputs")
-    logger.write("  DIFFTOL = {0:.5e}".format(DIFFTOL))
-    logger.write("  FAILTOL = {0:.5e}".format(FAILTOL))
+    mps.logger.write("Comaring outputs")
+    mps.logger.write("  DIFFTOL = {0:.5e}".format(DIFFTOL))
+    mps.logger.write("  FAILTOL = {0:.5e}".format(FAILTOL))
 
     simulate_response = mps.extract_from_db(VARIABLES, t=1)
 
@@ -190,15 +191,15 @@ def rand_runner1(*args, **kwargs):
         X = analytic_response[:, col]
         x = simulate_response[:, col]
         nrms = rms_error(T, X, t, x, disp=0)
-        logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
+        mps.logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
         if nrms < DIFFTOL:
-            logger.write("    PASS")
+            mps.logger.write("    PASS")
             continue
         elif nrms < FAILTOL and stat is PASSED:
-            logger.write("    DIFF")
+            mps.logger.write("    DIFF")
             stat = DIFFED
         else:
-            logger.write("    FAIL")
+            mps.logger.write("    FAIL")
             stat = FAILED
     return stat
 
@@ -208,7 +209,10 @@ def rand_runner2(*args, **kwargs):
     runid = kwargs.get("runid", "rand_" + RUNID + "2")
     solfile = runid + ".base_dat"
     pathfile = runid + ".path"
-    logger = Logger(runid)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid)
+
     VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
                  "STRESS_XX", "STRESS_YY", "STRESS_ZZ"]
 
@@ -225,26 +229,24 @@ def rand_runner2(*args, **kwargs):
     path, analytic_response = j2pr.gen_rand_analytic_resp_2(NU, E, K, G, LAM, Y0)
     with open(pathfile, 'w') as f:
         f.write(path)
-    logger.write("Path written to {0}".format(pathfile))
+    mps.logger.write("Path written to {0}".format(pathfile))
 
     # Write the analytic solution for visualization comparison
-    logger.write("Writing analytical solution to {0}".format(solfile))
+    mps.logger.write("Writing analytical solution to {0}".format(solfile))
     with open(solfile, 'w') as f:
         headers = ["TIME"] + VARIABLES
         f.write("".join(["{0:>20s}".format(_) for _ in headers]) + "\n")
         for row in analytic_response:
             f.write("".join(["{0:20.10e}".format(_) for _ in row]) + "\n")
-    logger.write("  Writing is complete")
+    mps.logger.write("  Writing is complete")
 
-    driver = Driver("Continuum", path, logger=logger,
-                    num_io_dumps=100, step_multiplier=100)
+    mps.Driver("Continuum", path, num_io_dumps=100, step_multiplier=100)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y0, "H": 0., "BETA": 0.}
-    material = Material("vonmises", parameters, logger=logger)
+    mps.Material("vonmises", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    # run the model
     mps.run()
 
     test = 1
@@ -252,9 +254,9 @@ def rand_runner2(*args, **kwargs):
         return
 
     # check output with analytic
-    logger.write("Comaring outputs")
-    logger.write("  DIFFTOL = {0:.5e}".format(DIFFTOL))
-    logger.write("  FAILTOL = {0:.5e}".format(FAILTOL))
+    mps.logger.write("Comaring outputs")
+    mps.logger.write("  DIFFTOL = {0:.5e}".format(DIFFTOL))
+    mps.logger.write("  FAILTOL = {0:.5e}".format(FAILTOL))
 
     # check output with analytic
     simulate_response = mps.extract_from_db(VARIABLES, t=1)
@@ -267,15 +269,15 @@ def rand_runner2(*args, **kwargs):
         X = analytic_response[:, col]
         x = simulate_response[:, col]
         nrms = rms_error(T, X, t, x, disp=0)
-        logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
+        mps.logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
         if nrms < DIFFTOL:
-            logger.write("    PASS")
+            mps.logger.write("    PASS")
             continue
         elif nrms < FAILTOL and stat is PASSED:
-            logger.write("    DIFF")
+            mps.logger.write("    DIFF")
             stat = DIFFED
         else:
-            logger.write("    FAIL")
+            mps.logger.write("    FAIL")
             stat = FAILED
     return stat
 
@@ -284,7 +286,8 @@ def rand_runner2(*args, **kwargs):
 def run_j2_plasticity1(*args, **kwargs):
 
     runid = RUNID + "1"
-    logger = Logger(runid)
+    # set up the model
+    mps = MaterialPointSimulator(runid)
 
     NU, E, K, G, LAM, Y = j2pr.copper_params()
 
@@ -295,21 +298,22 @@ def run_j2_plasticity1(*args, **kwargs):
 
     # set up the driver
     path = j2pr.gen_uniax_strain_path(Y, YF, G, LAM)
-    driver = Driver("Continuum", path, step_multiplier=200, logger=logger)
+    mps.Driver("Continuum", path, step_multiplier=200)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": YF, "H": H, "BETA": 0}
-    material = Material("vonmises", parameters, logger=logger)
+    mps.Material("vonmises", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    # run the model
     mps.run()
 
 @matmodlab
 def run_j2_plasticity_iso_hard(*args, **kwargs):
 
     runid = RUNID + "_iso_hard"
-    logger = Logger(runid)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid)
 
     NU, E, K, G, LAM, Y = j2pr.copper_params()
 
@@ -321,14 +325,13 @@ def run_j2_plasticity_iso_hard(*args, **kwargs):
 
     # set up the driver
     path = j2pr.gen_uniax_strain_path(Y, YF, G, LAM)
-    driver = Driver("Continuum", path, step_multiplier=200, logger=logger)
+    mps.Driver("Continuum", path, step_multiplier=200)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y, "H": H, "BETA": BETA}
-    material = Material("vonmises", parameters, logger=logger)
+    mps.Material("vonmises", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    # run the model
     mps.run()
 
 
@@ -336,7 +339,9 @@ def run_j2_plasticity_iso_hard(*args, **kwargs):
 def run_j2_plasticity_kin_hard(*args, **kwargs):
 
     runid = RUNID + "_kin_hard"
-    logger = Logger(runid)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid)
 
     NU, E, K, G, LAM, Y = j2pr.copper_params()
 
@@ -348,14 +353,13 @@ def run_j2_plasticity_kin_hard(*args, **kwargs):
 
     # set up the driver
     path = j2pr.gen_uniax_strain_path(Y, YF, G, LAM)
-    driver = Driver("Continuum", path, step_multiplier=200, logger=logger)
+    mps.Driver("Continuum", path, step_multiplier=200)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y, "H": H, "BETA": BETA}
-    material = Material("vonmises", parameters, logger=logger)
+    mps.Material("vonmises", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    # run the model
     mps.run()
 
 
@@ -363,7 +367,9 @@ def run_j2_plasticity_kin_hard(*args, **kwargs):
 def run_j2_plasticity_mix_hard(*args, **kwargs):
 
     runid = RUNID + "_mix_hard"
-    logger = Logger(runid)
+
+    # set up the model
+    mps = MaterialPointSimulator(runid)
 
     NU, E, K, G, LAM, Y = j2pr.copper_params()
 
@@ -375,14 +381,13 @@ def run_j2_plasticity_mix_hard(*args, **kwargs):
 
     # set up the driver
     path = j2pr.gen_uniax_strain_path(Y, YF, G, LAM)
-    driver = Driver("Continuum", path, step_multiplier=200, logger=logger)
+    mps.Driver("Continuum", path, step_multiplier=200)
 
     # set up the material
     parameters = {"K": K, "G": G, "Y0": Y, "H": H, "BETA": BETA}
-    material = Material("vonmises", parameters, logger=logger)
+    mps.Material("vonmises", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger)
+    # run the model
     mps.run()
 
 

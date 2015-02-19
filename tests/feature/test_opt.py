@@ -115,7 +115,7 @@ def runner(method, v=1):
     xinit = [K, G]
 
     optimizer = Optimizer(runid, func, xinit,
-                          descriptor=["PRES_V_EVOL"], method=method,
+                          descriptors=["PRES_V_EVOL"], method=method,
                           maxiter=25, tolerance=1.e-4, verbosity=v)
     optimizer.run()
     xopt = optimizer.xopt

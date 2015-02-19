@@ -54,14 +54,11 @@ class Logger:
     errors = 0
     def __init__(self):
         self.ch = sys.stdout
-
     def write(self, message):
         self.ch.write(message + "\n")
-
-    def info(message):
+    def info(self, message):
         self.write("plot2d: {0}".format(message))
-
-    def error(message, stop=0):
+    def error(self, message, stop=0):
         self.write("*** plot2d: error: {0}".format(message))
         if stop:
             sys.exit(1)
