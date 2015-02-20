@@ -64,8 +64,7 @@ def rand_runner(d=None, runid=None, test=0):
     solfile = os.path.join(d, runid + ".base_dat")
 
     # set up the model
-    mps = MaterialPointSimulator(runid, d=d)
-    mps.logger.write("logfile is: {0}".format(filename))
+    mps = MaterialPointSimulator(runid)#, d=d)
 
     # Set up the path and random material constants
     nu, E, K, G, LAM = ldpr.gen_rand_elastic_params()
@@ -77,7 +76,7 @@ def rand_runner(d=None, runid=None, test=0):
 
     # set up the driver
     path, strain = ldpr.gen_path(K, G, A1, A4)
-    mps.Driver("Continuum", path)
+    mps.Driver("Continuum", path, step_multiplier=25.0)
 
     # run the model
     mps.run()
@@ -156,4 +155,5 @@ def run_linear_drucker_prager_spherical(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    a = run_linear_drucker_prager_spherical()
+    #a = run_linear_drucker_prager_spherical()
+    rand_runner()

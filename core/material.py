@@ -246,7 +246,7 @@ class MaterialModel(object):
             C = isotropic_part(self.J0)
             lame = C[0,1]
             mu = C[5,5] / 2.
-            a = np.array([mu, lame])
+            a = np.array([lame, mu])
             b = [EC_LAME, EC_SHEAR]
             self.completions = complete_properties(a, b)
             return
@@ -561,7 +561,7 @@ class AbaqusMaterial(MaterialModel):
         C = isotropic_part(ddsdde)
         lame = C[0,1]
         mu = C[5,5] / 2.
-        a = np.array([mu, lame])
+        a = np.array([lame, mu])
         b = [EC_LAME, EC_SHEAR]
         self.completions = complete_properties(a, b)
 

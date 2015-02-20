@@ -417,7 +417,7 @@ def elastic_param_conversion(argv):
             return 1
 
         else:
-            ret = compute_elastic_constants(*ui)
+            ret = compute_elastic_constants(ui)
             retcode = ret["retcode"]
             if retcode > 0:
                 return retcode
@@ -451,7 +451,7 @@ def elastic_param_conversion(argv):
 
         ui = [None]*12
         ui[idx1],ui[idx2],ui[idx3] = val1, val2, dens
-        ret = compute_elastic_constants(*ui)
+        ret = compute_elastic_constants(ui)
         if ret == -1:
             non_positive_definite()
         elif ret == -2:
