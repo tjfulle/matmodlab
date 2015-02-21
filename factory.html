@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Factory Methods &mdash; Material Model Laboratory 2.0 documentation</title>
+    <title>The Material Point Simulator &mdash; Material Model Laboratory 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -55,30 +55,50 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="factory-methods">
-<span id="id1"></span><h1>Factory Methods<a class="headerlink" href="#factory-methods" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="the-material-factory-method">
-<h2>The Material Factory Method<a class="headerlink" href="#the-material-factory-method" title="Permalink to this headline">¶</a></h2>
-<p>A material instance is created through the <tt class="docutils literal"><span class="pre">Material</span></tt> factory method.  Minimally, the factory method requires the material model name <tt class="docutils literal"><span class="pre">model</span></tt> and the model parameters <tt class="docutils literal"><span class="pre">parameters</span></tt></p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+  <div class="section" id="the-material-point-simulator">
+<span id="mps"></span><span id="methods-for-creating-simulations"></span><h1>The Material Point Simulator<a class="headerlink" href="#the-material-point-simulator" title="Permalink to this headline">¶</a></h1>
+<p>A <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> instance is created directly through the
+<tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor. Minimally, the
+<tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor requires the specification of a
+<tt class="docutils literal"><span class="pre">runid</span></tt> (simulation ID).</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The object returned from <tt class="docutils literal"><span class="pre">Material</span></tt> is an instance of the class defining
-<tt class="docutils literal"><span class="pre">model</span></tt>.</p>
-<p>The formal parameters to <tt class="docutils literal"><span class="pre">Material</span></tt> are</p>
-<dl class="function">
-<dt id="Material">
-<tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>initial_temp=None</em>, <em>logger=None</em>, <em>expansion=None</em>, <em>trs=None</em>, <em>viscoelastic=None</em>, <em>rebuild=False</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>depvar=None</em>, <em>param_names=None</em>, <em>switch=None</em><big>)</big><a class="headerlink" href="#Material" title="Permalink to this definition">¶</a></dt>
-<dd><p>Factory method for subclasses of MaterialModel</p>
+<p>The formal parameters to the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor are</p>
+<dl class="class">
+<dt id="MaterialPointSimulator">
+<em class="property">class </em><tt class="descname">MaterialPointSimulator</tt><big>(</big><em>self</em>, <em>runid</em>, <em>termination_time=None</em>, <em>verbosity=1</em>, <em>d=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>MaterialPointSimulator constructor.  Creates a MaterialPointSimulator object and sets up the simulation</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>runid</strong> (<em>str</em>) &#8211; The simulation runid.  All simulation output will be named runid.ext, where ext is log, exo, etc.</li>
+<li><strong>termination_time</strong> (<em>float or None</em>) &#8211; Simulation termination time.  If not given, the last time in the driver path will be used [default: None].</li>
+<li><strong>verbosity</strong> (<em>int</em>) &#8211; Level of verbosity.  0-&gt;quiet, 3-&gt;noisy [default: 1]</li>
+<li><strong>d</strong> (<em>str or None</em>) &#8211; Directory to run simulation [default: PWD]</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<div class="section" id="public-methods-of-materialpointsimulator">
+<h2>Public Methods of <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt><a class="headerlink" href="#public-methods-of-materialpointsimulator" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="Material">
+<tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>initial_temp=None</em>, <em>expansion=None</em>, <em>trs=None</em>, <em>viscoelastic=None</em>, <em>rebuild=False</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>depvar=None</em>, <em>param_names=None</em>, <em>switch=None</em><big>)</big><a class="headerlink" href="#Material" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a material model</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>model</strong> (<em>str</em>) &#8211; material model name</li>
 <li><strong>parameters</strong> (<em>dict or ndarray</em>) &#8211; model parameters.  For Abaqus umat models and matmodlab user models, parameters is a ndarray of model constants (specified in the order expected by the model).  For other model types, parameters is a dictionary of name:value pairs.</li>
 <li><strong>initial_temp</strong> (<em>float or None</em>) &#8211; Initial temperature.  The initial temperature, if given, must be consistent with that of the simulation driver.  Defaults to 298K if not specified.</li>
-<li><strong>logger</strong> (<em>instance or None</em>) &#8211; An instance of a Logger</li>
 <li><strong>expansion</strong> (<em>instance or None</em>) &#8211; An instance of an Expansion model.</li>
 <li><strong>trs</strong> (<em>instance or None</em>) &#8211; An instance of a time-temperature shift (TRS) model</li>
 <li><strong>viscoelastic</strong> (<em>instance or None</em>) &#8211; An instance of a Viscoelastic model.</li>
@@ -91,40 +111,25 @@
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">MaterialModel instance</p>
-</td>
-</tr>
 </tbody>
 </table>
 </dd></dl>
 
-<div class="section" id="material-database">
-<h3>Material Database<a class="headerlink" href="#material-database" title="Permalink to this headline">¶</a></h3>
-<p>Set a material parameter key to &#8220;material&#8221; with value being the name of a
-material and the parameters dictionary will be updated with parameters from a
-material database file.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Set a material parameter key to &#8220;material&#8221; with value being the name of a
+material and the parameters dictionary will be updated with parameters from
+a material database file.</p>
 </div>
-</div>
-<div class="section" id="the-driver-factory-method">
-<h2>The Driver Factory Method<a class="headerlink" href="#the-driver-factory-method" title="Permalink to this headline">¶</a></h2>
-<p>A driver instance is created through the <tt class="docutils literal"><span class="pre">Driver</span></tt> factory method. Minimally,
-the factory method requires the driver kind <tt class="docutils literal"><span class="pre">driver_kind</span></tt> and the path
-specification <tt class="docutils literal"><span class="pre">path</span></tt></p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="n">driver_kind</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The object returned from <tt class="docutils literal"><span class="pre">Driver</span></tt> is an instance of the class defining
-<tt class="docutils literal"><span class="pre">driver_kind</span></tt>.  At present, only <tt class="docutils literal"><span class="pre">driver_kind=&quot;Continuum&quot;</span></tt> is defined.</p>
-<p>The formal parameters to <tt class="docutils literal"><span class="pre">Driver</span></tt> are</p>
-<dl class="function">
+<dl class="method">
 <dt id="Driver">
-<tt class="descname">Driver</tt><big>(</big><em>driver_kind</em>, <em>path</em>, <em>path_input=&quot;default&quot;</em>, <em>kappa=0.</em>, <em>amplitude=1.</em>, <em>rate_multiplier=1.</em>, <em>step_multiplier=1.</em>, <em>num_io_dumps=&quot;all&quot;</em>, <em>estar=1.</em>, <em>tstar=1.</em>, <em>sstar=1.</em>, <em>fstar=1.</em>, <em>efstar=1.</em>, <em>dstar=1.</em>, <em>proportional=False</em>, <em>termination_time=None</em>, <em>functions=None</em>, <em>cfmt=None</em>, <em>tfmt=&quot;time&quot;</em>, <em>num_steps=None</em>, <em>cols=None</em>, <em>skiprows=0</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#Driver" title="Permalink to this definition">¶</a></dt>
-<dd><p>Factory method for subclasses of PathDriver</p>
+<tt class="descname">Driver</tt><big>(</big><em>driver_kind</em>, <em>path</em>, <em>path_input=&quot;default&quot;</em>, <em>kappa=0.</em>, <em>amplitude=1.</em>, <em>rate_multiplier=1.</em>, <em>step_multiplier=1.</em>, <em>num_io_dumps=&quot;all&quot;</em>, <em>estar=1.</em>, <em>tstar=1.</em>, <em>sstar=1.</em>, <em>fstar=1.</em>, <em>efstar=1.</em>, <em>dstar=1.</em>, <em>proportional=False</em>, <em>termination_time=None</em>, <em>functions=None</em>, <em>cfmt=None</em>, <em>tfmt=&quot;time&quot;</em>, <em>num_steps=None</em>, <em>cols=None</em>, <em>skiprows=0</em><big>)</big><a class="headerlink" href="#Driver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a PathDriver</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>driver_kind</strong> (<em>str</em>) &#8211; The driver kind</li>
 <li><strong>path</strong> (<em>str</em>) &#8211; The deformation path through which to driver the material</li>
 <li><strong>path_input</strong> (<em>str or None</em>) &#8211; Type of path input.  Choices are default, table, function [default: default]</li>
@@ -142,25 +147,82 @@ specification <tt class="docutils literal"><span class="pre">path</span></tt></p
 <li><strong>num_steps</strong> (<em>int</em>) &#8211; Total number of steps if path_input is function [default: 1]</li>
 <li><strong>cols</strong> (<em>List of int</em>) &#8211; Columns from which to extract data if path_input is table.</li>
 <li><strong>skiprows</strong> (<em>int or None</em>) &#8211; Rows to skip when reading path_file or table data [default=0]</li>
-<li><strong>logger</strong> (<em>instance or None</em>) &#8211; An instance of a Logger</li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">PathDriver instance</p>
 </td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
-<div class="section" id="defining-the-path">
-<h3>Defining the Path<a class="headerlink" href="#defining-the-path" title="Permalink to this headline">¶</a></h3>
+<dl class="method">
+<dt id="MaterialPointSimulator.run">
+<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#MaterialPointSimulator.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the simulation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="MaterialPointSimulator.dump">
+<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">dump</tt><big>(</big><em>self</em>, <em>variables</em>, <em>format=&quot;ascii&quot;</em>, <em>step=1</em>, <em>time=True</em>, <em>ffmt=&quot;.18f&quot;</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dump variables from ExodusII database to other ascii formats</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>variables</strong> (<em>list of str</em>) &#8211; Variables to dump</li>
+<li><strong>format</strong> (<em>str</em>) &#8211; Output format.  Must be one of ascii, mathematica, ndarray [default: ascii].</li>
+<li><strong>step</strong> (<em>int</em>) &#8211; Step interval to dump data [default: 1].</li>
+<li><strong>time</strong> (<em>bool</em>) &#8211; Dump time [default: True].</li>
+<li><strong>ffmt</strong> (<em>str</em>) &#8211; Floating point number format.  Used as &#8220;{0:{1}}&#8221;.format(number, ffmt)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="MaterialPointSimulator.extract_from_db">
+<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">extract_from_db</tt><big>(</big><em>variables</em>, <em>step=1</em>, <em>t=0</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.extract_from_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract variables from ExodusII database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>variables</strong> (<em>list of str</em>) &#8211; Variables to extract</li>
+<li><strong>step</strong> (<em>int</em>) &#8211; Step interval to dump data [default: 1].</li>
+<li><strong>time</strong> (<em>int</em>) &#8211; Extract time [default: 0].</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="MaterialPointSimulator.visualize_results">
+<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">visualize_results</tt><big>(</big><em>overlay=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.visualize_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display simulation results in visualizer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>overlay</strong> (<em>str or None</em>) &#8211; Filename for which data is to be overlayed on top of simulation data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="defining-the-driver-path">
+<h2>Defining the Driver Path<a class="headerlink" href="#defining-the-driver-path" title="Permalink to this headline">¶</a></h2>
 <p>The path through which a material is driven is defined by deformation &#8220;legs&#8221;
 specifying the type of deformation to be prescribed over the time period of
 each leg. The method in which the path is defined is dependent on the value of
 the <tt class="docutils literal"><span class="pre">path_input</span></tt> parameter.</p>
 <div class="section" id="path-input-default">
-<h4><tt class="docutils literal"><span class="pre">path_input=&quot;default&quot;</span></tt><a class="headerlink" href="#path-input-default" title="Permalink to this headline">¶</a></h4>
+<h3><tt class="docutils literal"><span class="pre">path_input=&quot;default&quot;</span></tt><a class="headerlink" href="#path-input-default" title="Permalink to this headline">¶</a></h3>
 <p>For <tt class="docutils literal"><span class="pre">path_input=&quot;default&quot;</span></tt>, each leg of deformation is given as:</p>
 <div class="highlight-python"><div class="highlight"><pre>tf n cfmt Cij
 </pre></div>
@@ -248,7 +310,7 @@ specified, the component <tt class="docutils literal"><span class="pre">Cij</spa
 volumetric strain.</p>
 </div>
 <div class="section" id="path-input-table">
-<span id="tblform"></span><h4><tt class="docutils literal"><span class="pre">path_input=&quot;table&quot;</span></tt><a class="headerlink" href="#path-input-table" title="Permalink to this headline">¶</a></h4>
+<span id="tblform"></span><h3><tt class="docutils literal"><span class="pre">path_input=&quot;table&quot;</span></tt><a class="headerlink" href="#path-input-table" title="Permalink to this headline">¶</a></h3>
 <p>The <tt class="docutils literal"><span class="pre">table</span></tt> <tt class="docutils literal"><span class="pre">path_input</span></tt> format allows reading in deformation paths from a
 columnar table of data. Control format is uniform for all legs and is
 specified by the <tt class="docutils literal"><span class="pre">cfmt</span></tt> keyword argument to <tt class="docutils literal"><span class="pre">Driver</span></tt>. Specify which
@@ -269,7 +331,7 @@ driver = Driver(&quot;Continuum&quot;, path, path_input=&quot;table&quot;,
 columnar ascii data files, to drive a material model.</p>
 </div>
 <div class="section" id="path-input-function">
-<h4><tt class="docutils literal"><span class="pre">path_input=&quot;function&quot;</span></tt><a class="headerlink" href="#path-input-function" title="Permalink to this headline">¶</a></h4>
+<h3><tt class="docutils literal"><span class="pre">path_input=&quot;function&quot;</span></tt><a class="headerlink" href="#path-input-function" title="Permalink to this headline">¶</a></h3>
 <p>The <tt class="docutils literal"><span class="pre">function</span></tt> <tt class="docutils literal"><span class="pre">path_input</span></tt> format allows defining a deformation path by a
 function. A deformation path defined by <tt class="docutils literal"><span class="pre">function</span></tt> must have only 1 leg
 defining the termination time and the function specifier defining the values
@@ -294,103 +356,8 @@ user defined function to specify the 11 component of strain through time</p>
 </div>
 </div>
 </div>
-<div class="section" id="the-material-point-simulator">
-<span id="mps"></span><h2>The Material Point Simulator<a class="headerlink" href="#the-material-point-simulator" title="Permalink to this headline">¶</a></h2>
-<p>A <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> instance is created directly through the
-<tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor. Minimally, the
-<tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor requires the specification of a
-<tt class="docutils literal"><span class="pre">runid</span></tt>, <tt class="docutils literal"><span class="pre">driver</span></tt>, <tt class="docutils literal"><span class="pre">material</span></tt></p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">material</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The formal parameters to the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor are</p>
-<dl class="class">
-<dt id="MaterialPointSimulator">
-<em class="property">class </em><tt class="descname">MaterialPointSimulator</tt><big>(</big><em>self</em>, <em>runid</em>, <em>driver</em>, <em>material</em>, <em>termination_time=None</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator" title="Permalink to this definition">¶</a></dt>
-<dd><p>MaterialPointSimulator constructor.  Creates a MaterialPointSimulator object and sets up the simulation</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>runid</strong> (<em>str</em>) &#8211; The simulation runid.  All simulation output will be named runid.ext, where ext is log, exo, etc.</li>
-<li><strong>driver</strong> (<em>PathDriver</em>) &#8211; The driver object with which to drive the simulation</li>
-<li><strong>material</strong> (<em>MaterialModel</em>) &#8211; The material model object</li>
-<li><strong>termination_time</strong> (<em>float or None</em>) &#8211; Simulation termination time.  If not given, the last time in the driver path will be used [default: None].</li>
-<li><strong>verbosity</strong> (<em>int</em>) &#8211; Level of verbosity.  0-&gt;quiet, 3-&gt;noisy [default: 1]</li>
-<li><strong>d</strong> (<em>str or None</em>) &#8211; Directory to run simulation [default: PWD]</li>
-<li><strong>logger</strong> (<em>Logger or None</em>) &#8211; Logger object to log simulation process.  If not specified, a new logger will be created [default: None].</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<div class="section" id="public-methods-of-materialpointsimulator">
-<h3>Public Methods of <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt><a class="headerlink" href="#public-methods-of-materialpointsimulator" title="Permalink to this headline">¶</a></h3>
-<dl class="method">
-<dt id="MaterialPointSimulator.run">
-<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#MaterialPointSimulator.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run the simulation</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="MaterialPointSimulator.dump">
-<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">dump</tt><big>(</big><em>self</em>, <em>variables</em>, <em>format=&quot;ascii&quot;</em>, <em>step=1</em>, <em>time=True</em>, <em>ffmt=&quot;.18f&quot;</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.dump" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dump variables from ExodusII database to other ascii formats</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>variables</strong> (<em>list of str</em>) &#8211; Variables to dump</li>
-<li><strong>format</strong> (<em>str</em>) &#8211; Output format.  Must be one of ascii, mathematica, ndarray [default: ascii].</li>
-<li><strong>step</strong> (<em>int</em>) &#8211; Step interval to dump data [default: 1].</li>
-<li><strong>time</strong> (<em>bool</em>) &#8211; Dump time [default: True].</li>
-<li><strong>ffmt</strong> (<em>str</em>) &#8211; Floating point number format.  Used as &#8220;{0:{1}}&#8221;.format(number, ffmt)</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="MaterialPointSimulator.extract_from_db">
-<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">extract_from_db</tt><big>(</big><em>variables</em>, <em>step=1</em>, <em>t=0</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.extract_from_db" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extract variables from ExodusII database.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>variables</strong> (<em>list of str</em>) &#8211; Variables to extract</li>
-<li><strong>step</strong> (<em>int</em>) &#8211; Step interval to dump data [default: 1].</li>
-<li><strong>time</strong> (<em>int</em>) &#8211; Extract time [default: 0].</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="MaterialPointSimulator.visualize_results">
-<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">visualize_results</tt><big>(</big><em>overlay=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.visualize_results" title="Permalink to this definition">¶</a></dt>
-<dd><p>Display simulation results in visualizer.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>overlay</strong> (<em>str or None</em>) &#8211; Filename for which data is to be overlayed on top of simulation data.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</div>
-</div>
+<div class="section" id="factory-methods">
+<h1>Factory Methods<a class="headerlink" href="#factory-methods" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="the-function-factory-method">
 <span id="functions"></span><h2>The Function Factory Method<a class="headerlink" href="#the-function-factory-method" title="Permalink to this headline">¶</a></h2>
 <p>A function instance is created through the <tt class="docutils literal"><span class="pre">Function</span></tt> factory method. Minimally,
@@ -428,31 +395,7 @@ function types are supported.  When evaluated, functions are called as:</p>
 </div>
 <div class="section" id="the-logger">
 <h2>The Logger<a class="headerlink" href="#the-logger" title="Permalink to this headline">¶</a></h2>
-<p>Logging in <em>matmodlab</em> is through the <tt class="docutils literal"><span class="pre">Logger</span></tt> class.</p>
-<p>It is useful to setup and pass the same logger to <tt class="docutils literal"><span class="pre">Material</span></tt>, <tt class="docutils literal"><span class="pre">Driver</span></tt>, and <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt>.  A logger instance is created through the <tt class="docutils literal"><span class="pre">Logger</span></tt> constructor.  Minimally, the <tt class="docutils literal"><span class="pre">Logger</span></tt> constructor requires a <tt class="docutils literal"><span class="pre">Logger</span></tt> name</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">logger</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The formal parameters to <tt class="docutils literal"><span class="pre">Logger</span></tt> are</p>
-<dl class="class">
-<dt id="Logger">
-<em class="property">class </em><tt class="descname">Logger</tt><big>(</big><em>name</em>, <em>filename=1</em>, <em>verbosity=1</em><big>)</big><a class="headerlink" href="#Logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>The matmodlab logger.  Logs messages and warnings to the console and/or file</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> (<em>str</em>) &#8211; The logger name.</li>
-<li><strong>filename</strong> (<em>str or None</em>) &#8211; File name of log file.  By default, the file name used is name.log.  If None, no file will generated.</li>
-<li><strong>verbosity</strong> (<em>int</em>) &#8211; Verbosity.  =0, logging to file only.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
+<p>Logging in <em>matmodlab</em> is through the <tt class="docutils literal"><span class="pre">Logger</span></tt> class.  Each <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> instance creates a unique logger, sharing it with its <tt class="docutils literal"><span class="pre">Material</span></tt> and <tt class="docutils literal"><span class="pre">Driver</span></tt>.</p>
 <div class="section" id="logger-methods">
 <h3>Logger Methods<a class="headerlink" href="#logger-methods" title="Permalink to this headline">¶</a></h3>
 <dl class="method">
@@ -542,7 +485,8 @@ function types are supported.  When evaluated, functions are called as:</p>
 <li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">Factory Methods</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">The Material Point Simulator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#factory-methods">Factory Methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>

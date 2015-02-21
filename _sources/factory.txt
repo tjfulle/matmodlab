@@ -1,25 +1,40 @@
-.. _Factory Methods:
+.. _Methods for Creating Simulations:
 
-Factory Methods
-===============
+.. _mps:
 
-The Material Factory Method
----------------------------
+The Material Point Simulator
+============================
 
-A material instance is created through the ``Material`` factory method.  Minimally, the factory method requires the material model name ``model`` and the model parameters ``parameters``
+A ``MaterialPointSimulator`` instance is created directly through the
+``MaterialPointSimulator`` constructor. Minimally, the
+``MaterialPointSimulator`` constructor requires the specification of a
+``runid`` (simulation ID).
 
 .. code:: python
 
-   material = Material(model, parameters)
+   mps = MaterialPointSimulator(runid)
 
-The object returned from ``Material`` is an instance of the class defining
-``model``.
+The formal parameters to the ``MaterialPointSimulator`` constructor are
 
-The formal parameters to ``Material`` are
+.. class:: MaterialPointSimulator(self, runid, termination_time=None, verbosity=1, d=None)
 
-.. function:: Material(model, parameters, initial_temp=None, logger=None, expansion=None, trs=None, viscoelastic=None, rebuild=False, source_files=None, source_directory=None, depvar=None, param_names=None, switch=None)
+   MaterialPointSimulator constructor.  Creates a MaterialPointSimulator object and sets up the simulation
 
-   Factory method for subclasses of MaterialModel
+   :param runid: The simulation runid.  All simulation output will be named runid.ext, where ext is log, exo, etc.
+   :type runid: str
+   :param termination_time: Simulation termination time.  If not given, the last time in the driver path will be used [default: None].
+   :type termination_time: float or None
+   :param verbosity: Level of verbosity.  0->quiet, 3->noisy [default: 1]
+   :type verbosity: int
+   :param d: Directory to run simulation [default: PWD]
+   :type d: str or None
+
+Public Methods of ``MaterialPointSimulator``
+--------------------------------------------
+
+.. method:: Material(model, parameters, initial_temp=None, expansion=None, trs=None, viscoelastic=None, rebuild=False, source_files=None, source_directory=None, depvar=None, param_names=None, switch=None)
+
+   Create a material model
 
    :param model: material model name
    :type model: str
@@ -27,8 +42,6 @@ The formal parameters to ``Material`` are
    :type parameters: dict or ndarray
    :param initial_temp: Initial temperature.  The initial temperature, if given, must be consistent with that of the simulation driver.  Defaults to 298K if not specified.
    :type initial_temp: float or None
-   :param logger: An instance of a Logger
-   :type logger: instance or None
    :param expansion: An instance of an Expansion model.
    :type expansion: instance or None
    :param trs: An instance of a time-temperature shift (TRS) model
@@ -47,34 +60,16 @@ The formal parameters to ``Material`` are
    :type param_names: list or None
    :param switch: Model switch.  Two tuple given as (original material, new material).
    :type switch: tuple or None
-   :rtype: MaterialModel instance
 
-Material Database
-~~~~~~~~~~~~~~~~~
+.. note::
 
-Set a material parameter key to "material" with value being the name of a
-material and the parameters dictionary will be updated with parameters from a
-material database file.
+   Set a material parameter key to "material" with value being the name of a
+   material and the parameters dictionary will be updated with parameters from
+   a material database file.
 
-The Driver Factory Method
--------------------------
+.. method:: Driver(driver_kind, path, path_input="default", kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1., num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1., efstar=1., dstar=1., proportional=False, termination_time=None, functions=None, cfmt=None, tfmt="time", num_steps=None, cols=None, skiprows=0)
 
-A driver instance is created through the ``Driver`` factory method. Minimally,
-the factory method requires the driver kind ``driver_kind`` and the path
-specification ``path``
-
-.. code:: python
-
-   driver = Driver(driver_kind, path)
-
-The object returned from ``Driver`` is an instance of the class defining
-``driver_kind``.  At present, only ``driver_kind="Continuum"`` is defined.
-
-The formal parameters to ``Driver`` are
-
-.. function:: Driver(driver_kind, path, path_input="default", kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1., num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1., efstar=1., dstar=1., proportional=False, termination_time=None, functions=None, cfmt=None, tfmt="time", num_steps=None, cols=None, skiprows=0, logger=None)
-
-   Factory method for subclasses of PathDriver
+   Create a PathDriver
 
    :param driver_kind: The driver kind
    :type driver_kind: str
@@ -109,12 +104,46 @@ The formal parameters to ``Driver`` are
    :type cols: List of int
    :param skiprows: Rows to skip when reading path_file or table data [default=0]
    :type skiprows: int or None
-   :param logger: An instance of a Logger
-   :type logger: instance or None
-   :rtype: PathDriver instance
 
-Defining the Path
-~~~~~~~~~~~~~~~~~
+.. method:: MaterialPointSimulator.run()
+
+   Run the simulation
+
+.. method:: MaterialPointSimulator.dump(self, variables, format="ascii", step=1, time=True, ffmt=".18f")
+
+   Dump variables from ExodusII database to other ascii formats
+
+   :param variables: Variables to dump
+   :type variables: list of str
+   :param format: Output format.  Must be one of ascii, mathematica, ndarray [default: ascii].
+   :type format: str
+   :param step: Step interval to dump data [default: 1].
+   :type step: int
+   :param time: Dump time [default: True].
+   :type time: bool
+   :param ffmt: Floating point number format.  Used as "{0:{1}}".format(number, ffmt)
+   :type ffmt: str
+
+.. method:: MaterialPointSimulator.extract_from_db(variables, step=1, t=0)
+
+   Extract variables from ExodusII database.
+
+   :param variables: Variables to extract
+   :type variables: list of str
+   :param step: Step interval to dump data [default: 1].
+   :type step: int
+   :param time: Extract time [default: 0].
+   :type time: int
+
+.. method:: MaterialPointSimulator.visualize_results(overlay=None)
+
+   Display simulation results in visualizer.
+
+   :param overlay: Filename for which data is to be overlayed on top of simulation data.
+   :type overlay: str or None
+
+Defining the Driver Path
+------------------------
 
 The path through which a material is driven is defined by deformation "legs"
 specifying the type of deformation to be prescribed over the time period of
@@ -259,81 +288,8 @@ user defined function to specify the 11 component of strain through time
                    num_steps=200, termination_time=1.8*pi,
                    functions=functions, cfmt="222")
 
-.. _mps:
-
-The Material Point Simulator
-----------------------------
-
-A ``MaterialPointSimulator`` instance is created directly through the
-``MaterialPointSimulator`` constructor. Minimally, the
-``MaterialPointSimulator`` constructor requires the specification of a
-``runid``, ``driver``, ``material``
-
-.. code:: python
-
-   mps = MaterialPointSimulator(runid, driver, material)
-
-The formal parameters to the ``MaterialPointSimulator`` constructor are
-
-.. class:: MaterialPointSimulator(self, runid, driver, material, termination_time=None, verbosity=1, d=None, logger=None)
-
-   MaterialPointSimulator constructor.  Creates a MaterialPointSimulator object and sets up the simulation
-
-   :param runid: The simulation runid.  All simulation output will be named runid.ext, where ext is log, exo, etc.
-   :type runid: str
-   :param driver: The driver object with which to drive the simulation
-   :type driver: PathDriver
-   :param material: The material model object
-   :type material: MaterialModel
-   :param termination_time: Simulation termination time.  If not given, the last time in the driver path will be used [default: None].
-   :type termination_time: float or None
-   :param verbosity: Level of verbosity.  0->quiet, 3->noisy [default: 1]
-   :type verbosity: int
-   :param d: Directory to run simulation [default: PWD]
-   :type d: str or None
-   :param logger: Logger object to log simulation process.  If not specified, a new logger will be created [default: None].
-   :type logger: Logger or None
-
-Public Methods of ``MaterialPointSimulator``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. method:: MaterialPointSimulator.run()
-
-   Run the simulation
-
-.. method:: MaterialPointSimulator.dump(self, variables, format="ascii", step=1, time=True, ffmt=".18f")
-
-   Dump variables from ExodusII database to other ascii formats
-
-   :param variables: Variables to dump
-   :type variables: list of str
-   :param format: Output format.  Must be one of ascii, mathematica, ndarray [default: ascii].
-   :type format: str
-   :param step: Step interval to dump data [default: 1].
-   :type step: int
-   :param time: Dump time [default: True].
-   :type time: bool
-   :param ffmt: Floating point number format.  Used as "{0:{1}}".format(number, ffmt)
-   :type ffmt: str
-
-.. method:: MaterialPointSimulator.extract_from_db(variables, step=1, t=0)
-
-   Extract variables from ExodusII database.
-
-   :param variables: Variables to extract
-   :type variables: list of str
-   :param step: Step interval to dump data [default: 1].
-   :type step: int
-   :param time: Extract time [default: 0].
-   :type time: int
-
-.. method:: MaterialPointSimulator.visualize_results(overlay=None)
-
-   Display simulation results in visualizer.
-
-   :param overlay: Filename for which data is to be overlayed on top of simulation data.
-   :type overlay: str or None
-
+Factory Methods
+===============
 
 .. _Functions:
 
@@ -372,29 +328,10 @@ The formal parameters to ``Function`` are
 The Logger
 ----------
 
-Logging in *matmodlab* is through the ``Logger`` class.
-
-It is useful to setup and pass the same logger to ``Material``, ``Driver``, and ``MaterialPointSimulator``.  A logger instance is created through the ``Logger`` constructor.  Minimally, the ``Logger`` constructor requires a ``Logger`` name
-
-.. code:: python
-
-   logger = Logger(name)
-
-The formal parameters to ``Logger`` are
-
-.. class:: Logger(name, filename=1, verbosity=1)
-
-   The matmodlab logger.  Logs messages and warnings to the console and/or file
-
-   :param name: The logger name.
-   :type name: str
-   :param filename: File name of log file.  By default, the file name used is name.log.  If None, no file will generated.
-   :type filename: str or None
-   :param verbosity: Verbosity.  =0, logging to file only.
-   :type verbosity: int
+Logging in *matmodlab* is through the ``Logger`` class.  Each ``MaterialPointSimulator`` instance creates a unique logger, sharing it with its ``Material`` and ``Driver``.
 
 Logger Methods
-~~~~~~~~~~~~~~
+..............
 
 .. method:: Logger.write(message)
 

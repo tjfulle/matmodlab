@@ -59,32 +59,34 @@
 <span id="first-example"></span><span id="running-simulations"></span><h1>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h1>
 <p>Simulations are run by processing <em>matmodlab</em> input scripts with the <tt class="docutils literal"><span class="pre">mml</span></tt>
 command line utility. A <em>matmodlab</em> input script consists of defining
-(minimally) a <tt class="docutils literal"><span class="pre">driver</span></tt>, <tt class="docutils literal"><span class="pre">material</span></tt>, and <tt class="docutils literal"><span class="pre">simulator</span></tt> through the
-<tt class="docutils literal"><span class="pre">Driver</span></tt>, <tt class="docutils literal"><span class="pre">Material</span></tt>, and <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> factory methods. By
-including</p>
+an instance of the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> class and defininig for it
+a <tt class="docutils literal"><span class="pre">driver</span></tt> and <tt class="docutils literal"><span class="pre">material</span></tt>.  By including</p>
 <div class="code highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
 </pre></div>
 </div>
-<p>each of these factory methods is exposed to the simulation script&#8217;s namespace.
-Consider, for example, the following input, contained in <tt class="docutils literal"><span class="pre">runid.py</span></tt>, in
-which a material whose constitutive response is defined by the <tt class="docutils literal"><span class="pre">elastic</span></tt>
-material model, parameterized by the bulk modulus <img class="math" src="_images/math/9dcd0137ac9bf6bebbd9cd0bb350faae304a74bc.png" alt="K"/> and shear modulus
-<img class="math" src="_images/math/35fad2302b4254f53d7219798c2d19154deddf6c.png" alt="G"/>, that is driven through a path of uniaxial strain</p>
+<p>the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> and other necessary methods are exposed to the
+simulation script&#8217;s namespace. Consider, for example, the following input,
+contained in <tt class="docutils literal"><span class="pre">runid.py</span></tt>, in which a material&#8217;s constitutive response is
+defined by the <tt class="docutils literal"><span class="pre">elastic</span></tt> material model, parameterized by the bulk modulus
+<img class="math" src="_images/math/9dcd0137ac9bf6bebbd9cd0bb350faae304a74bc.png" alt="K"/> and shear modulus <img class="math" src="_images/math/35fad2302b4254f53d7219798c2d19154deddf6c.png" alt="G"/>, and is driven through a path of
+uniaxial strain</p>
 <div class="code highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="n">runid</span> <span class="o">=</span> <span class="s">&quot;elastic_uniaxial_strain&quot;</span>
 
+<span class="c"># set up the simulator</span>
+<span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">)</span>
+
 <span class="c"># setup the material</span>
 <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;K&quot;</span><span class="p">:</span> <span class="mf">135E+09</span><span class="p">,</span> <span class="s">&quot;G&quot;</span><span class="p">:</span> <span class="mf">54E+09</span><span class="p">}</span>
-<span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s">&quot;elastic&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&quot;elastic&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
 
 <span class="c"># set up the deformation path and driver</span>
 <span class="n">path</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;0  0 222  0 0 0</span>
 <span class="s">          1 10 222 .1 0 0&quot;&quot;&quot;</span>
-<span class="n">driver</span> <span class="o">=</span> <span class="n">Driver</span><span class="p">(</span><span class="s">&quot;Continuum&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">Driver</span><span class="p">(</span><span class="s">&quot;Continuum&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
 
-<span class="c"># set up the simulator and run</span>
-<span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">,</span> <span class="n">driver</span><span class="p">,</span> <span class="n">material</span><span class="p">)</span>
+<span class="c"># run the simulation</span>
 <span class="n">mps</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -98,7 +100,8 @@ material model, parameterized by the bulk modulus <img class="math" src="_images
 runid.exo         runid.log         runid.py
 </pre></div>
 </div>
-<p>In this guide, the <tt class="docutils literal"><span class="pre">Material</span></tt>, <tt class="docutils literal"><span class="pre">Driver</span></tt>, and <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt>, and other, factory methods will be described in more detail.</p>
+<p>In this guide, the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> and its associated <tt class="docutils literal"><span class="pre">Material</span></tt>
+and <tt class="docutils literal"><span class="pre">Driver</span></tt> methods will be described in more detail.</p>
 </div>
 
 
