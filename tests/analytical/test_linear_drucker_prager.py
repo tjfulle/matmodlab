@@ -64,7 +64,7 @@ def rand_runner(d=None, runid=None, test=0):
     solfile = os.path.join(d, runid + ".base_dat")
 
     # set up the model
-    mps = MaterialPointSimulator(runid)#, d=d)
+    mps = MaterialPointSimulator(runid)
 
     # Set up the path and random material constants
     nu, E, K, G, LAM = ldpr.gen_rand_elastic_params()

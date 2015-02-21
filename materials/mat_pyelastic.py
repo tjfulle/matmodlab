@@ -1,6 +1,7 @@
 import numpy as np
 from core.material import MaterialModel
 from materials.completion import EC_BULK, EC_SHEAR, Y_TENSION
+from utils.constants import VOIGHT
 
 class PyElastic(MaterialModel):
     name = "pyelastic"
@@ -71,7 +72,8 @@ class PyElastic(MaterialModel):
             Updated extra variables
 
         """
-        de = d * dtime
+        # strains are sent in using engineering shear strains, convert to tensor
+        de = d * dtime / VOIGHT
         iso = de[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         dev = de - iso
         K = self.params["K"]

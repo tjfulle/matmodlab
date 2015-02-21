@@ -15,7 +15,7 @@ from utils.misc import load_file, remove, who_is_calling
 from utils.data_containers import Parameters
 from core.logger import Logger
 from utils.variable import Variable, VAR_ARRAY, VAR_SCALAR
-from utils.constants import DEFAULT_TEMP, SET_AT_RUNTIME, ENGW
+from utils.constants import DEFAULT_TEMP, SET_AT_RUNTIME
 from core.product import MAT_LIB_DIRS, PKG_D, SUPPRESS_USER_ENV
 from materials.product import ABA_MATS, USER_MAT, F_MTL_PARAM_DB
 
@@ -245,7 +245,7 @@ class MaterialModel(object):
             self.J0 = self.get_initial_jacobian()
             C = isotropic_part(self.J0)
             lame = C[0,1]
-            mu = C[5,5] / 2.
+            mu = C[5,5]
             a = np.array([lame, mu])
             b = [EC_LAME, EC_SHEAR]
             self.completions = complete_properties(a, b)
@@ -262,7 +262,7 @@ class MaterialModel(object):
         for i in range(3):
             self.J0[i, i] = threek * c1
         for i in range(3, 6):
-            self.J0[i, i] = twog
+            self.J0[i, i] = twog / 2.
 
         # off diagonal
         (self.J0[0, 1], self.J0[0, 2],
@@ -602,8 +602,8 @@ class AbaqusMaterial(MaterialModel):
         # abaqus ordering
         stress = stress[[0,1,2,3,5,4]]
         # abaqus passes engineering strain
-        dstran = dstran[[0,1,2,3,5,4]] * w
-        stran = stran[[0,1,2,3,5,4]] * w
+        dstran = dstran[[0,1,2,3,5,4]] #* w
+        stran = stran[[0,1,2,3,5,4]] #* w
         stress, statev, ddsdde = self.update_state_umat(
             stress, statev, ddsdde, sse, spd, scd, rpl, ddsddt, drplde, drpldt,
             stran, dstran, time, dtime, temp, dtemp, predef, dpred, cmname,
@@ -612,7 +612,7 @@ class AbaqusMaterial(MaterialModel):
         if np.any(np.isnan(stress)):
             self.logger.raise_error("umat stress contains nan's")
         stress = stress[[0,1,2,3,5,4]]
-        stran = stran[[0,1,2,3,5,4]] / w
+        stran = stran[[0,1,2,3,5,4]] #/ w
         return stress, statev, ddsdde
 
 

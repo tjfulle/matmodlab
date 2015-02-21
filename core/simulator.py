@@ -63,6 +63,15 @@ class MaterialPointSimulator(object):
             kwargs["logger"] = self.logger
             return Driver(kind, path, **kwargs)
         self._driver = fun
+        self.set_dm()
+
+    def set_dm(self):
+        if self.material is not None and self.driver is not None:
+            try:
+                self.driver = self.driver()
+                self.material = self.material(initial_temp=self.driver.initial_temp)
+            except TypeError:
+                pass
 
     @property
     def material(self):
@@ -83,6 +92,7 @@ class MaterialPointSimulator(object):
             kwargs.update(**kwds)
             return Material(model, parameters, **kwargs)
         self._material = fun
+        self.set_dm()
 
     @property
     def variables(self):
@@ -115,10 +125,8 @@ Material: {3}
         """
         # set up the driver and material
         if not self.driver: raise MatModLabError("no driver assigned")
-        self.driver = self.driver()
-
         if not self.material: raise MatModLabError("no material assigned")
-        self.material = self.material(initial_temp=self.driver.initial_temp)
+        self.set_dm()
 
         if abs(self.driver.initial_temp - self.material.initial_temp) > 1.e-12:
             raise MatModLabError("driver initial temperature != "

@@ -51,6 +51,11 @@ def genrand():
     return RAND.random_sample()
 randreal = genrand()
 
+def requires(major, minor, micro=None):
+    M, m, _m = VERSION
+    if M != major or m != minor:
+        raise SystemExit("input requires matmodlab version "
+                         "{0}.{1}".format(major, minor))
 
 # --- DECORATOR FOR SIMULATION
 already_splashed = False

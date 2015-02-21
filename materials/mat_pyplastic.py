@@ -2,7 +2,7 @@ import numpy as np
 from core.runtime import opts
 from core.material import MaterialModel
 from utils.data_containers import Parameters
-from utils.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6
+from utils.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6, VOIGHT
 from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B, HARD_MOD
 
 
@@ -111,7 +111,7 @@ class PyPlastic(MaterialModel):
         ep = xtra[idx('EP_XX'):idx('EP_YZ')+1]
 
         # Compute the trial stress and invariants
-        stress = stress + self.dot_with_elastic_stiffness(d * dtime)
+        stress = stress + self.dot_with_elastic_stiffness(d / VOIGHT * dtime)
         i1 = self.i1(stress)
         rootj2 = self.rootj2(stress)
         if rootj2 - (A1 - A4 * i1) <= 0.0:

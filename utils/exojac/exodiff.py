@@ -32,7 +32,7 @@ class Logger(object):
         for h in self.handlers:
             h.write(message)
 
-DIFFTOL = 1.E-06
+DIFFTOL = 1.5E-06
 FAILTOL = 1.E-04
 FLOOR = 1.E-12
 
@@ -219,6 +219,12 @@ def diff_files(head1, data1, head2, data2, vars_to_compare, logger, interp=False
                 status.append(SAME)
                 continue
 
+        if amag(d1) < 1.e-10 and amag(d2) < 1.e-10:
+            logger.info(" pass")
+            logger.info("File1.{0} = File2.{0} = 0\n".format(var))
+            status.append(SAME)
+            continue
+
         rms, nrms = rms_error(t1, d1, t2, d2)
         if nrms < dtol:
             logger.info(" pass")
@@ -395,6 +401,10 @@ def read_diff_file(filepath, logger):
 def afloor(a, floor):
     a[np.where(np.abs(a) <= floor)] = 0.
     return a
+
+
+def amag(a):
+    return np.sqrt(np.sum(a * a))
 
 
 if __name__ == "__main__":

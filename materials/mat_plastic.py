@@ -2,6 +2,7 @@ import os
 from core.product import MAT_D
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
+from utils.constants import VOIGHT
 from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B
 from core.logger import logmes, logwrn, bombed
 
@@ -59,6 +60,7 @@ class Plastic(MaterialModel):
         """
         lid = self.logger.logger_id
         extra = ((lid,), (lid,), (lid,))
+        d = d / VOIGHT
         mat.plastic_update_state(dtime, self.params, d, stress,
                                  logmes, logwrn, bombed, *extra)
         return stress, xtra, None

@@ -20,15 +20,15 @@ OPT_METHODS = ("simplex", "powell", "cobyla",)
 
 class Optimizer(object):
     def __init__(self, runid, func, xinit, method="simplex", verbosity=1, d=None,
-                 maxiter=MAXITER, tolerance=TOL, descriptor=None, funcargs=[]):
+                 maxiter=MAXITER, tolerance=TOL, descriptors=None, funcargs=[]):
         opts.raise_e = True
         self.runid = runid
         self.func = func
 
-        if not isinstance(descriptor, (list, tuple)):
-            descriptor = [descriptor]
-        self.descriptor = descriptor
-        self.nresp = len(descriptor)
+        if not isinstance(descriptors, (list, tuple)):
+            descriptors = [descriptors]
+        self.descriptors = descriptors
+        self.nresp = len(descriptors)
 
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
@@ -86,7 +86,7 @@ class Optimizer(object):
         # write summary to the log file
         str_pars = "\n".join("  {0}={1:.2g}".format(name, self.idata[i])
                              for (i, name) in enumerate(self.names))
-        resp = "\n".join("  {0}".format(it) for it in self.descriptor)
+        resp = "\n".join("  {0}".format(it) for it in self.descriptors)
         summary = """
 summary of optimization job input
 ------- -- ------------ --- -----
@@ -135,7 +135,7 @@ response descriptors:
             cons = lcons + ucons
 
         args = (self.func, self.funcargs, self.rootd, self.runid, self.names,
-                self.descriptor, self.tabular, xfac)
+                self.descriptors, self.tabular, xfac)
 
         if self.method == "simplex":
             xopt = scipy.optimize.fmin(

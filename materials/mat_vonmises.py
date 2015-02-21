@@ -2,7 +2,7 @@ import numpy as np
 
 from core.runtime import opts
 from core.material import MaterialModel
-from utils.constants import ROOT2, ROOT23
+from utils.constants import ROOT2, ROOT23, VOIGHT
 from utils.data_containers import Parameters
 from materials.completion import EC_BULK, EC_SHEAR, Y_TENSION, HARD_MOD, HARD_PARAM
 
@@ -104,7 +104,7 @@ class VonMises(MaterialModel):
                        xtra[idx('BS_XY')], xtra[idx('BS_YZ')], xtra[idx('BS_XZ')]])
         yn = xtra[idx('Y')]
 
-        de = d * dtime
+        de = d / VOIGHT * dtime
 
         iso = de[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         dev = de - iso

@@ -4,6 +4,7 @@ from core.product import MAT_D
 from core.material import MaterialModel
 from core.logger import logmes, logwrn, bombed
 from utils.errors import ModelNotImportedError
+from utils.constants import VOIGHT
 from materials.completion import EC_BULK, EC_SHEAR
 
 mat = None
@@ -72,6 +73,9 @@ class Elastic(MaterialModel):
         """
         lid = self.logger.logger_id
         extra = ((lid,), (lid,), (lid,))
+        # model is written with strain components given as tensor strain,
+        # matmodlab uses engineering shear strains
+        d = d / VOIGHT
         mat.elastic_update_state(dtime, self.params, d, stress,
                                  logmes, logwrn, bombed, *extra)
         return stress, xtra, self.constant_jacobian
