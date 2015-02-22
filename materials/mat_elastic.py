@@ -5,7 +5,6 @@ from core.material import MaterialModel
 from core.logger import logmes, logwrn, bombed
 from utils.errors import ModelNotImportedError
 from utils.constants import VOIGHT
-from materials.completion import EC_BULK, EC_SHEAR
 
 mat = None
 
@@ -19,7 +18,7 @@ class Elastic(MaterialModel):
     source_files = [f1, f2]
     def __init__(self):
         self.param_names = ["K:BMOD", "G:SMOD:MU"]
-        self.prop_names = [EC_BULK, EC_SHEAR]
+        self.prop_names = ["K", "G"]
 
     def setup(self):
         """Set up the Elastic material
@@ -37,9 +36,9 @@ class Elastic(MaterialModel):
     def mimicking(self, mat_mimic):
         # reset the initial parameter array to represent this material
         iparray = np.zeros(2)
-        iparray[0] = mat_mimic.completions[EC_BULK] or 0.
-        iparray[1] = mat_mimic.completions[EC_SHEAR] or 0.
-        if mat_mimic.completions[Y_TENSION]:
+        iparray[0] = mat_mimic.completions["K"] or 0.
+        iparray[1] = mat_mimic.completions["G"] or 0.
+        if mat_mimic.completions["YT"]:
             self.logger.warn("{0} cannot mimic a strength limit, only "
                              "an elastic response will occur".format(self.name))
         return iparray

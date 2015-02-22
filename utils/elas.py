@@ -2,7 +2,7 @@
 
 '''
 NAME
-    pyelas
+    elas.py
 
 BACKGROUND
     This is a python implementation of a fortran program by Rebecca Brannon
@@ -31,9 +31,9 @@ PURPOSE
 USAGE
     Interactive
 
-     % pyelas
+     % elas
 
-    pyelas will ask to enter values of elastic constants, as follows
+    elas will ask to enter values of elastic constants, as follows
 
        FIRST elastic constant? E = 200e9
        SECOND elastic constant? G = 79e9
@@ -45,9 +45,9 @@ USAGE
 
    Direct
 
-     % pyelas --emod1=val --emod2=val
+     % elas --emod1=val --emod2=val
 
-   Execute pyelas -h for possible --emod[1,2] strings
+   Execute elas -h for possible --emod[1,2] strings
 
    A NOTE ABOUT WAVE SPEEDS...
    When shock physicists say `cs', they mean what we call `cl'. Longitudinal
@@ -71,514 +71,367 @@ USAGE
 '''
 
 constformulas="""
-   ######################################################################
-   lam = First Lame parameter         = G(E-2G)/(3G-E) = K-2G/3
-     G = Shear modulus (= 2nd Lame parameter, mu)   = E/2/(1+nu)
-     E = Young's modulus              = 3K(1-2nu) = 2G(1+nu) = 9KG/(3K+G)
-    nu = Poisson's ratio              = (3K-E)/6K = lam/2/(lam+G)
-     K = bulk modulus                 = E/3/(1-2nu) = lam + 2G/3
-     H = constrained modulus          = 2G+lam = 3K-2lam = K + 4G/3
-    ko = SIGy/SIGx in uniaxial strain = nu/(1-nu)
-    cl = longitudinal wave speed      = sqrt(H/rho)
-    ct = shear (TRANSVERSE) wave speed  = sqrt(G/rho)
-    co = bulk/plastic wave speed      = sqrt(K/rho)=SQRT(cl^2-4(ct^2)/3)
-    cr = thin rod elastic wave speed  = sqrt(E/rho)
-   ######################################################################
+   #########################################################################
+   lame = First Lame parameter         = G(E-2G)/(3G-E) = K-2G/3
+      G = Shear modulus (= 2nd Lame parameter, mu)   = E/2/(1+nu)
+      E = Young's modulus              = 3K(1-2nu) = 2G(1+nu) = 9KG/(3K+G)
+     nu = Poisson's ratio              = (3K-E)/6K = lam/2/(lam+G)
+      K = bulk modulus                 = E/3/(1-2nu) = lam + 2G/3
+      H = constrained modulus          = 2G+lam = 3K-2lam = K + 4G/3
+     ko = SIGy/SIGx in uniaxial strain = nu/(1-nu)
+     cl = longitudinal wave speed      = sqrt(H/rho)
+     ct = shear (TRANSVERSE) wave speed  = sqrt(G/rho)
+     co = bulk/plastic wave speed      = sqrt(K/rho)=SQRT(cl^2-4(ct^2)/3)
+     cr = thin rod elastic wave speed  = sqrt(E/rho)
+   #########################################################################
 """
 import sys
 import os
 import re
-import optparse
+import argparse
 from math import sqrt
 
-exe = os.path.basename(__file__)
-
-manpage = "{0} \n {1}".format(__doc__,constformulas)
-
+exe = "elas"
+manpage = "{0} \n {1}".format(__doc__, constformulas)
 interactive_help = ("Enter elastic constants in the form\n"
                     "\tconst = val\n\n{0} recognizes \n {1}\n"
                     "Enter h to display this message again\n"
                     "Enter q to quit\n"
-                    .format(exe,constformulas))
+                    .format(exe, constformulas))
 
-NAME_MAP = {"lam": 0, "G": 1, "E": 2, "nu": 3, "K": 4, "H": 5,
-            "ko": 6, "cl": 7, "ct": 8, "co": 9, "cr": 10, "rho": 11,}
+class ElasticConstantsError(Exception):
+    pass
 
-def compute_elastic_constants(args, disp=0):
-    """
-    PURPOSE
-        Given any two elastic elastic, compute all remaining constants
+class NonPositiveDefiniteError(Exception):
+    def __init__(self):
+        message = "nonpositive definite elastic constants,"
+        super(NonPositiveDefiniteError, self).__init__(message)
 
-    INPUT
-        args: array containing elastic constants in the following order
-        (only 2 may be nonzero on input):
-          args[0] = "lam"
-          args[1] = "G"
-          args[2] = "E"
-          args[3] = "nu"
-          args[4] = "K"
-          args[5] = "H"
-          args[6] = "ko"
-          args[7] = "cl"
-          args[8] = "ct"
-          args[9] = "co"
-          args[10] = "cr"
-          args[11] = "rho"]
-    OUTPUT
-        args: array containing all elastic constants
-    """
+class AmbiguousInputError(Exception):
+    def __init__(self):
+        message = "Ambiguous elastic constants"
+        super(AmbiguousInputError, self).__init__(message)
 
-    lconstnams = len(NAME_MAP)
-    if len(args) != lconstnams:
-        sys.stderr.write(
-            "ERROR: Wrong number of input sent to compute_elastic_constants")
-        return {"retcode": 8}
+class ElasticConstants(object):
+    def __init__(self):
+        self.names = ("LAME", "G", "E", "NU", "K", "H", "KO",
+                      "CL", "CT", "CO", "CR", "RHO")
+        self.nconsts = len(self.names)
+        self.constants = dict(zip(self.names, [None]*self.nconsts))
+        self.moduli = self.names[:7]
+        self.wavespeeds = self.names[7:-10]
 
-    lam, G, E, nu, K, H, ko, cl, ct, co, cr, rho = args
+    def __contains__(self, item):
+        return item.upper() in self.names
 
-    consts = [x for x in args if x is not None]
-    nconsts = len(consts)
-    if nconsts > 2 and not rho:
-        sys.stderr.write("too many nonzero elastic constants sent to {0}"
-                         .format(exe))
-        return {"retcode": 7}
+    def compute_elastic_constants(self, **kwargs):
+        """Given any two elastic elastic, compute all remaining constants
 
-    elif nconsts == 0:
-        sys.stderr.write("no elastic constants sent to {0}".format(exe))
-        return {"retcode": 6}
+        """
+        kwds = dict([(key.upper(), value) for (key, value) in kwargs.items()])
 
-    elif nconsts == 1 and nu is not None:
-        sys.stderr.write("only one elastic constants sent to {0}".format(exe))
-        return {"retcode": 5}
+        # check for goodness of input
+        rho = kwds.pop("RHO", None)
+        if rho is not None and rho <= 0.:
+            raise ElasticConstantsError("expected RHO to be > 0, got "
+                                        "{0}".format(rho))
+        if kwds.get("NU") is not None:
+            if kwds["NU"] < -1 or kwds["NU"] >= .5:
+                raise ElasticConstantsError("expected -1 < NU <= .5, got "
+                                            "{0}".format(kwds["NU"]))
 
-    idx0 = args.index(consts[0])
-    if nconsts == 1:
-        idx1 = 3
-    else:
-        idx1 = args.index(consts[1],idx0+1)
-    needrho = idx0 > 6 and idx1 > 6
+        if len(kwds) != 2:
+            raise ElasticConstantsError("expected 2 elastic constants, "
+                                        "got {0}".format(len(kwds)))
 
-    if needrho and (rho is None or rho < 0.):
-        sys.stderr.write("density must be positive when a wave speed is given")
-        return {"retcode": 4}
+        # determine indices of passed constants
+        ij = []
+        errors = []
+        for (key, value) in kwds.items():
+            try:
+                ij.append(self.names.index(key))
+            except ValueError:
+                errors.append(key)
+        if errors:
+            raise ElasticConstantsError("uexpected elastic constants: "
+                                        "{0}".format(", ".join(errors)))
+        ii, jj = ij
 
-    if idx0 == 6: # ko
-        idx0 = 3
-        nu = ko/(1. + ko)
-    elif idx0 == 7: # cl
-        idx0 = 5
-        H = rho*cl*cl
-    elif idx0 == 8: # ct
-        idx0 = 1
-        G = rho*ct*ct
-    elif idx0 == 9: # co
-        idx0 = 4
-        K = rho*co*co
-    elif idx0 == 10: # cr
-        idx0 = 2
-        E = rho*cr*cr
+        # determine if density is required
+        kwds["RHO"] = rho
+        if (ii > 6 and jj > 6) and not kwds["RHO"]:
+            raise ElasticConstantsError("density must be given when a wave "
+                                        "speed is given")
 
-    if idx1 == 6: # ko
-        idx1 = 3
-        nu = ko/(1. + ko)
-    elif idx1 == 7: # cl
-        idx1 = 5
-        H = rho*cl*cl
-    elif idx1 == 8: # ct
-        idx1 = 1
-        G = rho*ct*ct
-    elif idx1 == 9: # co
-        idx1 = 4
-        K = rho*co*co
-    elif idx1 == 10: # cr
-        idx1 = 2
-        E = rho*cr*cr
+        if ii == 6: # ko
+            ii = 3
+            kwds["NU"] = kwds["KO"] / (1. + kwds["KO"])
+        elif ii == 7: # cl
+            ii = 5
+            kwds["H"] = kwds["RHO"] * kwds["CL"] * kwds["CL"]
+        elif ii == 8: # ct
+            ii = 1
+            kwds["G"] = kwds["RHO"] * kwds["CT"] * kwds["CT"]
+        elif ii == 9: # co
+            ii = 4
+            kwds["K"] = kwds["RHO"] * kwds["CO"] * kwds["CO"]
+        elif ii == 10: # cr
+            ii = 2
+            kwds["E"] = kwds["RHO"] * kwds["CR"] * kwds["CR"]
 
-    #  At this point, idx0 and idx1 each range from 1 to 6, and are distinct.
-    #  There are 15 possible ways to choose 2 numbers from 6:
-    case = 0
-    if idx0 < idx1:
-        case = 10*(idx0 + 1) + idx1 + 1
-    else:
-        case = 10*(idx1 + 1)+idx0 + 1
+        if jj == 6: # ko
+            jj = 3
+            kwds["NU"] = kwds["KO"] / (1. + kwds["KO"])
+        elif jj == 7: # cl
+            jj = 5
+            kwds["H"] = kwds["RHO"] * kwds["CL"] * kwds["CL"]
+        elif jj == 8: # ct
+            jj = 1
+            kwds["G"] = kwds["RHO"] * kwds["CT"] * kwds["CT"]
+        elif jj == 9: # co
+            jj = 4
+            kwds["K"] = kwds["RHO"] * kwds["CO"] * kwds["CO"]
+        elif jj == 10: # cr
+            jj = 2
+            kwds["E"] = kwds["RHO"] * kwds["CR"] * kwds["CR"]
 
-    # Get G and nu
-    if case == 12: # lam, G
-        if lam + G == 0.:
-            return {"retcode": -1}
-        nu = lam/2./(lam + G)
-    elif case == 13: # lam, E
-        A = E*E + 2.*lam*E + 9.*lam*lam
-        if A < 0.:
-            return {"retcode": -1}
-        a = sqrt(a)
-        G = (A - 3.*lam + E)/4.
-        nu = (A - E - lam)/4./lam
-    elif case == 14: # lam, nu
-        if nu == 0.:
-            return {"retcode": -2}
-        G  = lam*(1. - 2.*nu)/2./nu
-    elif case == 15: # lam,K
-        if 3.*K - lam == 0.:
-            return {"retcode": -1}
-        G  = 3.*(K - lam)/2.
-        nu = lam/(3.*K - lam)
-    elif case == 16: # lam, H
-        if H + lam == 0.:
-            return {"retcode": -1}
-        G  = (H - lam)/2.
-        nu = lam/(H + lam)
-    elif case == 23: # G, E
-        nu = (E - 2.*G)/2./G
-    elif case == 24: # G, nu
-        pass
-    elif case == 25: # G,K
-        if 3. * K + G == 0.:
-            return {"retcode": -1}
-        nu = (3.*K - 2.*G)/2./(3.*K + G)
-    elif case == 26: # G, H
-        if H - G == 0.:
-            return {"retcode": -1}
-        nu = (H - 2.*G)/2./(H - G)
-    elif case == 34: # E, nu
-        if 1. + nu == 0.:
-            return {"retcode": -1}
-        G  = E/2./(1. + nu)
-    elif case == 35: # E,K
-        if 9.*K - E == 0.  or  K == 0.:
-            return {"retcode": -1}
-        G  = 3.*E*K/(9.*K - E)
-        nu = (3.*K - E)/R6/K
-    elif case == 36: # E, H
-        B = E*E + 9.*H*H - 10.*E*H
-        if B <0.  or  H == 0.:
-            return {"retcode": -1}
-        B = SQRT(B)
-        G  = (3.*H - B + E)/R8
-        nu = (B - H + E)/4./H
-    elif case == 45: # nu,K
-        if 1. + nu == 0.:
-            return {"retcode": -1}
-        G  = 3.*K*(1. - 2.*nu)/2./(1. + nu)
-    elif case == 46: # nu, H
-        if 1. - nu == 0.:
-            return {"retcode": -1}
-        G  = H*(1. - 2.*nu)/2./(1. - nu)
-    elif case == 56: # K, H
-        if 3.*K + H == 0.:
-            return {"retcode": -1}
-        G  = 3.*(H - K)/4.
-        nu = (3.*K - H)/(3.*K + H)
-    else:
-        sys.stderr.write("unexpected case")
-        return {"retcode": 3}
-
-    lam = 2.*G*nu/(1. - 2.*nu)
-    E = 2.*G*(1. + nu)
-    K = 2.*G*(1. + nu)/3./(1. - 2.*nu)
-    H = 2.*G*(1. - nu)/(1 - 2*nu)
-    ko = nu/(1. - nu)
-
-    if G <= 0. or K <= 0.:
-        return {"retcode": -1}
-
-    if rho:
-        cl = sqrt(H/rho)
-        ct = sqrt(G/rho)
-        co = sqrt(K/rho)
-        cr = sqrt(E/rho)
-
-    consts = [("lam", lam),
-              ("G", G),
-              ("E", E),
-              ("nu", nu),
-              ("K", K),
-              ("H", H),
-              ("ko", ko),
-              ("cl", cl),
-              ("ct", ct),
-              ("co", co),
-              ("cr", cr),
-              ("rho", rho)]
-    if disp == 1:
-        consts_dict = dict([(NAME_MAP[k], v) for (k, v) in consts])
-    else:
-        consts_dict = dict(consts)
-    return consts_dict
-
-def non_positive_definite():
-    sys.stderr.write("ERROR: nonpositive definite elastic constants, try again\n\n")
-
-def ambiguous_elastic_params():
-    sys.stderr.write("ERROR: ambiguous elastic params, try again\n\n")
-
-def elastic_param_conversion(argv):
-
-    """
-    NAME
-        elastic_param_conversion
-
-    PURPOSE
-        Fetches user input and sends in right format to compute_elastic_constants
-
-    INPUT
-        argv input arguments
-
-    AUTHORS
-        Tim Fuller Sandia National Laboratories tjfulle@sandia.gov
-    """
-
-    # -- command line option parsing
-    usage = "usage: %s [options]"%exe
-    parser= optparse.OptionParser(usage=usage, version="%prog 1.0")
-
-    parser.add_option("--lam",dest="lam",action="store",default=None,
-                      help=("First Lame parameter = G(E-2G)/(3G-E) = K-2G/3 "
-                            "[default: %default]"))
-    parser.add_option("--shear",dest="shear",action="store",default=None,
-                      help=("Shear modulus (= 2nd Lame parameter, mu) = E/2/(1+nu) "
-                            "[default: %default]"))
-    parser.add_option("--youngs",dest="youngs",action="store",default=None,
-                      help=("Young's modulus = 3K(1-2nu) = 2G(1+nu) = 9KG/(3K+G) "
-                            "[default: %default]"))
-    parser.add_option("--poissons",dest="poissons",action="store",default=None,
-                      help=("Poisson's ratio = (3K-E)/6K = lam/2/(lam+G) "
-                            "[default: %default]"))
-    parser.add_option("--bulk",dest="bulk",action="store",default=None,
-                      help=("bulk modulus = E/3/(1-2nu) = lam + 2G/3 "
-                            "[default: %default]"))
-    parser.add_option("--constrained",dest="constrained",action="store",
-                      default=None,
-                      help=("constrained modulus = 2G+lam = 3K-2lam = K + 4G/3 "
-                            "[default: %default]"))
-    parser.add_option("--ko",dest="sigratio",action="store",default=None,
-                      help=("SIGy/SIGx in uniaxial strain = nu/(1-nu) "
-                            "[default: %default]"))
-    parser.add_option("--cl",dest="longwvspd",action="store",default=None,
-                      help=("longitudinal wave speed = sqrt(H/rho) "
-                            "[default: %default]"))
-    parser.add_option("--ct",dest="tranwvspd",action="store",default=None,
-                      help=("shear (TRANSVERSE) wave speed = sqrt(G/rho) "
-                            "[default: %default]"))
-    parser.add_option("--co",dest="bulkwvspd",action="store",default=None,
-                      help=("bulk/plastic wave speed = "
-                            "sqrt(K/rho)=SQRT(cl^2-4(ct^2)/3) "
-                            "[default: %default]"))
-    parser.add_option("--cr",dest="thinwvspd",action="store",default=None,
-                      help=("thin rod elastic wave speed  = sqrt(E/rho) "
-                            "[default: %default]"))
-    parser.add_option("--rho",dest="rho",action="store",default=None,
-                      help=("density [default: %default]"))
-    parser.add_option("-H","--man",dest="MANPAGE",action="store_true",
-                      default=False,help="display manpage")
-
-    (opts,args) = parser.parse_args(argv)
-
-    if opts.MANPAGE:
-        parser.print_help()
-        sys.exit(manpage)
-
-    # check if user gave input
-    ui = [None] * len(NAME_MAP)
-    if opts.lam is not None:
-        ui[NAME_MAP["lam"]] = float(opts.lam)
-    if opts.shear is not None:
-        ui[NAME_MAP["G"]] = float(opts.shear)
-    if opts.youngs is not None:
-        ui[NAME_MAP["E"]] = float(opts.youngs)
-    if opts.poissons is not None:
-        ui[NAME_MAP["nu"]] = float(opts.poissons)
-    if opts.bulk is not None:
-        ui[NAME_MAP["K"]] = float(opts.bulk)
-    if opts.constrained is not None:
-        ui[NAME_MAP["H"]] = float(opts.constrained)
-    if opts.sigratio is not None:
-        ui[NAME_MAP["ko"]] = float(opts.sigratio)
-    if opts.longwvspd is not None:
-        ui[NAME_MAP["cl"]] = float(opts.longwvspd)
-    if opts.tranwvspd is not None:
-        ui[NAME_MAP["ct"]] = float(opts.tranwvspd)
-    if opts.bulkwvspd is not None:
-        ui[NAME_MAP["co"]] = float(opts.bulkwvspd)
-    if opts.thinwvspd is not None:
-        ui[NAME_MAP["cr"]] = float(opts.thinwvspd)
-    if opts.rho is not None:
-        rho = float(opts.rho)
-        if rho < 0.: sys.exit("density must be > 0., got %e"%rho)
-        ui[NAME_MAP["rho"]] = float(opts.rho)
-
-    if any(ui):
-        if (lui < 2 or lui > 3
-            or (lui > 2 and not opts.rho)
-            or (lui == 2 and opts.rho)):
-            parser.print_help()
-            print("\nERROR: must provide 2 elastic "
-                  "constants and optionally density")
-            return 1
-
+        #  At this point, ii and jj each range from 1 to 6, and are distinct.
+        #  There are 15 possible ways to choose 2 numbers from 6:
+        case = 0
+        if ii < jj:
+            case = 10 * (ii + 1) + jj + 1
         else:
-            ret = compute_elastic_constants(ui)
-            retcode = ret["retcode"]
-            if retcode > 0:
-                return retcode
-            elif retcode == -1:
-                non_positive_definite()
-                return retcode
-            elif retcode == -2:
-                ambiguous_elastic_params()
-                return retcode
-            else:
-                print_elastic_constants(ret)
+            case = 10 * (jj + 1) + ii + 1
 
-        return 0
+        # For each case, determine G and NU. From these two, all other
+        # constants will be determined below
+        if case == 12: # lam, G
+            if kwds["LAME"] + kwds["G"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["NU"] = kwds["LAME"] / 2. / (kwds["LAME"] + kwds["G"])
+        elif case == 13: # lam, E
+            A = kwds["E"] * kwds["E"]
+            A += 2. * kwds["LAME"] * kwds["E"]
+            A += 9. * kwds["LAME"] * kwds["LAME"]
+            if A < 0.:
+                raise NonPositiveDefiniteError
+            A = sqrt(A)
+            kwds["G"] = (A - 3. * kwds["LAME"] + kwds["E"]) / 4.
+            kwds["NU"] = (A - kwds["E"] - kwds["LAME"]) / 4. / kwds["LAME"]
+        elif case == 14: # lam, nu
+            if kwds["NU"] == 0.:
+                raise AmbiguousInputError
+            kwds["G"]  = kwds["LAME"] * (1. - 2. * kwds["NU"]) / 2. / kwds["NU"]
+        elif case == 15: # lam,K
+            if 3. * kwds["K"] - kwds["LAME"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["G"]  = 3. * (kwds["K"] - kwds["LAME"]) / 2.
+            kwds["NU"] = kwds["LAME"] / (3. * kwds["K"] - kwds["LAME"])
+        elif case == 16: # lam, H
+            if kwds["H"] + kwds["LAME"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["G"]  = (kwds["H"] - kwds["LAME"]) / 2.
+            kwds["NU"] = kwds["LAME"] / (kwds["H"] + kwds["LAME"])
+        elif case == 23: # G, E
+            kwds["NU"] = (kwds["E"] - 2. * kwds["G"]) / 2. / kwds["G"]
+        elif case == 24: # G, nu
+            pass
+        elif case == 25: # G,K
+            if 3. * kwds["K"] + kwds["G"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["NU"] = (3.*kwds["K"]-2.*kwds["G"])/2./(3.*kwds["K"]+kwds["G"])
+        elif case == 26: # G, H
+            if kwds["H"] - kwds["G"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["NU"] = (kwds["H"]-2.*kwds["G"])/2./(kwds["H"]-kwds["G"])
+        elif case == 34: # E, nu
+            if 1. + kwds["NU"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["G"]  = kwds["E"] / 2. / (1. + kwds["NU"])
+        elif case == 35: # E,K
+            if 9. * kwds["K"] - kwds["E"] == 0.  or  kwds["K"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["G"]  = 3. * kwds["E"] * kwds["K"] / (9. * kwds["K"] - kwds["E"])
+            kwds["NU"] = (3. * kwds["K"] - kwds["E"]) / 6. / kwds["K"]
+        elif case == 36: # E, H
+            B = kwds["E"] * kwds["E"]
+            B += 9. * kwds["H"] * kwds["H"]
+            B -= 10. * kwds["E"] * kwds["H"]
+            if B <0.  or  kwds["H"] == 0.:
+                raise NonPositiveDefiniteError
+            B = sqrt(B)
+            kwds["G"]  = (3. * kwds["H"] - B + kwds["E"]) / 8.
+            kwds["NU"] = (B - kwds["H"] + kwds["E"]) / 4. / kwds["H"]
+        elif case == 45: # nu,K
+            if 1. + kwds["NU"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["G"]  = 3.*kwds["K"]*(1.-2.*kwds["NU"])/2./(1.+kwds["NU"])
+        elif case == 46: # nu, H
+            if 1. - kwds["NU"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["G"]  = kwds["H"]*(1.-2.*kwds["NU"])/2./(1.-kwds["NU"])
+        elif case == 56: # K, H
+            if 3. * kwds["K"] + kwds["H"] == 0.:
+                raise NonPositiveDefiniteError
+            kwds["G"]  = 3. * (kwds["H"] - kwds["K"]) / 4.
+            kwds["NU"] = (3.*kwds["K"]-kwds["H"])/(3.*kwds["K"]+kwds["H"])
+        else:
+            raise ElasticConstantsError("unexpected case")
 
-    # no elastic constants given, ask for them
-    nam1, val1, nam2, val2, dens = None, None, None, None, None
-    print(interactive_help)
-    while True:
-        nam1, val1, idx1 = ask_input("FIRST elastic constant", nam1, val1)
+        kwds["LAME"] = 2. * kwds["G"] * kwds["NU"] / (1. - 2. * kwds["NU"])
+        kwds["E"] = 2. * kwds["G"] * (1. + kwds["NU"])
+        kwds["K"] = 2.*kwds["G"] * (1. + kwds["NU"]) / 3. / (1. - 2. * kwds["NU"])
+        kwds["H"] = 2. * kwds["G"] * (1. - kwds["NU"]) / (1 - 2 * kwds["NU"])
+        kwds["KO"] = kwds["NU"] / (1. - kwds["NU"])
+
+        if kwds["G"] <= 0. or kwds["K"] <= 0.:
+            raise NonPositiveDefiniteError
+
+        if kwds["RHO"]:
+            kwds["CL"] = sqrt(kwds["H"] / kwds["RHO"])
+            kwds["CT"] = sqrt(kwds["G"] / kwds["RHO"])
+            kwds["CO"] = sqrt(kwds["K"] / kwds["RHO"])
+            kwds["CR"] = sqrt(kwds["E"] / kwds["RHO"])
+
+        self.constants.update(kwds)
+        return kwds
+
+    def print_elastic_constants(self):
+        if not self.constants:
+            raise ElasticConstantsError("constants not yet computed")
+        print("\nElastic moduli:")
+        for name in self.moduli:
+            print("{0} = {1:g}".format(name, self.constants[name]))
+            continue
+        if self.constants.get("RHO"):
+            print("\nWavespeeds:")
+            print("DENSITY = {0:g}".format(self.constants["RHO"]))
+            for name in self.wavespeeds:
+                print("{0} = {1:g}".format(name, self.constants[name]))
+                continue
+        return
+
+    def interactive_guide(self):
+        """Command line interface"""
+        print(interactive_help)
+        aa = [None, None]
+        bb = [None, None]
+        rr = ["RHO", None]
 
         while True:
-            nam2, val2, idx2 = ask_input("SECOND elastic constant", nam2, val2)
+            self.get_input("FIRST elastic constant? [default {0}={1}]", aa)
+            while True:
+                self.get_input("SECOND elastic constant? [default {0}={1}]", bb)
 
-            if nam1 == nam2:
-                print("SECOND elastic constant must differ from first\ntry again")
+                if aa[0] == bb[0]:
+                    print("Second elastic constant must differ "
+                          "from first\nTry again")
+                    continue
+                break
+
+            self.get_input("DENSITY? [default {1}]", rr)
+
+            ui = {}
+            ui[aa[0]] = aa[1]
+            ui[bb[0]] = bb[1]
+            ui[rr[0]] = rr[1]
+            try:
+                self.compute_elastic_constants(**ui)
+                self.print_elastic_constants()
+            except (NonPositiveDefiniteError, AmbiguousInputError) as e:
+                message = "{0}, try again\n".format(e.args[0])
+                print(message)
+
+            continue
+
+        return
+
+    def get_input(self, query, args):
+
+        while True:
+
+            # ask for name, value pairs
+            try:
+                o = raw_input("{0}: ".format(query.format(*args)))
+            except KeyboardInterrupt:
+                raise SystemExit("\n")
+            inp = [x.strip().upper() for x in re.split(r"[=,]", o) if x.split()]
+
+            if not inp:
+                inp = [x for x in args]
+
+            elif inp[0] == "Q":
+                raise SystemExit("done")
+
+            elif inp[0] == "H":
+                print(interactive_help)
+                continue
+
+            if len(inp) == 1:
+                # use default name
+                inp.insert(0, args[0])
+
+            try:
+                name, val = inp[0], float(inp[1])
+            except ValueError:
+                print("\nExpected name = value, got {0}\nTry again\n".format(o))
+                continue
+
+            if name not in self.names:
+                print("\nUnknown constant {0}\nvalid entries are "
+                      "{1}\nTry again".format(name, ", ".join(self.names)))
                 continue
 
             break
 
-        nam3,dens,idx3 = ask_input("DENSITY","rho",dens)
+        args[:2] = [name, val]
 
-        ui = [None]*12
-        ui[idx1],ui[idx2],ui[idx3] = val1, val2, dens
-        ret = compute_elastic_constants(ui)
-        if ret == -1:
-            non_positive_definite()
-        elif ret == -2:
-            ambiguous_elastic_params()
-        else:
-            print_elastic_constants(ret)
-        continue
+        return
+
+
+def main(argv=None):
+    """ Fetches user input and sends in right format to compute_elastic_constants
+
+    """
+    argv = argv or sys.argv[1:]
+
+    # -- command line option parsing
+    p= argparse.ArgumentParser()
+    p.add_argument("--lam", dest="LAME", help="First Lame parameter")
+    p.add_argument("--shear", dest="G", help="Shear modulus")
+    p.add_argument("--youngs", dest="E", help="Young's modulus")
+    p.add_argument("--poissons", dest="NU", help="Poisson's ratio")
+    p.add_argument("--bulk", dest="K", help="Bulk modulus")
+    p.add_argument("--constrained", dest="H", help="Constrained modulus")
+    p.add_argument("--ko", dest="KO", help="SIGy/SIGx in uniaxial strain")
+    p.add_argument("--cl", dest="CL", help="Longitudinal wave speed")
+    p.add_argument("--ct", dest="CT", help="Shear (TRANSVERSE) wave speed")
+    p.add_argument("--co", dest="CO", help="Bulk/plastic wave speed")
+    p.add_argument("--cr", dest="CR", help="Thin rod elastic wave speed")
+    p.add_argument("--rho", dest="RHO", help="Density")
+    p.add_argument("--man", action="store_true", help="display manpage")
+    args = p.parse_args(argv)
+
+    if args.man:
+        parser.print_help()
+        sys.exit(manpage)
+
+    EC = ElasticConstants()
+
+    # check if user gave input
+    ui = {}
+    for name in EC.names:
+        try: ui[name] = float(getattr(args, name))
+        except (AttributeError, TypeError): continue
+
+    if ui:
+        EC.compute_elastic_constants(**ui)
+        EC.print_elastic_constants()
+        return 0
+
+    EC.interactive_guide()
     return 0
 
-def ask_input(query, defnam, defval):
-
-    rho = query.lower() == "density"
-
-    while True:
-
-        # default value
-        try:
-            defval = "{0:12.6E}".format(defval)
-        except ValueError:
-            pass
-
-        # ask for name, value pairs
-        if rho:
-            inp = get_input(query + "? [default: {0}] ".format(defval))
-        else:
-            inp = get_input(query + "? [default: {0} = {1}] ".format(
-                    defnam, defval))
-
-        if inp == "q":
-            sys.exit("done")
-
-        if inp == "h":
-            print(interactive_help)
-            continue
-
-        if not inp:
-            nam = defnam
-            try:
-                val = eval(defval)
-            except TypeError:
-                val = defval
-
-        else:
-            inp = re.split(r"[=,]", inp)
-            if len(inp) == 1:
-                inp.insert(0, defnam)
-
-            try:
-                nam, val = inp[0].strip(), float(inp[1].strip())
-
-            except ValueError:
-                if rho:
-                    bad_density()
-                else:
-                    bad_syntax()
-                continue
-
-            except:
-                bad_syntax()
-                continue
-
-            if rho and val < 0.:
-                bad_density()
-                continue
-
-            if nam == "nu" and (val <= -1. or val > 0.5):
-                bad_poissons()
-
-
-        if nam is None:
-            print("\nunknown constant %s\nvalid entries are %s\ntry again"
-                  %("None",', '.join(NAME_MAP.keys())))
-            continue
-
-        elif nam not in NAME_MAP:
-            print("\nunknown constant %s\nvalid entries are %s\ntry again"
-                  %(nam,', '.join(NAME_MAP.keys())))
-            continue
-
-        break
-
-    idx = NAME_MAP[nam]
-    return nam, val, idx
-
-def print_elastic_constants(econsts):
-    emods = [x for x in econsts if x in
-             sorted(NAME_MAP, key=NAME_MAP.__getitem__)[:7]]
-    espds = [x for x in econsts if x in
-             sorted(NAME_MAP, key=NAME_MAP.__getitem__)[7:]]
-    emods.sort()
-    espds.sort()
-    espds.remove("rho")
-    espds.insert(0,"rho")
-    print("\nElastic moduli:")
-    for key in emods:
-        try:
-            print("{0} = {1:12.6E}".format(key, econsts[key]))
-        except:
-            print("{0} = {1}".format(key, econsts[key]))
-        continue
-    if econsts["rho"]:
-        print("\nWavespeeds:")
-        for key in espds:
-            try:
-                print("{0} = {1:12.6E}".format(key, econsts[key]))
-            except:
-                print("{0} = {1}".format(key, econsts[key]))
-            continue
-    return
-
-def bad_syntax():
-    print("\nInvalid syntax, syntax should be\n\tvariableName = value\ntry again\n")
-    return
-
-def bad_density():
-    print("\nInvalid density, density must be > 0.\ntry again\n")
-    return
-
-def bad_poissons():
-    print("\nInvalid Poisson ratio, must be < .5 and > -1.\ntry again\n")
-    return
-
-def get_input(string):
-    try:
-        return raw_input(string)
-    except KeyboardInterrupt:
-        raise SystemExit("\n")
 
 if __name__ == "__main__":
-    elastic_param_conversion(sys.argv[1:])
+    main()

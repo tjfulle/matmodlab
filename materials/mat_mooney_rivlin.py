@@ -5,7 +5,6 @@ import utils.mmlabpack as mmlabpack
 from core.material import MaterialModel
 from core.logger import logmes, logwrn, bombed
 from utils.errors import ModelNotImportedError
-from materials.completion import EC_C10, EC_C01, EC_NU, TEMP0
 
 mat = None
 
@@ -22,7 +21,7 @@ class MooneyRivlin(MaterialModel):
     lapack = "lite"
     def __init__(self):
         self.param_names = ["C10", "C01", "NU", "T0", "MC10", "MC01"]
-        self.prop_names = [EC_C10, EC_C01, EC_NU, TEMP0, None, None]
+        self.prop_names = ["C10", "C01", "NU", "TEMP0", None, None]
 
     def setup(self):
         """Set up the domain Mooney-Rivlin materia

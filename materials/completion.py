@@ -1,50 +1,50 @@
 from math import sin, cos
 import numpy as np
 from utils.constants import TOOR3, ROOT3
-from utils.elas import compute_elastic_constants, NAME_MAP
+#from utils.elas import compute_elastic_constants, NAME_MAP
+from utils.elas import ElasticConstants
 
-# Properties 0-11 correspond to the property
-# mapping in utils/elas.py and should not be changed
+EC = ElasticConstants()
 
 # Elastic constants
-EC_LAME = 0
-EC_SHEAR = 1
-EC_YOUNGS = 2
-EC_NU = 3 # Poisson's ratio
-EC_BULK = 4
-EC_CONSTRAINED = 5
-EC_SIGRATIO = 6 # SIGy/SIGx in uniaxial strain = nu/(1-nu)
+# Names of recognized elastic constants:
+# LAME: First lame constant
+# G: Shear modulus
+# E: Young's modulus
+# NU: Poisson's ratio
+# K: Bulk modulus
+# H: Constrained modulus
+# KO: SIGy/SIGx in uniaxial strain = nu/(1-nu)
 
-# Wave speeds
-WS_LONGITUDINAL = 7 # longitudinal wave speed = sqrt(H/rho)
-WS_TRANSVERSE = 8  # shear (TRANSVERSE) wave speed = sqrt(G/rho)
-WS_BULK = 9 # bulk/plastic wave speed = sqrt(K/rho)=SQRT(cl^2-4(ct^2)/3)
-WS_THINROD = 10 # thin rod elastic wave speed  = sqrt(E/rho)
+# Names of recognized wave speeds
+# CL: longitudinal wave speed = sqrt(H/rho)
+# CT: shear (TRANSVERSE) wave speed = sqrt(G/rho)
+# CO: bulk/plastic wave speed = sqrt(K/rho)=SQRT(cl^2-4(ct^2)/3)
+# CR: thin rod elastic wave speed  = sqrt(E/rho)
 
-DENSITY = 11
+# Name of density
+# RHO
 
 # Common hyperelastic parameters
-EC_C10 = 12
-EC_C01 = 13
-EC_D1 = 14
+# C10, C01, D1
 
 # Strengths
-Y_SHEAR = 30
-Y_TENSION = 31
+# YS: Yield in shear
+# YT: Yield in tension
 
 # Hardening
-HARD_MOD = 32
-HARD_PARAM = 33
+# HM: Hardening modulus
+# HP: Hardening parameter
 
 # Drucker-Prager parameters: Sqrt[J2] = A + B I1
-DP_A = 50
-DP_B = 51
+# DPA
+# DPB
 
 # Cohesion and friction angle
-COHESION = 60
-FRICTION_ANGLE = 61
+# COHESION
+# FRICTION_ANGLE
 
-TEMP0 = 80
+# TEMP0
 
 
 class Completion:
@@ -57,15 +57,12 @@ class Completion:
     info to compute in the first place).
 
     """
-    def __init__(self, dict):
-        self.__dict__.update(dict)
+    def __init__(self, d):
+        self._dict = dict(d)
     def __getitem__(self, key):
-        return self.__dict__.get(key)
+        return self._dict.get(key)
     def __str__(self):
-        x = ", ".join("{0}={1}".format(k,v)
-                      for (a, v) in self.__dict__.items()
-                      for (k, b) in globals().items()
-                      if a is b)
+        x = ", ".join("{0}={1}".format(k, v) for (k, v) in self._dict.items())
         return "PropertyCompletion({0})".format(x)
 
 
@@ -84,50 +81,52 @@ def complete_properties(parameters, propmap):
         return
 
     # convert propmap to dict
-    propmap = dict([(x, i) for (i, x) in enumerate(propmap) if x is not None])
+    propmap = dict([(x.upper(), i)
+                    for (i, x) in enumerate(propmap) if x is not None])
 
     # check if any hyperelastic parameters are given and, if so, compute
     # equivalent linear elastic parameters
-    if EC_C10 in propmap and EC_SHEAR not in propmap:
-        c10 = parameters[propmap[EC_C10]]
-        if EC_C01 in propmap:
-            c01 = parameters[propmap[EC_C01]]
+    if "C10" in propmap and "G" not in propmap:
+        c10 = parameters[propmap["C10"]]
+        if "C01" in propmap:
+            c01 = parameters[propmap["C01"]]
         else:
             c01 = 0.
         g = 2. * (c10 + c01)
-        propmap[EC_SHEAR] = len(parameters)
+        propmap["G"] = len(parameters)
         parameters = np.append(parameters, g)
 
-    if EC_D1 in propmap and EC_BULK not in propmap:
-        k = 2. / parameters[propmap[EC_D1]]
-        propmap[EC_BULK] = len(parameters)
+    if "D1" in propmap and "K" not in propmap:
+        k = 2. / parameters[propmap["D1"]]
+        propmap["K"] = len(parameters)
         parameters = np.append(parameters, k)
 
     # prepopulate the completion mapping with properties already specified by
     # the material model. save the elastic constants in their own list
     completion = {}
-    elas = [None] * 12
+    elas = {}
     for (key, idx) in propmap.items():
         if key is None:
             continue
+        key = key.upper()
         completion[key] = parameters[idx]
-        if key <= DENSITY:
+        if key in EC:
             elas[key] = parameters[idx]
 
     # complete the elastic constants
-    completion.update(compute_elastic_constants(elas, disp=1))
+    completion.update(EC.compute_elastic_constants(**elas))
 
     # complete inelastic properties
 
     # yield strength in shear and tension
-    ys = completion.get(Y_SHEAR)
-    yt = completion.get(Y_TENSION)
+    ys = completion.get("YS")
+    yt = completion.get("YT")
 
     # Linear Drucker-Prager and Mohr-Coulomb properties
-    A = completion.get(DP_A)
-    B = completion.get(DP_B)
-    C = completion.get(COHESION)
-    phi = completion.get(FRICTION_ANGLE)
+    A = completion.get("DPA")
+    B = completion.get("DPB")
+    C = completion.get("COHESION")
+    phi = completion.get("FRICTION_ANGLE")
 
     if ys is None and yt is None and A is not None and B == 0.0:
         ys = A
@@ -136,8 +135,8 @@ def complete_properties(parameters, propmap):
             yt = ys / TOOR3
     elif yt is not None:
         ys = yt * TOOR3
-    completion[Y_SHEAR] = ys
-    completion[Y_TENSION] = yt
+    completion["YS"] = ys
+    completion["YT"] = yt
 
     if phi is None and B is not None:
         # B = 2 Sin[PHI] / ROOT3 / (3 + Sin[PHI])
@@ -162,9 +161,9 @@ def complete_properties(parameters, propmap):
     if A is None:
         A = ys
 
-    completion[DP_A] = A
-    completion[DP_B] = B
-    completion[COHESION] = C
-    completion[FRICTION_ANGLE] = phi
+    completion["DPA"] = A
+    completion["DPB"] = B
+    completion["COHESION"] = C
+    completion["FRICTION_ANGLE"] = phi
 
     return Completion(completion)

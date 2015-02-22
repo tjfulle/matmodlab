@@ -247,13 +247,13 @@ class MaterialModel(object):
             lame = C[0,1]
             mu = C[5,5]
             a = np.array([lame, mu])
-            b = [EC_LAME, EC_SHEAR]
+            b = ["LAME", "G"]
             self.completions = complete_properties(a, b)
             return
 
         self.J0 = np.zeros((6, 6))
-        threek = 3. * self.completions[EC_BULK]
-        twog = 2. * self.completions[EC_SHEAR]
+        threek = 3. * self.completions["K"]
+        twog = 2. * self.completions["G"]
         nu = (threek - twog) / (2. * threek + twog)
         c1 = (1. - nu) / (1. + nu)
         c2 = nu / (1. + nu)
@@ -560,9 +560,9 @@ class AbaqusMaterial(MaterialModel):
         # Do the property completion
         C = isotropic_part(ddsdde)
         lame = C[0,1]
-        mu = C[5,5] / 2.
+        mu = C[5,5]
         a = np.array([lame, mu])
-        b = [EC_LAME, EC_SHEAR]
+        b = ["LAME", "G"]
         self.completions = complete_properties(a, b)
 
         # set initial values of state variables
