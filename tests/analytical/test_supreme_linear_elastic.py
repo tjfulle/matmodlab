@@ -54,9 +54,12 @@ my_dir = get_my_directory()
 #
 
 def get_D_E_F_SIG(dadt, a, LAM, G, loc):
+    # This is just an implementation of the above derivations.
+    #
     # 'dadt' is the current time derivative of the strain
     # 'a' is the strain at the end of the step
-    # 'loc' is the index for what's wanted (0,0) for xx
+    # 'LAM' and 'G' are the lame and shear modulii
+    # 'loc' is the index for what's wanted (0,1) for xy
 
     if loc[0] == loc[1]:
         # axial
@@ -238,7 +241,13 @@ def runner(d=None, runid=None, test=0):
     VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
                  "STRAIN_XY", "STRAIN_XZ", "STRAIN_YZ",
                  "STRESS_XX", "STRESS_YY", "STRESS_ZZ",
-                 "STRESS_XY", "STRESS_XZ", "STRESS_YZ"]
+                 "STRESS_XY", "STRESS_XZ", "STRESS_YZ",
+                 "DEFGRAD_XX", "DEFGRAD_XY", "DEFGRAD_XZ",
+                 "DEFGRAD_YX", "DEFGRAD_YY", "DEFGRAD_YZ",
+                 "DEFGRAD_ZX", "DEFGRAD_ZY", "DEFGRAD_ZZ",
+                 "SYMM_L_XX", "SYMM_L_YY", "SYMM_L_ZZ",
+                 "SYMM_L_XY", "SYMM_L_XZ", "SYMM_L_YZ",
+                ]
 
     analytic_headers, analytic_response = load_data(solfile)
     simulate_response = mps.extract_from_db(VARIABLES, t=1)
