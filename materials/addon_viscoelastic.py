@@ -67,8 +67,10 @@ class Viscoelastic(object):
             self.params[1] = trs_model.wlf_coeffs[1] # C2
             self.params[2] = trs_model.temp_ref # REF TEMP
 
-        comm = (logmes, logwrn, bombed, (self.logger.logger_id,))
-        visco.propcheck(self.params, *comm)
+        lid = logger.logger_id
+        ex = ((lid,), (lid,), (lid,))
+        n = len(self.params)
+        visco.propcheck(self.params, logmes, logwrn, bombed, n, *ex)
 
         return keys, idata
 
@@ -85,13 +87,20 @@ class Viscoelastic(object):
         return self.Goo
 
     def initialize(self, logger, X):
-        comm = (logmes, logwrn, bombed, (self.logger.logger_id,))
-        visco.viscoini(self.params, X, *comm)
+        N = len(X)
+        n = len(self.params)
+        lid = logger.logger_id
+        ex = ((lid,), (lid,), (lid,))
+        visco.viscoini(self.params, X, logmes, logwrn, bombed, n, N, *ex)
         return X
 
     def update_state(self, logger, time, dtime, temp, dtemp, statev, F, sig):
-        comm = (logmes, logwrn, bombed, (self.logger.logger_id,))
+        N = len(statev)
+        n = len(self.params)
+        lid = logger.logger_id
+        ex = ((lid,), (lid,), (lid,))
         cfac = np.zeros(2)
         sig, cfac = visco.viscorelax(dtime, time, temp, dtemp, self.params,
-                                     F.reshape(3,3), statev, sig, *comm)
+                                     F.reshape(3,3), statev, sig,
+                                     logmes, logwrn, bombed, n, N, *ex)
         return sig, cfac, statev

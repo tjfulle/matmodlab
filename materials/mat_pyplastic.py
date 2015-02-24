@@ -2,8 +2,7 @@ import numpy as np
 from core.runtime import opts
 from core.material import MaterialModel
 from utils.data_containers import Parameters
-from utils.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6
-from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B, HARD_MOD
+from utils.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6, VOIGHT
 
 
 class PyPlastic(MaterialModel):
@@ -19,16 +18,16 @@ class PyPlastic(MaterialModel):
                            "A4"]   # Pressure dependence term.
                                    #   A4 = -d(sqrt(J2)) / d(I1)
                                    #         always positive
-        self.prop_names = [EC_BULK, EC_SHEAR, DP_A, DP_B]
+        self.prop_names = ["K", "G", "DPA", "DPB"]
 
     def mimicking(self, mat_mimic):
         # mat_mimic is a material instance of the material model to mimic
         iparray = np.zeros(len(self.param_names))
-        iparray[0] = mat_mimic.completions[EC_BULK] or 0.
-        iparray[1] = mat_mimic.completions[EC_SHEAR] or 0.
-        iparray[2] = mat_mimic.completions[DP_A] or 1.E+99
-        iparray[3] = mat_mimic.completions[DP_B] or 0.
-        if mat_mimic.completions[HARD_MOD]:
+        iparray[0] = mat_mimic.completions["K"] or 0.
+        iparray[1] = mat_mimic.completions["G"] or 0.
+        iparray[2] = mat_mimic.completions["DPA"] or 1.E+99
+        iparray[3] = mat_mimic.completions["DPB"] or 0.
+        if mat_mimic.completions["HARD_MOD"]:
             self.logger.warn("model {0} cannot mimic {1} with "
                              "hardening".format(self.name, mat_mimic.name))
         return iparray
@@ -111,7 +110,7 @@ class PyPlastic(MaterialModel):
         ep = xtra[idx('EP_XX'):idx('EP_YZ')+1]
 
         # Compute the trial stress and invariants
-        stress = stress + self.dot_with_elastic_stiffness(d * dtime)
+        stress = stress + self.dot_with_elastic_stiffness(d / VOIGHT * dtime)
         i1 = self.i1(stress)
         rootj2 = self.rootj2(stress)
         if rootj2 - (A1 - A4 * i1) <= 0.0:

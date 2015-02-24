@@ -6,7 +6,7 @@ from distutils.spawn import find_executable as which
 
 
 # ------------------------------------------------ PROJECT WIDE CONSTANTS --- #
-__version__ = (2, 0, 0)
+VERSION = (2, 1, 0)
 
 PLATFORM = sys.platform
 PYEXE = os.path.realpath(sys.executable)
@@ -61,4 +61,4 @@ SPLASH = """\
            M           M    M           M    LLLLLLLLL
                      Material Model Laboratory v {0}
 
-""".format(".".join("{0}".format(i) for i in __version__))
+""".format(".".join("{0}".format(i) for i in VERSION))

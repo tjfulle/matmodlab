@@ -1,5 +1,6 @@
 import numpy as np
 from core.material import MaterialModel
+from utils.constants import VOIGHT
 
 class TransIsoElas(MaterialModel):
     name = "transisoelas"
@@ -62,6 +63,7 @@ class TransIsoElas(MaterialModel):
         """
 
         # Handle strain-related tasks
+        d = d / VOIGHT
         eps = np.array(xtra) + d * dtime
         D = np.array([[eps[0], eps[3], eps[5]],
                       [eps[3], eps[1], eps[4]],

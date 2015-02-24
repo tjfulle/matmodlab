@@ -125,6 +125,8 @@ def main(argv=None):
     environment["PATH"] = envins("PATH", D)
     environment["DISPLAY"] = os.getenv("DISPLAY", ":0")
     environment["PYTHONPATH"] = envins("PYTHONPATH", ROOT_D)
+    if os.getenv("MATMODLABRC", "") is not "":
+        environment["MATMODLABRC"] = os.getenv("MATMODLABRC")
 
     proc = Popen(command.split(), env=environment)
     proc.wait()

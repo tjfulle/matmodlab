@@ -127,20 +127,23 @@ def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
     else:
         if not isinstance(variables, (list, tuple)):
             variables = [variables]
-        variables = [v.strip() for v in variables]
-        if "all" in [v.lower() for v in variables]:
+        variables = [v.strip().upper() for v in variables]
+        if "ALL" in variables:
             variables = ["ALL"]
 
     if not os.path.isfile(filepath):
         raise ExoDumpError("{0}: no such file".format(filepath))
 
     exof = ExodusIIReader(filepath)
-    return_time = True
+    return_time = "TIME" in variables or want_time
+    try:
+        variables.pop(variables.index("TIME"))
+    except (IndexError, ValueError):
+        pass
     glob_var_names = exof.glob_var_names
     elem_var_names = exof.elem_var_names
 
     if variables[0] != "ALL":
-        return_time = "time" in [x.lower() for x in variables] or want_time
         glob_var_names = expand_var_names(glob_var_names, variables)
         elem_var_names = expand_var_names(elem_var_names, variables)
         bad = [x for x in variables if x is not None]
@@ -149,12 +152,16 @@ def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
                                "{1}".format(", ".join(bad), filepath))
 
     # retrieve the data from the database
-    header = ["TIME"]
+    header = []
+    if return_time:
+        header.append("TIME")
     header.extend([H.upper() for H in glob_var_names])
     header.extend([H.upper() for H in elem_var_names])
     data = []
     for i in myrange(0, exof.num_time_steps, step):
-        row = [exof.get_time(i)]
+        row = []
+        if return_time:
+            row.append(exof.get_time(i))
         glob_vars_vals = exof.get_glob_vars(i, disp=1)
         for var in glob_var_names:
             try: row.append(glob_vars_vals[var])
@@ -167,10 +174,6 @@ def read_vars_from_exofile(filepath, variables=None, step=1, h=1,
 
     if len(header) != data.shape[1]:
         raise ExoDumpError("inconsistent data")
-
-    if not return_time:
-        data = data[:, 1:]
-        header = header[1:]
 
     if h:
         return header, data

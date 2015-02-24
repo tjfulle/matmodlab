@@ -2,9 +2,8 @@ import numpy as np
 
 from core.runtime import opts
 from core.material import MaterialModel
-from utils.constants import ROOT2, ROOT23
+from utils.constants import ROOT2, ROOT23, VOIGHT
 from utils.data_containers import Parameters
-from materials.completion import EC_BULK, EC_SHEAR, Y_TENSION, HARD_MOD, HARD_PARAM
 
 class VonMises(MaterialModel):
     name = "vonmises"
@@ -20,16 +19,16 @@ class VonMises(MaterialModel):
                                    #    0 < BETA < 1 for mixed hardening
                                    #    BETA = 1 for kinematic hardening
                                     ]
-        self.prop_names = [EC_BULK, EC_SHEAR, Y_TENSION, HARD_MOD, HARD_PARAM]
+        self.prop_names = ["K", "G", "YT", "HM", "HP"]
 
     def mimicking(self, mat_mimic):
         iparray = np.zeros(5)
-        iparray[0] = mat_mimic.completions[EC_BULK] or 0.
-        iparray[1] = mat_mimic.completions[EC_SHEAR] or 0.
-        iparray[2] = mat_mimic.completions[Y_TENSION] or 1.E+99
-        iparray[3] = mat_mimic.completions[HARD_MOD] or 0.
-        iparray[4] = mat_mimic.completions[HARD_PARAM] or 0.
-        if mat_mimic.completions[FRICTION_ANGLE]:
+        iparray[0] = mat_mimic.completions["K"] or 0.
+        iparray[1] = mat_mimic.completions["G"] or 0.
+        iparray[2] = mat_mimic.completions["YT"] or 1.E+99
+        iparray[3] = mat_mimic.completions["HM"] or 0.
+        iparray[4] = mat_mimic.completions["HP"] or 0.
+        if mat_mimic.completions["FRICTION_ANGLE"]:
             self.logger.warn("model {0} cannot mimic {1} with "
                 "pressure dependence".format(self.name, mat_mimic.name))
         return iparray
@@ -104,7 +103,7 @@ class VonMises(MaterialModel):
                        xtra[idx('BS_XY')], xtra[idx('BS_YZ')], xtra[idx('BS_XZ')]])
         yn = xtra[idx('Y')]
 
-        de = d * dtime
+        de = d / VOIGHT * dtime
 
         iso = de[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         dev = de - iso

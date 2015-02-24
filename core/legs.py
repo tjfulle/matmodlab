@@ -76,7 +76,6 @@ class LegRepository(OrderedDict):
                        rate_multiplier, step_multiplier, num_io_dumps, estar,
                        tstar, sstar, fstar, efstar, dstar, termination_time)
 
-
     @classmethod
     def from_continuum_path(cls, path, kappa, amplitude, ratfac, nfac, ndumps,
                             estar, tstar, sstar, fstar, efstar, dstar, tterm):

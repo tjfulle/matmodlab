@@ -3,6 +3,7 @@ module mmlabpack
   integer, parameter :: nsymm=6, ntens=9
   real(kind=8), parameter :: zero=0.e+00_8, half=5.e-01_8
   real(kind=8), parameter :: one=1.e+00_8, two=2.e+00_8, three=3.e+00_8
+  real(kind=8), parameter :: VOIGHT(6)=(/one,one,one,two,two,two/)
 
   interface expm
      module procedure expm_3x3, expm_6x1
@@ -47,14 +48,14 @@ contains
   function u2e(u, kappa)
     real(kind=8) :: u2e(6)
     real(kind=8), intent(in) :: u(3,3), kappa
-    real(kind=8) :: x(3,3)
+    real(kind=8) :: eps(3,3)
     u2e = zero
     if (kappa /= zero) then
-       x = one / kappa * (powm(u, kappa) - one)
+       eps = one / kappa * (powm(u, kappa) - one)
     else
-       x = logm(u)
+       eps = logm(u)
     end if
-    u2e = symarray(x)
+    u2e = symarray(eps) * VOIGHT
   end function u2e
 
   ! ------------------------------------------------------------------------- !
@@ -283,8 +284,8 @@ contains
     ! strain
     deps2d = zero
     i = eye(3)
-    eps = as3x3(e)
-    depsdt = as3x3(de)
+    eps = as3x3(e / VOIGHT)
+    depsdt = as3x3(de / VOIGHT)
     epsf = eps + depsdt * dt
 
     ! stretch and its rate
@@ -302,7 +303,7 @@ contains
     L = matmul(du, inv(u))
     d = half * (L + transpose(L))
 
-    deps2d = symarray(d)
+    deps2d = symarray(d) * VOIGHT
     return
 
   end function deps2d
@@ -443,7 +444,7 @@ contains
 
     ! convert arrays to matrices for upcoming operations
     f0 = transpose(reshape(farg, shape(f0)))
-    d = as3x3(darg)
+    d = as3x3(darg / VOIGHT)
     i = eye(3)
 
     ff = matmul(expm(d * dt), f0)
@@ -457,7 +458,7 @@ contains
        stop "negative Jacobian encountered"
     end if
     f = reshape(transpose(ff), shape(f))
-    e = symarray(eps)
+    e = symarray(eps) * VOIGHT
     return
   end subroutine update_deformation
 
@@ -483,7 +484,7 @@ contains
     if (det(f) <= zero) then
        stop "negative Jacobian encountered"
     end if
-    e = symarray(eps)
+    e = symarray(eps) * VOIGHT
     return
   end subroutine update_strain
 

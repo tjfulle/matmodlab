@@ -14,17 +14,19 @@ path = """
 
 @matmodlab
 def runner():
+
+    # setup the simulation
+    mps = MaterialPointSimulator("elastic-unistress")
+
     # set up the driver
-    driver = Driver("Continuum", path, kappa=0., tstar=1., sstar=-1e-6,
-                    amplitude=1., step_multiplier=1000, rate_multiplier=1.)
+    mps.Driver("Continuum", path, kappa=0., tstar=1., sstar=-1e-6,
+               amplitude=1., step_multiplier=1000, rate_multiplier=1.)
 
     # set up the material
     parameters = {"K": K, "G": G}
-    material = Material("elastic", parameters)
+    mps.Material("elastic", parameters)
 
-    runid = "elastic-unistress"
-    mps = MaterialPointSimulator(runid, driver, material)
-
+    # run the simulation
     mps.run()
     mps.dump(format="ascii", variables=["STRESS", "STRAIN"])
 

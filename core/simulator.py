@@ -6,17 +6,16 @@ import numpy as np
 from core.runtime import opts
 from core.logger import Logger
 from utils.exomgr import ExodusII
-from core.driver import PathDriver
+from core.driver import PathDriver, Driver
 from core.product import MAT_LIB_DIRS
-from core.material import MaterialModel
+from core.material import MaterialModel, Material
 from utils.errors import MatModLabError
 from utils.data_containers import DataContainer
 from utils.variable import Variable, VAR_SCALAR
 from utils.constants import DEFAULT_TEMP
 
 class MaterialPointSimulator(object):
-    def __init__(self, runid, driver=None, material=None,
-                 termination_time=None, verbosity=1, d=None, logger=None):
+    def __init__(self, runid, termination_time=None, verbosity=1, d=None):
         """Initialize the MaterialPointSimulator object
 
         """
@@ -25,19 +24,15 @@ class MaterialPointSimulator(object):
         self.termination_time = termination_time
         self.bp = None
 
+        self._material = None
+        self._driver = None
+
         # setup IO
         opts.simulation_dir = d or os.getcwd()
 	self.title = "matmodlab single element simulation"
-        if logger is None:
-            logfile = os.path.join(opts.simulation_dir, self.runid + ".log")
-            logger = Logger(runid, filename=logfile, verbosity=verbosity)
+        logfile = os.path.join(opts.simulation_dir, self.runid + ".log")
+        logger = Logger(runid, filename=logfile, verbosity=verbosity)
         self.logger = logger
-
-        # assignment must come after logger assignment above
-        if driver is not None:
-            self.driver = driver
-        if material is not None:
-            self.material = material
 
     def register_variable(self, var_name, var_type):
         self._vars.append(Variable(var_name, var_type))
@@ -52,37 +47,52 @@ class MaterialPointSimulator(object):
 
     @property
     def driver(self):
-        try:
-            return self._driver
-        except AttributeError:
-            return
+        return self._driver
 
     @driver.setter
-    def driver(self, driver):
-        if not isinstance(driver, PathDriver):
-            raise MatModLabError("driver must be instance of Driver")
-        self._driver = driver
-        self._driver.logger = self.logger
+    def driver(self, value):
+        if not isinstance(value, PathDriver):
+            raise MatModLabError("material must be an instance of PathDriver")
+        self._driver = value
 
-    def assign_driver(self, driver):
-        self.driver = driver
+    def Driver(self, kind="Continuum", path=None, **kwargs):
+        """Method that delays the instantiation of the material model
+
+        """
+        def fun(**kwds):
+            kwargs["logger"] = self.logger
+            return Driver(kind, path, **kwargs)
+        self._driver = fun
+        self.set_dm()
+
+    def set_dm(self):
+        if self.material is not None and self.driver is not None:
+            try:
+                self.driver = self.driver()
+                self.material = self.material(initial_temp=self.driver.initial_temp)
+            except TypeError:
+                pass
 
     @property
     def material(self):
-        try:
-            return self._material
-        except AttributeError:
-            return
+        return self._material
 
     @material.setter
-    def material(self, material):
-        if not isinstance(material, MaterialModel):
-            raise MatModLabError("material must be instance of Material")
-        self._material = material
-        self._material.logger = self.logger
+    def material(self, value):
+        if not isinstance(value, MaterialModel):
+            raise MatModLabError("material must be an instance of MaterialModel")
+        self._material = value
 
-    def assign_material(self, material):
-        self.material = material
+    def Material(self, model, parameters, **kwargs):
+        """Method that delays the instantiation of the material model
+
+        """
+        def fun(**kwds):
+            kwargs["logger"] = self.logger
+            kwargs.update(**kwds)
+            return Material(model, parameters, **kwargs)
+        self._material = fun
+        self.set_dm()
 
     @property
     def variables(self):
@@ -113,8 +123,16 @@ Material: {3}
         """Last items to set up before running
 
         """
-        assert self.driver, "driver not assigned"
-        assert self.material, "material not assigned"
+        # set up the driver and material
+        if not self.driver: raise MatModLabError("no driver assigned")
+        if not self.material: raise MatModLabError("no material assigned")
+        self.set_dm()
+
+        if abs(self.driver.initial_temp - self.material.initial_temp) > 1.e-12:
+            raise MatModLabError("driver initial temperature != "
+                                 "material initial temperature")
+
+        # Exodus database setup
         self.exo_db = ExodusII(self.runid, d=opts.simulation_dir)
         self.exo_file = self.exo_db.filepath
 
@@ -140,11 +158,6 @@ Material: {3}
                 self.elem_vars.extend(d.keys)
                 elem_data.append((d.name, d.keys, d.initial_value))
         self.elem_data = DataContainer(elem_data)
-
-        # synchronize temperatures
-        if abs(self.driver.initial_temp - self.material.initial_temp) > 1.e-12:
-            raise MatModLabError("inconsistent initial temperatures in "
-                                 "driver and material")
 
         # set up timing
         self.timing = {}
@@ -216,10 +229,10 @@ Material: {3}
         exodump(self.exo_file, step=step, ffmt=ffmt,
                 variables=variables, ofmt=format, time=time)
 
-    def extract_from_db(self, variables, step=1, t=0):
+    def extract_from_db(self, variables, step=1, t=0, h=0):
         from utils.exojac.exodump import read_vars_from_exofile
         data = read_vars_from_exofile(self.exo_file, variables=variables,
-                                      step=step, h=0, t=t)
+                                      step=step, h=h, t=t)
         return data
 
     def visualize_results(self, overlay=None):
@@ -244,7 +257,10 @@ Material: {3}
                 self.logger.error("break point variable {0} not a "
                                   "simulation variable".format(name))
         if self.logger.errors:
-            self.logger.raise_error("stopping due to previous errors")
+            raise MatModLabError("stopping due to previous errors")
+
+def cprint(string):
+    sys.stderr.write(string + "\n")
 
 class BreakPointError(Exception):
     def __init__(self, c):
@@ -256,9 +272,13 @@ class BreakPoint:
         self.mps = mps
         self.xit = xit
         self.condition, self.names = self.parse_condition(condition)
+        self.first = 1
 
     @staticmethod
     def parse_condition(condition):
+        """Parse the original condition given in the input file
+
+        """
         from StringIO import StringIO
         from tokenize import generate_tokens
         from token import NUMBER, OP, NAME, ENDMARKER
@@ -299,6 +319,9 @@ class BreakPoint:
         return condition, names
 
     def eval(self, time, glob_data, elem_data):
+        """Evaluate the break condition
+
+        """
         if not self.condition:
             return
         kwds = {"TIME": time}
@@ -338,12 +361,17 @@ SUMMARY OF ELEMENT DATA
     def ui(self, condition, time, glob_data, elem_data):
         self.summary = self.generate_summary(time, glob_data, elem_data)
 
-        print self.manpage(condition)
+        if self.first:
+            cprint(self.manpage(condition, time))
+            self.first = 0
+        else:
+            cprint("BREAK CONDITION {0} ({1}) "
+                   "MET AT TIME={2}".format(self._condition, condition, time))
+
         while 1:
             resp = raw_input("mml > ").lower().split()
 
             if not resp:
-                print self.manpage(condition)
                 continue
 
             if resp[0] == "c":
@@ -351,7 +379,7 @@ SUMMARY OF ELEMENT DATA
                 return
 
             if resp[0] == "h":
-                print self.manpage(condition)
+                cprint(self.manpage(condition, time))
                 continue
 
             if resp[0] == "s":
@@ -361,7 +389,7 @@ SUMMARY OF ELEMENT DATA
                 try:
                     name, value = resp[1:]
                 except ValueError:
-                    print "***error: must specify 'set name value'"
+                    cprint("***error: must specify 'set name value'")
                     continue
                 key = name.upper()
                 value = eval(value)
@@ -373,14 +401,14 @@ SUMMARY OF ELEMENT DATA
                     idx = self.mps.material.parameter_names.index(key)
                     self.mps.material.params[idx] = value
                 else:
-                    print "  {0}: not valid variable/parameter".format(item)
+                    cprint("  {0}: not valid variable/parameter".format(item))
                     continue
                 continue
 
             if resp[0] == "p":
                 toprint = resp[1:]
                 if not toprint:
-                    print self.summary
+                    cprint(self.summary)
                     continue
 
                 for item in toprint:
@@ -404,9 +432,9 @@ SUMMARY OF ELEMENT DATA
                         idx = self.mps.material.parameter_names.index(name)
                         value = self.mps.material.params[idx]
                     else:
-                        print "  {0}: not valid variable".format(item)
+                        cprint("  {0}: not valid variable".format(item))
                         continue
-                    print "  {0} = {1}".format(name, value)
+                    cprint("  {0} = {1}".format(name, value))
                 continue
 
             if resp[0] == "q":
@@ -415,12 +443,12 @@ SUMMARY OF ELEMENT DATA
                 sys.exit(0)
 
             else:
-                print "{0}: unrecognized command".format(" ".join(resp))
+                cprint("{0}: unrecognized command".format(" ".join(resp)))
 
-    def manpage(self, condition):
+    def manpage(self, condition, time):
         page = """
 
-BREAK CONDITION {0} ({1}) MET
+BREAK CONDITION {0} ({1}) MET AT TIME={2}
 
 SYNOPSIS OF COMMANDS
     c
@@ -453,5 +481,5 @@ EXAMPLES
       set K 100
       c
 
-    """.format(self._condition, condition)
+    """.format(self._condition, condition, time)
         return page

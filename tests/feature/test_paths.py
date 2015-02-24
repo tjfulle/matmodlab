@@ -20,12 +20,6 @@ class TestPathFunction(TestBase):
 
 @matmodlab
 def run_path_default(d=None, v=1):
-    runid = "path_default"
-    d = d or os.getcwd()
-    d = os.getcwd()
-    v = 1
-    logger = Logger(runid, verbosity=v)
-
     path = """
 0E+00 0 EEEEEE 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
 1E+00 100 EEEEEE 1E-01 0E+00 0E+00 0E+00 0E+00 0E+00
@@ -40,54 +34,47 @@ def run_path_default(d=None, v=1):
 1E+01 100 FFFFFFFFF 1E+00 0E+00 0E+00 0E+00 1E+00 0E+00 0E+00 0E+00 1E+00
 """
 
+    # set up the model
+    mps = MaterialPointSimulator("path_default")
+
     # set up the driver
-    driver = Driver("Continuum", path, kappa=0.0, amplitude=1.0,
-                    rate_multiplier=1.0, step_multiplier=1.0, num_io_dumps=20,
-                    estar=1.0, tstar=1.0, sstar=1.0, fstar=1.0, efstar=1.0,
-                    dstar=1.0, proportional=False, termination_time=None,
-                    logger=logger)
+    mps.Driver("Continuum", path, kappa=0.0, amplitude=1.0,
+               rate_multiplier=1.0, step_multiplier=1.0, num_io_dumps=20,
+               estar=1.0, tstar=1.0, sstar=1.0, fstar=1.0, efstar=1.0,
+               dstar=1.0, proportional=False, termination_time=None)
 
     # set up the material
     parameters = {"K":1.350E+11, "G":5.300E+10}
-    material = Material("elastic", parameters, logger=logger)
+    mps.Material("elastic", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    # run the model
     mps.run()
     return
 
 
 @matmodlab
 def run_path_table(d=None, v=1):
-    runid = "path_table"
-    d = d or os.getcwd()
-    d = os.getcwd()
-    v = 1
-    logger = Logger(runid, verbosity=v)
     path = """0E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
               1E+00 1E-01 0E+00 0E+00 0E+00 0E+00 0E+00
               2E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00"""
-    driver = Driver("Continuum", path, kappa=0.0, path_input="table",
-                    step_multiplier=10.0, cfmt="222222", cols=range(7),
-                    tfmt="time", logger=logger)
+    mps = MaterialPointSimulator("path_table")
+    mps.Driver("Continuum", path, kappa=0.0, path_input="table",
+               step_multiplier=10.0, cfmt="222222", cols=range(7),
+               tfmt="time")
     parameters = {"K":1.350E+11, "G":5.300E+10}
-    material = Material("elastic", parameters, logger=logger)
-    mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+    mps.Material("elastic", parameters)
     mps.run()
     return
 
 
 @matmodlab
 def run_path_func(d=None, v=1):
-    runid = "path_func"
-    d = d or os.getcwd()
-    d = os.getcwd()
-    v = 1
-    logger = Logger(runid, verbosity=v)
-
     path = """
     {0} 2:1.e-1 0 0
     """.format(2*pi)
+
+    # set up the model
+    mps = MaterialPointSimulator("path_func")
 
     a = np.array([[0., 2.], [1., 3.], [2., 4.]])
     f2 = Function(2, "analytic_expression", lambda t: np.sin(t))
@@ -95,17 +82,15 @@ def run_path_func(d=None, v=1):
     functions = [f2, f3]
 
     # set up the driver
-    driver = Driver("Continuum", path, path_input="function",
-                    num_steps=200, termination_time=1.8*pi,
-                    functions=functions, cfmt="222", logger=logger)
+    mps.Driver("Continuum", path, path_input="function",
+               num_steps=200, termination_time=1.8*pi,
+               functions=functions, cfmt="222")
 
     # set up the material
     parameters = {"material": "Test Material", "mat_db": F_MTL_PARAM_DB}
-    material = Material("elastic", parameters, logger=logger)
+    mps.Material("elastic", parameters)
 
-    # set up and run the model
-    mps = MaterialPointSimulator(runid, driver, material, d=d, logger=logger)
-
+    # run the model
     mps.run()
 
 if __name__ == "__main__":

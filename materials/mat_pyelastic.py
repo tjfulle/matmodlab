@@ -1,20 +1,20 @@
 import numpy as np
 from core.material import MaterialModel
-from materials.completion import EC_BULK, EC_SHEAR, Y_TENSION
+from utils.constants import VOIGHT
 
 class PyElastic(MaterialModel):
     name = "pyelastic"
 
     def __init__(self):
         self.param_names = ["K", "G"]
-        self.prop_names = [EC_BULK, EC_SHEAR]
+        self.prop_names = ["K", "G"]
 
     def mimicking(self, mat_mimic):
         # reset the initial parameter array to represent this material
         iparray = np.zeros(2)
-        iparray[0] = mat_mimic.completions[EC_BULK] or 0.
-        iparray[1] = mat_mimic.completions[EC_SHEAR] or 0.
-        if mat_mimic.completions[Y_TENSION]:
+        iparray[0] = mat_mimic.completions["K"] or 0.
+        iparray[1] = mat_mimic.completions["G"] or 0.
+        if mat_mimic.completions["YT"]:
             self.logger.warn("{0} cannot mimic a strength limit, only "
                              "an elastic response will occur".format(self.name))
         return iparray
@@ -71,7 +71,8 @@ class PyElastic(MaterialModel):
             Updated extra variables
 
         """
-        de = d * dtime
+        # strains are sent in using engineering shear strains, convert to tensor
+        de = d * dtime / VOIGHT
         iso = de[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         dev = de - iso
         K = self.params["K"]

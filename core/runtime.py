@@ -26,7 +26,7 @@ class RuntimeOptions(object):
 
         self.viz_on_completion = False
         self._switch = []
-        self.rebuild_mat_lib = False
+        self._mat_libs_built = []
 
         self._sim_dir = os.getcwd()
 
@@ -38,6 +38,16 @@ class RuntimeOptions(object):
             self.switch = cfgparse("switch", default=self._switch)
             self.nprocs = cfgparse("nprocs", default=self._nprocs)
             self.verbosity = cfgparse("verbosity", default=self._v)
+
+    @property
+    def rebuild_mat_lib(self):
+        return self._mat_libs_built
+
+    @rebuild_mat_lib.setter
+    def rebuild_mat_lib(self, value):
+        if value:
+            # this sets the truth value of rebuild_mat_lib to True
+            self._mat_libs_built.append(value)
 
     @property
     def warn(self):

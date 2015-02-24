@@ -162,7 +162,7 @@ def read_mml_evaldb(filepath):
 
     return sources, parameters, responses
 
-def read_mml_evaldb_nd(filepath):
+def read_mml_evaldb_nd(filepath, nonan=1):
     sources, parameters, responses = read_mml_evaldb(filepath)
     head = [x[0] for x in parameters[sources[0]]]
     resp = responses.get(sources[0])
@@ -178,11 +178,15 @@ def read_mml_evaldb_nd(filepath):
         line.extend([x[1] for x in r])
         data.append(line)
     data = np.array(data)
+    if nonan:
+        # remove nan's
+        rows = np.where(np.isnan(data))[0]
+        data = np.delete(data, rows, 0)
     return head, data, len(responses[sources[0]])
 
-def correlations(filepath):
-    title = "CORRELATIONS AMONG INPUT AND OUTPUT VARIABLES CREATED BY MMD"
-    head, data, nresp = read_mml_evaldb_nd(filepath)
+def correlations(filepath, nonan=1):
+    title = "CORRELATIONS AMONG INPUT AND OUTPUT VARIABLES CREATED BY MATMODLAB"
+    head, data, nresp = read_mml_evaldb_nd(filepath, nonan=nonan)
     H = " " * 13 + " ".join("{0:>12s}".format(x) for x in head)
     with open(os.path.splitext(filepath)[0] + ".corr", "w") as fobj:
         fobj.write("{0}\n".format(title))
@@ -197,15 +201,14 @@ def correlations(filepath):
             i += 1
     return
 
-
-def plot_correlations(filepath):
+def plot_correlations(filepath, nonan=1):
     try:
         import matplotlib.pyplot as plt
         from matplotlib.ticker import FormatStrFormatter
     except ImportError:
         print "unable to import matplotlib"
         return
-    head, data, nresp = read_mml_evaldb_nd(filepath)
+    head, data, nresp = read_mml_evaldb_nd(filepath, nonan=nonan)
 
     # create xy scatter plots
     y = data[:, -nresp]
@@ -223,7 +226,7 @@ def plot_correlations(filepath):
     if len(keys) == 1:
         axs = [axs]
 
-    ylabel = r"${0}$".format(head[-1])
+    ylabel = r"{0}".format(head[-1])
     axs[0].set_ylabel(ylabel)
     for i, key in enumerate(keys):
         x = data[:, i][sort]
@@ -231,7 +234,7 @@ def plot_correlations(filepath):
         m2, (m, b) = 0, np.polyfit(x, y, 1)
         axs[i].plot(x, y, "{0}.".format(colors[i]),
                     x, m2 * x * x + m * x + b, "-k")
-        axs[i].set_xlabel(r"${0}$".format(key))
+        axs[i].set_xlabel(r"{0}".format(key))
         plt.setp(axs[i].xaxis.get_majorticklabels(),
                  rotation=45, fontsize="small")
         continue

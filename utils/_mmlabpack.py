@@ -1,5 +1,6 @@
 import numpy
 import scipy.linalg
+from utils.constants import VOIGHT
 
 def epsilon(a):
     """Find the machine precision for a float of type 'a'"""
@@ -32,15 +33,15 @@ def u2e(u, kappa):
     Seth-Hill parameter kappa and return a 6x1 array"""
     u2e = numpy.zeros((3, 3))
     if kappa != 0:
-        x = 1.0 / kappa * (powm(u, kappa) - numpy.eye(3, 3))
+        eps = 1.0 / kappa * (powm(u, kappa) - numpy.eye(3, 3))
     else:
-        x = logm(u)
-    return symarray(x)
+        eps = logm(u)
+    return symarray(eps) * VOIGHT
 
 
 def symarray(a):
     """Convert a 3x3 matrix to a 6x1 array representing a symmetric matix."""
-    mat = (a + a.transpose()) / 2.0
+    mat = (a + a.T) / 2.0
     return numpy.array([mat[0, 0], mat[1, 1], mat[2, 2],
                         mat[0, 1], mat[1, 2], mat[0, 2]])
 
@@ -143,8 +144,8 @@ def deps2d(dt, k, e, de):
     """
 
     D = numpy.zeros((3,3))
-    eps = as3x3(e)
-    depsdt = as3x3(de)
+    eps = as3x3(e / VOIGHT)
+    depsdt = as3x3(de / VOIGHT)
     epsf = eps + depsdt * dt
 
     # stretch and its rate
@@ -158,9 +159,9 @@ def deps2d(dt, k, e, de):
     du = numpy.dot(numpy.dot(u, x), depsdt)
 
     L = numpy.dot(du, numpy.linalg.inv(u))
-    D = (L + L.transpose()) / 2.0
+    D = (L + L.T) / 2.0
 
-    return symarray(D)
+    return symarray(D) * VOIGHT
 
 
 def update_deformation(dt, k, farg, darg):
@@ -195,11 +196,10 @@ def update_deformation(dt, k, farg, darg):
     !
     ! where k is the Seth-Hill strain parameter.
     """
-
     f0 = farg.reshape((3, 3))
-    d = as3x3(darg)
+    d = as3x3(darg / VOIGHT)
     ff = numpy.dot(expm(d * dt), f0)
-    u = sqrtm(numpy.dot(ff.transpose(), ff))
+    u = sqrtm(numpy.dot(ff.T, ff))
     if k == 0:
         eps = logm(u)
     else:
@@ -209,7 +209,7 @@ def update_deformation(dt, k, farg, darg):
         raise Exception("negative jacobian encountered")
 
     f = asarray(ff, 9)
-    e = symarray(eps)
+    e = symarray(eps) * VOIGHT
 
     return f, e
 
@@ -223,7 +223,7 @@ def update_strain(k, farg):
     ! where k is the Seth-Hill strain parameter.
     """
     f = farg.reshape((3, 3))
-    u = sqrtm(numpy.dot(f.transpose(), f))
+    u = sqrtm(numpy.dot(f.T, f))
     if k == 0:
         eps = logm(u)
     else:
@@ -232,7 +232,7 @@ def update_strain(k, farg):
     if numpy.linalg.det(f) <= 0.0:
         raise Exception("negative jacobian encountered")
 
-    e = symarray(eps)
+    e = symarray(eps) * VOIGHT
 
     return e
 

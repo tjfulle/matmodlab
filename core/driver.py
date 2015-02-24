@@ -9,8 +9,7 @@ from utils.variable import Variable
 from utils.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
 from utils.errors import FileNotFoundError, MatModLabError
 from core.runtime import opts
-from utils.constants import NSYMM, NTENS, I9
-from materials.completion import EC_BULK
+from utils.constants import NSYMM, NTENS, I9, VOIGHT
 import utils.mmlabpack as mmlabpack
 from core.solvers import sig2d
 
@@ -177,10 +176,10 @@ class ContinuumDriver(PathDriver):
             nv = 0
             for i, cij in enumerate(c):
                 if control[i] == 1:                            # -- strain rate
-                    depsdt[i] = cij
+                    depsdt[i] = cij * VOIGHT[i]
 
                 elif control[i] == 2:                          # -- strain
-                    depsdt[i] = (cij - eps[i]) / delt
+                    depsdt[i] = (cij * VOIGHT[i] - eps[i]) / delt
 
                 elif control[i] == 3:                          # -- stress rate
                     sigdum[1, i] = sigdum[0, i] + cij * delt
@@ -256,7 +255,7 @@ class ContinuumDriver(PathDriver):
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)
-                                           + 2. * np.sum(eps[3:] ** 2)))
+                                           + .5 * np.sum(eps[3:] ** 2)))
                 epsv = np.sum(eps[:3])
 
                 pres = -np.sum(sig[:3]) / 3.
@@ -269,8 +268,9 @@ class ContinuumDriver(PathDriver):
                 glob_data.update(leg_num=leg_num, step_num=glob_step_num,
                                  time_step=dt)
 
-                elem_data.update(stress=sig, strain=eps, defgrad=f, symm_l=d,
-                                 eqstrain=eqeps, vstrain=epsv, dstress=dstress,
+                elem_data.update(stress=sig, strain=eps/VOIGHT, defgrad=f,
+                                 symm_l=d/VOIGHT, eqstrain=eqeps,
+                                 vstrain=epsv, dstress=dstress,
                                  smises=smises, xtra=xtra, temp=temp[2],
                                  pressure=pres)
 
@@ -286,7 +286,7 @@ class ContinuumDriver(PathDriver):
                     absmax = lambda a: np.max(np.abs(a))
                     sigerr = np.sqrt(np.sum((sig[v] - sigspec[2]) ** 2))
                     warned = True
-                    _tol = np.amax(np.abs(sig[v])) / material.completions[EC_BULK]
+                    _tol = np.amax(np.abs(sig[v])) / material.completions["K"]
                     _tol = max(_tol, 1e-4)
                     if sigerr > _tol:
                         self.logger.warn("leg: {0}, prescribed stress error: "

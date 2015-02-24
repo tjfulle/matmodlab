@@ -1,10 +1,11 @@
 import os
 import sys
 import time
-import subprocess
-import numpy as np
 import shutil
 import datetime
+import traceback
+import subprocess
+import numpy as np
 
 from runtime import opts
 from core.logger import Logger, ConsoleLogger
@@ -18,24 +19,20 @@ TOL = 1.E-06
 OPT_METHODS = ("simplex", "powell", "cobyla",)
 
 class Optimizer(object):
-    def __init__(self, func, xinit, runid, method="simplex", verbosity=1, d=None,
-                 maxiter=MAXITER, tolerance=TOL, descriptor=None, funcargs=[]):
+    def __init__(self, runid, func, xinit, method="simplex", verbosity=1, d=None,
+                 maxiter=MAXITER, tolerance=TOL, descriptors=None, funcargs=[]):
         opts.raise_e = True
         self.runid = runid
         self.func = func
 
-        if not isinstance(descriptor, (list, tuple)):
-            descriptor = [descriptor]
-        self.descriptor = descriptor
-        self.nresp = len(descriptor)
+        if not isinstance(descriptors, (list, tuple)):
+            descriptors = [descriptors]
+        self.descriptors = descriptors
+        self.nresp = len(descriptors)
 
         if not isinstance(funcargs, (list, tuple)):
             funcargs = [funcargs]
         self.funcargs = [x for x in funcargs]
-
-        # funcargs sent to every evaluation with first argument
-        # the evaluation directory
-        self.funcargs.append(None)
 
         # check method
         m = method.lower()
@@ -89,7 +86,7 @@ class Optimizer(object):
         # write summary to the log file
         str_pars = "\n".join("  {0}={1:.2g}".format(name, self.idata[i])
                              for (i, name) in enumerate(self.names))
-        resp = "\n".join("  {0}".format(it) for it in self.descriptor)
+        resp = "\n".join("  {0}".format(it) for it in self.descriptors)
         summary = """
 summary of optimization job input
 ------- -- ------------ --- -----
@@ -137,8 +134,8 @@ response descriptors:
                 continue
             cons = lcons + ucons
 
-        args = (self.func, self.funcargs, self.rootd, self.names,
-                self.descriptor, self.tabular, xfac)
+        args = (self.func, self.funcargs, self.rootd, self.runid, self.names,
+                self.descriptors, self.tabular, xfac)
 
         if self.method == "simplex":
             xopt = scipy.optimize.fmin(
@@ -211,7 +208,7 @@ def run_job(xcall, *args):
     """
     global IOPT
     logger = Logger("optimizer")
-    func, funcargs, rootd, xnames, desc, tabular, xfac = args
+    func, funcargs, rootd, runid, xnames, desc, tabular, xfac = args
 
     IOPT += 1
     evald = catd(rootd, IOPT)
@@ -219,8 +216,6 @@ def run_job(xcall, *args):
 
     cwd = os.getcwd()
     os.chdir(evald)
-
-    funcargs[-1] = evald
 
     # write the params.in for this run
     x = xcall * xfac
@@ -234,15 +229,14 @@ def run_job(xcall, *args):
         end="... ")
 
     try:
-        err = func(x, *funcargs)
+        err = func(x, xnames, evald, runid, *funcargs)
         logger.write("done (error={0:.4e})".format(err))
         stat = 0
-    except BaseException as e:
-        message = " ".join("{0}".format(_) for _ in e.args)
-        if hasattr(e, "filename") and type(e.filename) is str:
-            message = e.filename + ": " + message[1:]
-        logger.error("\nrun {0} failed with the following exception:\n"
-                     "   {1}".format(IOPT, message))
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        logger.error("\nRun {0} failed with the following "
+                     "exception:\n".format(IOPT))
+        traceback.print_exception(exc_type, exc_value, exc_traceback, file=logger)
         stat = 1
         err = np.nan
 

@@ -19,20 +19,18 @@ path = """
 1E+01 100 FFFFFFFFF 1E+00 0E+00 0E+00 0E+00 1E+00 0E+00 0E+00 0E+00 1E+00
 """
 
-# set up the model
+# the simulator
 mps = MaterialPointSimulator("path-cycle")
 
-# set up the driver
-driver = Driver("Continuum", path, kappa=0.0, amplitude=1.0,
-                rate_multiplier=1.0, step_multiplier=1.0, num_io_dumps=20,
-                estar=1.0, tstar=1.0, sstar=1.0, fstar=1.0, efstar=1.0,
-                dstar=1.0, proportional=False, termination_time=None)
+# its driver
+mps.Driver("Continuum", path, kappa=0.0, amplitude=1.0,
+           rate_multiplier=1.0, step_multiplier=1.0, num_io_dumps=20,
+           estar=1.0, tstar=1.0, sstar=1.0, fstar=1.0, efstar=1.0,
+           dstar=1.0, proportional=False, termination_time=None)
 
-# set up the material
+# and its material
 parameters = {"K": K, "G": G}
-material = Material("elastic", parameters)
+mps.Material("elastic", parameters)
 
-# set up and run the model
-mps.assign_driver(driver)
-mps.assign_material(material)
+# run the simulation
 mps.run()

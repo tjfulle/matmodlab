@@ -11,13 +11,10 @@ path = """
 
 @matmodlab
 def runner():
-    driver = Driver("Continuum", path, step_multiplier=100)
-
+    mps = MaterialPointSimulator("mooney-rivlin")
+    mps.Driver("Continuum", path, step_multiplier=100)
     parameters = {"C10": 72, "C01": 7.56, "NU": .49}
-    material = Material("mooney_rivlin", parameters)
-
-    runid = "mooney-rivlin"
-    mps = MaterialPointSimulator(runid, driver, material)
+    mps.Material("mooney_rivlin", parameters)
     mps.run()
 
 runner()

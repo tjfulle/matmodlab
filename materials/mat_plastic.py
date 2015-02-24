@@ -2,7 +2,7 @@ import os
 from core.product import MAT_D
 from core.material import MaterialModel
 from utils.errors import ModelNotImportedError
-from materials.completion import EC_BULK, EC_SHEAR, DP_A, DP_B
+from utils.constants import VOIGHT
 from core.logger import logmes, logwrn, bombed
 
 d = os.path.join(MAT_D, "src")
@@ -15,7 +15,7 @@ class Plastic(MaterialModel):
 
     def __init__(self):
         self.param_names = ["K", "G", "A1", "A4"]
-        self.prop_names = [EC_BULK, EC_SHEAR, DP_A, DP_B]
+        self.prop_names = ["K", "G", "DPA", "DPB"]
 
     def setup(self):
         """Set up the Plastic material
@@ -59,6 +59,7 @@ class Plastic(MaterialModel):
         """
         lid = self.logger.logger_id
         extra = ((lid,), (lid,), (lid,))
+        d = d / VOIGHT
         mat.plastic_update_state(dtime, self.params, d, stress,
                                  logmes, logwrn, bombed, *extra)
         return stress, xtra, None
