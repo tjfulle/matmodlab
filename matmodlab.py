@@ -53,7 +53,7 @@ randreal = genrand()
 
 def requires(major, minor, micro=None):
     M, m, _m = VERSION
-    if M != major or m != minor:
+    if M != major and m != minor:
         raise SystemExit("input requires matmodlab version "
                          "{0}.{1}".format(major, minor))
 
