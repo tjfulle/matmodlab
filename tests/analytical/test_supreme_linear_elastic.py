@@ -10,6 +10,13 @@ import numpy as np
 RUNID = "supreme_linear_elastic"
 my_dir = get_my_directory()
 
+# This test is 'supreme' because it compares the following values
+# against the analytical solution:
+#
+#   * Stress
+#   * Strain
+#   * Deformation gradient
+#   * Symmetric part of the velocity gradient
 #
 # This is meant to be a static test for linear elasticity.
 # It's primary purpose is to be THE benchmark for linear
@@ -100,9 +107,10 @@ def get_D_E_F_SIG(dadt, a, LAM, G, loc):
     return D, E, F, SIG
 
 
-def generate_solution(solfile):
+def generate_solution(solfile, N):
+    # solfile = filename to write analytical solution to
+    # N = number of steps per leg
     a = 0.1                 # total strain increment for each leg
-    N = 50                  # number of steps per leg
     LAM = 1.0e9             # Lame modulus
     G = 1.0e9               # Shear modulus
     T = [0.0]               # time
@@ -215,8 +223,9 @@ def runner(d=None, runid=None, test=0):
 
     mps = MaterialPointSimulator(runid)
 
-    path, LAM, G = generate_solution(solfile)
-    mps.Driver("Continuum", path, step_multiplier=20)
+    N = 25
+    path, LAM, G = generate_solution(solfile, N)
+    mps.Driver("Continuum", path, step_multiplier=N)
 
     # set up the material
     K = LAM + 2.0 * G / 3.0
@@ -237,30 +246,26 @@ def runner(d=None, runid=None, test=0):
     mps.logger.write("  DIFFTOL = {0:.5e}".format(myDIFFTOL))
     mps.logger.write("  FAILTOL = {0:.5e}".format(myFAILTOL))
 
-    # check output with analytic
-    VARIABLES = ["STRAIN_XX", "STRAIN_YY", "STRAIN_ZZ",
-                 "STRAIN_XY", "STRAIN_XZ", "STRAIN_YZ",
-                 "STRESS_XX", "STRESS_YY", "STRESS_ZZ",
-                 "STRESS_XY", "STRESS_XZ", "STRESS_YZ",
-                 "DEFGRAD_XX", "DEFGRAD_XY", "DEFGRAD_XZ",
-                 "DEFGRAD_YX", "DEFGRAD_YY", "DEFGRAD_YZ",
-                 "DEFGRAD_ZX", "DEFGRAD_ZY", "DEFGRAD_ZZ",
-                 "SYMM_L_XX", "SYMM_L_YY", "SYMM_L_ZZ",
-                 "SYMM_L_XY", "SYMM_L_XZ", "SYMM_L_YZ",
-                ]
-
+    # check output with analytic (all shared variables)
     analytic_headers, analytic_response = load_data(solfile)
-    simulate_response = mps.extract_from_db(VARIABLES, t=1)
+    simulate_headers, simulate_response = mps.extract_from_db(None, t=1, h=1)
 
-    T = analytic_response[:, 0]
-    t = simulate_response[:, 0]
+    tdxa = analytic_headers.index('TIME') # time index for analytic solution
+    tdxs = analytic_headers.index('TIME') # time index for simulate solution
+    T = analytic_response[:, tdxa]
+    t = simulate_response[:, tdxs]
 
     stat = PASSED
-    for col in range(1, 1 + len(VARIABLES)):
-        X = analytic_response[:, col]
-        x = simulate_response[:, col]
+    for varname in simulate_headers:
+        if varname == "TIME" or varname not in analytic_headers:
+            continue
+        idxa = analytic_headers.index(varname) # variable index for analytic solution
+        idxs = simulate_headers.index(varname) # variable index for simulate solution
+
+        X = analytic_response[:, idxa]
+        x = simulate_response[:, idxs]
         nrms = rms_error(T, X, t, x, disp=0)
-        mps.logger.write("  {0:s} NRMS = {1:.5e}".format(VARIABLES[col-1], nrms))
+        mps.logger.write("  {0:s} NRMS = {1:.5e}".format(varname, nrms))
         if nrms < myDIFFTOL:
             mps.logger.write("    PASS")
             continue

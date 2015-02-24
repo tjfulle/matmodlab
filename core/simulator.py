@@ -229,10 +229,10 @@ Material: {3}
         exodump(self.exo_file, step=step, ffmt=ffmt,
                 variables=variables, ofmt=format, time=time)
 
-    def extract_from_db(self, variables, step=1, t=0):
+    def extract_from_db(self, variables, step=1, t=0, h=0):
         from utils.exojac.exodump import read_vars_from_exofile
         data = read_vars_from_exofile(self.exo_file, variables=variables,
-                                      step=step, h=0, t=t)
+                                      step=step, h=h, t=t)
         return data
 
     def visualize_results(self, overlay=None):
