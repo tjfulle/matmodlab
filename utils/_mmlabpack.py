@@ -196,7 +196,6 @@ def update_deformation(dt, k, farg, darg):
     !
     ! where k is the Seth-Hill strain parameter.
     """
-
     f0 = farg.reshape((3, 3))
     d = as3x3(darg / VOIGHT)
     ff = numpy.dot(expm(d * dt), f0)

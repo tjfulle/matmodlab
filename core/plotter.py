@@ -97,7 +97,7 @@ def main(argv=None):
         if not os.path.isfile(filename):
             # check for known extensions
             filename = filename.rstrip(".")
-            for ext in (".exo", ".e", ".base_exo", ".dat", ".out"):
+            for ext in (".exo", ".e", ".base_exo", ".base_dat", ".dat", ".out"):
                 if os.path.isfile(filename + ext):
                     filename = filename + ext
                     break
@@ -112,7 +112,7 @@ def main(argv=None):
 
 class _SingleFileData:
     def __init__(self, filepath, legend_info=None):
-        self.name = os.path.splitext(os.path.basename(filepath))[0]
+        self.name = os.path.basename(filepath)
         self.source = filepath
         self.legend_info = legend_info
         names, self.data = loadcontents(filepath)
@@ -168,6 +168,7 @@ class FileData:
 
     def add(self, filename):
         self.data.append(_SingleFileData(filename))
+        self.files.append(filename)
 
     def remove(self, filename):
         for (i, d) in enumerate(self.data):
@@ -177,6 +178,7 @@ class FileData:
             i = None
         if i is not None:
             self.data.pop(i)
+            self.files.pop(i)
 
     @property
     def plotable_vars(self):
@@ -374,7 +376,7 @@ class Plot2D(HasTraits):
             fnam = pd.name
             header = pd.plotable_vars
             if fnam in fnams:
-                fnam += "-{0}".format(len(fnams))
+                fnam += " {0}".format(len(fnams))
             fnams.append(fnam)
             get_color(reset=1)
             for i, idx in enumerate(indices):
@@ -390,7 +392,7 @@ class Plot2D(HasTraits):
 
                 legend = pd.legend(yname)
                 if self.nfiles - 1 or self.overlay_file_data:
-                    entry = "({0}) {1}".format(fnam, legend)
+                    entry = "{1} ({0})".format(fnam, legend)
                 else:
                     entry = legend
 

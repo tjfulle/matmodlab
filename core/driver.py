@@ -179,7 +179,7 @@ class ContinuumDriver(PathDriver):
                     depsdt[i] = cij * VOIGHT[i]
 
                 elif control[i] == 2:                          # -- strain
-                    depsdt[i] = (cij - eps[i]) / delt * VOIGHT[i]
+                    depsdt[i] = (cij * VOIGHT[i] - eps[i]) / delt
 
                 elif control[i] == 3:                          # -- stress rate
                     sigdum[1, i] = sigdum[0, i] + cij * delt
