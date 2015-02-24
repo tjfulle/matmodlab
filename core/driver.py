@@ -98,6 +98,42 @@ class ContinuumDriver(PathDriver):
     def num_steps(self):
         return int(sum([x.num_steps for x in self.legs.values()]))
 
+    def tostr(self, obj="mps"):
+        p = "\n          ".join(self.path_tostr().split("\n"))
+        string = "path = '''{0}'''\n"
+        string += "{1}.Driver('{2}', path=path, path_input='default',\n"
+        string += "           kappa={3}, proportional={4})\n"
+        return string.format(p, obj, self.kind, self.kappa, self.proportional)
+
+    def path_tostr(self):
+        path = []
+        N = max([len(str(l.num_steps)) for l in self.legs.values()])
+
+        for (ileg, leg) in self.legs.items():
+
+            sleg = ["{0}".format(leg.termination_time),
+                    "{0:>{1}d}".format(leg.num_steps, N)]
+
+            c = [i for i in leg.control]
+            cij = [_ for _ in leg.components]
+
+            c.append(7)
+            cij.append(leg.temp)
+
+            c.extend([6] * len(leg.efield))
+            cij.extend(leg.efield)
+
+            if leg.user_field:
+                c.extend([9] * len(leg.user_field))
+                cij.extend(leg.user_field)
+
+            sleg.append("".join("{0}".format(_) for _ in c))
+            sleg.append(" ".join("{0:g}".format(_) for _ in cij))
+
+            path.append(" ".join("{0}".format(_) for _ in sleg))
+
+        return "\n".join(path)
+
     def run(self, glob_data, elem_data, material, out_db, bp,
             termination_time=None):
         """Process the deformation path

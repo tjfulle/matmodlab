@@ -116,7 +116,9 @@ class MaterialModel(object):
     def _parse_params(self, parameters):
 
         if not isinstance(parameters, dict):
-            raise MatModLabError("expected parameters to be a dict")
+            if len(parameters) != len(self.parameter_names):
+                raise MatModLabError("expected parameters to be a dict")
+            parameters = dict(zip(self.parameter_names, parameters))
 
         nprops = len(self.parameter_names)
         params = np.zeros(nprops)
@@ -404,6 +406,17 @@ class MaterialModel(object):
     def update_state(self, *args, **kwargs):
         raise NotImplementedError
 
+    def tostr(self, obj="mps"):
+        p = {}
+        for (i, name) in enumerate(self.parameter_names):
+            v = self.initial_parameters[i]
+            if abs(v) <= 1.e-12:
+                continue
+            p[name] = v
+        string = "parameters = {0}\n"
+        string += "{1}.Material('{2}', parameters)\n"
+        return string.format(p, obj, self.name)
+
     def compute_updated_state(self, time, dtime, temp, dtemp, kappa, F0, F,
             stran, d, elec_field, user_field, stress, statev,
             disp=0, v=None, last=False):
@@ -539,6 +552,9 @@ class AbaqusMaterial(MaterialModel):
         except TypeError:
             sdv_keys = xkeys(depvar)
 
+        # additional set up
+        self.model_setup(**kwargs)
+
         # call model with zero state to get initial state variables
         statev = np.zeros(depvar)
         time, dtime = 0., 1.
@@ -568,9 +584,6 @@ class AbaqusMaterial(MaterialModel):
         # set initial values of state variables
         self.initial_state = xinit
         self.register_xtra_variables(sdv_keys, xinit)
-
-        # additional set up
-        self.model_setup(**kwargs)
 
     def model_setup(self, *args, **kwargs):
         """Setup for specific model.  Only used by uanisohyper_inv"""

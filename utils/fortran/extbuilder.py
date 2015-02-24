@@ -44,8 +44,7 @@ class FortranExtBuilder(object):
         self.fc = fc
         FORT_COMPILER = fc
         self.name = name
-        self.quiet = verbosity < 2
-        self.silent = verbosity < 1
+        self.chatty = verbosity > 4
         self.exts_built = []
         self.exts_failed = []
         self.exts_to_build = []
@@ -114,10 +113,12 @@ class FortranExtBuilder(object):
 
         cwd = os.getcwd()
         os.chdir(PKG_D)
+
         # change sys.argv for distutils
         hold = [x for x in sys.argv]
+
         fexec = "--f77exec={0} --f90exec={0}".format(self.fc)
-        sys.argv = "./setup.py config_fc {0}".format(fexec).split()
+        argv = "./setup.py config_fc {0}".format(fexec).split()
         no_unused = ["-Wno-unused-dummy-argument"]
         if FFLAGS:
             fflags = FFLAGS
@@ -126,17 +127,21 @@ class FortranExtBuilder(object):
             fflags = no_unused
         fflags = " ".join(fflags)
         fflags = "--f77flags='{0}' --f90flags='{0}'".format(fflags).split()
-        sys.argv.extend(fflags)
-        sys.argv.extend("build_ext -i".split())
+        argv.extend(fflags)
+        argv.extend("build_ext -i".split())
 
         # build the extension modules with distutils setup
         logger.write("building extension module[s]", end="... ")
-        f = join(PKG_D, "build.log") if self.quiet else sys.stdout
-        with stdout_redirected(to=f), merged_stderr_stdout():
-            setup(**config.todict())
-        logger.write("done")
+        f = join(PKG_D, "build.log") if not self.chatty else sys.stdout
+        try:
+            sys.argv = [x for x in argv]
+            with stdout_redirected(to=f), merged_stderr_stdout():
+                setup(**config.todict())
+            logger.write("done")
+        except:
+            logger.error("failed")
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-        sys.argv = hold
+        sys.argv = [x for x in hold]
 
         # move files
         logger.write("Staging extension module[s]", end="... ")

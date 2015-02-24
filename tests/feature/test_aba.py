@@ -72,6 +72,6 @@ def run_uanisohyper_inv(*args, **kwargs):
     mps.run()
 
 if __name__ == "__main__":
-    #    run_umat_neohooke()
-    #     run_uhyper_neohooke()
+    run_umat_neohooke()
+    run_uhyper_neohooke()
     run_uanisohyper_inv()
