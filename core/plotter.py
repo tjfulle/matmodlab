@@ -120,7 +120,10 @@ class _SingleFileData:
         # data contains columns of data
         self.pv = dict([(s.upper(), i) for (i, s) in enumerate(names)])
 
-    def __call__(self, name, time=None):
+    # def __call__(self, name, time=None):
+    #     return self.get(name, time=time)
+
+    def get(self, name, time=None):
         j = self.pv.get(name.upper())
         if j is None:
             return
@@ -233,38 +236,31 @@ class Plot2D(HasTraits):
         self.show_legend = True
         pass
 
-    def set_scale(self, scale, real=1., i=None, string=None):
-        if string is not None:
-            for (i, v) in enumerate(self.plotable_vars):
-                data = self.file_data[0](v)
-                if string[:4] == "norm":
-                    _max = np.amax(np.abs(data))
-                    _max = 1. if _max < EPSILON else _max
-                    a = 1. / _max
-                elif string == "max":
-                    a = np.amax(data)
-                elif string == "min":
-                    a = np.amin(data)
-                else:
-                    try:
-                        a = float(eval(string, GDICT, LDICT))
-                    except NameError:
-                        a = scale[i]
-                scale[i] = a
-
-        elif i is None:
-            scale = [real for _ in len(self.plotable_vars)]
-
-        else:
-            scale[i] = real
+    def set_scale(self, scale, item):
+        for (i, v) in enumerate(self.plotable_vars):
+            data = self.file_data[0].get(v)
+            if item[:4] == "norm":
+                _max = np.amax(np.abs(data))
+                _max = 1. if _max < EPSILON else _max
+                a = 1. / _max
+            elif item == "max":
+                a = np.amax(data)
+            elif item == "min":
+                a = np.amin(data)
+            else:
+                try:
+                    a = float(eval(item, GDICT, LDICT))
+                except NameError:
+                    a = scale[i]
+            scale[i] = a
 
         return
 
-    def set_xscale(self, real=1., i=None, string=None):
-        self.set_scale(self.xscale, real=real, i=i, string=string)
+    def set_xscale(self, item):
+        self.set_scale(self.xscale, item)
 
-    def set_yscale(self, real=1., i=None, string=None):
-        self.set_scale(self.yscale, real=real, i=i, string=string)
+    def set_yscale(self, item):
+        self.set_scale(self.yscale, item)
 
     @on_trait_change('Time')
     def change_data_markers(self):
@@ -276,8 +272,8 @@ class Plot2D(HasTraits):
             for (i, y_idx) in enumerate(self.plot_indices):
                 yname = self.plotable_vars[y_idx]
                 self.time_data_labels[(pd.name, d)][i].data_point = (
-                    pd(xname, self.Time) * self.xscale[self.x_idx],
-                    pd(yname, self.Time) * self.yscale[y_idx])
+                    pd.get(xname, self.Time) * self.xscale[self.x_idx],
+                    pd.get(yname, self.Time) * self.yscale[y_idx])
 
         if self.overlay_file_data:
             # plot the overlay data
@@ -290,8 +286,8 @@ class Plot2D(HasTraits):
                 for (i, y_idx) in enumerate(self.plot_indices):
                     yname = self.plotable_vars[y_idx]
                     self.time_data_labels[(od.name, d)][i].data_point = (
-                        od(xname, self.Time) * self.xscale[self.x_idx],
-                        od(yname, self.Time) * self.yscale[y_idx])
+                        od.get(xname, self.Time) * self.xscale[self.x_idx],
+                        od.get(yname, self.Time) * self.yscale[y_idx])
 
         self.container.invalidate_and_redraw()
         return
@@ -322,7 +318,7 @@ class Plot2D(HasTraits):
     def create_data_label(self, xp, yp, d, di, name):
         nform = "[%(x).5g, %(y).5g]"
         if self.nfiles - 1 or self.overlay_file_data:
-            lform = "({0}) {1}".format(name, nform)
+            lform = "{1} ({0})".format(name, nform)
         else:
             lform = nform
         label = DataLabel(component=self.container, data_point=(xp, yp),
@@ -337,7 +333,7 @@ class Plot2D(HasTraits):
         self.container.overlays.append(label)
         return
 
-    def create_plot(self, x, y, c, ls, yvar_name, lw=2.0):
+    def create_plot(self, x, y, c, ls, yvar_name, lw=2.5):
         self.container.data.set_data("x " + yvar_name, x)
         self.container.data.set_data("y " + yvar_name, y)
         self.container.plot(
@@ -350,89 +346,91 @@ class Plot2D(HasTraits):
     def change_plot(self, indices):
         self.plot_indices = indices
         self.container = self.create_container()
-        self.high_time = float(max(self.file_data[0]("TIME")))
-        self.low_time = float(min(self.file_data[0]("TIME")))
+        self.high_time = float(max(self.file_data[0].get("TIME")))
+        self.low_time = float(min(self.file_data[0].get("TIME")))
         self.container.data = ArrayPlotData()
         self.time_data_labels = {}
         if len(indices) == 0:
             return
         self._refresh = 1
 
+        xname = self.plotable_vars[self.x_idx]
+
         # loop through plot data and plot it
-        overlays_plotted = False
         fnams = []
         for (d, pd) in enumerate(self.file_data):
 
-            xname = self.plotable_vars[self.x_idx]
             self.y_idx = indices[0]
 
             self.time_data_labels[(pd.name, d)] = []
 
             # indices is an integer list containing the columns of the data to
             # be plotted. The indices are wrt to the FIRST file in parsed, not
-            # necessarily the same for every file. Here, we loop through the
-            # indices, determine the name from the first file's header and
-            # find the x and y index in the file of interest
+            # necessarily the same for every file.
             fnam = pd.name
-            header = pd.plotable_vars
             if fnam in fnams:
-                fnam += " {0}".format(len(fnams))
-            fnams.append(fnam)
+                fnam += "-{0}".format(len(fnams))
+            if fnam not in fnams:
+                fnams.append(fnam)
             get_color(reset=1)
+
             for i, idx in enumerate(indices):
 
                 yname = self.plotable_vars[idx]
 
                 # get the data
-                if pd(xname) is None or pd(yname) is None:
+                if pd.get(xname) is None or pd.get(yname) is None:
                     continue
+                x = pd.get(xname) * self.xscale[self.x_idx]
+                y = pd.get(yname) * self.yscale[idx]
 
-                x = pd(xname) * self.xscale[self.x_idx]
-                y = pd(yname) * self.yscale[idx]
-
+                # legend entry
                 legend = pd.legend(yname)
                 if self.nfiles - 1 or self.overlay_file_data:
                     entry = "{1} ({0})".format(fnam, legend)
                 else:
                     entry = legend
-
                 color = get_color(rand=self.rand)
                 ls = LS[(d + i) % len(LS)]
                 self.create_plot(x, y, color, ls, entry)
 
                 # create point marker
-                xp = pd(xname, self.Time) * self.xscale[self.x_idx]
-                yp = pd(yname, self.Time) * self.yscale[idx]
+                xp = pd.get(xname, self.Time) * self.xscale[self.x_idx]
+                yp = pd.get(yname, self.Time) * self.yscale[idx]
                 yp_idx = pd.plotable_vars.index(yname)
                 self.create_data_label(xp, yp, d, yp_idx, pd.name)
 
-                if not overlays_plotted and self.overlay_file_data:
-                    # plot the overlay data
-                    overlays_plotted = True
-                    ii = i + 1
-                    for (dd, od) in enumerate(self.overlay_file_data):
-                        # get the x and y indeces corresponding to what is
-                        # being plotted
-                        xo = od(xname)
-                        yo = od(yname)
-                        if xo is None or yo is None:
-                            continue
+        if self.overlay_file_data:
+            # plot the overlay data
+            for (dd, od) in enumerate(self.overlay_file_data):
+                for i, idx in enumerate(indices):
+                    yname = self.plotable_vars[idx]
 
-                        # legend entry
-                        entry = "({0}) {1}".format(od.name, yname)
-                        color = get_color(rand=self.rand)
-                        ls = "dot" #LS[(d + ii) % len(LS)]
-                        self.create_plot(xo, yo, color, ls, entry, lw=1.0)
-
-                        # create point marker
-                        self.time_data_labels[(od.name, dd)] = []
-                        xp = od(xname, self.Time) * self.xscale[self.x_idx]
-                        yp = od(yname, self.Time) * self.yscale[idx]
-                        yp_idx = od.plotable_vars.index(yname)
-                        self.create_data_label(xp, yp, dd, yp_idx, od.name)
-
-                        ii += 1
+                    # get the x and y indices corresponding to what is
+                    # being plotted
+                    xo = od.get(xname)
+                    yo = od.get(yname)
+                    if xo is None or yo is None:
                         continue
+
+                    # legend entry
+                    fnam = od.name
+                    if fnam in fnams:
+                        fnam += "-{0}".format(len(fnams))
+                    if fnam not in fnams:
+                        fnams.append(fnam)
+                    entry = "{1} ({0})".format(fnam, yname)
+                    color = get_color(rand=self.rand)
+                    self.create_plot(xo, yo, color, "dot", entry, lw=1.0)
+
+                    # create point marker
+                    self.time_data_labels[(od.name, dd)] = []
+                    xp = od.get(xname, self.Time) * self.xscale[self.x_idx]
+                    yp = od.get(yname, self.Time) * self.yscale[idx]
+                    yp_idx = od.plotable_vars.index(yname)
+                    self.create_data_label(xp, yp, dd, yp_idx, od.name)
+
+                continue
 
         add_default_grids(self.container)
 
@@ -469,27 +467,33 @@ class Plot2D(HasTraits):
 
     @property
     def min_x(self):
-        return np.amin(self.file_data[0](self.plotable_vars[self.x_idx]))
+        name = self.plotable_vars[self.x_idx]
+        return np.amin(self.file_data[0].get(name))
 
     @property
     def max_x(self):
-        return np.amax(self.file_data[0](self.plotable_vars[self.x_idx]))
+        name = self.plotable_vars[self.x_idx]
+        return np.amax(self.file_data[0].get(name))
 
     @property
     def abs_max_x(self):
-        return np.amax(np.abs(self.file_data[0](self.plotable_vars[self.x_idx])))
+        name = self.plotable_vars[self.x_idx]
+        return np.amax(np.abs(self.file_data[0].get(name)))
 
     @property
     def min_y(self):
-        return np.amin(self.file_data[0](self.plotable_vars[self.y_idx]))
+        name = self.plotable_vars[self.y_idx]
+        return np.amin(self.file_data[0].get(name))
 
     @property
     def max_y(self):
-        return np.amax(self.file_data[0](self.plotable_vars[self.y_idx]))
+        name = self.plotable_vars[self.y_idx]
+        return np.amax(self.file_data[0].get(name))
 
     @property
     def abs_max_y(self):
-        return np.amax(np.abs(self.file_data[0](self.plotable_vars[self.y_idx])))
+        name = self.plotable_vars[self.y_idx]
+        return np.amax(np.abs(self.file_data[0].get(name)))
 
     @property
     def nfiles(self):
@@ -670,37 +674,16 @@ class ModelPlot(HasStrictTraits):
         scale = scale.strip()
         if not scale:
             scale = self.xscale = "1.0"
-        self.plot2d.set_xscale(string=scale)
+        self.plot2d.set_xscale(scale)
         self.plot2d.change_plot(self.plot2d.plot_indices)
         return
 
     def _yscale_changed(self, scale):
-        """Detect if the y-axis scale was changed and let the plotter know
-
-        Parameters
-        ----------
-        scale : str
-           The user entered scale
-
-        Returns
-        -------
-        None
-
-        Notes
-        -----
-
-        scale should be a float, one of the operations in LDICT, or one of the
-        optional magic keywords: min, max, normalize. On entry, scale is
-        stripped, and if an empty string is sent in, it is reset to 1.0. If
-        the magic words min or max are specified, the scale is set to the min
-        or max of the y-axis data for the FIRST set of data. If the magic
-        keyword normalize is specified, scale is set to 1 / max.
-
-        """
+        """See _xscale_changed"""
         scale = scale.strip()
         if not scale:
             scale = self.yscale = "1.0"
-        self.plot2d.set_yscale(string=scale)
+        self.plot2d.set_yscale(scale)
         self.plot2d.change_plot(self.plot2d.plot_indices)
         return
 
@@ -819,8 +802,7 @@ def create_model_plot(sources, handler=None):
             VGroup(HGroup(
                 Item('rand_colors', style="simple", label="Random Colors"),
                 Item('_'),
-                Item('show_legend', style="simple", label="Legend"),
-                Item('_'),),
+                Item('show_legend', style="simple", label="Legend"),),
                 VGrid(
                     Item('change_axis', show_label=False),
                     Item('reset_zoom', style="simple", show_label=False),

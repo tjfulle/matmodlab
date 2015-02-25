@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import solve, lstsq
 
 from core.logger import Logger
-from core.legs import LegRepository
+from core.legs import SingleLeg, LegRepository
 from utils.variable import Variable
 from utils.variable import VAR_SYMTENSOR, VAR_TENSOR, VAR_SCALAR, VAR_VECTOR
 from utils.errors import FileNotFoundError, MatModLabError
@@ -28,7 +28,7 @@ class PathDriver(object):
 
 class ContinuumDriver(PathDriver):
     kind = "Continuum"
-    def __init__(self, path, path_input="default",
+    def __init__(self, input, path_input="default",
                  kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1.,
                  num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1.,
                  efstar=1., dstar=1., proportional=False, termination_time=None,
@@ -44,14 +44,18 @@ class ContinuumDriver(PathDriver):
         self.kappa = kappa
         self.proportional = proportional
 
-        if not isinstance(path, np.ndarray):
-            path = [line.split() for line in path.split("\n") if line.split()]
-        self.legs = LegRepository.from_path("continuum", path_input, path,
-                              num_steps, amplitude,
-                              rate_multiplier, step_multiplier, num_io_dumps,
-                              termination_time, tfmt, cols, cfmt, skiprows,
-                              functions, kappa, estar, tstar, sstar, fstar,
-                              efstar, dstar)
+        if isinstance(input[0], SingleLeg):
+            self.legs = LegRepository(input)
+
+        else:
+            if not isinstance(input, np.ndarray):
+                input = [line.split() for line in input.split("\n") if line.split()]
+            self.legs = LegRepository.from_path("continuum", path_input, input,
+                                  num_steps, amplitude,
+                                  rate_multiplier, step_multiplier, num_io_dumps,
+                                  termination_time, tfmt, cols, cfmt, skiprows,
+                                  functions, kappa, estar, tstar, sstar, fstar,
+                                  efstar, dstar)
         self.itemp = self.legs.values()[0].temp
 
         # Register variables specifically needed by driver
@@ -120,8 +124,8 @@ class ContinuumDriver(PathDriver):
             c.append(7)
             cij.append(leg.temp)
 
-            c.extend([6] * len(leg.efield))
-            cij.extend(leg.efield)
+            c.extend([6] * len(leg.elec_field))
+            cij.extend(leg.elec_field)
 
             if leg.user_field:
                 c.extend([9] * len(leg.user_field))
@@ -190,13 +194,7 @@ class ContinuumDriver(PathDriver):
                 sigdum[0, v] = sigspec[1]
 
             tleg[1] = leg.termination_time
-            nsteps = leg.num_steps
-            control = leg.control
-            c = leg.components
-            ndumps = leg.num_dumps
-            ef = leg.efield
             temp[1] = leg.temp
-            ufield = leg.user_field
 
             delt = tleg[1] - tleg[0]
             if delt == 0.:
@@ -204,25 +202,25 @@ class ContinuumDriver(PathDriver):
 
             # ndumps_per_leg is the number of times to write to the output
             # file in this leg
-            dump_interval = max(1, int(nsteps / ndumps))
-            lsn = len(str(nsteps))
+            dump_interval = max(1, int(leg.num_steps / leg.num_dumps))
+            lsn = len(str(leg.num_steps))
             consfmt = ("leg {{0:{0}d}}, step {{1:{1}d}}, time {{2:.4E}}, "
                        "dt {{3:.4E}}".format(lsl, lsn))
 
             nv = 0
-            for i, cij in enumerate(c):
-                if control[i] == 1:                            # -- strain rate
+            for i, cij in enumerate(leg.components):
+                if leg.control[i] == 1:                        # -- strain rate
                     depsdt[i] = cij * VOIGHT[i]
 
-                elif control[i] == 2:                          # -- strain
+                elif leg.control[i] == 2:                      # -- strain
                     depsdt[i] = (cij * VOIGHT[i] - eps[i]) / delt
 
-                elif control[i] == 3:                          # -- stress rate
+                elif leg.control[i] == 3:                      # -- stress rate
                     sigdum[1, i] = sigdum[0, i] + cij * delt
                     vdum[nv] = i
                     nv += 1
 
-                elif control[i] == 4:                          # -- stress
+                elif leg.control[i] == 4:                      # -- stress
                     sigdum[1, i] = cij
                     vdum[nv] = i
                     nv += 1
@@ -235,8 +233,8 @@ class ContinuumDriver(PathDriver):
             Jsub = J0[[[x] for x in v], v]
 
             time = tleg[0]
-            dt = delt / nsteps
-            dtemp = (temp[1] - temp[0]) / nsteps
+            dt = delt / leg.num_steps
+            dtemp = (temp[1] - temp[0]) / leg.num_steps
 
             if not nv:
                 # strain or strain rate prescribed and d is constant over
@@ -257,15 +255,15 @@ class ContinuumDriver(PathDriver):
 
             warned = False
             # process this leg
-            for n in range(int(nsteps)):
+            for n in range(int(leg.num_steps)):
 
                 # increment time
                 time += dt
                 self.time = time
 
                 # interpolate values to the target values for this step
-                a1 = float(nsteps - (n + 1)) / nsteps
-                a2 = float(n + 1) / nsteps
+                a1 = float(leg.num_steps - (n + 1)) / leg.num_steps
+                a2 = float(n + 1) / leg.num_steps
                 sigspec[2] = a1 * sigspec[0] + a2 * sigspec[1]
                 temp[2] = a1 * temp[0] + a2 * temp[1]
                 tempn = temp[2] - dtemp
@@ -275,8 +273,9 @@ class ContinuumDriver(PathDriver):
                     # One or more stresses prescribed
                     # get just the prescribed stress components
                     d = sig2d(material, time, dt, tempn, dtemp,
-                              kappa, f0, f, eps, depsdt, sig, xtra, ef, ufield,
-                              v, sigspec[2], self.proportional, self.logger)
+                              kappa, f0, f, eps, depsdt, sig, xtra, leg.elec_field,
+                              leg.user_field, v, sigspec[2], self.proportional,
+                              self.logger)
 
                 # compute the current deformation gradient and strain from
                 # previous values and the deformation rate
@@ -286,8 +285,8 @@ class ContinuumDriver(PathDriver):
                 sigsave = np.array(sig)
                 xtrasave = np.array(xtra)
                 sig, xtra = material.compute_updated_state(time, dt, tempn,
-                    dtemp, kappa, f0, f, eps, d, ef, ufield, sig, xtra,
-                    last=True, disp=1)
+                    dtemp, kappa, f0, f, eps, d, leg.elec_field, leg.user_field,
+                    sig, xtra, last=True, disp=1)
 
                 # -------------------------- quantities derived from final state
                 eqeps = np.sqrt(2. / 3. * (np.sum(eps[:3] ** 2)
@@ -312,10 +311,10 @@ class ContinuumDriver(PathDriver):
 
                 # --- write state to file
                 endstep = abs(time - tleg[1]) / tleg[1] < 1.E-12
-                if (nsteps - n) % dump_interval == 0 or endstep:
+                if (leg.num_steps - n) % dump_interval == 0 or endstep:
                     out_db.snapshot(time, glob_data, elem_data)
 
-                if n == 0 or round((nsteps - 1) / 2.) == n or endstep:
+                if n == 0 or round((leg.num_steps - 1) / 2.) == n or endstep:
                     self.logger.write(consfmt.format(leg_num, n + 1, time, dt))
 
                 if n > 1 and nv and not warned:

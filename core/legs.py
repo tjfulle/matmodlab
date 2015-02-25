@@ -6,36 +6,121 @@ from utils.constants import DEFAULT_TEMP, NTENS, NSYMM
 import utils.mmlabpack as mmlabpack
 from core.functions import _Function as Function, DEFAULT_FUNCTIONS
 
-CONTROL_FLAGS = {"D": 1,  # strain rate
-                 "E": 2,  # strain
-                 "R": 3,  # stress rate
-                 "S": 4,  # stress
-                 "F": 5,  # deformation gradient
-                 "P": 6,  # electric field
-                 "T": 7,  # temperature
-                 "U": 8,  # displacement
-                 "X": 9}  # user defined field
+def cflags(key, s=0):
+    d = {"D": 1,  # strain rate
+         "E": 2,  # strain
+         "R": 3,  # stress rate
+         "S": 4,  # stress
+         "F": 5,  # deformation gradient
+         "P": 6,  # electric field
+         "T": 7,  # temperature
+         "U": 8,  # displacement
+         "X": 9}  # user defined field
+    value = None
+    try:
+        value = int(key)
+        if value not in d.values():
+            value = None
+    except ValueError:
+        try:
+            value = d[key.upper()]
+        except KeyError:
+            # bad key
+            value = None
+    if s and (value is None or value > 4):
+        message = "unexpected control flag {0}".format(key)
+        raise MatModLabError(message)
+    return value
 
-class Leg:
-    def __init__(self, start_time, termination_time, num_steps, control,
-                 Cij, ndumps, efcomp, temp, user_field=None):
+def Leg(start_time, time_step, control, num_steps=None,
+        ndumps=None, elec_field=None, temp=None, user_field=None):
+
+        if ndumps is None:
+            ndumps = 1000000
+
+        if elec_field is None:
+            elec_field = np.zeros(3)
+
+        if temp is None:
+            temp = DEFAULT_TEMP
+
+        if user_field is None:
+            user_field = []
+
+        Cij = np.array([c[1] for c in control], dtype=np.float64)
+        control = np.array([cflags(c[0]) for c in control], dtype=np.int)
+
+        # Check for special cases
+        if len(Cij) == 1:
+            if control[0] == 2:
+                # only one strain value given -> volumetric strain
+                # it is implied that kappa=0
+                eij = Cij[0] / 3.
+                Cij = np.array([eij, eij, eij], dtype=np.float64)
+                control = np.array([2, 2, 2], dtype=np.int)
+            elif control[0] == 4:
+                # only one stress value given -> pressure
+                Sij = -Cij[0]
+                Cij = np.array([Sij, Sij, Sij], dtype=np.float64)
+                control = np.array([4, 4, 4], dtype=np.int)
+
+        # leg components and control shall be NSYMM long. If given as anything
+        # less, we add a bunch of zero strain components to make up the
+        # difference
+        n = NSYMM - len(control)
+        assert n >= 0
+
+        Cij = np.append(Cij, [0.] * n)
+        control = np.append(control, [2] * n)
+
+        return SingleLeg(start_time, time_step, control, Cij, num_steps,
+                         ndumps, elec_field, temp, user_field)
+
+class SingleLeg(object):
+    def __init__(self, start_time, time_step, control, Cij, num_steps=None,
+                 ndumps=None, elec_field=None, temp=None, user_field=None):
+
         self.start_time = start_time
-        self.termination_time = termination_time
-        self.dtime = termination_time - start_time
+        self.dtime = time_step
+        self.termination_time = self.start_time + self.dtime
 
-        self.num_steps = num_steps
-        self.control = control
-        self.components = Cij
-        assert len(control) == len(Cij)
+        self.num_steps = num_steps or 1
 
+        assert len(control) == len(Cij) == NSYMM
+        self.components = np.array(Cij, dtype=np.float64)
+        self.control = np.array(control, dtype=np.int)
+
+        if ndumps is None:
+            ndumps = 1000000
         self.num_dumps = ndumps
-        self.efield = efcomp
 
+        if elec_field is None:
+            elec_field = np.zeros(3)
+        self.elec_field = elec_field
+
+        if temp is None:
+            temp = DEFAULT_TEMP
         self.temp = temp
+
+        if user_field is None:
+            user_field = []
         self.user_field = user_field
+
+    @classmethod
+    def zero_leg(cls):
+        return cls(0, 0, np.zeros(NSYMM), np.zeros(NSYMM), ndumps=1)
 
 
 class LegRepository(OrderedDict):
+
+    def __init__(self, legs):
+        super(LegRepository, self).__init__()
+        j = 0
+        for (i, leg) in enumerate(legs):
+            if i == 0 and leg.termination_time > 0.:
+                self[i] = SingleLeg.zero_leg()
+                j = 1
+            self[i+j] = leg
 
     @classmethod
     def from_path(cls, driver, path_input, path, num_steps, amplitude,
@@ -82,7 +167,7 @@ class LegRepository(OrderedDict):
         """Format the path by applying multipliers
 
         """
-        legs = cls()
+        legs = []
 
         # stress control if any of the control types are 3 or 4
         stress_control = any(c in (3, 4) for leg in path for c in leg[2])
@@ -125,7 +210,7 @@ class LegRepository(OrderedDict):
 
             # pull out electric field from other deformation specifications
             temp = DEFAULT_TEMP
-            efcomp = np.zeros(3)
+            elec_field = np.zeros(3)
             user_field = []
             trtbl = np.array([True] * len(control))
             j = 0
@@ -133,7 +218,7 @@ class LegRepository(OrderedDict):
                 if c in (6, 7, 9):
                     trtbl[i] = False
                     if c == 6:
-                        efcomp[j] = effac * Cij[i]
+                        elec_field[j] = effac * Cij[i]
                         j += 1
                     elif c == 7:
                         temp = Cij[i]
@@ -230,15 +315,17 @@ class LegRepository(OrderedDict):
                 elif 4 in control and any(x != 0. for x in Cij):
                     raise MatModLabError("nonzero initial stress not yet supported")
 
-            start_time = 0. if not legs else legs[ileg-1].termination_time
-            legs[ileg] = Leg(start_time, termination_time, num_steps, control,
-                             Cij, ndumps, efcomp, temp, user_field)
+            start_time = 0. if not legs else legs[-1].termination_time
+            time_step = termination_time - start_time
+            legs.append(SingleLeg(start_time, time_step, control, Cij,
+                                  num_steps, ndumps, elec_field, temp, user_field))
 
             if termination_time > tterm:
                 break
 
             continue
 
+        legs = cls(legs)
         return legs
 
     @classmethod
@@ -482,21 +569,13 @@ class LegRepository(OrderedDict):
     def _format_path_control(cfmt, leg_num=None):
         leg = "" if leg_num is None else "(leg {0})".format(leg_num)
 
-        _cfmt = [CONTROL_FLAGS.get(s.upper(), s) for s in cfmt]
+        _cfmt = [cflags(s) for s in cfmt]
 
         control = []
         for (i, flag) in enumerate(_cfmt):
-            try:
-                flag = int(flag)
-            except ValueError:
-                raise MatModLabError("Path: unexpected control "
-                                     "flag {0}".format(flag))
-
-            if flag not in CONTROL_FLAGS.values():
-                valid = ", ".join(xmltools.stringify(x)
-                                  for x in CONTROL_FLAGS.values())
-                raise MatModLabError("Path: expected control flag to be one "
-                                     "of {0}, got {1} {2}".format(valid, flag, leg))
+            if flag is None:
+                message = "unexpected control flag {0} {1}".format(cfmt[i], leg)
+                raise MatModLabError(message)
 
             control.append(flag)
 
