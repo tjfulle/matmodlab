@@ -63,7 +63,6 @@ class MaterialPointSimulator(object):
             kwargs["logger"] = self.logger
             return Driver(kind, path, **kwargs)
         self._driver = fun
-        fun()
         self.set_dm()
 
     def set_dm(self):

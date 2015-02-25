@@ -48,7 +48,7 @@ def Leg(start_time, time_step, control, num_steps=None,
             user_field = []
 
         Cij = np.array([c[1] for c in control], dtype=np.float64)
-        control = np.array([cflags(c[0]) for c in control], dtype=np.int)
+        control = np.array([cflags(c[0], s=1) for c in control], dtype=np.int)
 
         # Check for special cases
         if len(Cij) == 1:

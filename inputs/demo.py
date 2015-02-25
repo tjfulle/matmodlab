@@ -30,9 +30,6 @@ t, dt = 0, 1
 legs = [Leg(t, dt, [("S", 1.0e6), ("E", 0.0), ("E", 0.0)], num_steps=25)]
 mps.Driver("Continuum", legs)
 
-# set up the material
 parameters = {"K": 1.35e11, "G": 5.3e10}
 mps.Material("elastic", parameters)
-
-# run the simulation
 mps.run()
