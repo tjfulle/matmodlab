@@ -12,64 +12,18 @@ from core.runtime import opts
 from utils.constants import NSYMM, NTENS, I9, VOIGHT
 import utils.mmlabpack as mmlabpack
 from core.solvers import sig2d
+from core.dparse import continuum_legs, cflags
 
 
 class PathDriver(object):
     kind = None
     ran = False
+    _logger = None
+    itemp = None
 
     @property
     def variables(self):
         return self._vars
-
-    def register_variable(self, var_name, var_type, initial_value=None):
-        self._vars.append(Variable(var_name, var_type, initial_value=initial_value))
-
-
-class ContinuumDriver(PathDriver):
-    kind = "Continuum"
-    def __init__(self, input, path_input="default",
-                 kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1.,
-                 num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1.,
-                 efstar=1., dstar=1., proportional=False, termination_time=None,
-                 functions=None, cfmt=None, tfmt="time", num_steps=None,
-                 cols=None, skiprows=0, logger=None):
-
-        if logger is None:
-            logger = Logger("driver", filename=None)
-        self.logger = logger
-        self.logger.write("setting up the {0} driver".format(self.kind))
-
-        self._vars = []
-        self.kappa = kappa
-        self.proportional = proportional
-
-        if isinstance(input[0], SingleLeg):
-            self.legs = LegRepository(input)
-
-        else:
-            if not isinstance(input, np.ndarray):
-                input = [line.split() for line in input.split("\n") if line.split()]
-            self.legs = LegRepository.from_path("continuum", path_input, input,
-                                  num_steps, amplitude,
-                                  rate_multiplier, step_multiplier, num_io_dumps,
-                                  termination_time, tfmt, cols, cfmt, skiprows,
-                                  functions, kappa, estar, tstar, sstar, fstar,
-                                  efstar, dstar)
-        self.itemp = self.legs.values()[0].temp
-
-        # Register variables specifically needed by driver
-        self.register_variable("STRESS", VAR_SYMTENSOR)
-        self.register_variable("STRAIN", VAR_SYMTENSOR)
-        self.register_variable("DEFGRAD", VAR_TENSOR, initial_value=I9)
-        self.register_variable("SYMM_L", VAR_SYMTENSOR)
-        self.register_variable("EFIELD", VAR_VECTOR)
-        self.register_variable("VSTRAIN", VAR_SCALAR)
-        self.register_variable("EQSTRAIN", VAR_SCALAR)
-        self.register_variable("PRESSURE", VAR_SCALAR)
-        self.register_variable("SMISES", VAR_SCALAR)
-        self.register_variable("DSTRESS", VAR_SYMTENSOR)
-        self.register_variable("TEMP", VAR_SCALAR, initial_value=self.itemp)
 
     @property
     def logger(self):
@@ -102,41 +56,73 @@ class ContinuumDriver(PathDriver):
     def num_steps(self):
         return int(sum([x.num_steps for x in self.legs.values()]))
 
+    def register_variable(self, var_name, var_type, initial_value=None):
+        self._vars.append(Variable(var_name, var_type, initial_value=initial_value))
+
+
+class ContinuumDriver(PathDriver):
+    kind = "Continuum"
+    def __init__(self, input, path_input="default",
+                 kappa=0., amplitude=1., rate_multiplier=1., step_multiplier=1.,
+                 num_io_dumps="all", estar=1., tstar=1., sstar=1., fstar=1.,
+                 efstar=1., dstar=1., proportional=False, termination_time=None,
+                 functions=None, cfmt=None, tfmt="time", num_steps=None,
+                 cols=None, skiprows=0, logger=None):
+
+        if logger is None:
+            logger = Logger("driver", filename=None)
+        self.logger = logger
+        self.logger.write("setting up the {0} driver".format(self.kind))
+
+        self._vars = []
+        self.kappa = kappa
+        self.proportional = proportional
+
+        if isinstance(input[0], SingleLeg):
+            self.legs = LegRepository(input)
+        else:
+            try:
+                input = [line.split() for line in input.split("\n") if line.split()]
+            except AttributeError:
+                pass
+            legs = continuum_legs(path_input, input, num_steps, amplitude,
+                                  rate_multiplier, step_multiplier,
+                                  num_io_dumps, termination_time, tfmt,
+                                  cols, cfmt, skiprows, functions, kappa,
+                                  estar, tstar, sstar, fstar, efstar, dstar)
+            self.legs = LegRepository(legs)
+        self.itemp = self.legs.values()[0].temp
+
+        # Register variables specifically needed by driver
+        self.register_variable("STRESS", VAR_SYMTENSOR)
+        self.register_variable("STRAIN", VAR_SYMTENSOR)
+        self.register_variable("DEFGRAD", VAR_TENSOR, initial_value=I9)
+        self.register_variable("SYMM_L", VAR_SYMTENSOR)
+        self.register_variable("EFIELD", VAR_VECTOR)
+        self.register_variable("VSTRAIN", VAR_SCALAR)
+        self.register_variable("EQSTRAIN", VAR_SCALAR)
+        self.register_variable("PRESSURE", VAR_SCALAR)
+        self.register_variable("SMISES", VAR_SCALAR)
+        self.register_variable("DSTRESS", VAR_SYMTENSOR)
+        self.register_variable("TEMP", VAR_SCALAR, initial_value=self.itemp)
+
     def tostr(self, obj="mps"):
-        p = "\n          ".join(self.path_tostr().split("\n"))
-        string = "path = '''{0}'''\n"
-        string += "{1}.Driver('{2}', path=path, path_input='default',\n"
-        string += "           kappa={3}, proportional={4})\n"
-        return string.format(p, obj, self.kind, self.kappa, self.proportional)
+        """Write the python code neccesary to create this path"""
+        # representation of legs
+        legs = ", ".join([self.lrepr(l) for (i, l) in self.legs.items()])
+        string = "legs = [{0}]\n"
+        string += "{1}.Driver('{2}', legs, kappa={3}, proportional={4})\n"
+        return string.format(legs, obj, self.kind,
+                             self.kappa, self.proportional)
 
-    def path_tostr(self):
-        path = []
-        N = max([len(str(l.num_steps)) for l in self.legs.values()])
-
-        for (ileg, leg) in self.legs.items():
-
-            sleg = ["{0}".format(leg.termination_time),
-                    "{0:>{1}d}".format(leg.num_steps, N)]
-
-            c = [i for i in leg.control]
-            cij = [_ for _ in leg.components]
-
-            c.append(7)
-            cij.append(leg.temp)
-
-            c.extend([6] * len(leg.elec_field))
-            cij.extend(leg.elec_field)
-
-            if leg.user_field:
-                c.extend([9] * len(leg.user_field))
-                cij.extend(leg.user_field)
-
-            sleg.append("".join("{0}".format(_) for _ in c))
-            sleg.append(" ".join("{0:g}".format(_) for _ in cij))
-
-            path.append(" ".join("{0}".format(_) for _ in sleg))
-
-        return "\n".join(path)
+    def lrepr(self, leg):
+        c = [(cflags(a, r=1), b) for (a, b) in zip(leg.control, leg.components)]
+        ef = [float(a) for a in leg.elec_field]
+        uf = [float(a) for a in leg.user_field]
+        string = "Leg({0}, {1}, {2}, num_steps={3}, num_io_dumps={4}, "
+        string += "elec_field={5}, temp={6}, user_field={7})"
+        return string.format(leg.start_time, leg.dtime, c, leg.num_steps,
+                             leg.num_dumps, ef, leg.temp, uf)
 
     def run(self, glob_data, elem_data, material, out_db, bp,
             termination_time=None):

@@ -68,10 +68,10 @@ class MaterialPointSimulator(object):
     def set_dm(self):
         if self.material is not None and self.driver is not None:
             try:
+                self.driver.kind
+            except AttributeError:
                 self.driver = self.driver()
                 self.material = self.material(initial_temp=self.driver.initial_temp)
-            except TypeError:
-                pass
 
     @property
     def material(self):

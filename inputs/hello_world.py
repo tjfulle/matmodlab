@@ -19,3 +19,4 @@ mps.Material("elastic", parameters)
 
 # run the simulation
 mps.run()
+mps.write_input()
