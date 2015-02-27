@@ -26,11 +26,10 @@ mps.run()
 mps = MaterialPointSimulator("demo-1")
 
 # Stress-controlled uniaxial strain to 1MPa in 25 steps
-t, dt = 0, 1
-legs = [Leg(t, dt, [("S", 1.0e6), ("E", 0.0), ("E", 0.0)], num_steps=25)]
+legs = [ZeroLeg(),
+        Leg(0, 1, [("S", 1.0e6), ("E", 0.0), ("E", 0.0)], num_steps=25)]
 mps.Driver("Continuum", legs)
 
-parameters = {"K": 1.35e11, "G": 5.3e10}
 mps.Material("elastic", parameters)
 mps.run()
 mps.write_input()

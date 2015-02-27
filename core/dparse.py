@@ -530,3 +530,4 @@ def fmtctrl(control):
     return control
 
 Leg = continuum_leg
+ZeroLeg = SingleLeg.zero_leg

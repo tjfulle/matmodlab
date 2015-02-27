@@ -41,7 +41,7 @@ from core.optimizer import Optimizer, OptimizeVariable
 from core.functions import Function
 from core.logger import Logger
 from core.test import TestBase, TestError as TestError
-from core.dparse import Leg
+from core.dparse import Leg, ZeroLeg
 from materials.addon_expansion import Expansion
 from materials.addon_trs import TRS
 from materials.addon_viscoelastic import Viscoelastic
