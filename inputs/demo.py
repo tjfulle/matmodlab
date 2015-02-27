@@ -33,3 +33,4 @@ mps.Driver("Continuum", legs)
 parameters = {"K": 1.35e11, "G": 5.3e10}
 mps.Material("elastic", parameters)
 mps.run()
+mps.write_input()

@@ -38,7 +38,7 @@ class SingleLeg(object):
 
     @classmethod
     def zero_leg(cls, nc=NSYMM):
-        return cls(0, 0, nc, np.zeros(nc), np.zeros(nc), 1, 1, None, None, None)
+        return cls(0, 0, nc, np.ones(nc)*2, np.zeros(nc), 1, 1, None, None, None)
 
 class LegRepository(OrderedDict):
 

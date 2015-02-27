@@ -91,9 +91,11 @@ def continuum_leg(start_time, time_step, components, num_steps=1,
 
     if elec_field is None:
         elec_field = np.zeros(3)
+    elec_field = np.asarray(elec_field)
 
     if user_field is None:
         user_field = []
+    user_field = np.asarray(user_field)
 
     # Separate the identifiers and components
     control = np.array([cflags(c[0], s=2) for c in components], dtype=np.int)
