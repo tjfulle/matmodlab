@@ -1,6 +1,6 @@
 
-Optimization
-############
+Optimization*
+#############
 
 Optimize specified parameters against user specified objective function. Ideal
 for finding optimal model parameters. A optimizer instance is created through

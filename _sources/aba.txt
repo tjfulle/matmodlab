@@ -1,7 +1,7 @@
 .. _aba_mats:
 
-Abaqus Materials
-################
+Abaqus Materials*
+#################
 
 *matmodlab* can build and exercise Abaqus ``UMAT``, ``UHYPER``, and
 ``UANISOHYPER_INV`` user material models. *matmodlab* builds the Abaqus models

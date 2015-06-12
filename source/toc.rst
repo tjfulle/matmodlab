@@ -1,11 +1,7 @@
-.. _User's Guide:
-
-User's Guide
-############
-
 .. toctree::
    :maxdepth: 2
 
+   introduction
    quickstart
    conventions
    solmeth
@@ -19,12 +15,5 @@ User's Guide
    config
    post
    build
-
-Developer's Guide
-#################
-
-.. toctree::
-   :maxdepth: 2
-
    user_mats
    test

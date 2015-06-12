@@ -1,16 +1,12 @@
-.. _User's Guide:
-
-User's Guide
-############
-
 .. toctree::
    :maxdepth: 2
 
+   introduction
    quickstart
    conventions
    solmeth
    tools
-   run
+   examples
    factory
    aba
    addon
@@ -19,4 +15,5 @@ User's Guide
    config
    post
    build
-   examples
+   user_mats
+   test

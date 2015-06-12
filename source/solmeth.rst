@@ -6,11 +6,10 @@ Solution Method
 *matmodlab* exercises a material model directly by "driving" it through user
 specified paths. *matmodlab* computes an increment in deformation for a given
 step and requires that the material model update the stress in the material to
-the end of that step, given the current state and an increment in deformation.
-Because of the similarity of the material model interface in *matmodlab* with
-many commercial finite element codes, transitioning material models developed
-and tested in *matmodlab* to full finite element codes should be an easy
-process.
+the end of that step. Because of the similarity of the material model
+interface in *matmodlab* with many commercial finite element codes,
+transitioning material models developed and tested in *matmodlab* to full
+finite element codes should be an easy process.
 
 This guide has several purposes:
 
@@ -196,24 +195,36 @@ end, *matmodlab* retrieves updated kinematic quantities from user defined
 tables and/or functions.
 
 The path through which a material is exercised is defined by piecewise
-continuous "legs" in which components of the "control type" :math:`c_{i}` are
-specified at discrete points in time, shown in `Figure 1`_. The :math:`c_{i}`
-are used to obtain a sequence of piecewise constant strain rates that are used
-to advance the kinematic state. Supported control types are strain, strain
-rate, stress, stress rate, deformation gradient, displacement, and velocity.
-"Mixed-modes" of strain and stress (and their rates) are supported. Components
-of displacement and velocity control are applied only to the "+" faces of a
-unit cube centered at the coordinate origin.
+continuous "steps" in which tensor components of stress and/or deformation are
+specified at discrete points in time. The components are used to obtain a
+sequence of piecewise constant strain rates that are used to advance the
+kinematic state. Supported components are strain, strain rate, stress,
+stress rate, deformation gradient, displacement, and velocity. "Mixed-modes"
+of strain and stress (and their rates) are supported. Components of
+displacement and velocity control are applied only to the "+" faces of a unit
+cube centered at the coordinate origin.
 
-.. _Figure 1:
+Step Types
+~~~~~~~~~~
 
-.. figure:: ./images/path.png
-   :width: 5in
-   :align: center
-   :figclass: align-center
-    User defined path for the :math:`i^{\text{th}}` component of ":math:`c`".
-    :math:`c` may represent strain, strain rate, stress, stress rate,
-    deformation gradient, displacement, or velocity.
+The following step types are implemented by the ``MaterialPointSimulator`` class:
+
+* ``StrainStep``, all step components are interpreted as components of the strain tensor.
+
+* ``StrainRateStep``, all step components are interpreted as components of the strain rate tensor.
+
+* ``StressStep``, all step components are interpreted as components of the stress tensor.
+
+* ``StressRateStep``, all step components are interpreted as components of the stress rate tensor.
+
+* ``DisplacementStep``, all step components are interpreted as components of the displacement vector, applied only to the "+" faces of a unit cube centered at the coordinate origin.
+
+* ``DefGradStep``, all step components are interpreted as components of the deformation gradient tensor.
+
+* ``MixedStep``, all step components are interpreted as components of stress and/or strain.  Must supply the ``descriptors`` keyword to designate the interpretation of each component.
+
+The Strain Tensor
+~~~~~~~~~~~~~~~~~
 
 The components of strain are defined by
 
@@ -262,10 +273,10 @@ The volumetric strain :math:`\Strain[v]` is defined
 
 where the Jacobian :math:`\Jacobian` is the determinant of the deformation gradient.
 
-Each leg in the control table, from time :math:`t=0` to :math:`t=t_f` is
-subdivided into a user-specified number of steps and the material model
-evaluated at each step. When volumetric strain, deformation gradient,
-displacement, or velocity are specified for a leg, *matmodlab* internally
+Each step component, from time :math:`t=0` to :math:`t=t_f` is
+subdivided into a user-specified number of "frames" and the material model
+evaluated at each frame. When volumetric strain, deformation gradient,
+displacement, or velocity are specified for a step, *matmodlab* internally
 determines the corresponding strain components. If a component of stress is
 specified, *matmodlab* determines the strain increment that minimizes the
 distance between the prescribed stress component and model response.
@@ -409,12 +420,12 @@ Considering the symmetry of the stress tensor (:math:`\dStress[ij]=\dStress[ji]`
 .. math::
 
    \begin{Bmatrix}
-     \Stress[11] \\
-     \Stress[22] \\
-     \Stress[33] \\
-     \Stress[12] \\
-     \Stress[23] \\
-     \Stress[13]
+     \dStress[11] \\
+     \dStress[22] \\
+     \dStress[33] \\
+     \dStress[12] \\
+     \dStress[23] \\
+     \dStress[13]
    \end{Bmatrix} =
    \begin{bmatrix}
      C_{1111} & C_{1122} & C_{1133} & C_{1112} & C_{1123} & C_{1113} \\
@@ -425,15 +436,15 @@ Considering the symmetry of the stress tensor (:math:`\dStress[ij]=\dStress[ji]`
     symm      &          &          &          &          & C_{1313} \\
    \end{bmatrix}
    \begin{Bmatrix}
-     \Strain[11] \\
-     \Strain[22] \\
-     \Strain[33] \\
-     2\Strain[12] \\
-     2\Strain[23] \\
-     2\Strain[13]
+     \dStrain[11] \\
+     \dStrain[22] \\
+     \dStrain[33] \\
+     2\dStrain[12] \\
+     2\dStrain[23] \\
+     2\dStrain[13]
    \end{Bmatrix}
 
-Letting :math:`\{\dStress[1],\dStress[2],\dStress[3], \dStress[4], \dStress[5], \dStress[6]\}= \{\dStress[11],\dStress[22],\dStress[33], \dStress[12],\dStress[23],\dStress[13]\}` and :math:`\{\dStrain[1],\dStrain[2],\dStrain[3], \dStrain[4], \dStrain[5], \dStrain[6]\}= \{\dStrain[11],\dStrain[22],\dStrain[33],2\dStrain[12],2\dStrain[23],2\dStrain[13]\}`, the above stress-strain relationship is re-written as
+Letting :math:`\{\dStress[1],\dStress[2],\dStress[3], \dStress[4], \dStress[5], \dStress[6]\}= \{\dStress[11],\dStress[22],\dStress[33], \dStress[12],\dStress[23],\dStress[13]\}` and :math:`\{\dStrain[1],\dStrain[2],\dStrain[3], \dot{\gamma_4}, \dot{\gamma_5}, \dot{\gamma_6}\}= \{\dStrain[11],\dStrain[22],\dStrain[33],2\dStrain[12],2\dStrain[23],2\dStrain[13]\}`, the above stress-strain relationship is re-written as
 
 .. math::
 
@@ -457,9 +468,9 @@ Letting :math:`\{\dStress[1],\dStress[2],\dStress[3], \dStress[4], \dStress[5], 
      \dStrain[1] \\
      \dStrain[2] \\
      \dStrain[3] \\
-     \dStrain[4] \\
-     \dStrain[5] \\
-     \dStrain[6]
+     \dot{\gamma_4} \\
+     \dot{\gamma_5} \\
+     \dot{\gamma_6}
    \end{Bmatrix}
 
 As expressed, the components of :math:`\dStrain` and :math:`\dStress` are first order tensors and :math:`\Stiffness` is a second order tensor in :math:`\R{6}`, respectively.
@@ -494,40 +505,3 @@ Alternatively, one can express symmetric second order tensors with their
             &        &        &                  & 2C_{55}        & 2C_{56} \\
     symm    &        &        &                  &                & 2C_{66} \\
    \end{bmatrix}
-
-Supported Drivers
------------------
-
-Continuum Driver
-~~~~~~~~~~~~~~~~
-
-As the name implies, the *Continuum* driver is designed to exercise the type
-of material models encountered in continuum mechanics, with an emphasis on
-solid materials. The solution method is similar to that of many finite element
-codes, so that material models developed and tested in *matmodlab* can be
-easily transitioned to them.  `finish_me`_
-
-Mechanical
-..........
-
-**Direct**
-
-* Strain rate
-* Strain
-* Deformation gradient
-* Velocity
-* Displacement
-
-**Inverse**
-
-* Stress
-* Stress rate
-
-Electrical
-..........
-
-Electric field can be prescribed for testing piezoelectric models.
-
-**Direct**
-
-* Electric field

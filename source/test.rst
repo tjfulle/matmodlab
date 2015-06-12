@@ -1,7 +1,7 @@
 .. _rtest:
 
-Regression Testing
-##################
+Regression Testing*
+###################
 
 Regression testing is crucial to the model development process. Regression
 tests in *matmodlab* are special purpose problems that serve several purposes.

@@ -47,8 +47,8 @@ Ignoring Options
 
 The ``-E`` flag to ``mml run`` suppresses use of configuration file.
 
-Usefule Configurations
-----------------------
+Useful Configurations
+---------------------
 
 *matmodlab* must be configured to be made aware of materials and tests that
 reside outside of *matmodlab*. Use ``mml config`` to add directories to find

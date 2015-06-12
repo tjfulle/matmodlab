@@ -1,8 +1,8 @@
 
 .. _Addon:
 
-Optional Material Addons
-########################
+Optional Material Addons*
+#########################
 
 Thermal Expansion
 =================

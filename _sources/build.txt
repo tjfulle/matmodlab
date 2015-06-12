@@ -1,7 +1,7 @@
 .. _Building:
 
-Building
-########
+Building*
+#########
 
 *matmodlab*'s code base is largely written in Python and requires no
 additional compiling. However, several [optional] linear algebra packages and

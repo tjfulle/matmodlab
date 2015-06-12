@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>User’s Guide &mdash; Material Model Laboratory 2.0 documentation</title>
+    <title>&lt;no title&gt; &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0',
+        VERSION:     '3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,9 +23,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
-    <link rel="next" title="Quick Start Guide" href="quickstart.html" />
-    <link rel="prev" title="Introduction" href="introduction.html" />
+    <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
+    <link rel="next" title="Introduction" href="introduction.html" />
+    <link rel="prev" title="The Material Model Laboratory" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -39,12 +39,12 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="quickstart.html" title="Quick Start Guide"
+          <a href="introduction.html" title="Introduction"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="introduction.html" title="Introduction"
+          <a href="index.html" title="The Material Model Laboratory"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,10 +53,19 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="user-s-guide">
-<span id="id1"></span><h1>User&#8217;s Guide<a class="headerlink" href="#user-s-guide" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
+  <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#why-a-single-element-driver">Why a Single Element Driver?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#matmodlab-components">Matmodlab Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#obtaining-help">Obtaining Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#why-python">Why Python?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#historical-background">Historical Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#obtaining-matmodlab">Obtaining <em>matmodlab</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#about-this-guide">About This Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#references">References</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#setup-and-build">Setup and Build</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#prepare-input">Prepare Input</a></li>
@@ -90,29 +99,29 @@
 <li class="toctree-l2"><a class="reference internal" href="examples.html#example-3-uniaxial-stress-mixed-mode">Example 3: Uniaxial Stress, Mixed Mode</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="factory.html#public-methods-of-materialpointsimulator">Public Methods of <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt></a></li>
 <li class="toctree-l2"><a class="reference internal" href="factory.html#defining-the-driver-path">Defining the Driver Path</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="aba.html#abaqus-utility-procedures">Abaqus Utility Procedures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="aba.html#examples">Examples</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="addon.html#thermal-expansion">Thermal Expansion</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html#viscoelasticity">Viscoelasticity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="addon.html#time-temperature-shift">Time-Temperature Shift</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html#permutator-constructor">Permutator Constructor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html#permutatevariable-factory-method">PermutateVariable Factory Method</a></li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html#example">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="optimize.html#optimizer-constructor">Optimizer Constructor</a></li>
 <li class="toctree-l2"><a class="reference internal" href="optimize.html#optimizevariable-factory-method">OptimizeVariable Factory Method</a></li>
 <li class="toctree-l2"><a class="reference internal" href="optimize.html#example">Example</a></li>
@@ -132,7 +141,7 @@
 <li class="toctree-l2"><a class="reference internal" href="post.html#visualizing-results">Visualizing Results</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="build.html#system-requirements">System Requirements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build.html#required-software">Required Software</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build.html#installation">Installation</a></li>
@@ -140,14 +149,7 @@
 <li class="toctree-l2"><a class="reference internal" href="build.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
-</ul>
-</div>
-</div>
-<div class="section" id="developer-s-guide">
-<h1>Developer&#8217;s Guide<a class="headerlink" href="#developer-s-guide" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="user_mats.html#native-material-models">Native Material Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user_mats.html#abaqus-umat-material-models">Abaqus umat Material Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user_mats.html#building-and-linking-materials">Building and Linking Materials</a></li>
@@ -155,7 +157,7 @@
 <li class="toctree-l2"><a class="reference internal" href="user_mats.html#example">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="test.html#basic-examples">Basic Examples</a></li>
 <li class="toctree-l2"><a class="reference internal" href="test.html#command-line-interface">Command-Line Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="test.html#testbase-api">TestBase API</a></li>
@@ -163,7 +165,6 @@
 </ul>
 </li>
 </ul>
-</div>
 </div>
 
 
@@ -185,29 +186,23 @@
 
 
 <h3>Navigation</h3>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">User&#8217;s Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l2"><a class="reference internal" href="factory.html">The Material Point Simulator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
-<li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="#developer-s-guide">Developer&#8217;s Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="user_mats.html">Writing User Material Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html">Regression Testing</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
 </ul>
 
 
@@ -236,7 +231,7 @@
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |
-      <a href="_sources/users.txt"
+      <a href="_sources/toc.txt"
           rel="nofollow">Page source</a></li>
     </div>
 

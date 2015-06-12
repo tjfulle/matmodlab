@@ -2,8 +2,8 @@
 
 .. _mps:
 
-The Material Point Simulator
-============================
+The Material Point Simulator*
+=============================
 
 A ``MaterialPointSimulator`` instance is created directly through the
 ``MaterialPointSimulator`` constructor. Minimally, the
@@ -206,8 +206,6 @@ Types of deformation represented by ``cfmt`` are shown in `Table 1`_
 +----------+----------------------+
 |     8    | Displacement         |
 +----------+----------------------+
-|     9    | User defined field   |
-+----------+----------------------+
 
 The component ordering of vectors and tensors follows what is described in
 :ref:`Conventions`. If ``len(Cij)`` does not equal 6, (or 9 for deformation
@@ -273,7 +271,7 @@ of the components of deformation. The function specifier is of the form::
 
 where ``function_id`` is the ID of a ``Function`` object. The optional scale
 is a scalar multiplier applied to the return value of the function identified
-with ``function_id``.  See :ref:`Functions` for more information on defining ``Function`` objects.
+with ``function_id``.
 
 The following input stub demonstrates uniaxial strain deformation, using a
 user defined function to specify the 11 component of strain through time
@@ -287,76 +285,3 @@ user defined function to specify the 11 component of strain through time
    driver = Driver("Continuum", path, path_input="function",
                    num_steps=200, termination_time=1.8*pi,
                    functions=functions, cfmt="222")
-
-Factory Methods
-===============
-
-.. _Functions:
-
-The Function Factory Method
----------------------------
-
-A function instance is created through the ``Function`` factory method. Minimally,
-the factory method requires a unique function ID ``func_id``, function type ``func_type``, and function expression ``expr``.
-
-.. code:: python
-
-   func = Function(func_id, func_type, func_defn)
-
-The object returned from ``Function`` is an instance of the class defining
-``func_type``. At present, ``analytical expression`` and ``piecewise linear``
-function types are supported.  When evaluated, functions are called as::
-
-   Function(t)
-
-where ``t`` is the time of interest in the simulation.
-
-The formal parameters to ``Function`` are
-
-.. function:: Function(func_id, func_type, func_defn)
-
-   Build a function object with which a Path path can be created.
-
-   :parameter func_id: Unique integer ID to identify the function.  IDs 0 and 1 are reserved for the constant 0 and 1 functions.
-   :type function_id: int
-   :parameter func_type: The type of function.  One of "analytic expression" or "piecewise linear".  Analytic expression should be a function with 1 callable argument.  If piecewise linear, the current value are interpolated through time.
-   :type function_id: int
-   :parameter func_defn: The function definition.  If func_type is analytic expression, a function of a single argument.  If func_type is piecewise linear, a 2 column table; the first column represents time and the second the values to interpolate through time.
-   :type function_id: callable or str
-
-
-The Logger
-----------
-
-Logging in *matmodlab* is through the ``Logger`` class.  Each ``MaterialPointSimulator`` instance creates a unique logger, sharing it with its ``Material`` and ``Driver``.
-
-Logger Methods
-..............
-
-.. method:: Logger.write(message)
-
-   Log a message
-
-   :parameter message: The message to log
-   :type message: str
-
-.. method:: Logger.warn(message)
-
-   Log a warning message
-
-   :parameter message: The warning message to log
-   :type message: str
-
-.. method:: Logger.error(message)
-
-   Log an error message
-
-   :parameter message: The error message to log.  The simulation will not stop.
-   :type message: str
-
-.. method:: Logger.raise_error(message)
-
-   Log an error message and raise an exception
-
-   :parameter message: The error message to log. An exception will be raised.
-   :type message: str

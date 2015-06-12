@@ -35,17 +35,13 @@ packages such as ParaView_
 
 *matmodlab* is free software released under the MIT License.
 
-
 Why a Single Element Driver?
 ============================
 
-Due to their complexity, it is often over kill to use a finite element code
-for constitutive model development. In addition, features such as artificial
-viscosity can mask the actual material response from constitutive model
-development. Single element drivers allow the constituive model developer to
-concentrate on model development and not the finite element response. Other
-advantages of *matmodlab* (or, more generally, of any stand-alone
-constitutive model driver) are
+Single element drivers allow the constituive model developer to concentrate on
+model development and not the finite element response. Advantages of
+*matmodlab* (or, more generally, of any stand-alone constitutive model driver)
+are
 
   * *matmodlab* is a very small, special purpose, code. Thus, maintaining
     and adding new features to *matmodlab* is very easy.
@@ -63,6 +59,28 @@ constitutive model driver) are
   * Specific features of a material model may be exercised easily by the model
     developer by prescribing strains, strain rates, stresses, stress rates, and
     deformation gradients as functions of time.
+
+Matmodlab Components
+====================
+
+*matmodlab* consists of two main components, the material point driver and the viewer.
+
+Matmodlab Driver
+----------------
+
+The material point driver is a general-purpose single element driver that
+offers a wide range of capabilities for exercising material models. The driver
+is discussed in depth in this guide.
+
+Matmodlab Viewer
+----------------
+
+The viewer contains postprocessing capabilities.
+
+Obtaining Help
+==============
+
+In addition to this guide, many example input files can be found in ``matmodlab/inputs`` and ``matmodlab/tests``
 
 Why Python?
 ===========
@@ -132,9 +150,6 @@ target audience is assumed to have a basic knowledge of continuum mechanics
 and familiarity with other finite element codes. Accordingly, concepts of
 continuum mechanics and finite element methods are not described in detail and
 programing techniques are also not described.
-
-.. _solmeth:
-
 
 References
 ==========

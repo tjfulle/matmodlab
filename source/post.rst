@@ -13,10 +13,10 @@ Visualizing Results
 
 After completion of a simulation, results can be viewed in one of two ways
 
-* ``MaterialPointSimulator.visualize_results()`` method call::
+* ``MaterialPointSimulator.view()`` method call::
 
     mps.run()
-    mps.visualize_results()
+    mps.view()
 
 * The ``mml`` script::
 
@@ -26,9 +26,5 @@ Whichever method is chosen, a visualizer...
 
 
 .. figure:: images/mmv.png
-   :align: center
-   :height: 3.5in
-
-.. figure:: images/mmv_sig.png
    :align: center
    :height: 3.5in

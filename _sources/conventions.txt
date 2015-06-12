@@ -30,7 +30,7 @@ following ordering
 
 Tensor components are used for all second-order symmetric tensors.
 
-Nonsymmetric, Second-order tensors are stored as 9x1 arrays in row major
+Nonsymmetric, second-order tensors are stored as 9x1 arrays in row major
 ordering, i.e.,
 
 .. math::
@@ -52,15 +52,18 @@ passed to an Abaqus material as
 
    \AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{xz}, A_{yz}\}
 
-Also consistent with Abaqus conventions, the shear components of strain-like
-tensors are sent to the material model as engineering strains, i.e.
+Nonsymmetric, second-order tensors are sent as 3x3 matrices.
+
+Engineering Strains
+===================
+
+The shear components of strain-like tensors are sent to the material model as
+engineering strains, i.e.
 
 .. math::
 
    \Strain = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, 2\epsilon_{xy}, 2\epsilon_{xz}, 2\epsilon_{yz}\}
            = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, \gamma_{xy}, \gamma_{xz}, \gamma_{yz}\}
-
-Nonsymmetric, Second-order tensors are sent as 3x3 matrices.
 
 matmodlab Namespace
 ===================
@@ -78,7 +81,6 @@ Some useful parameters exposed by importing ``matmodlab`` are
 
 * ``ROOT_D``, The root ``matmodlab`` directory
 * ``PKG_D``, The ``matmodlab/lib`` directory, the location shared objects are copied
-* ``EXO_D``, The directory where the ExodusII tools are contained
 * ``MAT_D``, The directory where builtin materials are contained
 
 Methods
@@ -86,8 +88,6 @@ Methods
 
 Some useful methods exposed by importing ``matmodlab`` are
 
-* ``Driver``, The driver factory method
-* ``Material``, The material model factory method
 * ``MaterialPointSimulator``, The material point simulator constructor
 * ``Permutator``, The permutator constructor
 * ``Optimizer``, The optimizer constructor
@@ -96,5 +96,4 @@ Some useful methods exposed by importing ``matmodlab`` are
 * ``TRS``, The time-temperature shift model constructor
 * ``Viscoelastic``, The viscoelastic model constructor
 
-Each of these methods is described in more detail in the following chapters
-and sections.
+Each of these methods is described in more detail in the following sections.

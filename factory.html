@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Material Point Simulator &mdash; Material Model Laboratory 2.0 documentation</title>
+    <title>The Material Point Simulator* &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0',
+        VERSION:     '3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,10 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Material Model Laboratory 2.0 documentation" href="index.html" />
-    <link rel="up" title="User’s Guide" href="users.html" />
-    <link rel="next" title="Abaqus Materials" href="aba.html" />
-    <link rel="prev" title="Running a Simulation" href="run.html" />
+    <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
+    <link rel="up" title="&lt;no title&gt;" href="toc.html" />
+    <link rel="next" title="Abaqus Materials*" href="aba.html" />
+    <link rel="prev" title="Annotated Examples" href="examples.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,13 +40,13 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="aba.html" title="Abaqus Materials"
+          <a href="aba.html" title="Abaqus Materials*"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="run.html" title="Running a Simulation"
+          <a href="examples.html" title="Annotated Examples"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Material Model Laboratory 2.0 documentation</a> &raquo;</li>
-          <li><a href="users.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li>
+          <li><a href="toc.html" accesskey="U">&lt;no title&gt;</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -56,7 +56,7 @@
           <div class="body">
             
   <div class="section" id="the-material-point-simulator">
-<span id="mps"></span><span id="methods-for-creating-simulations"></span><h1>The Material Point Simulator<a class="headerlink" href="#the-material-point-simulator" title="Permalink to this headline">¶</a></h1>
+<span id="mps"></span><span id="methods-for-creating-simulations"></span><h1>The Material Point Simulator*<a class="headerlink" href="#the-material-point-simulator" title="Permalink to this headline">¶</a></h1>
 <p>A <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> instance is created directly through the
 <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor. Minimally, the
 <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> constructor requires the specification of a
@@ -230,9 +230,9 @@ the <tt class="docutils literal"><span class="pre">path_input</span></tt> parame
 <p>where <tt class="docutils literal"><span class="pre">tf</span></tt>, <tt class="docutils literal"><span class="pre">n</span></tt>, <tt class="docutils literal"><span class="pre">cfmt</span></tt>, and <tt class="docutils literal"><span class="pre">Cij</span></tt> are the termination time, number of
 steps, control format, and control format of the particular leg. The control
 format <tt class="docutils literal"><span class="pre">cfmt</span></tt> is concatenated integer list specifying in its
-<img class="math" src="_images/math/2522871c36e7c33523f8c02c52491a156f746df5.png" alt="i^\text{ith}"/> component the <img class="math" src="_images/math/d6f7cd583b9fd0c2ed57090c462952771f138e2f.png" alt="i^\text{th}"/> component of
+<img class="math" src="_images/math/ea96c735873ee4fbdbcd152871bcba0849b7fa15.png" alt="i^\text{ith}"/> component the <img class="math" src="_images/math/fba40b47c64398f08e03963865648209983c0e97.png" alt="i^\text{th}"/> component of
 deformation, i.e., <tt class="docutils literal"><span class="pre">cfmt[i]</span></tt> instructs the driver as to the type of
-deformation represented by <tt class="docutils literal"><span class="pre">Cij[i]</span></tt>. Consider the <a class="reference internal" href="run.html#first-example"><em>Running a Simulation</em></a>,
+deformation represented by <tt class="docutils literal"><span class="pre">Cij[i]</span></tt>. Consider the <a class="reference internal" href="examples.html#first-example"><em>Annotated Examples</em></a>,
 where the path was prescribed as:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">path</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;0  0 222  0 0 0</span>
 <span class="s">          1 10 222 .1 0 0&quot;&quot;&quot;</span>
@@ -284,9 +284,6 @@ where the path was prescribed as:</p>
 <tr class="row-odd"><td>8</td>
 <td>Displacement</td>
 </tr>
-<tr class="row-even"><td>9</td>
-<td>User defined field</td>
-</tr>
 </tbody>
 </table>
 <p>The component ordering of vectors and tensors follows what is described in
@@ -320,7 +317,7 @@ zero based and the first column is assumed to be the time specifier. The
 time (<tt class="docutils literal"><span class="pre">tfmt=&quot;time&quot;</span></tt>) or time step (<tt class="docutils literal"><span class="pre">tmft=&quot;dt&quot;</span></tt>). The number of steps for
 each leg can be set by <tt class="docutils literal"><span class="pre">num_steps</span></tt> keyword argument.</p>
 <p>The following input stubs sets up the driver with the same path as in the
-<a class="reference internal" href="run.html#first-example"><em>Running a Simulation</em></a>, but specified by a table:</p>
+<a class="reference internal" href="examples.html#first-example"><em>Annotated Examples</em></a>, but specified by a table:</p>
 <div class="highlight-python"><div class="highlight"><pre>path = &quot;&quot;&quot;0  0 0 0
           1 .1 0 0&quot;&quot;&quot;
 driver = Driver(&quot;Continuum&quot;, path, path_input=&quot;table&quot;,
@@ -341,7 +338,7 @@ of the components of deformation. The function specifier is of the form:</p>
 </div>
 <p>where <tt class="docutils literal"><span class="pre">function_id</span></tt> is the ID of a <tt class="docutils literal"><span class="pre">Function</span></tt> object. The optional scale
 is a scalar multiplier applied to the return value of the function identified
-with <tt class="docutils literal"><span class="pre">function_id</span></tt>.  See <a class="reference internal" href="#functions"><em>The Function Factory Method</em></a> for more information on defining <tt class="docutils literal"><span class="pre">Function</span></tt> objects.</p>
+with <tt class="docutils literal"><span class="pre">function_id</span></tt>.</p>
 <p>The following input stub demonstrates uniaxial strain deformation, using a
 user defined function to specify the 11 component of strain through time</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="c"># set up the driver with a function</span>
@@ -353,107 +350,6 @@ user defined function to specify the 11 component of strain through time</p>
                 <span class="n">functions</span><span class="o">=</span><span class="n">functions</span><span class="p">,</span> <span class="n">cfmt</span><span class="o">=</span><span class="s">&quot;222&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-</div>
-</div>
-<div class="section" id="factory-methods">
-<h1>Factory Methods<a class="headerlink" href="#factory-methods" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="the-function-factory-method">
-<span id="functions"></span><h2>The Function Factory Method<a class="headerlink" href="#the-function-factory-method" title="Permalink to this headline">¶</a></h2>
-<p>A function instance is created through the <tt class="docutils literal"><span class="pre">Function</span></tt> factory method. Minimally,
-the factory method requires a unique function ID <tt class="docutils literal"><span class="pre">func_id</span></tt>, function type <tt class="docutils literal"><span class="pre">func_type</span></tt>, and function expression <tt class="docutils literal"><span class="pre">expr</span></tt>.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">func</span> <span class="o">=</span> <span class="n">Function</span><span class="p">(</span><span class="n">func_id</span><span class="p">,</span> <span class="n">func_type</span><span class="p">,</span> <span class="n">func_defn</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>The object returned from <tt class="docutils literal"><span class="pre">Function</span></tt> is an instance of the class defining
-<tt class="docutils literal"><span class="pre">func_type</span></tt>. At present, <tt class="docutils literal"><span class="pre">analytical</span> <span class="pre">expression</span></tt> and <tt class="docutils literal"><span class="pre">piecewise</span> <span class="pre">linear</span></tt>
-function types are supported.  When evaluated, functions are called as:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Function</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>where <tt class="docutils literal"><span class="pre">t</span></tt> is the time of interest in the simulation.</p>
-<p>The formal parameters to <tt class="docutils literal"><span class="pre">Function</span></tt> are</p>
-<dl class="function">
-<dt id="Function">
-<tt class="descname">Function</tt><big>(</big><em>func_id</em>, <em>func_type</em>, <em>func_defn</em><big>)</big><a class="headerlink" href="#Function" title="Permalink to this definition">¶</a></dt>
-<dd><p>Build a function object with which a Path path can be created.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>func_id</strong> &#8211; Unique integer ID to identify the function.  IDs 0 and 1 are reserved for the constant 0 and 1 functions.</li>
-<li><strong>func_type</strong> &#8211; The type of function.  One of &#8220;analytic expression&#8221; or &#8220;piecewise linear&#8221;.  Analytic expression should be a function with 1 callable argument.  If piecewise linear, the current value are interpolated through time.</li>
-<li><strong>func_defn</strong> &#8211; The function definition.  If func_type is analytic expression, a function of a single argument.  If func_type is piecewise linear, a 2 column table; the first column represents time and the second the values to interpolate through time.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</div>
-<div class="section" id="the-logger">
-<h2>The Logger<a class="headerlink" href="#the-logger" title="Permalink to this headline">¶</a></h2>
-<p>Logging in <em>matmodlab</em> is through the <tt class="docutils literal"><span class="pre">Logger</span></tt> class.  Each <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> instance creates a unique logger, sharing it with its <tt class="docutils literal"><span class="pre">Material</span></tt> and <tt class="docutils literal"><span class="pre">Driver</span></tt>.</p>
-<div class="section" id="logger-methods">
-<h3>Logger Methods<a class="headerlink" href="#logger-methods" title="Permalink to this headline">¶</a></h3>
-<dl class="method">
-<dt id="Logger.write">
-<tt class="descclassname">Logger.</tt><tt class="descname">write</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#Logger.write" title="Permalink to this definition">¶</a></dt>
-<dd><p>Log a message</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; The message to log</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="Logger.warn">
-<tt class="descclassname">Logger.</tt><tt class="descname">warn</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#Logger.warn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Log a warning message</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; The warning message to log</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="Logger.error">
-<tt class="descclassname">Logger.</tt><tt class="descname">error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#Logger.error" title="Permalink to this definition">¶</a></dt>
-<dd><p>Log an error message</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; The error message to log.  The simulation will not stop.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="Logger.raise_error">
-<tt class="descclassname">Logger.</tt><tt class="descname">raise_error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#Logger.raise_error" title="Permalink to this definition">¶</a></dt>
-<dd><p>Log an error message and raise an exception</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; The error message to log. An exception will be raised.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </div>
 </div>
 </div>
@@ -478,26 +374,22 @@ function types are supported.  When evaluated, functions are called as:</p>
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="background.html">Introduction</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="users.html">User&#8217;s Guide</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="run.html">Running a Simulation</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">The Material Point Simulator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#factory-methods">Factory Methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials</a></li>
-<li class="toctree-l2"><a class="reference internal" href="addon.html">Optional Material Addons</a></li>
-<li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="build.html">Building</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html">Annoted Examples</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="dev.html">Developers&#8217;s Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">The Material Point Simulator*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
 </ul>
 
 

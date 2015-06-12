@@ -1,8 +1,8 @@
 
 .. _User_Mats:
 
-Writing User Material Models
-############################
+Writing User Material Models*
+#############################
 
 *matmodlab* can find, build, and exercise the following types of user
 materials:

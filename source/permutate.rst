@@ -1,7 +1,7 @@
 .. _inpperm:
 
-Permutation
-###########
+Permutation*
+############
 
 .. todo::
 
