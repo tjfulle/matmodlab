@@ -16,7 +16,26 @@ Setup and Build
 
 *The following commands are to be executed from a command prompt*
 
-Build *matmodlab*.  See :ref:`Building` for more details.
+Users
+-----
+
+Simply execute
+
+::
+
+  pip install matmodlab
+
+or
+
+::
+
+  easy_install matmodlab
+
+
+*matmodlab* Developers
+----------------------
+
+See :ref:`Building` for more details.
 
 * Clone *matmodlab* from `<https://github.com/tjfulle/matmodlab>`_::
 
