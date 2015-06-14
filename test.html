@@ -24,27 +24,14 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="&lt;no title&gt;" href="toc.html" />
-    <link rel="prev" title="Writing User Material Models*" href="user_mats.html" />
+    <link rel="next" title="Conventions" href="conventions.html" />
+    <link rel="prev" title="Abaqus Materials*" href="aba.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="user_mats.html" title="Writing User Material Models*"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li>
-          <li><a href="toc.html" accesskey="U">&lt;no title&gt;</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -54,10 +41,10 @@
   <div class="section" id="regression-testing">
 <span id="rtest"></span><h1>Regression Testing*<a class="headerlink" href="#regression-testing" title="Permalink to this headline">¶</a></h1>
 <p>Regression testing is crucial to the model development process. Regression
-tests in <em>matmodlab</em> are special purpose problems that serve several purposes.
-Most notably, component tests for the core capabilities of <em>matmodlab</em> and
+tests in Matmodlab are special purpose problems that serve several purposes.
+Most notably, component tests for the core capabilities of Matmodlab and
 verification and validation (V&amp;V) of material models. In the first role,
-problems are fast running and exercise specific features of <em>matmodlab</em> in a
+problems are fast running and exercise specific features of Matmodlab in a
 unit-test type fashion. In the second, material models are exercised through
 specific paths with known, or expected outcomes. Each type of test is
 supported through the <tt class="docutils literal"><span class="pre">core.test.TestBase</span></tt>. New tests are created as
@@ -102,17 +89,17 @@ internally for test identification and <tt class="docutils literal"><span class=
 organization. The module containing the test must also define a
 <tt class="docutils literal"><span class="pre">run_&lt;runid&gt;</span></tt> function (where <tt class="docutils literal"><span class="pre">&lt;runid&gt;</span></tt> is replaced with the actual
 <tt class="docutils literal"><span class="pre">runid</span></tt> of the test) to run the actual simulation. For each test so defined,
-<em>matmodlab</em> expects the existence of a base file <tt class="docutils literal"><span class="pre">&lt;runid&gt;.base_exo</span></tt> containing
-the expected, or baseline, results. <em>matmodlab</em> also expects, on exercising
+Matmodlab expects the existence of a base file <tt class="docutils literal"><span class="pre">&lt;runid&gt;.base_exo</span></tt> containing
+the expected, or baseline, results. Matmodlab also expects, on exercising
 <tt class="docutils literal"><span class="pre">run_&lt;runid&gt;</span></tt>, the creation of the results file <tt class="docutils literal"><span class="pre">&lt;runid&gt;.exo</span></tt>. At the
 completion of the test, <tt class="docutils literal"><span class="pre">&lt;runid&gt;.exo</span></tt> is compared to <tt class="docutils literal"><span class="pre">&lt;runid&gt;.base_exo</span></tt> and
-differences (if any) determined by <a class="reference internal" href="tools.html#exodiff"><em>exodiff</em></a>.</p>
+differences (if any) determined by <a class="reference internal" href="cli.html#exodiff"><em>exodiff</em></a>.</p>
 </div>
 </div>
 <div class="section" id="command-line-interface">
 <h2>Command-Line Interface<a class="headerlink" href="#command-line-interface" title="Permalink to this headline">¶</a></h2>
 <p>The <tt class="docutils literal"><span class="pre">test</span></tt> subcommand of <tt class="docutils literal"><span class="pre">mml</span></tt> gathers, runs, and analyzes tests. To run
-tests with <em>matmodlab</em>, be sure that <tt class="docutils literal"><span class="pre">matmodlab/bin</span></tt> is on your path and
+tests with Matmodlab, be sure that <tt class="docutils literal"><span class="pre">matmodlab/bin</span></tt> is on your path and
 execute:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ mml test
 </pre></div>
@@ -132,7 +119,7 @@ web browser.</p>
 <p><tt class="docutils literal"><span class="pre">mml</span> <span class="pre">test</span></tt> searches for test specification files in the <tt class="docutils literal"><span class="pre">matmodlab/tests</span></tt>
 directory and directories in the <tt class="docutils literal"><span class="pre">tests</span></tt> section of the configuration file.
 Test files are python files whose names match <tt class="docutils literal"><span class="pre">(?:^|[\\b_\\.-])[Tt]est</span></tt>.
-<em>matmodlab</em> supports</p>
+Matmodlab supports</p>
 <div class="section" id="mml-test-options">
 <h3>mml test Options<a class="headerlink" href="#mml-test-options" title="Permalink to this headline">¶</a></h3>
 <p>The full list of options to <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">test</span></tt> is:</p>
@@ -206,7 +193,7 @@ one of <em>long</em>, <em>medium</em>, <em>fast</em>.</p>
 <dl class="attribute">
 <dt id="TestBase.exodiff">
 <tt class="descclassname">TestBase.</tt><tt class="descname">exodiff</tt><a class="headerlink" href="#TestBase.exodiff" title="Permalink to this definition">¶</a></dt>
-<dd><p><a class="reference internal" href="tools.html#exodiff"><em>exodiff</em></a> diff file [default: <tt class="docutils literal"><span class="pre">tests/base.exodiff</span></tt>]</p>
+<dd><p><a class="reference internal" href="cli.html#exodiff"><em>exodiff</em></a> diff file [default: <tt class="docutils literal"><span class="pre">tests/base.exodiff</span></tt>]</p>
 </dd></dl>
 
 </div>
@@ -222,7 +209,7 @@ one of <em>long</em>, <em>medium</em>, <em>fast</em>.</p>
 </div>
 <div class="section" id="methods">
 <h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
-<p>As described in <a class="reference internal" href="#basic-test-ex"><em>Basic Examples</em></a>, minimally, a test subclasses <tt class="docutils literal"><span class="pre">TestBase</span></tt> and defines a <tt class="docutils literal"><span class="pre">runid</span></tt> and <tt class="docutils literal"><span class="pre">keywords</span></tt>, <em>matmodlab</em> will set up the test, run, and perform post processing.  Optionally, a test may define the following methods.</p>
+<p>As described in <a class="reference internal" href="#basic-test-ex"><em>Basic Examples</em></a>, minimally, a test subclasses <tt class="docutils literal"><span class="pre">TestBase</span></tt> and defines a <tt class="docutils literal"><span class="pre">runid</span></tt> and <tt class="docutils literal"><span class="pre">keywords</span></tt>, Matmodlab will set up the test, run, and perform post processing.  Optionally, a test may define the following methods.</p>
 <dl class="method">
 <dt id="TestBase.setup">
 <tt class="descclassname">TestBase.</tt><tt class="descname">setup</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#TestBase.setup" title="Permalink to this definition">¶</a></dt>
@@ -284,7 +271,7 @@ create the test directory.</p>
 
 
 <p>
-<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -292,21 +279,17 @@ create the test directory.</p>
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Regression Testing*</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-examples">Basic Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#command-line-interface">Command-Line Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testbase-api">TestBase API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Regression Testing*</a></li>
 </ul>
 
 

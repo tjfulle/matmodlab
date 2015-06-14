@@ -1,6 +1,7 @@
+:tocdepth: 2
 
-Optimization*
-#############
+Optimizer
+#########
 
 Optimize specified parameters against user specified objective function. Ideal
 for finding optimal model parameters. A optimizer instance is created through
@@ -23,8 +24,7 @@ Optimizer Constructor
 
 The formal parameters to ``Optimizer`` are
 
-.. class:: Optimizer(func, xinit, runid, method="simplex", d=None,
-                     maxiter=50, tolerance=1.e-6, descriptor=None, funcargs=None)
+.. class:: Optimizer(func, xinit, runid, method="simplex", d=None, maxiter=50, tolerance=1.e-6, descriptor=None, funcargs=None)
 
    Create a Optimizer object
 
@@ -89,110 +89,57 @@ The following input stub demonstrates how to permutate the ``K`` parameter
 Example
 =======
 
-The following input stub demonstrates how to optimize the ``K`` and ``G``
-parameters. The ``opt_sig_v_time`` function reads in the simulation output
-file and a baseline file and computes the error between the simulation results
-and the expected results.
+The following input demonstrates how to optimize the ``K`` and ``G``
+parameters and can be found in ``matmodlab/inputs/optimize_al.py``.  The objective function calls ``calculate_bounded_area`` to find the area between the calculated stress strain curve and the experimental.
 
 .. code:: python
 
-   import os
-   import sys
-   import numpy as np
-   CCHAR = "#"
+  import os
+  import numpy as np
 
-   from utils.exojac import ExodusIIFile
+  from matmodlab import *
+  import matmodlab.utils.fileio as ufio
+  import matmodlab.utils.numerix.nonmonotonic as unnm
 
+  filename = os.path.join(get_my_directory(), "optimize_al.xls")
+  strain_exp, stress_exp = zip(*ufio.loadfile(filename, sheet="MML", disp=0,
+                                              columns=["STRAIN_XX", "STRESS_XX"]))
 
-   def func(x, *args):
+  def func(x=[], xnames=[], evald="", runid="", *args):
+      mps = MaterialPointSimulator(runid)
 
-       runid = args[0]
-       evald = args[-1]
+      xp = dict(zip(xnames, x))
+      NU = 0.32  # poisson's ratio for aluminum
+      parameters = {"K": xp["E"]/3.0/(1.0-2.0*NU), "G": xp["E"]/2.0/(1.0+NU),
+                    "Y0": xp["Y0"], "H": xp["H"], "BETA": 0.0}
+      mps.Material("vonmises", parameters)
 
-       name = "{0}.{1}".format(os.path.basename(evald), runid)
-       logger = Logger(name)
+      # create steps from data. note, len(columns) below is < len(descriptors).
+      # The missing columns are filled with zeros -> giving uniaxial stress in
+      # this case. Declaring the steps this way does require loading the excel
+      # file anew for each run
+      mps.DataSteps(filename, steps=30, sheet='MML',
+                    columns=('STRAIN_XX',), descriptors='ESS')
 
-       # set up driver
-       driver = Driver("Continuum", open(path_file, "r").read(), cols=[0,2,3,4],
-                       cfmt="222", tfmt="time", path_input="table", logger=logger)
+      mps.run()
+      if not mps.ran:
+          return 1.0e9
 
-       # set up material
-       parameters = {"K": x[0], "G": x[1]}
-       material = Material("elastic", parameters, logger=logger)
+      strain_sim, stress_sim = zip(*mps.get("STRAIN_XX", "STRESS_XX"))
+      error = unnm.calculate_bounded_area(strain_exp, stress_exp,
+                                        strain_sim, stress_sim)
+      return error
 
-       # set up and run the model
-       mps = MaterialPointSimulator(runid, driver, material, logger=logger)
-       mps.run()
+  def runjob(method, v=1):
+      E = OptimizeVariable("E",  2.0e6, bounds=(1.0e5, 1.0e7))
+      Y0= OptimizeVariable("Y0", 0.3e5, bounds=(1.0e4, 1.0e6))
+      H = OptimizeVariable("H",  1.0e6, bounds=(1.0e4, 1.0e7))
+      xinit = [E, Y0, H]
 
-       error = opt_sig_v_time(mps.exodus_file)
+      optimizer = Optimizer("optimize_al", func, xinit, method=method,
+                          maxiter=200, tolerance=1.e-3)
+      optimizer.run()
+      xopt = optimizer.xopt
+      return xopt
 
-       return error
-
-   @matmodlab
-   def runner(method, v=1):
-
-       runid = "opt_{0}".format(method)
-
-       # run the optimization job.
-       # the optimizer expects:
-       #    1) A list of OptimizeVariable to optimize
-       #    2) An objective function -> a MaterialPointSimulator simulation
-       #       that returns some error measure
-       #    3) A method
-       # It's that simple!
-
-       K = OptimizeVariable("K", 129e9, bounds=(125e9, 150e9))
-       G = OptimizeVariable("G", 54e9, bounds=(45e9, 57e9))
-       xinit = [K, G]
-
-       optimizer = Optimizer(func, xinit, runid,
-                             descriptor=["PRES_V_EVOL"], method=method,
-                             maxiter=25, tolerance=1.e-4, verbosity=v,
-                             funcargs=[runid])
-       optimizer.run()
-
-       return
-
-   def opt_sig_v_time(exof):
-       """Find the error in stress vs. time for the current simulation"""
-       vars_to_get = ("STRESS_XX", "STRESS_YY", "STRESS_ZZ")
-
-       # read in baseline data
-       aux = "opt.base_dat"
-       auxhead, auxdat = loadtxt(aux)
-       I = np.array([auxhead[var] for var in vars_to_get], dtype=np.int)
-       basesig = auxdat[:, I]
-       basetime = auxdat[:, auxhead["TIME"]]
-
-       # read in output data
-       exof = ExodusIIFile(exof)
-       simtime = exof.get_all_times()
-       simsig = np.transpose([exof.get_elem_var_time(var, 0)
-                              for var in vars_to_get])
-
-       # do the comparison
-       error = -1
-       t0 = max(np.amin(basetime), np.amin(simtime))
-       tf = min(np.amax(basetime), np.amax(simtime))
-       n = basetime.shape[0]
-       for idx in range(3):
-           base = lambda x: np.interp(x, basetime, basesig[:, idx])
-           comp = lambda y: np.interp(y, simtime, simsig[:, idx])
-           dnom = np.amax(np.abs(simsig[:, idx]))
-           if dnom < 1.e-12: dnom = 1.
-           rms = np.sqrt(np.mean([((base(t) - comp(t)) / dnom) ** 2
-                                  for t in np.linspace(t0, tf, n)]))
-           error = max(rms, error)
-           continue
-
-       return error
-
-
-   def loadtxt(filename):
-       head = open(filename).readline().strip(CCHAR).split()
-       head = dict([(a, i) for (i, a) in enumerate(head)])
-       data = np.loadtxt(filename, skiprows=1)
-       return head, data
-
-   if __name__ == "__main__":
-       runner("cobyla")
+  runjob('powell')

@@ -1,0 +1,10 @@
+.. _annotated_examples:
+
+Annotated Examples
+##################
+
+.. toctree::
+   :maxdepth: 1
+
+   ex1
+   ex2

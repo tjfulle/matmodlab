@@ -1,9 +1,9 @@
-.. _Building:
+.. _Installing:
 
-Building*
-#########
+Installing
+##########
 
-*matmodlab*'s code base is largely written in Python and requires no
+Matmodlab's code base is largely written in Python and requires no
 additional compiling. However, several [optional] linear algebra packages and
 material models are written in Fortran and require a seperate compile step.
 
@@ -11,25 +11,25 @@ material models are written in Fortran and require a seperate compile step.
 System Requirements
 ===================
 
-*matmodlab* has been built and tested extensively on several versions of Linux
+Matmodlab has been built and tested extensively on several versions of Linux
 and the Apple Mac OSX 10.9 operating systems. It is unknown whether or not
-*matmodlab* will run on Windows.
+Matmodlab will run on Windows.
 
 
 Required Software
 =================
 
-The basic functionality of *matmodlab* requires the following software installed
+The basic functionality of Matmodlab requires the following software installed
 for your platform:
 
 #) `Python 2.7 <http://www.python.org/>`_ or newer (A, E)
 
-#) `NumPy 1.6 <http://www.numpy.org/>`_ or newer (A, E)
+#) `NumPy <http://www.numpy.org/>`_ or newer (A, E)
 
-#) `SciPy 0.1 <http://www.scipy.org/>`_ or newer (A, E)
+#) `SciPy <http://www.scipy.org/>`_ or newer (A, E)
 
 
-*matmodlab* has further functionality that can be utilized if the appropriate
+Matmodlab has further functionality that can be utilized if the appropriate
 packages are installed.
 
 #) `traits <http://pypi.python.org/pypi/traits>`_, `traitsui <http://pypi.python.org/pypi/traitsui>`_, and `chaco <http://pypi.python.org/pypi/chaco>`_ for data visualization (E)
@@ -77,14 +77,14 @@ linear algebra package.
 Installation
 ============
 
-Ensure that all *matmodlab* prerequisites are installed and working properly
+Ensure that all Matmodlab prerequisites are installed and working properly
 before proceeding.
 
 
 The Easy Way
 ------------
 
-Because *matmodlab* is in `PyPI <http://pypi.python.org/pypi/matmodlab>`_, you
+Because Matmodlab is in `PyPI <http://pypi.python.org/pypi/matmodlab>`_, you
 can simply run
 
 ::
@@ -105,7 +105,7 @@ try to use ``pip`` first.
 The Manual Way
 --------------
 
-After downloading and unpacking *matmodlab* from
+After downloading and unpacking Matmodlab from
 `PyPI <http://pypi.python.org/pypi/matmodlab>`_ or from
 `github <http://github.com/tjfulle/matmodlab>`_, there will be a folder that
 contains, among other files, the directories ``femlib``, ``matmodlab``, and
@@ -123,17 +123,17 @@ or
 
   python setup.py develop
 
-Both commands make *matmodlab* usable in the same way as using ``pip`` or
+Both commands make Matmodlab usable in the same way as using ``pip`` or
 ``easy_install``. The only difference is that when you setup using the
 ``develop`` argument the downloaded files are linked to, not moved, so changes
-are applied immediately and do not require you to re-install *matmodlab*.
+are applied immediately and do not require you to re-install Matmodlab.
 
 
 
 The Hard Way
 ------------
 
-Get *matmodlab* as detailed in ``The Manual Way`` but do the following:
+Get Matmodlab as detailed in ``The Manual Way`` but do the following:
 
 #) Add ``path/to/files/matmodlab/bin`` to your ``PATH``
 
@@ -143,7 +143,7 @@ Get *matmodlab* as detailed in ``The Manual Way`` but do the following:
 Build (Optional)
 ----------------
 
-Fortran models are built as-needed when *matmodlab* attempts to run a
+Fortran models are built as-needed when Matmodlab attempts to run a
 simulation and it cannot find the compiled model. However, if you want
 to build a model without running a simulation or if you want to build an
 extension pack you will need to use the ``mml build`` command.
@@ -169,7 +169,7 @@ Example
 
   mml build
 
-This will build the *matmodlab* Fortran utilities and material libraries. The
+This will build the Matmodlab Fortran utilities and material libraries. The
 resultant shared object libraries are copied to ``matmodlab/lib``.
 
 
@@ -178,7 +178,7 @@ Testing the Installation
 
 Testing is done through the ``mml test`` command. However, this is just a
 wrapper around the ``py.test`` command, which can also be used. To test
-*matmodlab* after installation, execute::
+Matmodlab after installation, execute::
 
 	mml test -k fast
 
@@ -191,6 +191,6 @@ Please note that running all of the tests takes several minutes.
 Troubleshooting
 ===============
 
-If you experience problems when building/installing/testing *matmodlab*, you can
+If you experience problems when building/installing/testing Matmodlab, you can
 ask help from `Tim Fuller <timothy.fuller@utah.edu>`_ or
 `Scot Swan <scot.swan@gmail.com>`_.

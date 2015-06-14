@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Example 2: Uniaxial Stress &mdash; Material Model Laboratory 3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
+    <link rel="up" title="Annotated Examples" href="examples.html" />
+    <link rel="next" title="Example 3: Uniaxial Stress, Mixed Mode" href="ex3.html" />
+    <link rel="prev" title="Example 1: Uniaxial Strain" href="ex1.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="example-2-uniaxial-stress">
+<h1>Example 2: Uniaxial Stress<a class="headerlink" href="#example-2-uniaxial-stress" title="Permalink to this headline">¶</a></h1>
+<p>This example demonstrates exercising the elastic material model through a path
+of uniaxial stress. The example input below is found in <tt class="docutils literal"><span class="pre">matmodlab/inputs/example-2.py</span></tt></p>
+<div class="section" id="the-example-script">
+<h2>The Example Script<a class="headerlink" href="#the-example-script" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c"># Create the material point simulator</span>
+<span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="s">&#39;uniaxial_stress_example&#39;</span><span class="p">)</span>
+
+<span class="c"># Define the material</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;elastic&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mf">1.35e11</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="mf">5.3e10</span><span class="p">})</span>
+
+<span class="c"># Define the stress step</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">StressStep</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">frames</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1e6</span><span class="p">)</span>
+
+<span class="c"># Run the simulation</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-does-the-script-work">
+<h2>How Does the Script Work?<a class="headerlink" href="#how-does-the-script-work" title="Permalink to this headline">¶</a></h2>
+<p>This section describes each part of the example script</p>
+<p><tt class="docutils literal"><span class="pre">from</span> <span class="pre">matmodlab</span> <span class="pre">import</span> <span class="pre">*</span></tt></p>
+<p>This statement makes the Matmodlab objects accessible to the script.</p>
+<p><tt class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_stress_example')</span></tt></p>
+<p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_stress_example</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.</p>
+<p><tt class="docutils literal"><span class="pre">mps.Material('elastic',</span> <span class="pre">{'K':</span> <span class="pre">1.35e11,</span> <span class="pre">'G':</span> <span class="pre">5.3e10})</span></tt></p>
+<p>This statement defines the material model to be the <tt class="docutils literal"><span class="pre">elastic</span></tt> material and
+defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to 1.35e11 and 5.3e10,
+respectively.</p>
+<p><tt class="docutils literal"><span class="pre">mps.StressStep(components=(1,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">frames=25,</span> <span class="pre">scale=1e6)</span></tt></p>
+<p>This statement defines an analysis step during which the material will be
+exercised. The step is defined by a deformation path with tensor
+<tt class="docutils literal"><span class="pre">components</span></tt> <img class="math" src="_images/math/2e955f5cf007cbc3caa6242e7c286a2e7d496534.png" alt="\{1, 0, 0, 0, 0, 0\}"/>. The <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and <tt class="docutils literal"><span class="pre">zz</span></tt>
+components represent stress. The step is run in 25 <tt class="docutils literal"><span class="pre">frames</span></tt> (increments) and
+a <tt class="docutils literal"><span class="pre">scale</span></tt> of 1e6 is applied to each component. Note the following:</p>
+<ul class="simple">
+<li>The first 3 values of <tt class="docutils literal"><span class="pre">components</span></tt> represent the <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and
+<tt class="docutils literal"><span class="pre">zz</span></tt> components of the tensor describing the deformation path. The <tt class="docutils literal"><span class="pre">xy</span></tt>,
+<tt class="docutils literal"><span class="pre">yz</span></tt>, and <tt class="docutils literal"><span class="pre">xz</span></tt> components are implicitly 0.</li>
+</ul>
+<p><tt class="docutils literal"><span class="pre">mps.run()</span></tt></p>
+<p>This statement runs the material through the defined deformation path.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="basics.html">Matmodlab Basics</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="components.html">Matmodlab Simulation Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html">Installing</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">User Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="create.html">Model Creation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="simulator.html">Material Point Simulator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimizer</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller, Scot Swan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="_sources/ex2.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

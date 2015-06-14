@@ -24,31 +24,15 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="&lt;no title&gt;" href="toc.html" />
-    <link rel="next" title="Postprocessing Results" href="post.html" />
-    <link rel="prev" title="Optimization*" href="optimize.html" />
+    <link rel="up" title="Matmodlab Basics" href="basics.html" />
+    <link rel="next" title="Model Creation" href="create.html" />
+    <link rel="prev" title="Postprocessing Results" href="post.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="post.html" title="Postprocessing Results"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="optimize.html" title="Optimization*"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li>
-          <li><a href="toc.html" accesskey="U">&lt;no title&gt;</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,7 +41,7 @@
             
   <div class="section" id="user-configuration">
 <span id="user-config"></span><h1>User Configuration<a class="headerlink" href="#user-configuration" title="Permalink to this headline">¶</a></h1>
-<p>User&#8217;s can get/set/delete <em>matmodlab</em> configuration options through the <tt class="docutils literal"><span class="pre">mml</span>
+<p>User&#8217;s can get/set/delete Matmodlab configuration options through the <tt class="docutils literal"><span class="pre">mml</span>
 <span class="pre">config</span></tt> script.</p>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
@@ -96,14 +80,14 @@ optional arguments:
 </div>
 <div class="section" id="useful-configurations">
 <h2>Useful Configurations<a class="headerlink" href="#useful-configurations" title="Permalink to this headline">¶</a></h2>
-<p><em>matmodlab</em> must be configured to be made aware of materials and tests that
-reside outside of <em>matmodlab</em>. Use <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">config</span></tt> to add directories to find
+<p>Matmodlab must be configured to be made aware of materials and tests that
+reside outside of Matmodlab. Use <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">config</span></tt> to add directories to find
 these materials and tests:</p>
 <div class="highlight-python"><div class="highlight"><pre>mml config --add materials path/to/material
 mml config --add tests path/to/tests
 </pre></div>
 </div>
-<p>On completion of the preceding commands, <em>matmodlab</em> will treat materials and
+<p>On completion of the preceding commands, Matmodlab will treat materials and
 tests in <tt class="docutils literal"><span class="pre">path/to/material</span></tt> and <tt class="docutils literal"><span class="pre">path/to/tests</span></tt>, respectively, as built in
 materials and tests.</p>
 </div>
@@ -133,7 +117,7 @@ materials and tests.</p>
 
 
 <p>
-<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -141,21 +125,18 @@ materials and tests.</p>
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="basics.html">Matmodlab Basics</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="components.html">Matmodlab Simulation Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html">Installing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">User Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
 </ul>
 
 

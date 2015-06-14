@@ -1,7 +1,7 @@
 .. _inpperm:
 
-Permutation*
-############
+Permutator
+##########
 
 .. todo::
 
@@ -66,6 +66,8 @@ file with the values of each permutated parameter for that job.
 ``mml-evaldb.xml`` contains a summary of each job run. ``mml view``
 recognizes ``mml-evaldb.xml`` files.
 
+Run a permutation job by invoking the ``Permutator.run()`` method.
+
 PermutateVariable Factory Method
 ================================
 
@@ -106,52 +108,38 @@ The following input stub demonstrates how to permutate the ``K`` parameter
 Example
 =======
 
-The following input stub demonstrates how to permutate the ``K`` and ``G``
-parameters
+The following input demonstrates how to permutate the ``K`` and ``G``
+parameters to the ``elastic`` model.  The input can be found in ``matmodlab/inputs/permutation.py``.
 
 .. code:: python
 
-   from matmodlab import *
+  from matmodlab import *
 
-   def func(x, *args):
+  def func(x, xnames, d, runid, *args):
 
-       path = """
-       0 0 222222 0 0 0 0 0 0
-       1 1 222222 1 0 0 0 0 0
-       2 1 222222 2 0 0 0 0 0
-       3 1 222222 1 0 0 0 0 0
-       4 1 222222 0 0 0 0 0 0
-       """
-       d, runid = args[:2]
-       logfile = os.path.join(d, runid + ".log")
-       logger = Logger(logfile=logfile, verbosity=0)
+      mps = MaterialPointSimulator(runid)
+      mps.StrainStep(components=(1, 0, 0), increment=1., scale=-.5, frames=10)
+      mps.StrainStep(components=(2, 0, 0), increment=1., scale=-.5, frames=10)
+      mps.StrainStep(components=(1, 0, 0), increment=1., scale=-.5, frames=10)
+      mps.StrainStep(components=(0, 0, 0), increment=1., scale=-.5, frames=10)
 
-       # set up the driver
-       driver = Driver("Continuum", path=path, step_multiplier=1000,
-                       logger=logger, estar=-.5)
+      # set up the material
+      parameters = dict(zip(xnames, x))
+      mps.Material('elastic', parameters)
 
-       # set up the material
-       parameters = {"K": x[0], "G": x[1]}
-       material = Material("elastic", parameters=parameters, logger=logger)
+      # set up and run the model
+      mps.run()
 
-       # set up and run the model
-       mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
-       mps.run()
-       pres = mps.extract_from_db(["PRESSURE"])
-       return np.amax(pres)
+      s = mps.get('STRESS_XX')
+      return np.amax(s)
 
-   @matmodlab
-   def runner():
-       method = "zip"
-       d = os.getcwd()
-       runid = "perm_{0}".format(method)
-       K = PermutateVariable("K", 125e9, method="weibull", b=14, N=3)
-       G = PermutateVariable("G", 45e9, method="percentage", b=10, N=3)
-       xinit = [K, G]
-       permutator = Permutator(func, xinit, runid, descriptor=["MAX_PRES"],
-                               method=method, correlations=True, d=d, verbosity=v,
-                               funcargs=[runid])
-       permutator.run()
+  def runjob():
+      N = 15
+      K = PermutateVariable('K', 125e9, method='weibull', b=14, N=N)
+      G = PermutateVariable('G', 45e9, method='percentage', b=10, N=N)
+      xinit = [K, G]
+      permutator = Permutator('permutation', func, xinit, method='zip',
+                              descriptors=['MAX_PRES'], correlations=True)
+      permutator.run()
 
-   if __name__ == "__main__":
-       runner()
+  runjob()

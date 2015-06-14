@@ -2,7 +2,7 @@
 Quick Start Guide
 #################
 
-The steps for running a simulation in *matmodlab* are
+The steps for running a simulation in Matmodlab are
 
 * :ref:`setup_and_build`
 * :ref:`prepare_input`
@@ -32,12 +32,12 @@ or
   easy_install matmodlab
 
 
-*matmodlab* Developers
+Matmodlab Developers
 ----------------------
 
-See :ref:`Building` for more details.
+See :ref:`Installing` for more details.
 
-* Clone *matmodlab* from `<https://github.com/tjfulle/matmodlab>`_::
+* Clone Matmodlab from `<https://github.com/tjfulle/matmodlab>`_::
 
    git clone https://github.com/tjfulle/matmodlab.git
 
@@ -45,14 +45,14 @@ See :ref:`Building` for more details.
 
    python setup.py develop
 
-All components of *matmodlab* will be built and installed.
+All components of Matmodlab will be built and installed.
 
 .. _prepare_input:
 
 Prepare Input
 =============
 
-Input files are Python scripts. See :ref:`Annotated Examples` and :ref:`Methods for Creating Simulations` for more details.
+Input files are Python scripts. See :ref:`examples` and :ref:`Methods for Creating Simulations` for more details.
 
 * Instantiate a ``MaterialPointSimulator`` object.
 * Define the material model
@@ -63,7 +63,7 @@ Input files are Python scripts. See :ref:`Annotated Examples` and :ref:`Methods 
 Run the Simulation
 ==================
 
-Run the input script with ``mml``.  See :ref:`Annotated Examples` for more
+Run the input script with ``mml``.  See :ref:`examples` for more
 details::
 
   mml run [options] filename.py
@@ -71,9 +71,9 @@ details::
 ``mml`` will create the following files::
 
   ls filename.*
-  filename.exo            filename.log            filename.py
+  filename.dbx            filename.log            filename.py
 
-``filename.exo`` is the ExodusII output database and ``filename.log`` the simulation
+``filename.dbx`` is the dbx output database and ``filename.log`` the simulation
 log file. See ``mml help run`` for a complete list of options
 
 .. _post_proc_results:
@@ -81,6 +81,6 @@ log file. See ``mml help run`` for a complete list of options
 Postprocess
 ===========
 
-View results in *matmodlab* viewer.  See :ref:`Postprocessing` for more details::
+View results in Matmodlab viewer.  See :ref:`Postprocessing` for more details::
 
-  mml view filename.exo
+  mml view filename.dbx

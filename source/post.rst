@@ -4,10 +4,6 @@
 Postprocessing Results
 ######################
 
-Exporting Results to Other Formats
-==================================
-
-
 Visualizing Results
 ===================
 
@@ -28,3 +24,6 @@ Whichever method is chosen, a visualizer...
 .. figure:: images/mmv.png
    :align: center
    :height: 3.5in
+
+Exporting Results to Other Formats
+==================================

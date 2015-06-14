@@ -68,11 +68,11 @@ engineering strains, i.e.
 matmodlab Namespace
 ===================
 
-Input scripts to *matmodlab* should include::
+Input scripts to Matmodlab should include::
 
    from matmodlab import *
 
-to populate the script's namespace with *matmodlab* specific parameters and methods.
+to populate the script's namespace with Matmodlab specific parameters and methods.
 
 Parameters
 ----------

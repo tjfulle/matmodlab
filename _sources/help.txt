@@ -1,0 +1,4 @@
+Obtaining Help
+##############
+
+In addition to this guide, many example input files can be found in ``matmodlab/inputs`` and ``matmodlab/tests``

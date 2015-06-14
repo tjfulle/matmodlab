@@ -24,31 +24,15 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="&lt;no title&gt;" href="toc.html" />
-    <link rel="next" title="Command Line Tools" href="tools.html" />
-    <link rel="prev" title="Conventions" href="conventions.html" />
+    <link rel="up" title="Introduction" href="introduction.html" />
+    <link rel="next" title="Matmodlab Command Line Tools" href="cli.html" />
+    <link rel="prev" title="Quick Start Guide" href="quickstart.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="tools.html" title="Command Line Tools"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="conventions.html" title="Conventions"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li>
-          <li><a href="toc.html" accesskey="U">&lt;no title&gt;</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,18 +41,18 @@
             
   <div class="section" id="solution-method">
 <span id="id1"></span><h1>Solution Method<a class="headerlink" href="#solution-method" title="Permalink to this headline">¶</a></h1>
-<p><em>matmodlab</em> exercises a material model directly by &#8220;driving&#8221; it through user
-specified paths. <em>matmodlab</em> computes an increment in deformation for a given
+<p>Matmodlab exercises a material model directly by &#8220;driving&#8221; it through user
+specified paths. Matmodlab computes an increment in deformation for a given
 step and requires that the material model update the stress in the material to
 the end of that step. Because of the similarity of the material model
-interface in <em>matmodlab</em> with many commercial finite element codes,
-transitioning material models developed and tested in <em>matmodlab</em> to full
+interface in Matmodlab with many commercial finite element codes,
+transitioning material models developed and tested in Matmodlab to full
 finite element codes should be an easy process.</p>
 <p>This guide has several purposes:</p>
 <ul class="simple">
 <li>Describe the role and importance of the material model in a finite element procedure</li>
-<li>Describe the solution method adopted by drivers in <em>matmodlab</em> (comparing to finite elements where applicable)</li>
-<li>Describe how to set up, run, and view results of a <em>matmodlab</em> simulation.</li>
+<li>Describe the solution method adopted by drivers in Matmodlab (comparing to finite elements where applicable)</li>
+<li>Describe how to set up, run, and view results of a Matmodlab simulation.</li>
 <li>Introduce material Validation and Verification testing procedures.</li>
 </ul>
 <div class="section" id="the-role-of-the-material-model-in-continuum-mechanics">
@@ -84,36 +68,36 @@ production in the interior plus flux through the boundary</em></p>
 <ul>
 <li><p class="first">Conservation of mass</p>
 <div class="math">
-<p><img src="_images/math/980010c4eefafb825885d3c5f88b1bb6a324087f.png" alt="\dDensity + \Density\Del\DotProd\dDisplacement = 0"/></p>
+<p><img src="_images/math/693a72e9d210fcf1cacff1c697893b31f153c5da.png" alt="\dDensity + \Density\Del\DotProd\dDisplacement = 0"/></p>
 </div></li>
 <li><p class="first">Conservtion of momentum per unit volume</p>
 <div class="math">
-<p><img src="_images/math/439098dc6fc04d143bddc26c84b71aab195823af.png" alt="\Density\Der{}{t}\dDisplacement =
+<p><img src="_images/math/7737d505e53cb7531d6f47fa7e688be11bfb02e7.png" alt="\Density\Der{}{t}\dDisplacement =
 \underset{\text{internal forces}}{\boxed{\Del\DotProd\Stress}} +
 \underset{\text{body forces}}{\boxed{\BodyForce}}"/></p>
 </div></li>
 <li><p class="first">Conservation of energy per unit volume</p>
 <div class="math">
-<p><img src="_images/math/46cb96a9bb9fe7357e0ba92da28e1d2deb85da4e.png" alt="\Density\Der{}{t}\Energy =
+<p><img src="_images/math/ff5066ae8652d47e32a68c64f4f6b200fc57fe6f.png" alt="\Density\Der{}{t}\Energy =
 \underset{\text{heat source}}{\boxed{\Density s}} +
 \underset{\text{strain energy}}{\boxed{\Stress\DDotProd\dStrain}} +
 \underset{\text{heat flux}}{\boxed{\Del\DotProd\HeatFlux}}"/></p>
 </div></li>
 </ul>
-<p>where <img class="math" src="_images/math/76a4b7469d7b271a7c4455769aca9a6e216c42d2.png" alt="\Displacement"/> is the displacement, <img class="math" src="_images/math/67d562b5f0919e3ab0334086de08f90457b27f60.png" alt="\Density"/> the mass
-density, <img class="math" src="_images/math/77c9378524400b4f70b288ff86c43784709eb9d5.png" alt="\Stress"/> the stress, <img class="math" src="_images/math/c261814e5cc993b17e9ef9305cc2222ba865b59e.png" alt="\dStrain"/> the rate of strain,
-<img class="math" src="_images/math/7ce39c84e610bb01bcf451b4373a125c524b38c1.png" alt="\BodyForce"/> the body force per unit volume, <img class="math" src="_images/math/c5b87751540ff95d70e7181dc35f31ebc495a495.png" alt="\HeatFlux"/> the heat
-flux, <img class="math" src="_images/math/fec6fc03330f906a79d6eaf35025ffead638c80a.png" alt="s"/> the heat source, and <img class="math" src="_images/math/13cddb1514586fe3104fb0ecb68b44c79b386be1.png" alt="\Energy"/> is the internal energy
+<p>where <img class="math" src="_images/math/8114d5db7f2ab4536bda2ef768fb26ad8054a6c2.png" alt="\Displacement"/> is the displacement, <img class="math" src="_images/math/d2e36ab07c3b45bd8125e895dc30927bf675e3f6.png" alt="\Density"/> the mass
+density, <img class="math" src="_images/math/546d2e1fceb92c2444b3a0d3ee2baa60b3a30844.png" alt="\Stress"/> the stress, <img class="math" src="_images/math/57f45bb25b375cf183f0cd5a26f12d05966d668a.png" alt="\dStrain"/> the rate of strain,
+<img class="math" src="_images/math/7a1ef29dab692ad0f59445b84d31ac2faed453e1.png" alt="\BodyForce"/> the body force per unit volume, <img class="math" src="_images/math/dbb309f90971a77d5f38e0d0a7f7f7115cc50eab.png" alt="\HeatFlux"/> the heat
+flux, <img class="math" src="_images/math/ee7b76792e446b293afe4a1af130c87654a88cba.png" alt="s"/> the heat source, and <img class="math" src="_images/math/716285836c672b8f91cc73840f2ec0fc6ccc0344.png" alt="\Energy"/> is the internal energy
 per unit mass.</p>
 <p>In solid mechanics, mass is conserved trivially, and many problems are
 adiabatic or isotrhermal, so that only the momentum balance is explicitly
 solved</p>
 <div class="math" id="equation-mbal">
-<p><span class="eqno">(1)</span><img src="_images/math/439098dc6fc04d143bddc26c84b71aab195823af.png" alt="\Density\Der{}{t}\dDisplacement =
+<p><span class="eqno">(1)</span><img src="_images/math/7737d505e53cb7531d6f47fa7e688be11bfb02e7.png" alt="\Density\Der{}{t}\dDisplacement =
 \underset{\text{internal forces}}{\boxed{\Del\DotProd\Stress}} +
 \underset{\text{body forces}}{\boxed{\BodyForce}}"/></p>
 </div><p>The balance of linear momentum is the continuum mechanics generalization of
-Newton&#8217;s second law <img class="math" src="_images/math/9deee082baaf2e78381031e0a9ac16e1bf6c070f.png" alt="F=ma"/>.</p>
+Newton&#8217;s second law <img class="math" src="_images/math/0eeba9d24fc3edece23282965fa3e1cefe7a5d70.png" alt="F=ma"/>.</p>
 <p>The first term on the RHS of <a href="#equation-mbal">(1)</a> represents the internal forces, which
 arise in the medium to resist imposed deformation. This resistance is a
 fundamental response of matter and is given by the divergence of the stress
@@ -121,7 +105,7 @@ field.</p>
 <p>The balance of linear momentum represents an initial boundary value problem
 for applications of interest in solid dynamics:</p>
 <div class="math" id="equation-ibvp">
-<p><span class="eqno">(2)</span><img src="_images/math/f5325532367ffcb440f0854f2cd9e50dd08a60c0.png" alt="\begin{aligned}
+<p><span class="eqno">(2)</span><img src="_images/math/1c0f8d9b5d9d21cdafe8f280f59175930d871dc0.png" alt="\begin{aligned}
   \Density\Der{}{t}\dDisplacement = \Del\DotProd\Stress + \BodyForce&amp;
   &amp;&amp;\quad\text{in }\Omega \\
   \Displacement = \Displacement_0&amp; &amp;&amp;\quad\text{on }\Gamma_0 \\
@@ -135,10 +119,10 @@ for applications of interest in solid dynamics:</p>
 <span id="femeth"></span><h3>The Finite Element Method<a class="headerlink" href="#the-finite-element-method" title="Permalink to this headline">¶</a></h3>
 <p>The form of the momentum equation in <a href="#equation-ibvp">(2)</a> is termed the <strong>strong</strong> form.
 The strong form of the initial BVP problem can also be expressed in the weak
-form by introducing a test function <img class="math" src="_images/math/dd894beae09e581365536a184bf0d766025544ff.png" alt="\Tensor{w}{}{}"/> and integrating
+form by introducing a test function <img class="math" src="_images/math/06d94d98c34b6667a6bc746b20f11b1285af8756.png" alt="\Tensor{w}{}{}"/> and integrating
 over space</p>
 <div class="math" id="equation-ibvp-1">
-<p><span class="eqno">(3)</span><img src="_images/math/b9963b9f7dc6d1f21730d42989f1ce0b628c6879.png" alt="\begin{aligned}
+<p><span class="eqno">(3)</span><img src="_images/math/b22f0875469c2ef3cd7c70bbba047e86d35316d9.png" alt="\begin{aligned}
     \int_{\Omega}\Tensor{w}{}{}\DotProd\left(
       \Del\DotProd\Stress + \BodyForce - \Density\Der{}{t}\dDisplacement
     \right)\,d\Omega&amp; &amp;&amp;\quad \forall \Tensor{w}{}{} \\
@@ -151,7 +135,7 @@ over space</p>
 </div><p>Integrating <a href="#equation-ibvp-1">(3)</a> by parts allows the traction boundary conditions to
 be incorporated in to the governing equations</p>
 <div class="math" id="equation-weak">
-<p><span class="eqno">(4)</span><img src="_images/math/aff70c95f4e926580a60415865f8c024b79aaef8.png" alt="\begin{aligned}
+<p><span class="eqno">(4)</span><img src="_images/math/73c5f1f99336fd619fa6a0494671dcd223ba94f5.png" alt="\begin{aligned}
     \int_{\Omega}\Density\Tensor{w}{}{}\DotProd\Acceleration +
     \Stress\DDotProd\Del\Tensor{w}{}{}\,d\Omega
     = \int_{\Omega}\Tensor{w}{}{}\DotProd\BodyForce\,d\Omega +
@@ -167,19 +151,19 @@ be incorporated in to the governing equations</p>
 IBVP as a integro-differential equation and eliminates singularities that may
 arise in the strong form. Traction boundary conditions are incorporated in the
 governing equations. The weak form forms the basis for finite element methods.</p>
-<p>In the finite element method, forms of <img class="math" src="_images/math/dd894beae09e581365536a184bf0d766025544ff.png" alt="\Tensor{w}{}{}"/> are assumed in
-subdomains (elements) in <img class="math" src="_images/math/794d6efa7af45ee363b2116aed0f9c6164974545.png" alt="\Omega"/> and displacements are sought such that
-the force imbalance <img class="math" src="_images/math/3ec10834034ec5bd6b475701963acd1dc9919a27.png" alt="R"/> is minimized:</p>
+<p>In the finite element method, forms of <img class="math" src="_images/math/06d94d98c34b6667a6bc746b20f11b1285af8756.png" alt="\Tensor{w}{}{}"/> are assumed in
+subdomains (elements) in <img class="math" src="_images/math/22442f280b11c9e51e5010a22843d273d1544c7d.png" alt="\Omega"/> and displacements are sought such that
+the force imbalance <img class="math" src="_images/math/073da5bcc8473d77438299184816f3bc2787e68d.png" alt="R"/> is minimized:</p>
 <div class="math" id="equation-resid">
-<p><span class="eqno">(5)</span><img src="_images/math/1cbebcc494e63e4a890d4f1fcd1e9fbe11d401f9.png" alt="R = \int_{\Omega}\Tensor{w}{}{}\DotProd\BodyForce\,d\Omega +
+<p><span class="eqno">(5)</span><img src="_images/math/85b0bfc1aa8c5cd43308aa99ec665ece2892b954.png" alt="R = \int_{\Omega}\Tensor{w}{}{}\DotProd\BodyForce\,d\Omega +
 \int_{\Gamma}\Tensor{w}{}{}\DotProd\Traction\,d\Gamma_{t} -
  \int_{\Omega}\Density\Tensor{w}{}{}\DotProd\Acceleration +
         \Stress\DDotProd\Del\Tensor{w}{}{}\,d\Omega"/></p>
 </div><p>The equations of motion as described in <a href="#equation-resid">(5)</a> are not closed, but
-require relationships relating <img class="math" src="_images/math/77c9378524400b4f70b288ff86c43784709eb9d5.png" alt="\Stress"/> to <img class="math" src="_images/math/76a4b7469d7b271a7c4455769aca9a6e216c42d2.png" alt="\Displacement"/></p>
+require relationships relating <img class="math" src="_images/math/546d2e1fceb92c2444b3a0d3ee2baa60b3a30844.png" alt="\Stress"/> to <img class="math" src="_images/math/8114d5db7f2ab4536bda2ef768fb26ad8054a6c2.png" alt="\Displacement"/></p>
 <p class="centered">
-<strong>Constitutive model <img class="math" src="_images/math/022bf4a8c4d71f784c2829eed0ea92ee283378a7.png" alt="\longrightarrow"/> relationship between
-<img class="math" src="_images/math/77c9378524400b4f70b288ff86c43784709eb9d5.png" alt="\Stress"/> and <img class="math" src="_images/math/76a4b7469d7b271a7c4455769aca9a6e216c42d2.png" alt="\Displacement"/></strong></p><p>In the typical finite element procedure, the host finite element code passes
+<strong>Constitutive model <img class="math" src="_images/math/8c93083a5a0812997b508d78b55188c100a51110.png" alt="\longrightarrow"/> relationship between
+<img class="math" src="_images/math/546d2e1fceb92c2444b3a0d3ee2baa60b3a30844.png" alt="\Stress"/> and <img class="math" src="_images/math/8114d5db7f2ab4536bda2ef768fb26ad8054a6c2.png" alt="\Displacement"/></strong></p><p>In the typical finite element procedure, the host finite element code passes
 to the constitutive routine the stress and material state at the beginning of
 a finite step (in time) and kinematic quantities at the end of the step. The
 constitutive routine is responsible for updating the stress to the end of the
@@ -193,15 +177,15 @@ required for material variables.</p>
 <div class="section" id="solution-procedure">
 <span id="mmlsol"></span><h2>Solution Procedure<a class="headerlink" href="#solution-procedure" title="Permalink to this headline">¶</a></h2>
 <p>In addition to providing a platform for material model developers to formulate
-and test constitutive routines, <em>matmodlab</em> aims to provide users of material
+and test constitutive routines, Matmodlab aims to provide users of material
 models an independent platform to exercise, parameterize, and compare material
 responses against single element finite element simulations. To this end, the
-solution procedure in <em>matmodlab</em> is similar to that of the finite element
-method, in that the host code (<em>matmodlab</em>) provides to the constitutive
+solution procedure in Matmodlab is similar to that of the finite element
+method, in that the host code (Matmodlab) provides to the constitutive
 routine a measure of deformation at the end of a finite step and expects the
 updated stress in return. However, rather than solve the momentum equation at
 the beginning of each step and advancing kinematic quantities to the step&#8217;s
-end, <em>matmodlab</em> retrieves updated kinematic quantities from user defined
+end, Matmodlab retrieves updated kinematic quantities from user defined
 tables and/or functions.</p>
 <p>The path through which a material is exercised is defined by piecewise
 continuous &#8220;steps&#8221; in which tensor components of stress and/or deformation are
@@ -212,34 +196,21 @@ stress rate, deformation gradient, displacement, and velocity. &#8220;Mixed-mode
 of strain and stress (and their rates) are supported. Components of
 displacement and velocity control are applied only to the &#8220;+&#8221; faces of a unit
 cube centered at the coordinate origin.</p>
-<div class="section" id="step-types">
-<h3>Step Types<a class="headerlink" href="#step-types" title="Permalink to this headline">¶</a></h3>
-<p>The following step types are implemented by the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> class:</p>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">StrainStep</span></tt>, all step components are interpreted as components of the strain tensor.</li>
-<li><tt class="docutils literal"><span class="pre">StrainRateStep</span></tt>, all step components are interpreted as components of the strain rate tensor.</li>
-<li><tt class="docutils literal"><span class="pre">StressStep</span></tt>, all step components are interpreted as components of the stress tensor.</li>
-<li><tt class="docutils literal"><span class="pre">StressRateStep</span></tt>, all step components are interpreted as components of the stress rate tensor.</li>
-<li><tt class="docutils literal"><span class="pre">DisplacementStep</span></tt>, all step components are interpreted as components of the displacement vector, applied only to the &#8220;+&#8221; faces of a unit cube centered at the coordinate origin.</li>
-<li><tt class="docutils literal"><span class="pre">DefGradStep</span></tt>, all step components are interpreted as components of the deformation gradient tensor.</li>
-<li><tt class="docutils literal"><span class="pre">MixedStep</span></tt>, all step components are interpreted as components of stress and/or strain.  Must supply the <tt class="docutils literal"><span class="pre">descriptors</span></tt> keyword to designate the interpretation of each component.</li>
-</ul>
-</div>
 <div class="section" id="the-strain-tensor">
-<h3>The Strain Tensor<a class="headerlink" href="#the-strain-tensor" title="Permalink to this headline">¶</a></h3>
+<span id="strain-tensor"></span><h3>The Strain Tensor<a class="headerlink" href="#the-strain-tensor" title="Permalink to this headline">¶</a></h3>
 <p>The components of strain are defined by</p>
 <div class="math">
-<p><img src="_images/math/2f2a6bd791c3c090c69a097ed5d797b4d2c974f9.png" alt="\Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)"/></p>
-</div><p>where <img class="math" src="_images/math/95dfe9c848465f3b1c8fd39da12aa4a44311615b.png" alt="\RightStretch"/> is the right Cauchy stretch tensor, defined by the
-polar decomposition of the deformation gradient <img class="math" src="_images/math/8bb574f782f8456b4fe86c65af04ced2ae7a2b43.png" alt="\DefGrad =
-\Rotation\DotProd\RightStretch"/>, and <img class="math" src="_images/math/d52507346ebb6e51753f5c1d04b2240d05eaa15c.png" alt="\kappa"/> is a user specified
+<p><img src="_images/math/822dd924735a9abccc3ab26fb0e63a056afa2542.png" alt="\Strain = \frac{1}{\kappa}\left(\RightStretch^\kappa - \SOIdentity\right)"/></p>
+</div><p>where <img class="math" src="_images/math/40fb80b3ae6e03cd7992331d84787d613306e239.png" alt="\RightStretch"/> is the right Cauchy stretch tensor, defined by the
+polar decomposition of the deformation gradient <img class="math" src="_images/math/eba565c81e936246752f835be8b4cf7031d61dec.png" alt="\DefGrad =
+\Rotation\DotProd\RightStretch"/>, and <img class="math" src="_images/math/c07754ecb1eb2a60be258d6b982137621d2ee99f.png" alt="\kappa"/> is a user specified
 &#8220;Seth-Hill&#8221; parameter that controls the strain definition. Choosing
-<img class="math" src="_images/math/84b2369c5bc89b54c0aebe750f4a587db25953a4.png" alt="\kappa=2"/> gives the Lagrange strain, which might be useful when testing
-models cast in a reference coordinate system. The choice <img class="math" src="_images/math/a4fedb71f84a541b4e91d1f875ffa61f8c080a11.png" alt="\kappa=1"/>,
+<img class="math" src="_images/math/fb047eccdfde1173cfe3933bd15a8ff372c5cf20.png" alt="\kappa=2"/> gives the Lagrange strain, which might be useful when testing
+models cast in a reference coordinate system. The choice <img class="math" src="_images/math/40e1444f5c60a849b23fdfb6367afce7f103404a.png" alt="\kappa=1"/>,
 which gives the engineering strain, is convenient when driving a problem over
-the same strain path as was used in an experiment. The choice <img class="math" src="_images/math/954a90f18046738333e24e5ca5386c839e602930.png" alt="\kappa=0"/>
+the same strain path as was used in an experiment. The choice <img class="math" src="_images/math/2e78b99321c82e1cc47be1f112f98a0746866c1e.png" alt="\kappa=0"/>
 corresponds to the logarithmic (Hencky) strain. Common values of
-<img class="math" src="_images/math/d52507346ebb6e51753f5c1d04b2240d05eaa15c.png" alt="\kappa"/> and the associated names for each (there is some ambiguity in
+<img class="math" src="_images/math/c07754ecb1eb2a60be258d6b982137621d2ee99f.png" alt="\kappa"/> and the associated names for each (there is some ambiguity in
 the names) are listed in <a class="reference internal" href="#table-1">Table 1</a></p>
 <table border="1" class="docutils" id="table-1">
 <colgroup>
@@ -247,7 +218,7 @@ the names) are listed in <a class="reference internal" href="#table-1">Table 1</
 <col width="62%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head"><img class="math" src="_images/math/d52507346ebb6e51753f5c1d04b2240d05eaa15c.png" alt="\kappa"/></th>
+<tr class="row-odd"><th class="head"><img class="math" src="_images/math/c07754ecb1eb2a60be258d6b982137621d2ee99f.png" alt="\kappa"/></th>
 <th class="head">Name(s)</th>
 </tr>
 </thead>
@@ -269,47 +240,47 @@ the names) are listed in <a class="reference internal" href="#table-1">Table 1</
 </tr>
 </tbody>
 </table>
-<p>The volumetric strain <img class="math" src="_images/math/06e38804544f303589039bfa4b7f4a43e0e19d2a.png" alt="\Strain[v]"/> is defined</p>
+<p>The volumetric strain <img class="math" src="_images/math/b2d0a2771b25cdc21b9c57572af64fcb85071526.png" alt="\Strain[v]"/> is defined</p>
 <div class="math" id="equation-volstrain">
-<p><span class="eqno">(6)</span><img src="_images/math/bc9438d3314c766062ace91ab4ea6657cdc0c8f9.png" alt="\Strain[v] =
+<p><span class="eqno">(6)</span><img src="_images/math/52985f81907340241ddfac5c541b221107b46e4b.png" alt="\Strain[v] =
 \begin{cases}
     \OneOver{\kappa}\left(\Jacobian^{\kappa} - 1\right)
     &amp; \text{if }\kappa \ne 0 \\
     \ln{\Jacobian} &amp; \text{if }\kappa = 0
 \end{cases}"/></p>
-</div><p>where the Jacobian <img class="math" src="_images/math/32335519de9fde6ca6e2f2db449e74b8416bb9e2.png" alt="\Jacobian"/> is the determinant of the deformation gradient.</p>
-<p>Each step component, from time <img class="math" src="_images/math/044152e5757b8597e2535aa25222a17668272f7d.png" alt="t=0"/> to <img class="math" src="_images/math/2718fac656be4ece9b3d0a733d4986c934ef1771.png" alt="t=t_f"/> is
+</div><p>where the Jacobian <img class="math" src="_images/math/a4db1622c88aa630584a84ffea5127255beb553a.png" alt="\Jacobian"/> is the determinant of the deformation gradient.</p>
+<p>Each step component, from time <img class="math" src="_images/math/ed2664148097cd7691f1f89d7bb5306cddf0d44c.png" alt="t=0"/> to <img class="math" src="_images/math/2dc715e8cc162ae0c93bafc5b17abed0ca10c0c1.png" alt="t=t_f"/> is
 subdivided into a user-specified number of &#8220;frames&#8221; and the material model
 evaluated at each frame. When volumetric strain, deformation gradient,
-displacement, or velocity are specified for a step, <em>matmodlab</em> internally
+displacement, or velocity are specified for a step, Matmodlab internally
 determines the corresponding strain components. If a component of stress is
-specified, <em>matmodlab</em> determines the strain increment that minimizes the
+specified, Matmodlab determines the strain increment that minimizes the
 distance between the prescribed stress component and model response.</p>
 </div>
 <div class="section" id="stress-control">
 <span id="id3"></span><h3>Stress Control<a class="headerlink" href="#stress-control" title="Permalink to this headline">¶</a></h3>
 <p>Stress control is accomplished through an iterative scheme that seeks to
-determine the unkown strain rates, <img class="math" src="_images/math/2ec1f83d3b1d8aca043e26f9b8d0da712946d55e.png" alt="\dStrain\,[\text{v}]"/>, that satisfy</p>
+determine the unkown strain rates, <img class="math" src="_images/math/438c81c94a17ad44e98fa010258d3692d00d87a2.png" alt="\dStrain\,[\text{v}]"/>, that satisfy</p>
 <div class="math">
-<p><img src="_images/math/8561ba7f76e704fa95321e427dc0e6ecd4a560fc.png" alt="\Stress\left(\dStrain\,[\text{v}]\right) = \PrescStress"/></p>
-</div><p>where, <img class="math" src="_images/math/e80276a31735f49b1fdb2a229104411051465552.png" alt="\text{v}"/> is a vector subscript array containing the components
-for which stresses are prescribed, and <img class="math" src="_images/math/b6bd39a15d75e6ca52a3d24e93f205014517a6b1.png" alt="\PrescStress"/> are the components
+<p><img src="_images/math/3d13067136df7a1a695aa1de7f21548786ceb156.png" alt="\Stress\left(\dStrain\,[\text{v}]\right) = \PrescStress"/></p>
+</div><p>where, <img class="math" src="_images/math/11ca7b34c078b80e658a1232b75a7cca4aa488fb.png" alt="\text{v}"/> is a vector subscript array containing the components
+for which stresses are prescribed, and <img class="math" src="_images/math/3aeda9a39981ea69a4d33a63afe12a21aabbbdb8.png" alt="\PrescStress"/> are the components
 of prescribed stress.</p>
 <p>The approach is an iterative scheme employing a multidimensional Newton&#8217;s
 method. Each iteration begins by determining the submatrix of the material
 stiffness</p>
 <div class="math">
-<p><img src="_images/math/6196d19c44e39b4f27e99ff421231f4c1ae70abb.png" alt="\Stiffness_{\text{v}} = \Stiffness\,[\text{v}, \text{v}]"/></p>
-</div><p>where <img class="math" src="_images/math/c5f4a423d8e541332194abc9a8702b0563607824.png" alt="\Stiffness"/> is the full stiffness matrix
-<img class="math" src="_images/math/9058e5254a71b4c888bb0a5bbc06184882023f32.png" alt="\Stiffness=d\Stress/d\Strain"/>. The value of
-<img class="math" src="_images/math/2ec1f83d3b1d8aca043e26f9b8d0da712946d55e.png" alt="\dStrain\,[\text{v}]"/> is then updated according to</p>
+<p><img src="_images/math/7a09b58c6a6c2280c6a49bdba0d2b841725cfb3f.png" alt="\Stiffness_{\text{v}} = \Stiffness\,[\text{v}, \text{v}]"/></p>
+</div><p>where <img class="math" src="_images/math/1d65357f8b0087119a067f29a8543c107a603e93.png" alt="\Stiffness"/> is the full stiffness matrix
+<img class="math" src="_images/math/18b0a648c73c854bac1bd83725deedcca0b0b159.png" alt="\Stiffness=d\Stress/d\Strain"/>. The value of
+<img class="math" src="_images/math/438c81c94a17ad44e98fa010258d3692d00d87a2.png" alt="\dStrain\,[\text{v}]"/> is then updated according to</p>
 <div class="math">
-<p><img src="_images/math/04f6e70a387c35190b0443da6f483c15c316b035.png" alt="\dStrain_{n+1}\,[\text{v}] =
+<p><img src="_images/math/5030208270553873402f35dcdf3df666e80a745c.png" alt="\dStrain_{n+1}\,[\text{v}] =
     \dStrain_{n}\,[\text{v}] -
     \Stiffness_{\text{v}}^{-1}\DDotProd\Stress^{*}(\dStrain_{n}\,[\text{v}])/dt"/></p>
 </div><p>where</p>
 <div class="math">
-<p><img src="_images/math/9b80dcf7ffcdedbc71bda945c6a67fef663321e5.png" alt="\Stress^{*}(\dStrain\,[\text{v}]) = \Stress(\dStrain\,[\text{v}])
+<p><img src="_images/math/a6b9741fb988c65822ab08e765674f70d172e5f2.png" alt="\Stress^{*}(\dStrain\,[\text{v}]) = \Stress(\dStrain\,[\text{v}])
                                   - \PrescStress"/></p>
 </div><p>The Newton procedure will converge for valid stress states. However, it is
 possible to prescribe invalid stress state, e.g. a stress state beyond the
@@ -323,13 +294,13 @@ is used as a back up procedure. A warning is logged in these cases.</p>
 to as the material&#8217;s &#8220;Jacobian&#8221;, plays an integral roll in the solution of the
 inverse stress problem (determining strains as a function of prescribed
 stress). Similarly, the Jacobian plays a role in implicit finite element
-methods. In general, the Jacobian is a fourth order tensor in <img class="math" src="_images/math/607c07a93d36058505b6a11cbe30eaea2c2fc731.png" alt="\R{3}"/>
+methods. In general, the Jacobian is a fourth order tensor in <img class="math" src="_images/math/e445fbdf14118babe9203fdd2fac5378120e2abe.png" alt="\R{3}"/>
 with 81 independent components. Casting the stress and strain second order
-tensors in <img class="math" src="_images/math/607c07a93d36058505b6a11cbe30eaea2c2fc731.png" alt="\R{3}"/> as first order tensors in <img class="math" src="_images/math/011a121d93616a0f01decd0ad2f1cc2d5c01f406.png" alt="\R{9}"/> and the
-Jacobian as a second order tensor in <img class="math" src="_images/math/011a121d93616a0f01decd0ad2f1cc2d5c01f406.png" alt="\R{9}"/>, the stress/strain relation
+tensors in <img class="math" src="_images/math/e445fbdf14118babe9203fdd2fac5378120e2abe.png" alt="\R{3}"/> as first order tensors in <img class="math" src="_images/math/0ab81cd12fb722761a3ee17030f082f331c73d03.png" alt="\R{9}"/> and the
+Jacobian as a second order tensor in <img class="math" src="_images/math/0ab81cd12fb722761a3ee17030f082f331c73d03.png" alt="\R{9}"/>, the stress/strain relation
 in <a class="reference internal" href="#stress-control">Stress Control</a> can be written in matrix form as</p>
 <div class="math">
-<p><img src="_images/math/1a6a217d781e41ae1680c5c636988f223622fc1f.png" alt="\begin{Bmatrix}
+<p><img src="_images/math/897311096d905e0454ad427e34027ed6aad00f37.png" alt="\begin{Bmatrix}
   \dStress[11] \\
   \dStress[22] \\
   \dStress[33] \\
@@ -362,9 +333,9 @@ in <a class="reference internal" href="#stress-control">Stress Control</a> can b
   \Strain[32] \\
   \dStrain[31]
 \end{Bmatrix}"/></p>
-</div><p>Due to the symmetries of the stiffness and strain tensors (<img class="math" src="_images/math/dad444285bdd6c4425816c9bded668fcab32ff0b.png" alt="\Stiffness[ijkl]=\Stiffness[ijlk]"/>, <img class="math" src="_images/math/f14952a4b5ae9ddafc89681ae8951b68f5950aa8.png" alt="\dStrain[ij]=\dStrain[ji]"/>), the expression above can be simplified by removing the last three columns of <img class="math" src="_images/math/c5f4a423d8e541332194abc9a8702b0563607824.png" alt="\Stiffness"/>:</p>
+</div><p>Due to the symmetries of the stiffness and strain tensors (<img class="math" src="_images/math/8ad8dab2be42da5c6b6d722ee9ab48434a6fb4e5.png" alt="\Stiffness[ijkl]=\Stiffness[ijlk]"/>, <img class="math" src="_images/math/58c2d369a69c56a4e6811bb8b8865d029f4f5c14.png" alt="\dStrain[ij]=\dStrain[ji]"/>), the expression above can be simplified by removing the last three columns of <img class="math" src="_images/math/1d65357f8b0087119a067f29a8543c107a603e93.png" alt="\Stiffness"/>:</p>
 <div class="math">
-<p><img src="_images/math/ab45d4fa8b5a66b4af2f0163aa11688c3b61058e.png" alt="\begin{Bmatrix}
+<p><img src="_images/math/ae5b7b30d8b071df661330f8e235d06567ce3322.png" alt="\begin{Bmatrix}
   \dStress[11] \\
   \dStress[22] \\
   \dStress[33] \\
@@ -394,9 +365,9 @@ in <a class="reference internal" href="#stress-control">Stress Control</a> can b
   2\dStrain[23] \\
   2\dStrain[13]
 \end{Bmatrix}"/></p>
-</div><p>Considering the symmetry of the stress tensor (<img class="math" src="_images/math/0583552b0c73e3e17c74ae3782dfe2370fcfab51.png" alt="\dStress[ij]=\dStress[ji]"/>) and the major symmetry of <img class="math" src="_images/math/c5f4a423d8e541332194abc9a8702b0563607824.png" alt="\Stiffness"/> (<img class="math" src="_images/math/5a586cdb2417a686f9ab6b1f0133d597d15137d2.png" alt="\Stiffness[ijkl]=\Stiffness[klij]"/>), the final three rows of <img class="math" src="_images/math/c5f4a423d8e541332194abc9a8702b0563607824.png" alt="\Stiffness"/> may also be ommitted, resulting in the symmetric form</p>
+</div><p>Considering the symmetry of the stress tensor (<img class="math" src="_images/math/68b63e51cc8f068f6f8a11c18c7240ddeedd1b74.png" alt="\dStress[ij]=\dStress[ji]"/>) and the major symmetry of <img class="math" src="_images/math/1d65357f8b0087119a067f29a8543c107a603e93.png" alt="\Stiffness"/> (<img class="math" src="_images/math/9ba708a999a34abc7f6d3dc3cd34263d6a42408b.png" alt="\Stiffness[ijkl]=\Stiffness[klij]"/>), the final three rows of <img class="math" src="_images/math/1d65357f8b0087119a067f29a8543c107a603e93.png" alt="\Stiffness"/> may also be ommitted, resulting in the symmetric form</p>
 <div class="math">
-<p><img src="_images/math/f77e752ef1c96e12f88d2d5c9469d3702eb31307.png" alt="\begin{Bmatrix}
+<p><img src="_images/math/0d7003ebea8efe06efb5df19fb94935d53bebf3a.png" alt="\begin{Bmatrix}
   \dStress[11] \\
   \dStress[22] \\
   \dStress[33] \\
@@ -420,9 +391,9 @@ in <a class="reference internal" href="#stress-control">Stress Control</a> can b
   2\dStrain[23] \\
   2\dStrain[13]
 \end{Bmatrix}"/></p>
-</div><p>Letting <img class="math" src="_images/math/8390fa7fbfb810b025a7b95ad42df7effb4b30c0.png" alt="\{\dStress[1],\dStress[2],\dStress[3], \dStress[4], \dStress[5], \dStress[6]\}= \{\dStress[11],\dStress[22],\dStress[33], \dStress[12],\dStress[23],\dStress[13]\}"/> and <img class="math" src="_images/math/03f7f643d6327de56ec657f03f8fa032d54d93d7.png" alt="\{\dStrain[1],\dStrain[2],\dStrain[3], \dot{\gamma_4}, \dot{\gamma_5}, \dot{\gamma_6}\}= \{\dStrain[11],\dStrain[22],\dStrain[33],2\dStrain[12],2\dStrain[23],2\dStrain[13]\}"/>, the above stress-strain relationship is re-written as</p>
+</div><p>Letting <img class="math" src="_images/math/a438110f0ff3779bf1ac64bbfea353af8e5720bb.png" alt="\{\dStress[1],\dStress[2],\dStress[3], \dStress[4], \dStress[5], \dStress[6]\}= \{\dStress[11],\dStress[22],\dStress[33], \dStress[12],\dStress[23],\dStress[13]\}"/> and <img class="math" src="_images/math/ca71956e10f1c7cc90b419b1f9d01b8fd0868cff.png" alt="\{\dStrain[1],\dStrain[2],\dStrain[3], \dot{\gamma_4}, \dot{\gamma_5}, \dot{\gamma_6}\}= \{\dStrain[11],\dStrain[22],\dStrain[33],2\dStrain[12],2\dStrain[23],2\dStrain[13]\}"/>, the above stress-strain relationship is re-written as</p>
 <div class="math">
-<p><img src="_images/math/8db02746a06d52af150bb7773471122ac88275a5.png" alt="\begin{Bmatrix}
+<p><img src="_images/math/910fd049caaed6a5e824c1d28a62cb8303d03bfd.png" alt="\begin{Bmatrix}
   \dStress[1] \\
   \dStress[2] \\
   \dStress[3] \\
@@ -446,25 +417,25 @@ in <a class="reference internal" href="#stress-control">Stress Control</a> can b
   \dot{\gamma_5} \\
   \dot{\gamma_6}
 \end{Bmatrix}"/></p>
-</div><p>As expressed, the components of <img class="math" src="_images/math/c261814e5cc993b17e9ef9305cc2222ba865b59e.png" alt="\dStrain"/> and <img class="math" src="_images/math/0f94250886196e8ecc47b8c4a1d468cf03085456.png" alt="\dStress"/> are first order tensors and <img class="math" src="_images/math/c5f4a423d8e541332194abc9a8702b0563607824.png" alt="\Stiffness"/> is a second order tensor in <img class="math" src="_images/math/40901a5916e0c99992d6d3ad85a6d8e61780c6aa.png" alt="\R{6}"/>, respectively.</p>
+</div><p>As expressed, the components of <img class="math" src="_images/math/57f45bb25b375cf183f0cd5a26f12d05966d668a.png" alt="\dStrain"/> and <img class="math" src="_images/math/486bbd8aab0fec4b9f65fd1f279f94740d53696f.png" alt="\dStress"/> are first order tensors and <img class="math" src="_images/math/1d65357f8b0087119a067f29a8543c107a603e93.png" alt="\Stiffness"/> is a second order tensor in <img class="math" src="_images/math/18ac49148f73ebc3457a1a7b06fc5935575d8022.png" alt="\R{6}"/>, respectively.</p>
 <div class="section" id="alternative-representations-of-tensors-in">
-<h4>Alternative Representations of Tensors in <img class="math" src="_images/math/40901a5916e0c99992d6d3ad85a6d8e61780c6aa.png" alt="\R{6}"/><a class="headerlink" href="#alternative-representations-of-tensors-in" title="Permalink to this headline">¶</a></h4>
+<h4>Alternative Representations of Tensors in <img class="math" src="_images/math/18ac49148f73ebc3457a1a7b06fc5935575d8022.png" alt="\R{6}"/><a class="headerlink" href="#alternative-representations-of-tensors-in" title="Permalink to this headline">¶</a></h4>
 <p>The representation of symmetric tensors at the end of <a class="reference internal" href="#the-material-stiffness">The Material
 Stiffness</a> is known as the &#8220;Voight&#8221; representation. The shear strain
-components <img class="math" src="_images/math/ffc0210819b59b39fc0c3297bf4e1cf10381882b.png" alt="\dStrain[I]=2\dStrain[ij], \ I=4,5,6, \ ij=12,23,13"/> are
-known as the engineering shear strains (in contrast to <img class="math" src="_images/math/b252cd263204d28190d914c607e0051164c61640.png" alt="\dStrain[ij], \
+components <img class="math" src="_images/math/c9a23d3902bc261a07915d22981d224eff28d36b.png" alt="\dStrain[I]=2\dStrain[ij], \ I=4,5,6, \ ij=12,23,13"/> are
+known as the engineering shear strains (in contrast to <img class="math" src="_images/math/ea529137f0dc803e39c01b3907a88d6762aa9834.png" alt="\dStrain[ij], \
 ij=12,23,13"/> which are known as the tensor components). An advantage of the
 Voight representation is that the scalar product
-<img class="math" src="_images/math/dcbe655ade7ceb89c455bc8a39efaa4fc847d7bf.png" alt="\Stress[ij]\dStrain[ij]=\Stress[I]\dStrain[I]"/> is preserved and the
-components of the stiffness tensor are unchanged in <img class="math" src="_images/math/40901a5916e0c99992d6d3ad85a6d8e61780c6aa.png" alt="\R{6}"/>. However,
+<img class="math" src="_images/math/79760fb43bcaab4accfb37dee622923c3ac52194.png" alt="\Stress[ij]\dStrain[ij]=\Stress[I]\dStrain[I]"/> is preserved and the
+components of the stiffness tensor are unchanged in <img class="math" src="_images/math/18ac49148f73ebc3457a1a7b06fc5935575d8022.png" alt="\R{6}"/>. However,
 one must take care to account for the factor of 2 in the engineering shear
 strain components.</p>
 <p>Alternatively, one can express symmetric second order tensors with their
 &#8220;Mandel&#8221; components
-<img class="math" src="_images/math/9182e0bf3919051fb0cccf3bb3f4a596af503eb2.png" alt="\{\AA[1],\AA[2],\AA[3],\AA[4],\AA[5],\AA[6]\}=\{\AA[11],\AA[22],\AA[33],
-\sqrt{2}\AA[12],\sqrt{2}\AA[23],\sqrt{2}\AA[13]\}"/>.  Representing both the stress and strain with their Mandel representation also preserves the scalar product, without having to treat the components of stress and strain differently (at the expense of carrying around the factor of <img class="math" src="_images/math/ec94401787cc49420fb9258a7b791a3b7e8badc1.png" alt="\sqrt{2}"/> in the off-diagonal components of both).  The Mandel representation has the advantage that its basis in <img class="math" src="_images/math/40901a5916e0c99992d6d3ad85a6d8e61780c6aa.png" alt="\R{6}"/> is orthonormal, whereas the basis for the Voight representation is only orthogonal.  If Mandel components are used, the components of the stiffness must be modified as</p>
+<img class="math" src="_images/math/105a1a244d6c0272d0da6766dd7f9524da042c50.png" alt="\{\AA[1],\AA[2],\AA[3],\AA[4],\AA[5],\AA[6]\}=\{\AA[11],\AA[22],\AA[33],
+\sqrt{2}\AA[12],\sqrt{2}\AA[23],\sqrt{2}\AA[13]\}"/>.  Representing both the stress and strain with their Mandel representation also preserves the scalar product, without having to treat the components of stress and strain differently (at the expense of carrying around the factor of <img class="math" src="_images/math/e72ce74950f8099b1b3ed774f4b44df21c8f28be.png" alt="\sqrt{2}"/> in the off-diagonal components of both).  The Mandel representation has the advantage that its basis in <img class="math" src="_images/math/18ac49148f73ebc3457a1a7b06fc5935575d8022.png" alt="\R{6}"/> is orthonormal, whereas the basis for the Voight representation is only orthogonal.  If Mandel components are used, the components of the stiffness must be modified as</p>
 <div class="math">
-<p><img src="_images/math/2d3894a03beaabfac7cc627acd2dce91a57c33e5.png" alt="\Stiffness =
+<p><img src="_images/math/7249d8ec41e1dd840e004e0374e68de0f281d908.png" alt="\Stiffness =
 \begin{bmatrix}
   C_{11} &amp; C_{12} &amp; C_{13} &amp; \sqrt{2}C_{14}   &amp; \sqrt{2}C_{15} &amp; \sqrt{2}C_{16} \\
          &amp; C_{22} &amp; C_{23} &amp; \sqrt{2}C_{24}   &amp; \sqrt{2}C_{25} &amp; \sqrt{2}C_{26} \\
@@ -491,29 +462,25 @@ strain components.</p>
 
 
 <p>
-<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="introduction.html">Introduction</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="bg.html">Matmodlab Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">Matmodlab Command Line Tools</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
 </ul>
 
 

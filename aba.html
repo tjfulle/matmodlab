@@ -24,31 +24,15 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="&lt;no title&gt;" href="toc.html" />
-    <link rel="next" title="Optional Material Addons*" href="addon.html" />
-    <link rel="prev" title="The Material Point Simulator*" href="factory.html" />
+    <link rel="up" title="User Materials" href="user_mats.html" />
+    <link rel="next" title="Regression Testing*" href="test.html" />
+    <link rel="prev" title="Writing User Material Models*" href="mat_install.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="addon.html" title="Optional Material Addons*"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="factory.html" title="The Material Point Simulator*"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li>
-          <li><a href="toc.html" accesskey="U">&lt;no title&gt;</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,8 +41,8 @@
             
   <div class="section" id="abaqus-materials">
 <span id="aba-mats"></span><h1>Abaqus Materials*<a class="headerlink" href="#abaqus-materials" title="Permalink to this headline">¶</a></h1>
-<p><em>matmodlab</em> can build and exercise Abaqus <tt class="docutils literal"><span class="pre">UMAT</span></tt>, <tt class="docutils literal"><span class="pre">UHYPER</span></tt>, and
-<tt class="docutils literal"><span class="pre">UANISOHYPER_INV</span></tt> user material models. <em>matmodlab</em> builds the Abaqus models
+<p>Matmodlab can build and exercise Abaqus <tt class="docutils literal"><span class="pre">UMAT</span></tt>, <tt class="docutils literal"><span class="pre">UHYPER</span></tt>, and
+<tt class="docutils literal"><span class="pre">UANISOHYPER_INV</span></tt> user material models. Matmodlab builds the Abaqus models
 and calls them with the same calling arguments as Abaqus. Abaqus user material
 models use the same <tt class="docutils literal"><span class="pre">Material</span></tt> factory method as other materials, but requires the following:</p>
 <ul class="simple">
@@ -69,11 +53,11 @@ expected by the model).</li>
 <li><tt class="docutils literal"><span class="pre">depvar</span></tt> [optional], is the number of state dependent variables required
 for the model. Can also be specified as a list of state dependent variable
 names, specified in the order expected by the model. If given as a list, the
-number of state variables allocated is inferred from its length. <em>matmodlab</em>
+number of state variables allocated is inferred from its length. Matmodlab
 allocates storage for the <tt class="docutils literal"><span class="pre">depvar</span></tt> state dependent variables and
 initializes their values to 0.</li>
 <li><tt class="docutils literal"><span class="pre">source_files</span></tt> [optional] is a list of model source files. If not
-specified, <em>matmodlab</em> will look for <tt class="docutils literal"><span class="pre">umat.[Ff](90)?</span></tt> in the current
+specified, Matmodlab will look for <tt class="docutils literal"><span class="pre">umat.[Ff](90)?</span></tt> in the current
 working directory.</li>
 <li><tt class="docutils literal"><span class="pre">source_directory</span></tt> [optional] is a directory containing source files.</li>
 <li><tt class="docutils literal"><span class="pre">param_names</span></tt> [optional] is a list of parameter names. If given,
@@ -88,7 +72,7 @@ procedure as in Abaqus</li>
 </div>
 <div class="section" id="abaqus-utility-procedures">
 <h2>Abaqus Utility Procedures<a class="headerlink" href="#abaqus-utility-procedures" title="Permalink to this headline">¶</a></h2>
-<p><em>matmodlab</em> implements the following Abaqus utility procedures:</p>
+<p>Matmodlab implements the following Abaqus utility procedures:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">XIT</span></tt>.  Stops calculations immediately.</li>
 <li><tt class="docutils literal"><span class="pre">STDB_ABQERR</span></tt>.  Message passing interface from material model to host code.</li>
@@ -146,7 +130,7 @@ procedure as in Abaqus</li>
 
 
 <p>
-<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -154,21 +138,15 @@ procedure as in Abaqus</li>
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="user_mats.html">User Materials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="mat_install.html">Writing User Material Models*</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Abaqus Materials*</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
 </ul>
 
 

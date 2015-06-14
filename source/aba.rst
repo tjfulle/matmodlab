@@ -3,8 +3,8 @@
 Abaqus Materials*
 #################
 
-*matmodlab* can build and exercise Abaqus ``UMAT``, ``UHYPER``, and
-``UANISOHYPER_INV`` user material models. *matmodlab* builds the Abaqus models
+Matmodlab can build and exercise Abaqus ``UMAT``, ``UHYPER``, and
+``UANISOHYPER_INV`` user material models. Matmodlab builds the Abaqus models
 and calls them with the same calling arguments as Abaqus. Abaqus user material
 models use the same ``Material`` factory method as other materials, but requires the following:
 
@@ -15,11 +15,11 @@ models use the same ``Material`` factory method as other materials, but requires
 * ``depvar`` [optional], is the number of state dependent variables required
   for the model. Can also be specified as a list of state dependent variable
   names, specified in the order expected by the model. If given as a list, the
-  number of state variables allocated is inferred from its length. *matmodlab*
+  number of state variables allocated is inferred from its length. Matmodlab
   allocates storage for the ``depvar`` state dependent variables and
   initializes their values to 0.
 * ``source_files`` [optional] is a list of model source files. If not
-  specified, *matmodlab* will look for ``umat.[Ff](90)?`` in the current
+  specified, Matmodlab will look for ``umat.[Ff](90)?`` in the current
   working directory.
 * ``source_directory`` [optional] is a directory containing source files.
 * ``param_names`` [optional] is a list of parameter names. If given,
@@ -34,7 +34,7 @@ models use the same ``Material`` factory method as other materials, but requires
 Abaqus Utility Procedures
 =========================
 
-*matmodlab* implements the following Abaqus utility procedures:
+Matmodlab implements the following Abaqus utility procedures:
 
 * ``XIT``.  Stops calculations immediately.
 * ``STDB_ABQERR``.  Message passing interface from material model to host code.

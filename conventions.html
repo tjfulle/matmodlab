@@ -24,31 +24,13 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="&lt;no title&gt;" href="toc.html" />
-    <link rel="next" title="Solution Method" href="solmeth.html" />
-    <link rel="prev" title="Quick Start Guide" href="quickstart.html" />
+    <link rel="prev" title="Regression Testing*" href="test.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="solmeth.html" title="Solution Method"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="quickstart.html" title="Quick Start Guide"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li>
-          <li><a href="toc.html" accesskey="U">&lt;no title&gt;</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -65,19 +47,19 @@
 <h2>Vector Storage<a class="headerlink" href="#vector-storage" title="Permalink to this headline">¶</a></h2>
 <p>Vector components are stored as</p>
 <div class="math">
-<p><img src="_images/math/d322e36c3f407fb313d49059dc9e866c4e078a17.png" alt="\Tensor{v}{}{}{} = \{v_x, v_y, v_z\}"/></p>
+<p><img src="_images/math/04094e39307f8d0bcaad3f2f777d52c84fef5af7.png" alt="\Tensor{v}{}{}{} = \{v_x, v_y, v_z\}"/></p>
 </div></div>
 <div class="section" id="tensor-storage">
 <h2>Tensor Storage<a class="headerlink" href="#tensor-storage" title="Permalink to this headline">¶</a></h2>
 <p>In general, second-order symmetric tensors are stored as 6x1 arrays with the
 following ordering</p>
 <div class="math" id="equation-order-symtens">
-<p><span class="eqno">(1)</span><img src="_images/math/2cb62dac8f80190a4ff1cd647c2e3daae1dac415.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{yz}, A_{xz}\}"/></p>
+<p><span class="eqno">(1)</span><img src="_images/math/3b6b877dfca24ef0ad4cc512d96a3a11b38e2bfa.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{yz}, A_{xz}\}"/></p>
 </div><p>Tensor components are used for all second-order symmetric tensors.</p>
 <p>Nonsymmetric, second-order tensors are stored as 9x1 arrays in row major
 ordering, i.e.,</p>
 <div class="math">
-<p><img src="_images/math/7a201fff4ca2d7d59ef3e0f858836ed7050ce039.png" alt="\BB = \{A_{xx}, A_{xy}, A_{xz},
+<p><img src="_images/math/62ff4b6e367f11199a5ddc84a2624f7e647f5da8.png" alt="\BB = \{A_{xx}, A_{xy}, A_{xz},
         A_{yx}, A_{yy}, A_{yz},
         A_{zx}, A_{zy}, A_{zz}\}"/></p>
 </div><div class="section" id="abaqus-materials">
@@ -87,7 +69,7 @@ tensors are modified when the material is called to be consistent with
 Abaqus/Standard.   i.e., the second-order tensor in <a href="#equation-order-symtens">(1)</a> is
 passed to an Abaqus material as</p>
 <div class="math">
-<p><img src="_images/math/b8c1a149924b09c47c48c92bb0a2bd09dbd44dda.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{xz}, A_{yz}\}"/></p>
+<p><img src="_images/math/c42c4695b97a57b5f92d84c964607d4e12d2b841.png" alt="\AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{xz}, A_{yz}\}"/></p>
 </div><p>Nonsymmetric, second-order tensors are sent as 3x3 matrices.</p>
 </div>
 </div>
@@ -96,16 +78,16 @@ passed to an Abaqus material as</p>
 <p>The shear components of strain-like tensors are sent to the material model as
 engineering strains, i.e.</p>
 <div class="math">
-<p><img src="_images/math/50adcbcad15a4ad8ee703bd60cffca1770a69771.png" alt="\Strain = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, 2\epsilon_{xy}, 2\epsilon_{xz}, 2\epsilon_{yz}\}
+<p><img src="_images/math/8819f55d14c75ba947545df34b0f8db508aa3495.png" alt="\Strain = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, 2\epsilon_{xy}, 2\epsilon_{xz}, 2\epsilon_{yz}\}
         = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, \gamma_{xy}, \gamma_{xz}, \gamma_{yz}\}"/></p>
 </div></div>
 <div class="section" id="matmodlab-namespace">
 <h2>matmodlab Namespace<a class="headerlink" href="#matmodlab-namespace" title="Permalink to this headline">¶</a></h2>
-<p>Input scripts to <em>matmodlab</em> should include:</p>
+<p>Input scripts to Matmodlab should include:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
 </pre></div>
 </div>
-<p>to populate the script&#8217;s namespace with <em>matmodlab</em> specific parameters and methods.</p>
+<p>to populate the script&#8217;s namespace with Matmodlab specific parameters and methods.</p>
 <div class="section" id="parameters">
 <h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h3>
 <p>Some useful parameters exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt> are</p>
@@ -145,7 +127,7 @@ engineering strains, i.e.</p>
 
 
 <p>
-<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -153,21 +135,18 @@ engineering strains, i.e.</p>
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Conventions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dimension">Dimension</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vector-storage">Vector Storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tensor-storage">Tensor Storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#engineering-strains">Engineering Strains</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#matmodlab-namespace">matmodlab Namespace</a></li>
+</ul>
+</li>
 </ul>
 
 

@@ -24,25 +24,13 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="#" />
-    <link rel="next" title="&lt;no title&gt;" href="toc.html" />
+    <link rel="next" title="Introduction" href="introduction.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="toc.html" title="&lt;no title&gt;"
-             accesskey="N">next</a> |</li>
-        <li><a href="#">Material Model Laboratory 3.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -52,33 +40,37 @@
   <div class="section" id="the-material-model-laboratory">
 <h1>The Material Model Laboratory<a class="headerlink" href="#the-material-model-laboratory" title="Permalink to this headline">¶</a></h1>
 <p>This guide to the Material Model Laboratory is a work in progress.  The documentation is currently in a state of flux between describing version 2 and the new default version 3.  Section headings containing an asterisk (*) are not up to date with version 3.  Efforts are currently under way to update the documentation.</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
-</ul>
+<div class="section" id="obtaining-matmodlab">
+<h2>Obtaining Matmodlab<a class="headerlink" href="#obtaining-matmodlab" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab is an open source project licensed under the MIT license. The source can be obtained from <a class="reference external" href="https://github.com/tjfulle/matmodlab">https://github.com/tjfulle/matmodlab</a></p>
+<p>Matmodlab can be installed via pip:</p>
+<div class="highlight-python"><div class="highlight"><pre>pip install matmodlab
+</pre></div>
 </div>
+<p>See <a class="reference internal" href="install.html#installing"><em>Installing</em></a> for more installation details.</p>
+</div>
+<div class="section" id="about-this-guide">
+<h2>About This Guide<a class="headerlink" href="#about-this-guide" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab is developed as a tool for developers and analysts who care to
+understand the responses of material models to specific deformation paths. The
+target audience is assumed to have a basic knowledge of continuum mechanics
+and familiarity with other finite element codes. Accordingly, concepts of
+continuum mechanics and finite element methods are not described in detail and
+programing techniques are also not described.</p>
+</div>
+<div class="section" id="obtaining-additional-help">
+<h2>Obtaining Additional Help<a class="headerlink" href="#obtaining-additional-help" title="Permalink to this headline">¶</a></h2>
+<p>In addition to this guide, many example input files can be found in <tt class="docutils literal"><span class="pre">matmodlab/inputs</span></tt> and <tt class="docutils literal"><span class="pre">matmodlab/tests</span></tt></p>
 </div>
 <div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
 <li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
 </ul>
+<div class="toctree-wrapper compound">
+</div>
+</div>
 </div>
 
 
@@ -94,7 +86,7 @@
 
 
 <p>
-<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -102,21 +94,11 @@
 <h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
 </ul>
 
 

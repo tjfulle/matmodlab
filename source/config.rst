@@ -4,7 +4,7 @@
 User Configuration
 ==================
 
-User's can get/set/delete *matmodlab* configuration options through the ``mml
+User's can get/set/delete Matmodlab configuration options through the ``mml
 config`` script.
 
 Usage
@@ -50,14 +50,14 @@ The ``-E`` flag to ``mml run`` suppresses use of configuration file.
 Useful Configurations
 ---------------------
 
-*matmodlab* must be configured to be made aware of materials and tests that
-reside outside of *matmodlab*. Use ``mml config`` to add directories to find
+Matmodlab must be configured to be made aware of materials and tests that
+reside outside of Matmodlab. Use ``mml config`` to add directories to find
 these materials and tests::
 
   mml config --add materials path/to/material
   mml config --add tests path/to/tests
 
-On completion of the preceding commands, *matmodlab* will treat materials and
+On completion of the preceding commands, Matmodlab will treat materials and
 tests in ``path/to/material`` and ``path/to/tests``, respectively, as built in
 materials and tests.
 

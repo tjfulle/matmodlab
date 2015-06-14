@@ -106,12 +106,10 @@ pygments_style = 'sphinx'
 sys.path.insert(0, d)
 import alabaster
 html_theme_path = [alabaster.get_path()]
-extendsions = ["alabaster"]
 html_theme = 'alabaster'
 html_sidebars = {
    '**': [
-       'about.html', 'navigation.html', 'searchbox.html', 'donate.html',
-   ]
+       'about.html', 'navigation.html', 'searchbox.html', 'donate.html'],
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -120,6 +118,7 @@ html_sidebars = {
 html_theme_options = {
     #"logo": "logo.png",
     "github_user": "tjfulle",
+    "extra_nav_links": {},
     "github_repo": "matmodlab",}
 
 # Add any paths that contain custom themes here, relative to this directory.

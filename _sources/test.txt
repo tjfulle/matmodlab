@@ -4,10 +4,10 @@ Regression Testing*
 ###################
 
 Regression testing is crucial to the model development process. Regression
-tests in *matmodlab* are special purpose problems that serve several purposes.
-Most notably, component tests for the core capabilities of *matmodlab* and
+tests in Matmodlab are special purpose problems that serve several purposes.
+Most notably, component tests for the core capabilities of Matmodlab and
 verification and validation (V&V) of material models. In the first role,
-problems are fast running and exercise specific features of *matmodlab* in a
+problems are fast running and exercise specific features of Matmodlab in a
 unit-test type fashion. In the second, material models are exercised through
 specific paths with known, or expected outcomes. Each type of test is
 supported through the ``core.test.TestBase``. New tests are created as
@@ -58,8 +58,8 @@ internally for test identification and ``keywords`` for test filtering and
 organization. The module containing the test must also define a
 ``run_<runid>`` function (where ``<runid>`` is replaced with the actual
 ``runid`` of the test) to run the actual simulation. For each test so defined,
-*matmodlab* expects the existence of a base file ``<runid>.base_exo`` containing
-the expected, or baseline, results. *matmodlab* also expects, on exercising
+Matmodlab expects the existence of a base file ``<runid>.base_exo`` containing
+the expected, or baseline, results. Matmodlab also expects, on exercising
 ``run_<runid>``, the creation of the results file ``<runid>.exo``. At the
 completion of the test, ``<runid>.exo`` is compared to ``<runid>.base_exo`` and
 differences (if any) determined by :ref:`exodiff`.
@@ -68,7 +68,7 @@ Command-Line Interface
 ======================
 
 The ``test`` subcommand of ``mml`` gathers, runs, and analyzes tests. To run
-tests with *matmodlab*, be sure that ``matmodlab/bin`` is on your path and
+tests with Matmodlab, be sure that ``matmodlab/bin`` is on your path and
 execute::
 
   $ mml test
@@ -89,7 +89,7 @@ web browser.
 ``mml test`` searches for test specification files in the ``matmodlab/tests``
 directory and directories in the ``tests`` section of the configuration file.
 Test files are python files whose names match ``(?:^|[\\b_\\.-])[Tt]est``.
-*matmodlab* supports
+Matmodlab supports
 
 mml test Options
 ----------------
@@ -168,7 +168,7 @@ Useful Read-Only Attributes of TestBase
 Methods
 =======
 
-As described in :ref:`basic_test_ex`, minimally, a test subclasses ``TestBase`` and defines a ``runid`` and ``keywords``, *matmodlab* will set up the test, run, and perform post processing.  Optionally, a test may define the following methods.
+As described in :ref:`basic_test_ex`, minimally, a test subclasses ``TestBase`` and defines a ``runid`` and ``keywords``, Matmodlab will set up the test, run, and perform post processing.  Optionally, a test may define the following methods.
 
 .. method:: TestBase.setup(*args, **kwargs)
 

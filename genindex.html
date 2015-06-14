@@ -30,16 +30,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="#" title="General Index"
-             accesskey="I">index</a></li>
-        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -54,6 +45,7 @@
  | <a href="#B"><strong>B</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
+ | <a href="#G"><strong>G</strong></a>
  | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
@@ -71,7 +63,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="user_mats.html#NativeMaterial.__init__">__init__() (NativeMaterial method)</a>
+  <dt><a href="mat_install.html#NativeMaterial.__init__">__init__() (NativeMaterial method)</a>
   </dt>
 
   </dl></td>
@@ -91,13 +83,17 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="factory.html#Driver">Driver()</a>
+  <dt><a href="simulator.html#MaterialPointSimulator.DataSteps">DataSteps() (MaterialPointSimulator method)</a>
+  </dt>
+
+      
+  <dt><a href="simulator.html#MaterialPointSimulator.DefGradStep">DefGradStep() (MaterialPointSimulator method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="factory.html#MaterialPointSimulator.dump">dump() (MaterialPointSimulator method)</a>
+  <dt><a href="simulator.html#MaterialPointSimulator.DisplacementStep">DisplacementStep() (MaterialPointSimulator method)</a>
   </dt>
 
   </dl></td>
@@ -111,9 +107,13 @@
   </dt>
 
   </dl></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="factory.html#MaterialPointSimulator.extract_from_db">extract_from_db() (MaterialPointSimulator method)</a>
+  <dt><a href="simulator.html#MaterialPointSimulator.get">get() (MaterialPointSimulator method)</a>
   </dt>
 
   </dl></td>
@@ -133,7 +133,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="user_mats.html#NativeMaterial.lapack">lapack (NativeMaterial attribute)</a>
+  <dt><a href="mat_install.html#NativeMaterial.lapack">lapack (NativeMaterial attribute)</a>
   </dt>
 
   </dl></td>
@@ -147,13 +147,17 @@
   </dt>
 
       
-  <dt><a href="factory.html#Material">Material()</a>
+  <dt><a href="simulator.html#MaterialPointSimulator.Material">Material() (MaterialPointSimulator method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="factory.html#MaterialPointSimulator">MaterialPointSimulator (built-in class)</a>
+  <dt><a href="simulator.html#MaterialPointSimulator">MaterialPointSimulator (built-in class)</a>
+  </dt>
+
+      
+  <dt><a href="simulator.html#MaterialPointSimulator.MixedStep">MixedStep() (MaterialPointSimulator method)</a>
   </dt>
 
   </dl></td>
@@ -163,13 +167,13 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="user_mats.html#NativeMaterial.name">name (NativeMaterial attribute)</a>
+  <dt><a href="mat_install.html#NativeMaterial.name">name (NativeMaterial attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="user_mats.html#NativeMaterial">NativeMaterial (built-in class)</a>
+  <dt><a href="mat_install.html#NativeMaterial">NativeMaterial (built-in class)</a>
   </dt>
 
   </dl></td>
@@ -177,6 +181,12 @@
 
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="optimize.html#Optimizer">Optimizer (built-in class)</a>
+  </dt>
+
+  </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="optimize.html#OptimizeVariable">OptimizeVariable() (built-in function)</a>
@@ -213,7 +223,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="factory.html#MaterialPointSimulator.run">run() (MaterialPointSimulator method)</a>
+  <dt><a href="simulator.html#MaterialPointSimulator.run">run() (MaterialPointSimulator method)</a>
   </dt>
 
       <dd><dl>
@@ -235,7 +245,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="user_mats.html#NativeMaterial.setup">setup() (NativeMaterial method)</a>
+  <dt><a href="mat_install.html#NativeMaterial.setup">setup() (NativeMaterial method)</a>
   </dt>
 
       <dd><dl>
@@ -244,10 +254,26 @@
   </dt>
 
       </dl></dd>
+      
+  <dt><a href="mat_install.html#NativeMaterial.source_files">source_files (NativeMaterial attribute)</a>
+  </dt>
+
+      
+  <dt><a href="simulator.html#MaterialPointSimulator.StrainRateStep">StrainRateStep() (MaterialPointSimulator method)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="user_mats.html#NativeMaterial.source_files">source_files (NativeMaterial attribute)</a>
+  <dt><a href="simulator.html#MaterialPointSimulator.StrainStep">StrainStep() (MaterialPointSimulator method)</a>
+  </dt>
+
+      
+  <dt><a href="simulator.html#MaterialPointSimulator.StressRateStep">StressRateStep() (MaterialPointSimulator method)</a>
+  </dt>
+
+      
+  <dt><a href="simulator.html#MaterialPointSimulator.StressStep">StressStep() (MaterialPointSimulator method)</a>
   </dt>
 
   </dl></td>
@@ -277,7 +303,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="user_mats.html#NativeMaterial.update_state">update_state() (NativeMaterial method)</a>
+  <dt><a href="mat_install.html#NativeMaterial.update_state">update_state() (NativeMaterial method)</a>
   </dt>
 
   </dl></td>
@@ -287,7 +313,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="factory.html#MaterialPointSimulator.visualize_results">visualize_results() (MaterialPointSimulator method)</a>
+  <dt><a href="simulator.html#MaterialPointSimulator.view">view() (MaterialPointSimulator method)</a>
   </dt>
 
   </dl></td>
@@ -307,7 +333,7 @@
 
 
 <p>
-<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -315,21 +341,11 @@
 <h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
 </ul>
 
 

@@ -24,31 +24,15 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="&lt;no title&gt;" href="toc.html" />
-    <link rel="next" title="Conventions" href="conventions.html" />
-    <link rel="prev" title="Introduction" href="introduction.html" />
+    <link rel="up" title="Introduction" href="introduction.html" />
+    <link rel="next" title="Solution Method" href="solmeth.html" />
+    <link rel="prev" title="Matmodlab Background" href="bg.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="conventions.html" title="Conventions"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="introduction.html" title="Introduction"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Material Model Laboratory 3.0 documentation</a> &raquo;</li>
-          <li><a href="toc.html" accesskey="U">&lt;no title&gt;</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,7 +41,7 @@
             
   <div class="section" id="quick-start-guide">
 <h1>Quick Start Guide<a class="headerlink" href="#quick-start-guide" title="Permalink to this headline">¶</a></h1>
-<p>The steps for running a simulation in <em>matmodlab</em> are</p>
+<p>The steps for running a simulation in Matmodlab are</p>
 <ul class="simple">
 <li><a class="reference internal" href="#setup-and-build"><em>Setup and Build</em></a></li>
 <li><a class="reference internal" href="#prepare-input"><em>Prepare Input</em></a></li>
@@ -67,9 +51,22 @@
 <div class="section" id="setup-and-build">
 <span id="id1"></span><h2>Setup and Build<a class="headerlink" href="#setup-and-build" title="Permalink to this headline">¶</a></h2>
 <p><em>The following commands are to be executed from a command prompt</em></p>
-<p>Build <em>matmodlab</em>.  See <a class="reference internal" href="build.html#building"><em>Building*</em></a> for more details.</p>
+<div class="section" id="users">
+<h3>Users<a class="headerlink" href="#users" title="Permalink to this headline">¶</a></h3>
+<p>Simply execute</p>
+<div class="highlight-python"><div class="highlight"><pre>pip install matmodlab
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre>easy_install matmodlab
+</pre></div>
+</div>
+</div>
+<div class="section" id="matmodlab-developers">
+<h3>Matmodlab Developers<a class="headerlink" href="#matmodlab-developers" title="Permalink to this headline">¶</a></h3>
+<p>See <a class="reference internal" href="install.html#installing"><em>Installing</em></a> for more details.</p>
 <ul>
-<li><p class="first">Clone <em>matmodlab</em> from <a class="reference external" href="https://github.com/tjfulle/matmodlab">https://github.com/tjfulle/matmodlab</a>:</p>
+<li><p class="first">Clone Matmodlab from <a class="reference external" href="https://github.com/tjfulle/matmodlab">https://github.com/tjfulle/matmodlab</a>:</p>
 <div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/tjfulle/matmodlab.git
 </pre></div>
 </div>
@@ -80,11 +77,12 @@
 </div>
 </li>
 </ul>
-<p>All components of <em>matmodlab</em> will be built and installed.</p>
+<p>All components of Matmodlab will be built and installed.</p>
+</div>
 </div>
 <div class="section" id="prepare-input">
 <span id="id2"></span><h2>Prepare Input<a class="headerlink" href="#prepare-input" title="Permalink to this headline">¶</a></h2>
-<p>Input files are Python scripts. See <a class="reference internal" href="examples.html#annotated-examples"><em>Annotated Examples</em></a> and <a class="reference internal" href="factory.html#methods-for-creating-simulations"><em>The Material Point Simulator*</em></a> for more details.</p>
+<p>Input files are Python scripts. See <a class="reference internal" href="examples.html#examples"><em>Annotated Examples</em></a> and <a class="reference internal" href="simulator.html#methods-for-creating-simulations"><em>Material Point Simulator</em></a> for more details.</p>
 <ul class="simple">
 <li>Instantiate a <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> object.</li>
 <li>Define the material model</li>
@@ -93,23 +91,23 @@
 </div>
 <div class="section" id="run-the-simulation">
 <span id="run-the-input"></span><h2>Run the Simulation<a class="headerlink" href="#run-the-simulation" title="Permalink to this headline">¶</a></h2>
-<p>Run the input script with <tt class="docutils literal"><span class="pre">mml</span></tt>.  See <a class="reference internal" href="examples.html#annotated-examples"><em>Annotated Examples</em></a> for more
+<p>Run the input script with <tt class="docutils literal"><span class="pre">mml</span></tt>.  See <a class="reference internal" href="examples.html#examples"><em>Annotated Examples</em></a> for more
 details:</p>
 <div class="highlight-python"><div class="highlight"><pre>mml run [options] filename.py
 </pre></div>
 </div>
 <p><tt class="docutils literal"><span class="pre">mml</span></tt> will create the following files:</p>
 <div class="highlight-python"><div class="highlight"><pre>ls filename.*
-filename.exo            filename.log            filename.py
+filename.dbx            filename.log            filename.py
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">filename.exo</span></tt> is the ExodusII output database and <tt class="docutils literal"><span class="pre">filename.log</span></tt> the simulation
+<p><tt class="docutils literal"><span class="pre">filename.dbx</span></tt> is the dbx output database and <tt class="docutils literal"><span class="pre">filename.log</span></tt> the simulation
 log file. See <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">help</span> <span class="pre">run</span></tt> for a complete list of options</p>
 </div>
 <div class="section" id="postprocess">
 <span id="post-proc-results"></span><h2>Postprocess<a class="headerlink" href="#postprocess" title="Permalink to this headline">¶</a></h2>
-<p>View results in <em>matmodlab</em> viewer.  See <a class="reference internal" href="post.html#postprocessing"><em>Postprocessing Results</em></a> for more details:</p>
-<div class="highlight-python"><div class="highlight"><pre>mml view filename.exo
+<p>View results in Matmodlab viewer.  See <a class="reference internal" href="post.html#postprocessing"><em>Postprocessing Results</em></a> for more details:</p>
+<div class="highlight-python"><div class="highlight"><pre>mml view filename.dbx
 </pre></div>
 </div>
 </div>
@@ -128,29 +126,25 @@ log file. See <tt class="docutils literal"><span class="pre">mml</span> <span cl
 
 
 <p>
-<iframe src="http://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Quick Start Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tools.html">Command Line Tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="factory.html">The Material Point Simulator*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="addon.html">Optional Material Addons*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">Permutation*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">User Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="build.html">Building*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">Writing User Material Models*</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="introduction.html">Introduction</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="bg.html">Matmodlab Background</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Quick Start Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">Matmodlab Command Line Tools</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
 </ul>
 
 
