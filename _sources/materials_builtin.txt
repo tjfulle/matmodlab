@@ -1,0 +1,9 @@
+Builtin Material Models
+=======================
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   materials_elastic
+   materials_plastic

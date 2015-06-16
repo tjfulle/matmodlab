@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Matmodlab Background &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>Introduction: General &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,9 +24,6 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="Introduction" href="introduction.html" />
-    <link rel="next" title="Quick Start Guide" href="quickstart.html" />
-    <link rel="prev" title="Introduction" href="introduction.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -39,8 +36,51 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="matmodlab-background">
-<h1>Matmodlab Background<a class="headerlink" href="#matmodlab-background" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="introduction-general">
+<h1>Introduction: General<a class="headerlink" href="#introduction-general" title="Permalink to this headline">¶</a></h1>
+<h2> Overview of the Material Model Laboratory </h2><p>The Material Model Laboratory (Matmodlab) is a collection of tools that
+provides capability to develop, parameterize, and test material constitutive
+models. Matmodlab includes:</p>
+<ul class="simple">
+<li>Matmodlab Driver, a specialized material model driver</li>
+<li>Matmodlab Permutator, a toolkit for determining model sensitivities to
+parameters.</li>
+<li>Matmodlab Optimizer, an optimization toolkit for optimizing material model
+parameters;</li>
+<li>Matmodlab Viewer, an interactive visualization tool.</li>
+</ul>
+<p>The material model driver can be thought to drive a single material point of a
+finite element simulation through very specific user designed paths. This
+permits exercising material models in ways not possible in finite element
+calculations, desgining verification and validation tests of the material
+response, among others. Matmodlab is a small suite of tools at the developers
+disposal to aid in the design and implementation of material models in larger
+finite element host codes. It is also a useful tool to analysts for
+understanding and parameterizing a material&#8217;s response to deformation.</p>
+<h2> About Matmodlab </h2><p>The core of Matmodlab code base is written in Python and leverages
+Python&#8217;s object oriented programming (OOP) design. OOP techniques are used
+throughout Matmodlab to setup and manage simulation data. Computationally
+heavy portions of the code, and many material models themselves are written in
+Fortran for its speed and ubiquity in scientific computing. Calling Fortran
+procedures from Python is made possible by the <tt class="docutils literal"><span class="pre">f2py</span></tt> module, standard in
+Numpy, that compiles and creates Python shared object libraries from Fortran
+sources.</p>
+<p>Output files from Matmodlab simulations are in the <em>dbx</em> or database
+ExodusII format. Since Matmodlab is designed to be used by material model
+developers, it is expected that the typical user will want access to <em>all</em>
+available output from a material model, thus all simulation data is written to
+the output database. Output files can be visualized with the Matmodlab
+visualization utility.</p>
+<p>Matmodlab is free software released under the MIT License.</p>
+<p>The Matmodlab Model Laboratory (Matmodlab) is a collection of tools
+A matmodlab simulation consists of three parts: model definition, simulation,
+and postprocessing.</p>
+<p><strong>Model Definition</strong></p>
+<p>Define a model as a python input script.</p>
+<p><strong>Simulation</strong></p>
+<p>Solve the numerical problem given in the model.  Output from the model is generated and stored in one of several output formats, <tt class="docutils literal"><span class="pre">dbx</span></tt> being the default.</p>
+<p><strong>Postprocessing</strong></p>
+<p>Model results can be evaluated in the Matmodlab viewer.  Additionally, model results can be evaluated using the output database scripting interface.</p>
 <div class="section" id="why-a-single-element-driver">
 <h2>Why a Single Element Driver?<a class="headerlink" href="#why-a-single-element-driver" title="Permalink to this headline">¶</a></h2>
 <p>Single element drivers allow the constituive model developer to concentrate on
@@ -132,19 +172,12 @@ spend a few weekends re-writing it in to what is now known as Matmodlab.</p>
 
 
 <h3>Navigation</h3>
-<ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="introduction.html">Introduction</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="">Matmodlab Background</a></li>
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="solmeth.html">Solution Method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html">Matmodlab Command Line Tools</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic.html">2. Matmodlab Job Execution: Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="create.html">3. Model Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="materials.html">4. Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">5. Regression Testing*</a></li>
 </ul>
 
 

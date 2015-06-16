@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Material Point Simulator &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>3.1. Material Point Simulator &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,9 +24,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="Model Creation" href="create.html" />
-    <link rel="next" title="Permutator" href="permutate.html" />
-    <link rel="prev" title="Model Creation" href="create.html" />
+    <link rel="up" title="3. Model Creation" href="create.html" />
+    <link rel="next" title="3.2. Permutator" href="permutate.html" />
+    <link rel="prev" title="3. Model Creation" href="create.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,7 +40,7 @@
           <div class="body">
             
   <div class="section" id="material-point-simulator">
-<span id="mps"></span><span id="methods-for-creating-simulations"></span><h1>Material Point Simulator<a class="headerlink" href="#material-point-simulator" title="Permalink to this headline">¶</a></h1>
+<span id="mps"></span><span id="methods-for-creating-simulations"></span><h1>3.1. Material Point Simulator<a class="headerlink" href="#material-point-simulator" title="Permalink to this headline">¶</a></h1>
 <p>A model in Matmodlab is defined by a <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> object.</p>
 <dl class="class">
 <dt id="MaterialPointSimulator">
@@ -58,7 +58,7 @@
 </dd></dl>
 
 <div class="section" id="defining-a-material-model">
-<h2>Defining a Material Model<a class="headerlink" href="#defining-a-material-model" title="Permalink to this headline">¶</a></h2>
+<span id="defining-a-material"></span><h2>Defining a Material Model<a class="headerlink" href="#defining-a-material-model" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="MaterialPointSimulator.Material">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>expansion=None</em>, <em>trs=None</em>, <em>viscoelastic=None</em>, <em>rebuild=False</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>fiber_dirs=None</em>, <em>depvar=None</em>, <em>param_names=None</em>, <em>switch=None</em>, <em>user_ics=False</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.Material" title="Permalink to this definition">¶</a></dt>
@@ -168,10 +168,10 @@
 <span id="common-args"></span><h3>Common Step Arguments<a class="headerlink" href="#common-step-arguments" title="Permalink to this headline">¶</a></h3>
 <p>The arguments common to all step functions are:</p>
 <blockquote>
-<div><p><em>components</em> are the components of the tensor defining the step.  Tensor ordering is described in <a class="reference internal" href="conventions.html#conventions"><em>Conventions</em></a>.  For all tensors, the components are assumed to be the &#8220;tensor values&#8221;, as opposed to the &#8220;engineering values&#8221;.  For symmetric tensors, specifying only the three diagonal components implicitly assigns the off-diagonal components a value of zero.  For strain type tensors, if only a single component is given, it is assumed to be a volumetric deformation.  For stress type tensors, if only a single component is given, it is assumed to be a pressure.</p>
+<div><p><em>components</em> are the components of the tensor defining the step.  Tensor ordering is described in <a class="reference internal" href="intro_conventions.html#conventions"><em>Matmodlab Conventions</em></a>.  For all tensors, the components are assumed to be the &#8220;tensor values&#8221;, as opposed to the &#8220;engineering values&#8221;.  For symmetric tensors, specifying only the three diagonal components implicitly assigns the off-diagonal components a value of zero.  For strain type tensors, if only a single component is given, it is assumed to be a volumetric deformation.  For stress type tensors, if only a single component is given, it is assumed to be a pressure.</p>
 <p><em>scale</em> is a multiplier applied to all components.  It can be a float or a numpy ndarray (so that a different scale could be applied to each component separately).</p>
 <p><em>frames</em> is the integer number of increments that the step is subdivided in to.</p>
-<p><em>kappa</em> the Seth-Hill strain parameter.  See <a class="reference internal" href="solmeth.html#strain-tensor"><em>The Strain Tensor</em></a> for details.</p>
+<p><em>kappa</em> the Seth-Hill strain parameter.  See <a class="reference internal" href="intro_solution.html#strain-tensor"><em>The Strain Tensor</em></a> for details.</p>
 <p><em>temperature</em> is the temperature.  If not specified, the step is assigned the same temperature as the previous step.</p>
 <p><em>elec_field</em> is the electric field vector.  If none is given, it is set to (0, 0, 0).</p>
 <p><em>num_dumps</em> is the integer number of times to write the output database.  If not specified, all step increments are written.</p>
@@ -229,18 +229,24 @@
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="create.html">Model Creation</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="">Material Point Simulator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="optimize.html">Optimizer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic.html">2. Matmodlab Execution</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="create.html">3. Model Creation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="">3.1. Material Point Simulator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#defining-a-material-model">Defining a Material Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optional-material-addons">Optional Material Addons</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#defining-simulation-steps">Defining Simulation Steps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-the-simulation">Running the Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extracting-results-from-the-output-database">Extracting Results from the Output Database</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#view-simulation-results">View Simulation Results</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutate.html">3.2. Permutator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimize.html">3.3. Optimizer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="materials.html">4. Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">5. Regression Testing*</a></li>
 </ul>
 
 

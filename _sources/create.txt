@@ -1,3 +1,4 @@
+
 Model Creation
 ##############
 
@@ -10,4 +11,3 @@ Describe different ways of creating a model
    simulator
    permutate
    optimize
-   examples

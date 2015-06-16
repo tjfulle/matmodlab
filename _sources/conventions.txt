@@ -1,7 +1,7 @@
 .. _Conventions:
 
-Conventions
-###########
+Matmodlab Conventions
+#####################
 
 Dimension
 =========

@@ -1,0 +1,12 @@
+
+Materials
+#########
+
+This chapter provides an overview of material models available in Matmodlab, as well as instructions on how to incorporate user defined material models.
+
+.. toctree::
+   :hidden:
+
+    materials_overview
+    materials_builtin
+    materials_user

@@ -119,7 +119,8 @@ html_theme_options = {
     #"logo": "logo.png",
     "github_user": "tjfulle",
     "extra_nav_links": {},
-    "github_repo": "matmodlab",}
+    "github_repo": "matmodlab",
+    "show_related": True}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []

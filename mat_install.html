@@ -24,9 +24,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="User Materials" href="user_mats.html" />
-    <link rel="next" title="Abaqus Materials*" href="aba.html" />
-    <link rel="prev" title="User Materials" href="user_mats.html" />
+    <link rel="up" title="Materials" href="mat.html" />
+    <link rel="next" title="Abaqus Materials*" href="mat_umat.html" />
+    <link rel="prev" title="Materials" href="mat.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -45,7 +45,7 @@
 materials:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">native</span></tt> material models.  See <a class="reference internal" href="#native"><em>Native Material Models</em></a>.</li>
-<li>Abaqus <tt class="docutils literal"><span class="pre">umat</span></tt> material models. See <a class="reference internal" href="aba.html#aba-mats"><em>Abaqus Materials*</em></a></li>
+<li>Abaqus <tt class="docutils literal"><span class="pre">umat</span></tt> material models. See <a class="reference internal" href="mat_umat.html#aba-mats"><em>Abaqus Materials*</em></a></li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -140,7 +140,7 @@ models, a material interface is not necessary.</p>
 </div>
 <div class="section" id="abaqus-umat-material-models">
 <span id="aba-umat-models"></span><h2>Abaqus umat Material Models<a class="headerlink" href="#abaqus-umat-material-models" title="Permalink to this headline">¶</a></h2>
-<p>See <a class="reference internal" href="aba.html#aba-mats"><em>Abaqus Materials*</em></a></p>
+<p>See <a class="reference internal" href="mat_umat.html#aba-mats"><em>Abaqus Materials*</em></a></p>
 </div>
 <div class="section" id="building-and-linking-materials">
 <h2>Building and Linking Materials<a class="headerlink" href="#building-and-linking-materials" title="Permalink to this headline">¶</a></h2>
@@ -159,7 +159,7 @@ need to be built by Matmodlab and are built using numpy&#8217;s distutils and f2
 <h3>Building Material Models Implemented in Fortran<a class="headerlink" href="#building-material-models-implemented-in-fortran" title="Permalink to this headline">¶</a></h3>
 <p>Matmodlab must be able to find, compile, and link the Fortran source files.
 For Abaqus umats, this is done by passing a list of source file names to the
-<tt class="docutils literal"><span class="pre">Material</span></tt> factory method, see <a class="reference internal" href="aba.html#aba-mats"><em>Abaqus Materials*</em></a>. Native materials communicate
+<tt class="docutils literal"><span class="pre">Material</span></tt> factory method, see <a class="reference internal" href="mat_umat.html#aba-mats"><em>Abaqus Materials*</em></a>. Native materials communicate
 information regarding source file locations through the <tt class="docutils literal"><span class="pre">source_files</span></tt> class
 attribute.</p>
 <div class="section" id="f2py-signature-file">
@@ -388,9 +388,16 @@ end python module hooke
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="create.html">Model Creation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="user_mats.html">User Materials</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="">Writing User Material Models*</a></li>
-<li class="toctree-l2"><a class="reference internal" href="aba.html">Abaqus Materials*</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="mat.html">Materials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="">Writing User Material Models*</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#native-material-models">Native Material Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#abaqus-umat-material-models">Abaqus umat Material Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-and-linking-materials">Building and Linking Materials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#communicating-information-from-fortran-materials-to-the-logger">Communicating Information from Fortran Materials to the Logger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mat_umat.html">Abaqus Materials*</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>

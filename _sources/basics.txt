@@ -1,9 +1,12 @@
-:tocdepth: 2
 
 Matmodlab Basics
 ################
 
-A matmodlab simulation consists of three parts: model definition, simulation, and postprocessing.
+Overview
+========
+
+A matmodlab simulation consists of three parts: model definition, simulation,
+and postprocessing.
 
 **Model Definition**
 

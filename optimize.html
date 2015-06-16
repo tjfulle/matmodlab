@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Optimizer &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>3.3. Optimizer &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,9 +24,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="up" title="Model Creation" href="create.html" />
-    <link rel="next" title="Annotated Examples" href="examples.html" />
-    <link rel="prev" title="Permutator" href="permutate.html" />
+    <link rel="up" title="3. Model Creation" href="create.html" />
+    <link rel="next" title="4. Materials" href="materials.html" />
+    <link rel="prev" title="3.2. Permutator" href="permutate.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,7 +40,7 @@
           <div class="body">
             
   <div class="section" id="optimizer">
-<h1>Optimizer<a class="headerlink" href="#optimizer" title="Permalink to this headline">¶</a></h1>
+<h1>3.3. Optimizer<a class="headerlink" href="#optimizer" title="Permalink to this headline">¶</a></h1>
 <p>Optimize specified parameters against user specified objective function. Ideal
 for finding optimal model parameters. A optimizer instance is created through
 the <tt class="docutils literal"><span class="pre">Optimizer</span></tt> constructor. Minimally, the constructor requires a function
@@ -116,7 +116,7 @@ file with the values of each parameter to optimize for that job.
 </dd></dl>
 
 <div class="section" id="examples">
-<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<h3>3.3. Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
 <p>The following input stub demonstrates how to permutate the <tt class="docutils literal"><span class="pre">K</span></tt> parameter</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="n">K</span> <span class="o">=</span> <span class="n">OptimizeVariable</span><span class="p">(</span><span class="s">&quot;K&quot;</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span>
 </pre></div>
@@ -204,18 +204,21 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="basics.html">Matmodlab Basics</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="create.html">Model Creation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="simulator.html">Material Point Simulator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="permutate.html">Permutator</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">Optimizer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html">Annotated Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic.html">2. Matmodlab Execution</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="create.html">3. Model Creation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="simulator.html">3.1. Material Point Simulator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutate.html">3.2. Permutator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">3.3. Optimizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#optimizer-constructor">Optimizer Constructor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optimizevariable-factory-method">OptimizeVariable Factory Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user_mats.html">User Materials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Regression Testing*</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conventions.html">Conventions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="materials.html">4. Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">5. Regression Testing*</a></li>
 </ul>
 
 

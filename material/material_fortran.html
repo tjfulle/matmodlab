@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Fortran User Material Interface &mdash; Material Model Laboratory 3.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
+    <link rel="up" title="3.6. User Defined Materials" href="material_user.html" />
+    <link rel="next" title="4. Regression Testing*" href="../test.html" />
+    <link rel="prev" title="Python User Material Interface" href="material_python.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="fortran-user-material-interface">
+<h1>Fortran User Material Interface<a class="headerlink" href="#fortran-user-material-interface" title="Permalink to this headline">¶</a></h1>
+<p>Matmodlab can build and exercise Abaqus <tt class="docutils literal"><span class="pre">UMAT</span></tt>, <tt class="docutils literal"><span class="pre">UHYPER</span></tt>, and
+<tt class="docutils literal"><span class="pre">UANISOHYPER_INV</span></tt> user material models. Matmodlab builds the Abaqus models
+and calls them with the same calling arguments as Abaqus. Abaqus user material
+models use the same <tt class="docutils literal"><span class="pre">Material</span></tt> factory method as other materials, but requires the following:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">model</span></tt> argument must be one of <tt class="docutils literal"><span class="pre">umat</span></tt>, <tt class="docutils literal"><span class="pre">uhyper</span></tt>, or
+<tt class="docutils literal"><span class="pre">uanisohyper_inv</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">parameters</span></tt> must be a ndarray of model constants (specified in the order
+expected by the model).</li>
+<li><tt class="docutils literal"><span class="pre">depvar</span></tt> [optional], is the number of state dependent variables required
+for the model. Can also be specified as a list of state dependent variable
+names, specified in the order expected by the model. If given as a list, the
+number of state variables allocated is inferred from its length. Matmodlab
+allocates storage for the <tt class="docutils literal"><span class="pre">depvar</span></tt> state dependent variables and
+initializes their values to 0.</li>
+<li><tt class="docutils literal"><span class="pre">source_files</span></tt> [optional] is a list of model source files. If not
+specified, Matmodlab will look for <tt class="docutils literal"><span class="pre">umat.[Ff](90)?</span></tt> in the current
+working directory.</li>
+<li><tt class="docutils literal"><span class="pre">source_directory</span></tt> [optional] is a directory containing source files.</li>
+<li><tt class="docutils literal"><span class="pre">param_names</span></tt> [optional] is a list of parameter names. If given,
+<tt class="docutils literal"><span class="pre">parameters</span></tt> must be given as dict of <tt class="docutils literal"><span class="pre">param_name:value</span></tt> pairs (just as
+in the native models).</li>
+<li><tt class="docutils literal"><span class="pre">cmname</span></tt> [optional] is the constitutive model name. Passed to the user
+procedure as in Abaqus</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only one <tt class="docutils literal"><span class="pre">UMAT</span></tt> material can be run and exercised at a time.</p>
+</div>
+<div class="section" id="abaqus-utility-procedures">
+<h2>Abaqus Utility Procedures<a class="headerlink" href="#abaqus-utility-procedures" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab implements the following Abaqus utility procedures:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">XIT</span></tt>.  Stops calculations immediately.</li>
+<li><tt class="docutils literal"><span class="pre">STDB_ABQERR</span></tt>.  Message passing interface from material model to host code.</li>
+</ul>
+<p>Consult the Abaqus documentation for more information.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="example-umat-user-subroutines">
+<h3>Example UMAT User Subroutines<a class="headerlink" href="#example-umat-user-subroutines" title="Permalink to this headline">¶</a></h3>
+<p>See <tt class="docutils literal"><span class="pre">matmodlab/materials/abaumats</span></tt> for some sample <tt class="docutils literal"><span class="pre">umat</span></tt> materials.</p>
+</div>
+<div class="section" id="example-material-inputs">
+<h3>Example Material Inputs<a class="headerlink" href="#example-material-inputs" title="Permalink to this headline">¶</a></h3>
+<p>Two parameter Neo-Hookean nonlinear elastic model implemented as a <tt class="docutils literal"><span class="pre">UMAT</span></tt>.</p>
+<div class="code highlight-python"><div class="highlight"><pre><span class="n">E</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="o">.</span><span class="mi">333</span>
+<span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s">&quot;umat&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">E</span><span class="p">,</span> <span class="n">nu</span><span class="p">],</span>
+                     <span class="n">source_files</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;neohooke.f90&quot;</span><span class="p">],</span>
+                     <span class="n">source_directory</span><span class="o">=</span><span class="s">&quot;{0}/abaumats&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">MAT_D</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Two parameter Neo-Hookean nonlinear elastic model implemented as a <tt class="docutils literal"><span class="pre">UHYPER</span></tt>.</p>
+<div class="code highlight-python"><div class="highlight"><pre><span class="n">C10</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">D1</span> <span class="o">=</span> <span class="mf">1E-05</span>
+<span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s">&quot;uhyper&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">C10</span><span class="p">,</span> <span class="n">D1</span><span class="p">],</span>
+                    <span class="n">source_files</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;uhyper.f90&quot;</span><span class="p">],</span>
+                    <span class="n">source_directory</span><span class="o">=</span><span class="s">&quot;{0}/abaumats&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">MAT_D</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Two parameter Neo-Hookean nonlinear elastic model implemented as a <tt class="docutils literal"><span class="pre">UHYPER</span></tt>, specifying the <tt class="docutils literal"><span class="pre">param_names</span></tt></p>
+<div class="code highlight-python"><div class="highlight"><pre><span class="n">C10</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">D1</span> <span class="o">=</span> <span class="mf">1E-05</span>
+<span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;C10&quot;</span><span class="p">,</span> <span class="s">&quot;D1&quot;</span><span class="p">]</span>
+<span class="n">paramters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">param_names</span><span class="p">,</span> <span class="p">[</span><span class="n">C10</span><span class="p">,</span> <span class="n">D1</span><span class="p">]))</span>
+<span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s">&quot;uhyper&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span>
+                    <span class="n">source_files</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;uhyper.f90&quot;</span><span class="p">],</span>
+                    <span class="n">source_directory</span><span class="o">=</span><span class="s">&quot;{0}/abaumats&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">MAT_D</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../basic.html">2. Matmodlab Execution</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="material.html">3. Materials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="material_overview.html">3.1. Material Library: Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="material_overview.html#references">3.2. References</a></li>
+<li class="toctree-l2"><a class="reference internal" href="material_overview.html#defining-materials">3.3. Defining Materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="material_overview.html#other-material-behaviors">3.4. Other Material Behaviors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="material_builtin.html">3.5. Builtin Material Models</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="material_user.html">3.6. User Defined Materials</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="material_user.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="material_user.html#references">References</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="material_user.html#user-material-interface">User Material Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="material_user.html#material-ordering">Material Ordering</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller, Scot Swan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="../_sources/material/material_fortran.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

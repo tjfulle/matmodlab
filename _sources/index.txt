@@ -37,12 +37,11 @@ Indices and tables
 * :ref:`search`
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :hidden:
+   :numbered: 2
 
-   introduction
-   basics
-   create
-   user_mats
+   intro
+   basic
+   material/material
    test
-   conventions

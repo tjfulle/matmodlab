@@ -24,6 +24,8 @@ A model in Matmodlab is defined by a ``MaterialPointSimulator`` object.
      >>> mps = MaterialPointSimulator('model', verbosity=2, d='/home/user/sim')
 
 
+.. _defining_a_material:
+
 Defining a Material Model
 =========================
 
