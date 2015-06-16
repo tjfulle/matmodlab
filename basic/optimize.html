@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2.6. Optimizer &mdash; Material Model Laboratory 3.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
+    <link rel="up" title="2. Matmodlab Execution" href="index.html" />
+    <link rel="next" title="2.7. Environment Settings" href="environment.html" />
+    <link rel="prev" title="2.5. Permutator" href="permutate.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="optimizer">
+<h1>2.6. Optimizer<a class="headerlink" href="#optimizer" title="Permalink to this headline">¶</a></h1>
+<p>Optimize specified parameters against user specified objective function. Ideal
+for finding optimal model parameters. A optimizer instance is created through
+the <tt class="docutils literal"><span class="pre">Optimizer</span></tt> constructor. Minimally, the constructor requires a function
+to evaluate <tt class="docutils literal"><span class="pre">func</span></tt>, initial parameters <tt class="docutils literal"><span class="pre">xinit</span></tt>, and a <tt class="docutils literal"><span class="pre">runid</span></tt>.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">optimizer</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">runid</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">func</span></tt> is called as <tt class="docutils literal"><span class="pre">func(x,</span> <span class="pre">*args)</span></tt> where <tt class="docutils literal"><span class="pre">x</span></tt> are the current values of
+the permutated variables and <tt class="docutils literal"><span class="pre">args</span></tt> contains in its last component:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">dirname</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>where <tt class="docutils literal"><span class="pre">dirname</span></tt> is the directory where simulations should is to be run.</p>
+<div class="section" id="optimizer-constructor">
+<h2>Optimizer Constructor<a class="headerlink" href="#optimizer-constructor" title="Permalink to this headline">¶</a></h2>
+<p>The formal parameters to <tt class="docutils literal"><span class="pre">Optimizer</span></tt> are</p>
+<dl class="class">
+<dt id="Optimizer">
+<em class="property">class </em><tt class="descname">Optimizer</tt><big>(</big><em>func</em>, <em>xinit</em>, <em>runid</em>, <em>method=&quot;simplex&quot;</em>, <em>d=None</em>, <em>maxiter=50</em>, <em>tolerance=1.e-6</em>, <em>descriptor=None</em>, <em>funcargs=None</em><big>)</big><a class="headerlink" href="#Optimizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a Optimizer object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>func</strong> &#8211; Function that evaluates a matmodlab simulation.  Must have signature <tt class="docutils literal"><span class="pre">func(x,</span> <span class="pre">*args)</span></tt>, where x are the current values of the permutated variable and funcargs are described below.</li>
+<li><strong>xinit</strong> (<em>List of PermutateVariable objects</em>) &#8211; Initial values of simulation parameters.</li>
+<li><strong>method</strong> (<em>str</em>) &#8211; The optimization method. One of simplex, powell, cobyla.</li>
+<li><strong>d</strong> (<em>str or None</em>) &#8211; Parent directory to run jobs.  If the directory does not exist, it will be created.  If not given, the current directory will be used.</li>
+<li><strong>maxiter</strong> (<em>int</em>) &#8211; Maximum number of iterations</li>
+<li><strong>tolerance</strong> (<em>float</em>) &#8211; The tolerance.</li>
+<li><strong>descriptor</strong> (<em>list of str or None</em>) &#8211; Descriptors of return values from func</li>
+<li><strong>funcargs</strong> (<em>list or None</em>) &#8211; Additional arguments to be sent to func.  The directory of the current job is appended to the end of funcargs.  If None,</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p>Each <tt class="docutils literal"><span class="pre">Optimzer</span></tt> job creates a directory <tt class="docutils literal"><span class="pre">runid.eval</span></tt> with the following
+contents:</p>
+<div class="highlight-python"><div class="highlight"><pre>ls runid.eval
+eval_000/    eval_002/    mml-evaldb.xml
+eval_001/    ...          runid.log
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">eval_...</span></tt> directory holds the output of the ith job and a <tt class="docutils literal"><span class="pre">params.in</span></tt>
+file with the values of each parameter to optimize for that job.
+<tt class="docutils literal"><span class="pre">mml-evaldb.xml</span></tt> contains a summary of each job run. <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">view</span></tt> recognizes
+<tt class="docutils literal"><span class="pre">mml-evaldb.xml</span></tt> files.</p>
+</div>
+<div class="section" id="optimizevariable-factory-method">
+<h2>OptimizeVariable Factory Method<a class="headerlink" href="#optimizevariable-factory-method" title="Permalink to this headline">¶</a></h2>
+<p>The formal parameters to <tt class="docutils literal"><span class="pre">OptimizeVariable</span></tt> are</p>
+<dl class="function">
+<dt id="OptimizeVariable">
+<tt class="descname">OptimizeVariable</tt><big>(</big><em>name</em>, <em>initial_value</em>, <em>bounds=None</em><big>)</big><a class="headerlink" href="#OptimizeVariable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a OptimizeVariable object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) &#8211; Name of variable</li>
+<li><strong>initial_value</strong> &#8211; Initial value or values, dependending on method.</li>
+<li><strong>bounds</strong> &#8211; Bounds on the variable.  If given, (lower_bound, upper_bound)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<div class="section" id="examples">
+<h3>2.6. Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<p>The following input stub demonstrates how to permutate the <tt class="docutils literal"><span class="pre">K</span></tt> parameter</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">K</span> <span class="o">=</span> <span class="n">OptimizeVariable</span><span class="p">(</span><span class="s">&quot;K&quot;</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">K</span> <span class="o">=</span> <span class="n">OptimizeVariable</span><span class="p">(</span><span class="s">&quot;K&quot;</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">150</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>The following input demonstrates how to optimize the <tt class="docutils literal"><span class="pre">K</span></tt> and <tt class="docutils literal"><span class="pre">G</span></tt>
+parameters and can be found in <tt class="docutils literal"><span class="pre">matmodlab/inputs/optimize_al.py</span></tt>.  The objective function calls <tt class="docutils literal"><span class="pre">calculate_bounded_area</span></tt> to find the area between the calculated stress strain curve and the experimental.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">matmodlab.utils.fileio</span> <span class="kn">as</span> <span class="nn">ufio</span>
+<span class="kn">import</span> <span class="nn">matmodlab.utils.numerix.nonmonotonic</span> <span class="kn">as</span> <span class="nn">unnm</span>
+
+<span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">get_my_directory</span><span class="p">(),</span> <span class="s">&quot;optimize_al.xls&quot;</span><span class="p">)</span>
+<span class="n">strain_exp</span><span class="p">,</span> <span class="n">stress_exp</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">ufio</span><span class="o">.</span><span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">sheet</span><span class="o">=</span><span class="s">&quot;MML&quot;</span><span class="p">,</span> <span class="n">disp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;STRAIN_XX&quot;</span><span class="p">,</span> <span class="s">&quot;STRESS_XX&quot;</span><span class="p">]))</span>
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[],</span> <span class="n">xnames</span><span class="o">=</span><span class="p">[],</span> <span class="n">evald</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">runid</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">)</span>
+
+    <span class="n">xp</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">xnames</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+    <span class="n">NU</span> <span class="o">=</span> <span class="mf">0.32</span>  <span class="c"># poisson&#39;s ratio for aluminum</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;K&quot;</span><span class="p">:</span> <span class="n">xp</span><span class="p">[</span><span class="s">&quot;E&quot;</span><span class="p">]</span><span class="o">/</span><span class="mf">3.0</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span><span class="n">NU</span><span class="p">),</span> <span class="s">&quot;G&quot;</span><span class="p">:</span> <span class="n">xp</span><span class="p">[</span><span class="s">&quot;E&quot;</span><span class="p">]</span><span class="o">/</span><span class="mf">2.0</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0</span><span class="o">+</span><span class="n">NU</span><span class="p">),</span>
+                  <span class="s">&quot;Y0&quot;</span><span class="p">:</span> <span class="n">xp</span><span class="p">[</span><span class="s">&quot;Y0&quot;</span><span class="p">],</span> <span class="s">&quot;H&quot;</span><span class="p">:</span> <span class="n">xp</span><span class="p">[</span><span class="s">&quot;H&quot;</span><span class="p">],</span> <span class="s">&quot;BETA&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+    <span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&quot;vonmises&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+
+    <span class="c"># create steps from data. note, len(columns) below is &lt; len(descriptors).</span>
+    <span class="c"># The missing columns are filled with zeros -&gt; giving uniaxial stress in</span>
+    <span class="c"># this case. Declaring the steps this way does require loading the excel</span>
+    <span class="c"># file anew for each run</span>
+    <span class="n">mps</span><span class="o">.</span><span class="n">DataSteps</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">sheet</span><span class="o">=</span><span class="s">&#39;MML&#39;</span><span class="p">,</span>
+                  <span class="n">columns</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;STRAIN_XX&#39;</span><span class="p">,),</span> <span class="n">descriptors</span><span class="o">=</span><span class="s">&#39;ESS&#39;</span><span class="p">)</span>
+
+    <span class="n">mps</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mps</span><span class="o">.</span><span class="n">ran</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.0e9</span>
+
+    <span class="n">strain_sim</span><span class="p">,</span> <span class="n">stress_sim</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">mps</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;STRAIN_XX&quot;</span><span class="p">,</span> <span class="s">&quot;STRESS_XX&quot;</span><span class="p">))</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">unnm</span><span class="o">.</span><span class="n">calculate_bounded_area</span><span class="p">(</span><span class="n">strain_exp</span><span class="p">,</span> <span class="n">stress_exp</span><span class="p">,</span>
+                                      <span class="n">strain_sim</span><span class="p">,</span> <span class="n">stress_sim</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">error</span>
+
+<span class="k">def</span> <span class="nf">runjob</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="n">OptimizeVariable</span><span class="p">(</span><span class="s">&quot;E&quot;</span><span class="p">,</span>  <span class="mf">2.0e6</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0e5</span><span class="p">,</span> <span class="mf">1.0e7</span><span class="p">))</span>
+    <span class="n">Y0</span><span class="o">=</span> <span class="n">OptimizeVariable</span><span class="p">(</span><span class="s">&quot;Y0&quot;</span><span class="p">,</span> <span class="mf">0.3e5</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0e4</span><span class="p">,</span> <span class="mf">1.0e6</span><span class="p">))</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">OptimizeVariable</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span>  <span class="mf">1.0e6</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0e4</span><span class="p">,</span> <span class="mf">1.0e7</span><span class="p">))</span>
+    <span class="n">xinit</span> <span class="o">=</span> <span class="p">[</span><span class="n">E</span><span class="p">,</span> <span class="n">Y0</span><span class="p">,</span> <span class="n">H</span><span class="p">]</span>
+
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span><span class="s">&quot;optimize_al&quot;</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+                        <span class="n">maxiter</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">1.e-3</span><span class="p">)</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="n">xopt</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">xopt</span>
+    <span class="k">return</span> <span class="n">xopt</span>
+
+<span class="n">runjob</span><span class="p">(</span><span class="s">&#39;powell&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../intro/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Matmodlab Execution</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cli.html">2.1. Execution Procedures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="execution.html">2.2. Model Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html">2.3. Matmodlab Output Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="post.html">2.4. Postprocessing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutate.html">2.5. Permutator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">2.6. Optimizer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#optimizer-constructor">Optimizer Constructor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optimizevariable-factory-method">OptimizeVariable Factory Method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="environment.html">2.7. Environment Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html">2.8. Annotated Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller, Scot Swan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="../_sources/basic/optimize.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

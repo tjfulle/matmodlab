@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1.3. Installing &mdash; Material Model Laboratory 3.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
+    <link rel="up" title="1. Introduction" href="index.html" />
+    <link rel="next" title="1.4. The Matmodlab Solution Method" href="solution.html" />
+    <link rel="prev" title="1.2. Matmodlab Conventions" href="conventions.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="installing">
+<span id="id1"></span><h1>1.3. Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#overview" id="id4">Overview</a></li>
+<li><a class="reference internal" href="#system-requirements" id="id5">System Requirements</a></li>
+<li><a class="reference internal" href="#required-software" id="id6">Required Software</a></li>
+<li><a class="reference internal" href="#installation" id="id7">Installation</a></li>
+<li><a class="reference internal" href="#testing-the-installation" id="id8">Testing the Installation</a></li>
+<li><a class="reference internal" href="#troubleshooting" id="id9">Troubleshooting</a></li>
+</ul>
+</div>
+<div class="section" id="overview">
+<h2><a class="toc-backref" href="#id4">Overview</a><a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab&#8217;s code base is largely written in Python and requires no
+additional compiling. However, several [optional] linear algebra packages and
+material models are written in Fortran and require a seperate compile step.</p>
+</div>
+<div class="section" id="system-requirements">
+<h2><a class="toc-backref" href="#id5">System Requirements</a><a class="headerlink" href="#system-requirements" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab has been built and tested extensively on several versions of Linux
+and the Apple Mac OSX 10.9 operating systems. It is unknown whether or not
+Matmodlab will run on Windows.</p>
+</div>
+<div class="section" id="required-software">
+<h2><a class="toc-backref" href="#id6">Required Software</a><a class="headerlink" href="#required-software" title="Permalink to this headline">¶</a></h2>
+<p>The basic functionality of Matmodlab requires the following software installed
+for your platform:</p>
+<ol class="arabic simple">
+<li><a class="reference external" href="http://www.python.org/">Python 2.7</a> or newer (A, E)</li>
+<li><a class="reference external" href="http://www.numpy.org/">NumPy</a> or newer (A, E)</li>
+<li><a class="reference external" href="http://www.scipy.org/">SciPy</a> or newer (A, E)</li>
+</ol>
+<p>Matmodlab has further functionality that can be utilized if the appropriate
+packages are installed.</p>
+<ol class="arabic simple">
+<li><a class="reference external" href="http://pypi.python.org/pypi/traits">traits</a>, <a class="reference external" href="http://pypi.python.org/pypi/traitsui">traitsui</a>, and <a class="reference external" href="http://pypi.python.org/pypi/chaco">chaco</a> for data visualization (E)</li>
+<li><a class="reference external" href="http://pypi.python.org/pypi/pytest">pytest</a> for running built-in benchmarks (A, E)</li>
+<li><a class="reference external" href="http://pypi.python.org/pypi/openpyxl">openpyxl</a> for simulation output and visualization of .xlsx data (A, E)</li>
+<li><a class="reference external" href="http://pypi.python.org/pypi/xlwt">xlwt</a> for simulation output as .xls (A)</li>
+<li><a class="reference external" href="http://pypi.python.org/pypi/xlrd">xlrd</a> for visualization of .xls data (A)</li>
+</ol>
+<p>The required software may be obtained in several ways, though most development
+has been made using the Anaconda <a class="reference external" href="http://www.continuum.io">http://www.continuum.io</a> and Enthought
+Canopy <a class="reference external" href="http://www.enthought.com">http://www.enthought.com</a> Python Distributions (E=available in
+base Enthought Canopy distribution, A=available in base Anaconda distribution).
+It is also possible to get all of the required packages through a linux
+distribution&#8217;s package manager or, for all installations of python, by running</p>
+<div class="highlight-python"><div class="highlight"><pre>easy_install xlrd
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre>pip install chaco
+</pre></div>
+</div>
+<p>or, for Anaconda,</p>
+<div class="highlight-python"><div class="highlight"><pre>conda install traitsui
+</pre></div>
+</div>
+<p>and so on for each required package.</p>
+<p>If using a linux distribution&#8217;s version of python, you might need to install the
+python development headers in order to build fortran models or use the faster
+linear algebra package.</p>
+</div>
+<div class="section" id="installation">
+<span id="id2"></span><h2><a class="toc-backref" href="#id7">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Ensure that all Matmodlab prerequisites are installed and working properly
+before proceeding.</p>
+<div class="section" id="the-easy-way">
+<h3>The Easy Way<a class="headerlink" href="#the-easy-way" title="Permalink to this headline">¶</a></h3>
+<p>Because Matmodlab is in <a class="reference external" href="http://pypi.python.org/pypi/matmodlab">PyPI</a>, you
+can simply run</p>
+<div class="highlight-python"><div class="highlight"><pre>easy_install matmodlab
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre>pip install matmodlab
+</pre></div>
+</div>
+<p>and you&#8217;re done! Note: you may have to have administrative privileges to
+install. If you don&#8217;t know the difference between <tt class="docutils literal"><span class="pre">pip</span></tt> and <tt class="docutils literal"><span class="pre">easy_install</span></tt>,
+try to use <tt class="docutils literal"><span class="pre">pip</span></tt> first.</p>
+</div>
+<div class="section" id="the-manual-way">
+<h3>The Manual Way<a class="headerlink" href="#the-manual-way" title="Permalink to this headline">¶</a></h3>
+<p>After downloading and unpacking Matmodlab from
+<a class="reference external" href="http://pypi.python.org/pypi/matmodlab">PyPI</a> or from
+<a class="reference external" href="http://github.com/tjfulle/matmodlab">github</a>, there will be a folder that
+contains, among other files, the directories <tt class="docutils literal"><span class="pre">femlib</span></tt>, <tt class="docutils literal"><span class="pre">matmodlab</span></tt>, and
+<tt class="docutils literal"><span class="pre">tabfileio</span></tt>.</p>
+<p>Using your preferred python interpreter, run</p>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py install
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py develop
+</pre></div>
+</div>
+<p>Both commands make Matmodlab usable in the same way as using <tt class="docutils literal"><span class="pre">pip</span></tt> or
+<tt class="docutils literal"><span class="pre">easy_install</span></tt>. The only difference is that when you setup using the
+<tt class="docutils literal"><span class="pre">develop</span></tt> argument the downloaded files are linked to, not moved, so changes
+are applied immediately and do not require you to re-install Matmodlab.</p>
+</div>
+<div class="section" id="the-hard-way">
+<h3>The Hard Way<a class="headerlink" href="#the-hard-way" title="Permalink to this headline">¶</a></h3>
+<p>Get Matmodlab as detailed in <tt class="docutils literal"><span class="pre">The</span> <span class="pre">Manual</span> <span class="pre">Way</span></tt> but do the following:</p>
+<ol class="arabic simple">
+<li>Add <tt class="docutils literal"><span class="pre">path/to/files/matmodlab/bin</span></tt> to your <tt class="docutils literal"><span class="pre">PATH</span></tt></li>
+<li>Add <tt class="docutils literal"><span class="pre">path/to/files</span></tt> to your <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt></li>
+</ol>
+</div>
+<div class="section" id="build-optional">
+<h3>Build (Optional)<a class="headerlink" href="#build-optional" title="Permalink to this headline">¶</a></h3>
+<p>Fortran models are built as-needed when Matmodlab attempts to run a
+simulation and it cannot find the compiled model. However, if you want
+to build a model without running a simulation or if you want to build an
+extension pack you will need to use the <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">build</span></tt> command.</p>
+<p>Building is performed by the <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">build</span></tt> command:</p>
+<div class="highlight-python"><div class="highlight"><pre>usage: mml build [-h] [-v V] [-w] [-W] [-m M [M ...]] [-u]
+
+mml build: build fortran utilities and materials.
+
+optional arguments:
+  -h, --help    show this help message and exit
+  -v V          Verbosity [default: 1]
+  -w            Wipe before building [default: False]
+  -W            Wipe and exit [default: False]
+  -m M [M ...]  Materials to build [default: all]
+  -u            Build auxiliary support files only [default: False]
+</pre></div>
+</div>
+<div class="section" id="example">
+<h4>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-python"><div class="highlight"><pre>mml build
+</pre></div>
+</div>
+<p>This will build the Matmodlab Fortran utilities and material libraries. The
+resultant shared object libraries are copied to <tt class="docutils literal"><span class="pre">matmodlab/lib</span></tt>.</p>
+</div>
+</div>
+</div>
+<div class="section" id="testing-the-installation">
+<h2><a class="toc-backref" href="#id8">Testing the Installation</a><a class="headerlink" href="#testing-the-installation" title="Permalink to this headline">¶</a></h2>
+<p>Testing is done through the <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">test</span></tt> command. However, this is just a
+wrapper around the <tt class="docutils literal"><span class="pre">py.test</span></tt> command, which can also be used. To test
+Matmodlab after installation, execute:</p>
+<div class="highlight-python"><div class="highlight"><pre>mml test -k fast
+</pre></div>
+</div>
+<p>which will run the &#8220;fast&#8221; tests. To run the full test suite execute:</p>
+<div class="highlight-python"><div class="highlight"><pre>mml test
+</pre></div>
+</div>
+<p>Please note that running all of the tests takes several minutes.</p>
+</div>
+<div class="section" id="troubleshooting">
+<h2><a class="toc-backref" href="#id9">Troubleshooting</a><a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<p>If you experience problems when building/installing/testing Matmodlab, you can
+ask help from <a class="reference external" href="mailto:timothy&#46;fuller&#37;&#52;&#48;utah&#46;edu">Tim Fuller</a> or
+<a class="reference external" href="mailto:scot&#46;swan&#37;&#52;&#48;gmail&#46;com">Scot Swan</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=tjfulle&repo=matmodlab&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">1. Introduction</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="general.html">1.1. Introduction: General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conventions.html">1.2. Matmodlab Conventions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">1.3. Installing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#system-requirements">System Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#required-software">Required Software</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-easy-way">The Easy Way</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-manual-way">The Manual Way</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-hard-way">The Hard Way</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#build-optional">Build (Optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#testing-the-installation">Testing the Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="solution.html">1.4. The Matmodlab Solution Method</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../basic/index.html">2. Matmodlab Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Tim Fuller, Scot Swan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      
+      |
+      <a href="../_sources/intro/install.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>
