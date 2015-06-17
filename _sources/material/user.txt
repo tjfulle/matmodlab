@@ -1,3 +1,4 @@
+.. _user_mats:
 
 User Defined Materials
 ######################

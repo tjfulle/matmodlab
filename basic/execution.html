@@ -45,7 +45,8 @@
 <p class="topic-title first">Contents</p>
 <ul class="simple">
 <li><a class="reference internal" href="#overview" id="id1">Overview</a></li>
-<li><a class="reference internal" href="#the-materialpointsimulator-object" id="id2">The MaterialPointSimulator Object</a></li>
+<li><a class="reference internal" href="#references" id="id2">References</a></li>
+<li><a class="reference internal" href="#the-materialpointsimulator-object" id="id3">The MaterialPointSimulator Object</a></li>
 </ul>
 </div>
 <div class="section" id="overview">
@@ -55,8 +56,16 @@
 analysis steps. In this section, the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt> object is
 described.</p>
 </div>
+<div class="section" id="references">
+<h2><a class="toc-backref" href="#id2">References</a><a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="../intro/conventions.html#conventions"><em>Matmodlab Conventions</em></a></li>
+<li><a class="reference internal" href="../material/overview.html#mat-lib"><em>Material Library</em></a></li>
+<li><a class="reference internal" href="../material/user.html#user-mats"><em>User Defined Materials</em></a></li>
+</ul>
+</div>
 <div class="section" id="the-materialpointsimulator-object">
-<h2><a class="toc-backref" href="#id2">The MaterialPointSimulator Object</a><a class="headerlink" href="#the-materialpointsimulator-object" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">The MaterialPointSimulator Object</a><a class="headerlink" href="#the-materialpointsimulator-object" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="MaterialPointSimulator">
 <em class="property">class </em><tt class="descname">MaterialPointSimulator</tt><big>(</big><em>runid</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>inital_temperature=DEFAULT_TEMP</em>, <em>output='dbx'</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator" title="Permalink to this definition">¶</a></dt>
@@ -76,15 +85,13 @@ described.</p>
 <span id="defining-a-material"></span><h3>Defining a Material Model<a class="headerlink" href="#defining-a-material-model" title="Permalink to this headline">¶</a></h3>
 <dl class="method">
 <dt id="MaterialPointSimulator.Material">
-<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>expansion=None</em>, <em>trs=None</em>, <em>viscoelastic=None</em>, <em>rebuild=False</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>fiber_dirs=None</em>, <em>depvar=None</em>, <em>param_names=None</em>, <em>switch=None</em>, <em>user_ics=False</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.Material" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>name=None</em>, <em>switch=None</em>, <em>rebuild=False</em>, <em>param_names=None</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>depvar=None</em>, <em>fiber_dirs=None</em>, <em>user_ics=False</em>, <em>order=None</em>, <em>response=None</em>, <em>libname=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.Material" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create and assign a material model</p>
 <p>The required arguments are a model name and material parameters.  The model name must be a recognized material model (see <a class="reference internal" href="../material/overview.html#mat-lib"><em>Material Library</em></a>).  <em>parameters</em> can either be a dictionary of key:value (key is the parameter name, value its numeric value) or ndarray.</p>
 <p>The following arguments are optional and applicable to all materials.</p>
-<p><em>expansion</em> is an <a class="reference internal" href="#expan-model"><em>Thermal Expansion</em></a> object, enabling the computation of thermal strains associated with thermal expansion.  <em>rebuild</em> is a boolean that, when True, forces the material model to be rebuilt before the simulation.  <em>switch</em> is a tuple containing the material name and the name of another material to be switched in to its place.</p>
-<p>The following arguments are applicable to viscoelastic materials.</p>
-<p><em>trs</em> is a <a class="reference internal" href="#trs-model"><em>Time-Temperature Shift</em></a> object.  Used in conjuction with a <a class="reference internal" href="#visco-model"><em>Viscoelasticity</em></a> to compute a reduced time.  <em>viscoelastic</em> is a <a class="reference internal" href="#visco-model"><em>Viscoelasticity</em></a> object defining the linear relaxation response of the material.  When given, the elastic moduli are treated as the instantaneous values.</p>
-<p>The following arguments are applicable to umats.</p>
-<p><em>source_files</em> is a list of model source files.  Each file must exist.  If the optional <em>source_directory</em> is given, source files are looked for there.  <em>fiber_dirs</em> is an array of fiber directions (applicable only to uanisohyper_inv models). <em>depvar</em> is either the integer number of state dependent variables or a list of state dependent variable names.  <em>param_names</em> is a list of parameter names.  If <em>user_ics</em> is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.</p>
+<p><em>rebuild</em> is a boolean that, when True, forces the material model to be rebuilt before the simulation.  <em>switch</em> is a tuple containing the material name and the name of another material to be switched in to its place.</p>
+<p>The following arguments are applicable to user materials</p>
+<p><em>source_files</em> is a list of model source files.  Each file must exist and be readable on the file system.  If the optional <em>source_directory</em> is given, source files are looked for there. <em>depvar</em> is either the integer number of state dependent variables or a list of state dependent variable names. <em>fiber_dirs</em> is an array of fiber directions (applicable only to uanisohyper_inv models). <em>param_names</em> is a list of parameter names. If <em>user_ics</em> is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.  <em>order</em> is a list of strings specifying the component ordering of second order tensors.  <em>response</em> is one of &#8220;mechanical&#8221;, &#8220;hyperelastic&#8221;, or &#8220;anisotropic hyperelastic&#8221; and is used to determine which type of response the model will describe.</p>
 <p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;elastic&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mf">123e9</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="mf">53e9</span><span class="p">})</span>
 
@@ -101,12 +108,15 @@ described.</p>
 <h3>Optional Material Addons<a class="headerlink" href="#optional-material-addons" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="thermal-expansion">
 <span id="expan-model"></span><h4>Thermal Expansion<a class="headerlink" href="#thermal-expansion" title="Permalink to this headline">¶</a></h4>
+<p>An <a class="reference internal" href="#expan-model"><em>Thermal Expansion</em></a> object, enabling the computation of thermal strains associated with thermal expansion.</p>
 </div>
 <div class="section" id="viscoelasticity">
 <span id="visco-model"></span><h4>Viscoelasticity<a class="headerlink" href="#viscoelasticity" title="Permalink to this headline">¶</a></h4>
+<p>A <a class="reference internal" href="#visco-model"><em>Viscoelasticity</em></a> object defining the linear relaxation response of the material.  When given, the elastic moduli are treated as the instantaneous values.</p>
 </div>
 <div class="section" id="time-temperature-shift">
 <span id="trs-model"></span><h4>Time-Temperature Shift<a class="headerlink" href="#time-temperature-shift" title="Permalink to this headline">¶</a></h4>
+<p>Used in conjuction with a <a class="reference internal" href="#visco-model"><em>Viscoelasticity</em></a> to compute a reduced time.</p>
 </div>
 </div>
 <div class="section" id="defining-simulation-steps">
@@ -250,6 +260,7 @@ described.</p>
 <li class="toctree-l2"><a class="reference internal" href="cli.html">2.1. Execution Procedures</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">2.2. Model Execution</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#the-materialpointsimulator-object">The MaterialPointSimulator Object</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#defining-a-material-model">Defining a Material Model</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#optional-material-addons">Optional Material Addons</a></li>

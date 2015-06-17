@@ -17,6 +17,13 @@ A model in Matmodlab is defined by a ``MaterialPointSimulator`` object. The
 analysis steps. In this section, the ``MaterialPointSimulator`` object is
 described.
 
+References
+==========
+
+* :ref:`Conventions`
+* :ref:`mat_lib`
+* :ref:`user_mats`
+
 
 The MaterialPointSimulator Object
 =================================
@@ -43,7 +50,7 @@ The MaterialPointSimulator Object
 Defining a Material Model
 -------------------------
 
-.. method:: MaterialPointSimulator.Material(model, parameters, expansion=None, trs=None, viscoelastic=None, rebuild=False, source_files=None, source_directory=None, fiber_dirs=None, depvar=None, param_names=None, switch=None, user_ics=False)
+.. method:: MaterialPointSimulator.Material(model, parameters, name=None, switch=None, rebuild=False, param_names=None, source_files=None, source_directory=None, depvar=None, fiber_dirs=None, user_ics=False, order=None, response=None, libname=None)
 
    Create and assign a material model
 
@@ -51,15 +58,11 @@ Defining a Material Model
 
    The following arguments are optional and applicable to all materials.
 
-   *expansion* is an :ref:`expan_model` object, enabling the computation of thermal strains associated with thermal expansion.  *rebuild* is a boolean that, when True, forces the material model to be rebuilt before the simulation.  *switch* is a tuple containing the material name and the name of another material to be switched in to its place.
+   *rebuild* is a boolean that, when True, forces the material model to be rebuilt before the simulation.  *switch* is a tuple containing the material name and the name of another material to be switched in to its place.
 
-   The following arguments are applicable to viscoelastic materials.
+   The following arguments are applicable to user materials
 
-   *trs* is a :ref:`trs_model` object.  Used in conjuction with a :ref:`visco_model` to compute a reduced time.  *viscoelastic* is a :ref:`visco_model` object defining the linear relaxation response of the material.  When given, the elastic moduli are treated as the instantaneous values.
-
-   The following arguments are applicable to umats.
-
-   *source_files* is a list of model source files.  Each file must exist.  If the optional *source_directory* is given, source files are looked for there.  *fiber_dirs* is an array of fiber directions (applicable only to uanisohyper_inv models). *depvar* is either the integer number of state dependent variables or a list of state dependent variable names.  *param_names* is a list of parameter names.  If *user_ics* is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.
+   *source_files* is a list of model source files.  Each file must exist and be readable on the file system.  If the optional *source_directory* is given, source files are looked for there. *depvar* is either the integer number of state dependent variables or a list of state dependent variable names. *fiber_dirs* is an array of fiber directions (applicable only to uanisohyper_inv models). *param_names* is a list of parameter names. If *user_ics* is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.  *order* is a list of strings specifying the component ordering of second order tensors.  *response* is one of "mechanical", "hyperelastic", or "anisotropic hyperelastic" and is used to determine which type of response the model will describe.
 
    Examples::
 
@@ -78,15 +81,22 @@ Optional Material Addons
 Thermal Expansion
 .................
 
+An :ref:`expan_model` object, enabling the computation of thermal strains associated with thermal expansion.
+
 .. _visco_model:
 
 Viscoelasticity
 ...............
 
+A :ref:`visco_model` object defining the linear relaxation response of the material.  When given, the elastic moduli are treated as the instantaneous values.
+
 .. _trs_model:
 
 Time-Temperature Shift
 ......................
+
+Used in conjuction with a :ref:`visco_model` to compute a reduced time.
+
 
 Defining Simulation Steps
 -------------------------

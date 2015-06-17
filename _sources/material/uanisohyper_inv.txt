@@ -1,5 +1,5 @@
-uanisohyper_inv Interface
-#########################
+User Model to Define a Material's Anisotropic Hyperelastic Response
+###################################################################
 
 Overview
 ========

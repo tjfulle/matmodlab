@@ -1,5 +1,5 @@
-uhyper Interface
-################
+User Model to Define a Material's Hyperelastic Response
+#######################################################
 
 Overview
 ========

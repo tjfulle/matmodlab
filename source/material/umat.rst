@@ -1,6 +1,6 @@
 
-umat Interface
-##############
+User Model to Define a Material's Mechanical Response
+#####################################################
 
 Overview
 ========

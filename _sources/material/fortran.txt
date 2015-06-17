@@ -50,8 +50,9 @@ Optional MaterialPointSimulator.Material Arguments
 * *cmname*, is a string giving is the constitutive model name.
 * *order*, is a list of strings specifying the ordering of second-order
   symmetric tensors. The default ordering of symmetric second-order tensor
-  components is ``xx, yy, zz, xy, yz, xz``. Can be used to change the ordering
-  to be consistent with the assumptions of the material model.
+  components is ``xx, yy, zz, xy, yz, xz``. The *order* argument can be used
+  to change the ordering to be consistent with the assumptions of the material
+  model.
 
 Example
 -------
@@ -63,12 +64,13 @@ Example
    mps.Material('user', parameters)
 
 
-.. note:: Abaqus Users:
+.. topic:: Abaqus Users:
 
    Setting the *model* name to one of "*umat*", "*uhyper*", or
    "*uanisohyper_inv*" is equivalient to *model=*"*user*", with
    *behavior=*"*mechanical*", *behavior=*"*hyperelastic*", or
-   *behavior=*"*anisohyperelastic*", respectively.
+   *behavior=*"*anisohyperelastic*", respectively, and *order=(*"xx", "yy",
+   "zz", "xy", "xz", "yz"*)*.
 
 Compiling Fortran Sources
 =========================

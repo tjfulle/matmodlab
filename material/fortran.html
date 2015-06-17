@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="3.3. User Defined Materials" href="user.html" />
-    <link rel="next" title="umat Interface" href="umat.html" />
+    <link rel="next" title="User Model to Define a Material’s Mechanical Response" href="umat.html" />
     <link rel="prev" title="Python User Material Interface" href="python.html" />
    
   
@@ -51,7 +51,7 @@
 <li><a class="reference internal" href="../intro/solution.html#role-of-material-model"><em>The Role of the Material Model in Continuum Mechanics</em></a></li>
 <li><a class="reference internal" href="../basic/execution.html#defining-a-material"><em>Defining a Material Model</em></a></li>
 <li><a class="reference internal" href="../intro/conventions.html#conventions"><em>Matmodlab Conventions</em></a></li>
-<li><a class="reference internal" href="comm.html#comm-w-matmodlab"><em>Communicating Messages with Matmodlab</em></a></li>
+<li><a class="reference internal" href="comm.html#comm-w-matmodlab"><em>Writing to Messages to the Console and/or Log File</em></a></li>
 </ul>
 </div>
 <div class="section" id="invoking-user-materials">
@@ -86,8 +86,9 @@ initializes their values to 0.</li>
 <li><em>cmname</em>, is a string giving is the constitutive model name.</li>
 <li><em>order</em>, is a list of strings specifying the ordering of second-order
 symmetric tensors. The default ordering of symmetric second-order tensor
-components is <tt class="docutils literal"><span class="pre">xx,</span> <span class="pre">yy,</span> <span class="pre">zz,</span> <span class="pre">xy,</span> <span class="pre">yz,</span> <span class="pre">xz</span></tt>. Can be used to change the ordering
-to be consistent with the assumptions of the material model.</li>
+components is <tt class="docutils literal"><span class="pre">xx,</span> <span class="pre">yy,</span> <span class="pre">zz,</span> <span class="pre">xy,</span> <span class="pre">yz,</span> <span class="pre">xz</span></tt>. The <em>order</em> argument can be used
+to change the ordering to be consistent with the assumptions of the material
+model.</li>
 </ul>
 </div>
 <div class="section" id="example">
@@ -97,13 +98,13 @@ to be consistent with the assumptions of the material model.</li>
 <span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;user&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p>Abaqus Users:</p>
-<p class="last">Setting the <em>model</em> name to one of &#8220;<em>umat</em>&#8221;, &#8220;<em>uhyper</em>&#8221;, or
+<div class="topic">
+<p class="topic-title first">Abaqus Users:</p>
+<p>Setting the <em>model</em> name to one of &#8220;<em>umat</em>&#8221;, &#8220;<em>uhyper</em>&#8221;, or
 &#8220;<em>uanisohyper_inv</em>&#8221; is equivalient to <em>model=</em>&#8220;<em>user</em>&#8221;, with
 <em>behavior=</em>&#8220;<em>mechanical</em>&#8221;, <em>behavior=</em>&#8220;<em>hyperelastic</em>&#8221;, or
-<em>behavior=</em>&#8220;<em>anisohyperelastic</em>&#8221;, respectively.</p>
+<em>behavior=</em>&#8220;<em>anisohyperelastic</em>&#8221;, respectively, and <em>order=(</em>&#8220;xx&#8221;, &#8220;yy&#8221;,
+&#8220;zz&#8221;, &#8220;xy&#8221;, &#8220;xz&#8221;, &#8220;yz&#8221;<em>)</em>.</p>
 </div>
 </div>
 </div>
@@ -115,9 +116,9 @@ to be consistent with the assumptions of the material model.</li>
 <h2>User Subroutine Interfaces<a class="headerlink" href="#user-subroutine-interfaces" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="umat.html">umat Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="uhyper.html">uhyper Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="uanisohyper_inv.html">uanisohyper_inv Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="umat.html">User Model to Define a Material&#8217;s Mechanical Response</a></li>
+<li class="toctree-l1"><a class="reference internal" href="uhyper.html">User Model to Define a Material&#8217;s Hyperelastic Response</a></li>
+<li class="toctree-l1"><a class="reference internal" href="uanisohyper_inv.html">User Model to Define a Material&#8217;s Anisotropic Hyperelastic Response</a></li>
 </ul>
 </div>
 </div>
@@ -158,7 +159,7 @@ to be consistent with the assumptions of the material model.</li>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Communicating Messages with Matmodlab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing to Messages to the Console and/or Log File</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>

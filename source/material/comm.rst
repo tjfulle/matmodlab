@@ -1,8 +1,8 @@
 
 .. _comm_w_matmodlab:
 
-Communicating Messages with Matmodlab
-#####################################
+Writing to Messages to the Console and/or Log File
+##################################################
 
 Overview
 ========
