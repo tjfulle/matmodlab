@@ -3,7 +3,7 @@ Example 1: Uniaxial Strain
 ##########################
 
 This example demonstrates exercising the elastic material model through a path
-of uniaxial strain. The example input below is found in ``matmodlab/inputs/example-1.py``
+of uniaxial strain. The example input below is found in ``matmodlab/examples/uniaxial_strain.py``
 
 The Example Script
 ==================
@@ -13,7 +13,7 @@ The Example Script
    from matmodlab import *
 
    # Create the material point simulator
-   mps = MaterialPointSimulator('uniaxial_strain_example')
+   mps = MaterialPointSimulator('uniaxial_strain')
 
    # Define the material
    mps.Material('elastic', {'K': 1.35e11, 'G': 5.3e10})
@@ -34,9 +34,9 @@ This section describes each part of the example script
 
 This statement makes the Matmodlab objects accessible to the script.
 
-``mps = MaterialPointSimulator('uniaxial_strain_example')``
+``mps = MaterialPointSimulator('uniaxial_strain')``
 
-This statement creates a new material point simlator object named ``uniaxial_strain_example``.  The variable ``mps`` is assigned to the simulator.
+This statement creates a new material point simlator object named ``uniaxial_strain``.  The variable ``mps`` is assigned to the simulator.
 
 ``mps.Material('elastic', {'K': 1.35e11, 'G': 5.3e10})``
 

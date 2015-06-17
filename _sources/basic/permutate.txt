@@ -109,7 +109,7 @@ Example
 =======
 
 The following input demonstrates how to permutate the ``K`` and ``G``
-parameters to the ``elastic`` model.  The input can be found in ``matmodlab/inputs/permutation.py``.
+parameters to the ``elastic`` model.  The input can be found in ``matmodlab/examples/permutate.py``.
 
 .. code:: python
 

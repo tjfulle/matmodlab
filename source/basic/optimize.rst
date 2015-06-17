@@ -90,7 +90,7 @@ Example
 =======
 
 The following input demonstrates how to optimize the ``K`` and ``G``
-parameters and can be found in ``matmodlab/inputs/optimize_al.py``.  The objective function calls ``calculate_bounded_area`` to find the area between the calculated stress strain curve and the experimental.
+parameters and can be found in ``matmodlab/examples/optimize.py``.  The objective function calls ``calculate_bounded_area`` to find the area between the calculated stress strain curve and the experimental.
 
 .. code:: python
 
@@ -101,7 +101,7 @@ parameters and can be found in ``matmodlab/inputs/optimize_al.py``.  The objecti
   import matmodlab.utils.fileio as ufio
   import matmodlab.utils.numerix.nonmonotonic as unnm
 
-  filename = os.path.join(get_my_directory(), "optimize_al.xls")
+  filename = os.path.join(get_my_directory(), "optimize.xls")
   strain_exp, stress_exp = zip(*ufio.loadfile(filename, sheet="MML", disp=0,
                                               columns=["STRAIN_XX", "STRESS_XX"]))
 
@@ -136,7 +136,7 @@ parameters and can be found in ``matmodlab/inputs/optimize_al.py``.  The objecti
       H = OptimizeVariable("H",  1.0e6, bounds=(1.0e4, 1.0e7))
       xinit = [E, Y0, H]
 
-      optimizer = Optimizer("optimize_al", func, xinit, method=method,
+      optimizer = Optimizer("optimize", func, xinit, method=method,
                           maxiter=200, tolerance=1.e-3)
       optimizer.run()
       xopt = optimizer.xopt

@@ -42,13 +42,13 @@
   <div class="section" id="example-1-uniaxial-strain">
 <h1>Example 1: Uniaxial Strain<a class="headerlink" href="#example-1-uniaxial-strain" title="Permalink to this headline">¶</a></h1>
 <p>This example demonstrates exercising the elastic material model through a path
-of uniaxial strain. The example input below is found in <tt class="docutils literal"><span class="pre">matmodlab/inputs/example-1.py</span></tt></p>
+of uniaxial strain. The example input below is found in <tt class="docutils literal"><span class="pre">matmodlab/examples/uniaxial_strain.py</span></tt></p>
 <div class="section" id="the-example-script">
 <h2>The Example Script<a class="headerlink" href="#the-example-script" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="c"># Create the material point simulator</span>
-<span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="s">&#39;uniaxial_strain_example&#39;</span><span class="p">)</span>
+<span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="s">&#39;uniaxial_strain&#39;</span><span class="p">)</span>
 
 <span class="c"># Define the material</span>
 <span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;elastic&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mf">1.35e11</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="mf">5.3e10</span><span class="p">})</span>
@@ -66,8 +66,8 @@ of uniaxial strain. The example input below is found in <tt class="docutils lite
 <p>This section describes each part of the example script</p>
 <p><tt class="docutils literal"><span class="pre">from</span> <span class="pre">matmodlab</span> <span class="pre">import</span> <span class="pre">*</span></tt></p>
 <p>This statement makes the Matmodlab objects accessible to the script.</p>
-<p><tt class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_strain_example')</span></tt></p>
-<p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_strain_example</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.</p>
+<p><tt class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_strain')</span></tt></p>
+<p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_strain</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.</p>
 <p><tt class="docutils literal"><span class="pre">mps.Material('elastic',</span> <span class="pre">{'K':</span> <span class="pre">1.35e11,</span> <span class="pre">'G':</span> <span class="pre">5.3e10})</span></tt></p>
 <p>This statement defines the material model to be the <tt class="docutils literal"><span class="pre">elastic</span></tt> material and
 defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to 1.35e11 and 5.3e10,

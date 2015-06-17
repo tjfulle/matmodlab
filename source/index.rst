@@ -27,7 +27,7 @@ programing techniques are also not described.
 Obtaining Additional Help
 =========================
 
-In addition to this guide, many example input files can be found in ``matmodlab/inputs`` and ``matmodlab/tests``
+In addition to this guide, many example input files can be found in ``matmodlab/examples`` and ``matmodlab/tests``
 
 Indices and tables
 ==================

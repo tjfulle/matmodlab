@@ -39,7 +39,7 @@ Parameters
 * *charv*
 
 
-.. note:: Abaqus Users:
+.. topic:: Abaqus Users:
 
-   Procedure *stdb_abqerr*, which has the same interface as *mml_comm* is also
+   Procedure *stdb_abqerr*, which has the same interface as *mml_comm*, is also
    compiled and linked to user defined materials.

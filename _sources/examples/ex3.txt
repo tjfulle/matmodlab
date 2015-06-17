@@ -3,7 +3,7 @@ Example 3: Uniaxial Stress, Mixed Mode
 ######################################
 
 This example demonstrates exercising the elastic material model through a path
-of uniaxial stress, using a mixed mode step. The example input below is found in ``matmodlab/inputs/example-3.py``
+of uniaxial stress, using a mixed mode step. The example input below is found in ``matmodlab/examples/uniaxial_stress.py``
 
 The Example Script
 ..................
@@ -13,7 +13,7 @@ The Example Script
    from matmodlab import *
 
    # Create the material point simulator
-   mps = MaterialPointSimulator('uniaxial_stress_example_mixed', output='exo')
+   mps = MaterialPointSimulator('uniaxial_stress-1', output='exo')
 
    # Define the material
    mps.Material('elastic', {'K': 1.35e11, 'G': 5.3e10})
@@ -36,9 +36,9 @@ This section describes each part of the example script
 
 This statement makes the Matmodlab objects accessible to the script.
 
-``mps = MaterialPointSimulator('uniaxial_stress_example_mixed', output='exo')``
+``mps = MaterialPointSimulator('uniaxial_stress-1', output='exo')``
 
-This statement creates a new material point simlator object named ``uniaxial_stress_example``.  The variable ``mps`` is assigned to the simulator.  The ``output`` format is ``exo`` (ExodusII) instead of the default dbx.
+This statement creates a new material point simlator object named ``uniaxial_stress-1``.  The variable ``mps`` is assigned to the simulator.  The ``output`` format is ``exo`` (ExodusII) instead of the default dbx.
 
 ``mps.Material('elastic', {'K': 1.35e11, 'G': 5.3e10})``
 

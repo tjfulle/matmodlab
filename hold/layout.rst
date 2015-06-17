@@ -15,7 +15,7 @@ The *matmodlab* project has the following directory structure
     bin/
     core/
     docs/
-    inputs/
+    examples/
     lib/
     materials/
     matmodlab.py

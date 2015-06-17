@@ -129,7 +129,7 @@ file with the values of each parameter to optimize for that job.
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <p>The following input demonstrates how to optimize the <tt class="docutils literal"><span class="pre">K</span></tt> and <tt class="docutils literal"><span class="pre">G</span></tt>
-parameters and can be found in <tt class="docutils literal"><span class="pre">matmodlab/inputs/optimize_al.py</span></tt>.  The objective function calls <tt class="docutils literal"><span class="pre">calculate_bounded_area</span></tt> to find the area between the calculated stress strain curve and the experimental.</p>
+parameters and can be found in <tt class="docutils literal"><span class="pre">matmodlab/examples/optimize.py</span></tt>.  The objective function calls <tt class="docutils literal"><span class="pre">calculate_bounded_area</span></tt> to find the area between the calculated stress strain curve and the experimental.</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
@@ -137,7 +137,7 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
 <span class="kn">import</span> <span class="nn">matmodlab.utils.fileio</span> <span class="kn">as</span> <span class="nn">ufio</span>
 <span class="kn">import</span> <span class="nn">matmodlab.utils.numerix.nonmonotonic</span> <span class="kn">as</span> <span class="nn">unnm</span>
 
-<span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">get_my_directory</span><span class="p">(),</span> <span class="s">&quot;optimize_al.xls&quot;</span><span class="p">)</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">get_my_directory</span><span class="p">(),</span> <span class="s">&quot;optimize.xls&quot;</span><span class="p">)</span>
 <span class="n">strain_exp</span><span class="p">,</span> <span class="n">stress_exp</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">ufio</span><span class="o">.</span><span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">sheet</span><span class="o">=</span><span class="s">&quot;MML&quot;</span><span class="p">,</span> <span class="n">disp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                             <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;STRAIN_XX&quot;</span><span class="p">,</span> <span class="s">&quot;STRESS_XX&quot;</span><span class="p">]))</span>
 
@@ -172,7 +172,7 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
     <span class="n">H</span> <span class="o">=</span> <span class="n">OptimizeVariable</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span>  <span class="mf">1.0e6</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0e4</span><span class="p">,</span> <span class="mf">1.0e7</span><span class="p">))</span>
     <span class="n">xinit</span> <span class="o">=</span> <span class="p">[</span><span class="n">E</span><span class="p">,</span> <span class="n">Y0</span><span class="p">,</span> <span class="n">H</span><span class="p">]</span>
 
-    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span><span class="s">&quot;optimize_al&quot;</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span><span class="s">&quot;optimize&quot;</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
                         <span class="n">maxiter</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">1.e-3</span><span class="p">)</span>
     <span class="n">optimizer</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
     <span class="n">xopt</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">xopt</span>
