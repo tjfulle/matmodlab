@@ -9,6 +9,11 @@ Overview
 
 The Matmodlab execution can be customized with Matmodlab user environment file ``mml_userenv.py``.  Matmodlab looks for this file in your home directory, the location specified by the environment variable ``MML_USERENV``, and the current working directory, in that order.  Matmodlab will read each file if found, meaning settings in the current working will overwrite similar settings previously read.
 
+References
+==========
+
+* :ref:`invoke_user_f`
+
 Recognized Environment Settings and Defaults
 ============================================
 
@@ -74,19 +79,19 @@ Simulation Directory
 A Note on Defining User Material Models
 =======================================
 
-The ``materials`` and ``std_materials`` user settings are used to inform Matmodlab concerning user defined materials.  The ``std_materials`` is a list of python interface files for standard models.  The ``materials`` dictionary should contain the following information:
+The ``materials`` and ``std_materials`` user settings are used to inform Matmodlab concerning user defined materials.  The ``std_materials`` is a list of python interface files for standard models.  The ``materials`` dictionary is a dictionary of ``model_name: attribute_dict`` key:value pairs with the dictionary of model attributes containing the following information:
 
+* *source_files*: [list, required] A list of model source files
 * *model*: [string, optional] The model type.  One of user, umat, uhyper, uanisohyper.  The default is user.
 * *behavior*: [string, optional] The model behavior, one of mechanical, hperelastic, anisohyper.  The default is mechanical.
-* *source_files*: [required] A list of model source files
-* *source_directory*: [string, optional] Directory to find source files, if source files are not their absolute paths.
-* *ordering*: [list of int, optional] Symmetric tensor ordering.  The default is xx, yy, zz, xy, yz, xz
+* *source_directory*: [string, optional] Directory to find source files. Useful for defining files in *source_files* relative to *source_directory*.
+* *ordering*: [list of int, optional] Symmetric tensor ordering.  The default is XX, YY, ZZ, XY, YZ, XZ
 * *user_ics*: [boolean, optional] Does the model provide its own SDVINI
 
 Example
 -------
 
-The following user environment file is found in ``matmodlab/examples``::
+The following user environment file is found in ``matmodlab/examples`` and is used by ``examples/users.py`` to define the material model's attributes::
 
   materials = {'neohooke': {'model': 'user', 'behavior': 'hyperelastic',
                             'source_directory': ROOT_D + '/materials/abaumats',

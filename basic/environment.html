@@ -45,6 +45,12 @@
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>The Matmodlab execution can be customized with Matmodlab user environment file <tt class="docutils literal"><span class="pre">mml_userenv.py</span></tt>.  Matmodlab looks for this file in your home directory, the location specified by the environment variable <tt class="docutils literal"><span class="pre">MML_USERENV</span></tt>, and the current working directory, in that order.  Matmodlab will read each file if found, meaning settings in the current working will overwrite similar settings previously read.</p>
 </div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="../material/fortran.html#invoke-user-f"><em>Invoking User Materials</em></a></li>
+</ul>
+</div>
 <div class="section" id="recognized-environment-settings-and-defaults">
 <h2>Recognized Environment Settings and Defaults<a class="headerlink" href="#recognized-environment-settings-and-defaults" title="Permalink to this headline">¶</a></h2>
 <p>Below are the recognized environment settings and their defaults.  Any of these settings can be changed by specifying a different value in a user environment file.</p>
@@ -102,18 +108,18 @@ it is updated with the user setting.</p>
 </div>
 <div class="section" id="a-note-on-defining-user-material-models">
 <h2>A Note on Defining User Material Models<a class="headerlink" href="#a-note-on-defining-user-material-models" title="Permalink to this headline">¶</a></h2>
-<p>The <tt class="docutils literal"><span class="pre">materials</span></tt> and <tt class="docutils literal"><span class="pre">std_materials</span></tt> user settings are used to inform Matmodlab concerning user defined materials.  The <tt class="docutils literal"><span class="pre">std_materials</span></tt> is a list of python interface files for standard models.  The <tt class="docutils literal"><span class="pre">materials</span></tt> dictionary should contain the following information:</p>
+<p>The <tt class="docutils literal"><span class="pre">materials</span></tt> and <tt class="docutils literal"><span class="pre">std_materials</span></tt> user settings are used to inform Matmodlab concerning user defined materials.  The <tt class="docutils literal"><span class="pre">std_materials</span></tt> is a list of python interface files for standard models.  The <tt class="docutils literal"><span class="pre">materials</span></tt> dictionary is a dictionary of <tt class="docutils literal"><span class="pre">model_name:</span> <span class="pre">attribute_dict</span></tt> key:value pairs with the dictionary of model attributes containing the following information:</p>
 <ul class="simple">
+<li><em>source_files</em>: [list, required] A list of model source files</li>
 <li><em>model</em>: [string, optional] The model type.  One of user, umat, uhyper, uanisohyper.  The default is user.</li>
 <li><em>behavior</em>: [string, optional] The model behavior, one of mechanical, hperelastic, anisohyper.  The default is mechanical.</li>
-<li><em>source_files</em>: [required] A list of model source files</li>
-<li><em>source_directory</em>: [string, optional] Directory to find source files, if source files are not their absolute paths.</li>
-<li><em>ordering</em>: [list of int, optional] Symmetric tensor ordering.  The default is xx, yy, zz, xy, yz, xz</li>
+<li><em>source_directory</em>: [string, optional] Directory to find source files. Useful for defining files in <em>source_files</em> relative to <em>source_directory</em>.</li>
+<li><em>ordering</em>: [list of int, optional] Symmetric tensor ordering.  The default is XX, YY, ZZ, XY, YZ, XZ</li>
 <li><em>user_ics</em>: [boolean, optional] Does the model provide its own SDVINI</li>
 </ul>
 <div class="section" id="example">
 <h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
-<p>The following user environment file is found in <tt class="docutils literal"><span class="pre">matmodlab/examples</span></tt>:</p>
+<p>The following user environment file is found in <tt class="docutils literal"><span class="pre">matmodlab/examples</span></tt> and is used by <tt class="docutils literal"><span class="pre">examples/users.py</span></tt> to define the material model&#8217;s attributes:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">materials</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;neohooke&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;model&#39;</span><span class="p">:</span> <span class="s">&#39;user&#39;</span><span class="p">,</span> <span class="s">&#39;behavior&#39;</span><span class="p">:</span> <span class="s">&#39;hyperelastic&#39;</span><span class="p">,</span>
                           <span class="s">&#39;source_directory&#39;</span><span class="p">:</span> <span class="n">ROOT_D</span> <span class="o">+</span> <span class="s">&#39;/materials/abaumats&#39;</span><span class="p">,</span>
                           <span class="s">&#39;source_files&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;uhyper.f90&#39;</span><span class="p">],</span>
@@ -154,6 +160,7 @@ it is updated with the user setting.</p>
 <li class="toctree-l2"><a class="reference internal" href="optimize.html">2.6. Optimizer</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">2.7. Environment Settings</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#recognized-environment-settings-and-defaults">Recognized Environment Settings and Defaults</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#io-settings">IO Settings</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#debugging-and-sqa">Debugging and SQA</a></li>

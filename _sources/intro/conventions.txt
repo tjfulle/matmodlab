@@ -74,17 +74,24 @@ Parameters
 
 Some useful parameters exposed by importing ``matmodlab`` are
 
-* ``ROOT_D``, The root ``matmodlab`` directory
-* ``PKG_D``, The ``matmodlab/lib`` directory, the location shared objects are copied
-* ``MAT_D``, The directory where builtin materials are contained
+* ``ROOT_D``, the root ``matmodlab`` directory
+* ``PKG_D``, the ``matmodlab/lib`` directory, the location shared objects are copied
+* ``MAT_D``, the directory where builtin materials are contained
 
 Methods
 -------
 
 Some useful methods exposed by importing ``matmodlab`` are
 
-* ``MaterialPointSimulator``, The material point simulator constructor
-* ``Permutator``, The permutator constructor
-* ``Optimizer``, The optimizer constructor
+* ``MaterialPointSimulator``, the material point simulator constructor
+* ``Permutator``, the permutator constructor
+* ``Optimizer``, the optimizer constructor
 
 Each of these methods is described in more detail in the following sections.
+
+Symbolic Constants
+------------------
+
+The following symbolic constants are exposed by importing ``matmodlab``:
+
+* ``XX, YY, ZZ, XY, YZ, XZ``, constants representing the *xx*, *yy*, *zz*, *xy*, *yz*, and *xz* components of second-order symmetric tensors.

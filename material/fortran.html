@@ -82,13 +82,13 @@ names, specified in the order expected by the model. If given as a list, the
 number of state variables allocated is inferred from its length. Matmodlab
 allocates storage for the <em>depvar</em> state dependent variables and
 initializes their values to 0.</li>
-<li><em>type</em>, is a string specifying the type of model.  Must be one of &#8220;mechanical&#8221; (default), &#8220;hyperelastic&#8221;, or &#8220;anisohyper&#8221;.</li>
+<li><em>behavior</em>, is a string specifying the type of model.  Must be one of &#8220;mechanical&#8221; (default), &#8220;hyperelastic&#8221;, or &#8220;anisohyper&#8221;.</li>
 <li><em>cmname</em>, is a string giving is the constitutive model name.</li>
-<li><em>order</em>, is a list of strings specifying the ordering of second-order
-symmetric tensors. The default ordering of symmetric second-order tensor
-components is <tt class="docutils literal"><span class="pre">xx,</span> <span class="pre">yy,</span> <span class="pre">zz,</span> <span class="pre">xy,</span> <span class="pre">yz,</span> <span class="pre">xz</span></tt>. The <em>order</em> argument can be used
-to change the ordering to be consistent with the assumptions of the material
-model.</li>
+<li><em>ordering</em>, is a list of symbolic constants specifying the ordering of
+second-order symmetric tensors. The default ordering of symmetric
+second-order tensor components is <tt class="docutils literal"><span class="pre">XX,</span> <span class="pre">YY,</span> <span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">YZ,</span> <span class="pre">XZ</span></tt>. The <em>ordering</em>
+argument can be used to change the ordering to be consistent with the
+assumptions of the material model.</li>
 </ul>
 </div>
 <div class="section" id="example">
@@ -103,8 +103,8 @@ model.</li>
 <p>Setting the <em>model</em> name to one of &#8220;<em>umat</em>&#8221;, &#8220;<em>uhyper</em>&#8221;, or
 &#8220;<em>uanisohyper_inv</em>&#8221; is equivalient to <em>model=</em>&#8220;<em>user</em>&#8221;, with
 <em>behavior=</em>&#8220;<em>mechanical</em>&#8221;, <em>behavior=</em>&#8220;<em>hyperelastic</em>&#8221;, or
-<em>behavior=</em>&#8220;<em>anisohyperelastic</em>&#8221;, respectively, and <em>order=(</em>&#8220;xx&#8221;, &#8220;yy&#8221;,
-&#8220;zz&#8221;, &#8220;xy&#8221;, &#8220;xz&#8221;, &#8220;yz&#8221;<em>)</em>.</p>
+<em>behavior=</em>&#8220;<em>anisohyperelastic</em>&#8221;, respectively, and <em>ordering=(XX, YY,
+ZZ, XY, XZ, YZ)</em>.</p>
 </div>
 </div>
 </div>
