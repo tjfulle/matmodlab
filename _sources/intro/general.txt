@@ -1,10 +1,6 @@
 Introduction: General
 #####################
 
-.. contents:: Contents
-   :depth: 2
-   :local:
-
 Overview of the Material Model Laboratory
 =========================================
 

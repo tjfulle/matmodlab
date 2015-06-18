@@ -3,10 +3,6 @@
 Installing
 ##########
 
-.. contents:: Contents
-   :local:
-   :depth: 1
-
 Overview
 ========
 

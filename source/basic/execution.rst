@@ -5,10 +5,6 @@
 Model Execution
 ###############
 
-.. contents:: Contents
-   :local:
-   :depth: 1
-
 Overview
 ========
 

@@ -3,10 +3,6 @@
 The Matmodlab Solution Method
 #############################
 
-.. contents:: Contents
-   :depth: 1
-   :local:
-
 Overview
 ========
 

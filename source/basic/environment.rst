@@ -7,71 +7,88 @@ Environment Settings
 Overview
 ========
 
-The Matmodlab execution can be customized with the Matmodlab rc file.  Matmodlab looks for this file in ``~/.matmodlabrc``.  See :ref:`basic_config` for more information on customizing the execution environment.
+The Matmodlab execution can be customized with Matmodlab user environment file ``mml_userenv.py``.  Matmodlab looks for this file in your home directory, the location specified by the environment variable ``MML_USERENV``, and the current working directory, in that order.  Matmodlab will read each file if found, meaning settings in the current working will overwrite similar settings previously read.
 
-User's can get/set/delete Matmodlab configuration options through the ``mml
-config`` script.
+Recognized Environment Settings and Defaults
+============================================
 
-The mml config Procedure
-========================
+Below are the recognized environment settings and their defaults.  Any of these settings can be changed by specifying a different value in a user environment file.
 
-Usage
------
+.. note::
 
-::
+   When specifying environment settings in a user environment file, the
+   setting must have the same type as the default. If the default is a list,
+   the user setting is inserted in the list. If the default is a dictionary,
+   it is updated with the user setting.
 
-  usage: mml config [-h] [--add name [value[s] ...]] [--del name [value[s] ...]]
-                    [--old2new] [--cat]
-
-  mml config: Set matmodlab options
-
-  optional arguments:
-    -h, --help            show this help message and exit
-    --add name [value[s] ...]
-                          name and value of option to add to configuration
-    --del name [value[s] ...]
-                          name and value of option to remove from configuration
-    --old2new             switch from old MMLMTLS environment variable to new
-                          config file
-    --cat                 print the MATMODLABRC file to the console and exit
-
-
-Adding Options
---------------
+IO Settings
+-----------
 
 ::
 
-  mml config --add option value
+   verbosity = 1
+   warn = "std"
+   Wall = False
+   Werror = False
+   Wlimit = 10
 
-Deleting Options
-----------------
-
-::
-
-  mml config --del option value
-
-Ignoring Options
-----------------
-
-The ``-E`` flag to ``mml run`` suppresses use of configuration file.
-
-Common Environment Setting
-==========================
-
-materials
----------
-
-Location of user defined materials.
+Debugging and SQA
+-----------------
 
 ::
 
-  mml config --add materials path/to/material
+   raise_e = False
+   sqa = False
+   debug = False
+   sqa_stiff = False
 
-sqa
----
-
-Run extra SQA checks during procedure execution
+Performance
+-----------
 
 ::
 
-  mml config --add sqa true
+   nprocs = 1
+
+Material Switching
+------------------
+
+::
+
+   switch = []
+
+User Material Models
+--------------------
+
+::
+
+    materials = {}
+    std_materials = [MAT_D]
+
+Simulation Directory
+--------------------
+
+::
+
+   simulation_dir = os.getcwd()
+
+A Note on Defining User Material Models
+=======================================
+
+The ``materials`` and ``std_materials`` user settings are used to inform Matmodlab concerning user defined materials.  The ``std_materials`` is a list of python interface files for standard models.  The ``materials`` dictionary should contain the following information:
+
+* *model*: [string, optional] The model type.  One of user, umat, uhyper, uanisohyper.  The default is user.
+* *behavior*: [string, optional] The model behavior, one of mechanical, hperelastic, anisohyper.  The default is mechanical.
+* *source_files*: [required] A list of model source files
+* *source_directory*: [string, optional] Directory to find source files, if source files are not their absolute paths.
+* *ordering*: [list of int, optional] Symmetric tensor ordering.  The default is xx, yy, zz, xy, yz, xz
+* *user_ics*: [boolean, optional] Does the model provide its own SDVINI
+
+Example
+-------
+
+The following user environment file is found in ``matmodlab/examples``::
+
+  materials = {'neohooke': {'model': 'user', 'behavior': 'hyperelastic',
+                            'source_directory': ROOT_D + '/materials/abaumats',
+                            'source_files': ['uhyper.f90'],
+                            'ordering': [XX, YY, ZZ, XY, XZ, YZ]}}

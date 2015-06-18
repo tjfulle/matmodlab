@@ -3,10 +3,6 @@
 Matmodlab Conventions
 #####################
 
-.. contents:: Contents
-   :depth: 1
-   :local:
-
 Overview
 ========
 
@@ -90,9 +86,5 @@ Some useful methods exposed by importing ``matmodlab`` are
 * ``MaterialPointSimulator``, The material point simulator constructor
 * ``Permutator``, The permutator constructor
 * ``Optimizer``, The optimizer constructor
-* ``Logger``, The logger factory method.
-* ``Expansion``, The expansion model constructor
-* ``TRS``, The time-temperature shift model constructor
-* ``Viscoelastic``, The viscoelastic model constructor
 
 Each of these methods is described in more detail in the following sections.

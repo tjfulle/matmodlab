@@ -3,10 +3,6 @@
 Material Library
 ################
 
-.. contents:: Contents
-   :local:
-   :depth: 1
-
 Overview
 ========
 
