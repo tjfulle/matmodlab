@@ -28,17 +28,6 @@ import sys, os, re
 #extensions = ['sphinx.ext.todo', 'sphinx.ext.pngmath']
 extensions = ['sphinx.ext.todo', 'sphinx.ext.mathjax']
 
-# latex preamble
-pream = []
-d = os.path.dirname(os.path.realpath(__file__))
-f = os.path.join(d, "nomenclature")
-src = f + ".src"
-lines = re.sub(r"<PATH>", d, open(src).read())
-sty = os.path.splitext(f)[0] + ".sty"
-with open(sty, "w") as fh:
-    fh.write(lines)
-pngmath_latex_preamble = "\usepackage{{{0}}}".format(f)
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -103,6 +92,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
+d = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, d)
 import alabaster
 html_theme_path = [alabaster.get_path()]
