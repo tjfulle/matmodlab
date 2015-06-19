@@ -41,6 +41,10 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*.html $(BUILDDIR)/doctrees
+	-rm -rf $(BUILDDIR)/basic/*.html
+	-rm -rf $(BUILDDIR)/examples/*.html
+	-rm -rf $(BUILDDIR)/intro/*.html
+	-rm -rf $(BUILDDIR)/material/*.html
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)

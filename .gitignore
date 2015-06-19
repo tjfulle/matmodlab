@@ -31,3 +31,5 @@ lib/*.so
 
 TestResults.*
 .built
+
+_images/math/*

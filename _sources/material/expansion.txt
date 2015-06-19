@@ -1,3 +1,4 @@
+.. _expansion:
 
 Thermal Expansion
 #################

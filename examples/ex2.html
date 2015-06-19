@@ -23,6 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="2.8. Annotated Examples" href="../basic/examples.html" />
     <link rel="next" title="Example 3: Uniaxial Stress, Mixed Mode" href="ex3.html" />
@@ -75,7 +76,7 @@ respectively.</p>
 <p><tt class="docutils literal"><span class="pre">mps.StressStep(components=(1,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">frames=25,</span> <span class="pre">scale=1e6)</span></tt></p>
 <p>This statement defines an analysis step during which the material will be
 exercised. The step is defined by a deformation path with tensor
-<tt class="docutils literal"><span class="pre">components</span></tt> <img class="math" src="../_images/math/2e955f5cf007cbc3caa6242e7c286a2e7d496534.png" alt="\{1, 0, 0, 0, 0, 0\}"/>. The <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and <tt class="docutils literal"><span class="pre">zz</span></tt>
+<tt class="docutils literal"><span class="pre">components</span></tt> <span class="math">\(\{1, 0, 0, 0, 0, 0\}\)</span>. The <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and <tt class="docutils literal"><span class="pre">zz</span></tt>
 components represent stress. The step is run in 25 <tt class="docutils literal"><span class="pre">frames</span></tt> (increments) and
 a <tt class="docutils literal"><span class="pre">scale</span></tt> of 1e6 is applied to each component. Note the following:</p>
 <ul class="simple">

@@ -1,3 +1,4 @@
+.. _viscoelastic:
 
 Viscoelasticity
 ###############

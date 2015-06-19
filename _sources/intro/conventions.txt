@@ -20,7 +20,7 @@ Vector components are stored as
 
 .. math::
 
-   \Tensor{v}{}{}{} = \{v_x, v_y, v_z\}
+   v_i = \{v_x, v_y, v_z\}
 
 Tensor Storage
 ==============
@@ -31,7 +31,7 @@ following ordering
 .. math::
    :label: order-symtens
 
-   \AA = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{yz}, A_{xz}\}
+   A_{ij} = \{A_{xx}, A_{yy}, A_{zz}, A_{xy}, A_{yz}, A_{xz}\}
 
 Tensor components are used for all second-order symmetric tensors.
 
@@ -40,9 +40,9 @@ ordering, i.e.,
 
 .. math::
 
-   \BB = \{A_{xx}, A_{xy}, A_{xz},
-           A_{yx}, A_{yy}, A_{yz},
-           A_{zx}, A_{zy}, A_{zz}\}
+   B_{ij} = \{B_{xx}, B_{xy}, B_{xz},
+              B_{yx}, B_{yy}, B_{yz},
+              B_{zx}, B_{zy}, B_{zz}\}
 
 .. note::
 
@@ -57,7 +57,7 @@ engineering strains, i.e.
 
 .. math::
 
-   \Strain = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, 2\epsilon_{xy}, 2\epsilon_{xz}, 2\epsilon_{yz}\}
+   \epsilon_{ij} = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, 2\epsilon_{xy}, 2\epsilon_{xz}, 2\epsilon_{yz}\}
            = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, \gamma_{xy}, \gamma_{xz}, \gamma_{yz}\}
 
 matmodlab Namespace
@@ -95,3 +95,11 @@ Symbolic Constants
 The following symbolic constants are exposed by importing ``matmodlab``:
 
 * ``XX, YY, ZZ, XY, YZ, XZ``, constants representing the *xx*, *yy*, *zz*, *xy*, *yz*, and *xz* components of second-order symmetric tensors.
+* ``MECHANICAL``, ``HYPERELASTIC``, ``ANISOHYPER`` are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material behaviors (see :ref:`user_mats`).
+* ``WLF`` specifies a WLF time-temperature shift (see :ref:`trs`)
+* ``PRONY`` specifies a prony series input to the viscoelastic model (see :ref:`viscoelastic`)
+* ``ISOTROPIC`` specifies isotropic thermal expansion (see :ref:`expansion`)
+* ``USER`` specifies that a user developed mode is of type "user"
+* ``UMAT`` specifies that a user developed mode is of type "umat"
+* ``UHYPER`` specifies that a user developed mode is of type "uhyper"
+* ``UANISOHYPER_INV`` specifies that a user developed mode is of type "uanisohyper_inv"

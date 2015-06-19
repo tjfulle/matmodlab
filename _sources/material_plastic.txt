@@ -1,3 +1,0 @@
-
-Von Mises Plasticity
-####################
