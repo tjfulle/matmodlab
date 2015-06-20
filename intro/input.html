@@ -83,8 +83,8 @@ classes, and symbolic constants.</p>
 <div class="section" id="symbolic-constants">
 <h3>Symbolic Constants<a class="headerlink" href="#symbolic-constants" title="Permalink to this headline">¶</a></h3>
 <p>The following are symbolic constants that are exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt>.</p>
-<div class="section" id="symbolic-constants-relating-to-materialpointsimulator">
-<h4>Symbolic Constants Relating to MaterialPointSimulator<a class="headerlink" href="#symbolic-constants-relating-to-materialpointsimulator" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="symbolic-constants-relating-to-matmodlab-simulator">
+<h4>Symbolic Constants Relating to Matmodlab.Simulator<a class="headerlink" href="#symbolic-constants-relating-to-matmodlab-simulator" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">DBX,</span> <span class="pre">EXO,</span> <span class="pre">TXT,</span> <span class="pre">PKL,</span> <span class="pre">XLS,</span> <span class="pre">XLSX</span></tt>, constants representing the output file formats.  See <a class="reference internal" href="output.html#mml-out-dbs"><em>Matmodlab Output Formats</em></a>.</li>
 </ul>
@@ -93,7 +93,7 @@ classes, and symbolic constants.</p>
 <h4>Symbolic Constants Relating to User Defined Materials<a class="headerlink" href="#symbolic-constants-relating-to-user-defined-materials" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">XX,</span> <span class="pre">YY,</span> <span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">YZ,</span> <span class="pre">XZ</span></tt>, constants representing the <em>xx</em>, <em>yy</em>, <em>zz</em>, <em>xy</em>, <em>yz</em>, and <em>xz</em> components of second-order symmetric tensors.</li>
-<li><tt class="docutils literal"><span class="pre">MECHANICAL</span></tt>, <tt class="docutils literal"><span class="pre">HYPERELASTIC</span></tt>, <tt class="docutils literal"><span class="pre">ANISOHYPER</span></tt> are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material behaviors (see <a class="reference internal" href="../material/user.html#user-mats"><em>User Defined Materials</em></a>).</li>
+<li><tt class="docutils literal"><span class="pre">MECHANICAL</span></tt>, <tt class="docutils literal"><span class="pre">HYPERELASTIC</span></tt>, <tt class="docutils literal"><span class="pre">ANISOHYPER</span></tt> are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material responses, respectively (see <a class="reference internal" href="../material/user.html#user-mats"><em>User Defined Materials</em></a>).</li>
 <li><tt class="docutils literal"><span class="pre">WLF</span></tt> specifies a WLF time-temperature shift (see <a class="reference internal" href="../material/trs.html#trs"><em>Time Temperature Shift</em></a>)</li>
 <li><tt class="docutils literal"><span class="pre">PRONY</span></tt> specifies a prony series input to the viscoelastic model (see <a class="reference internal" href="../material/viscoelastic.html#viscoelastic"><em>Viscoelasticity</em></a>)</li>
 <li><tt class="docutils literal"><span class="pre">ISOTROPIC</span></tt> specifies isotropic thermal expansion (see <a class="reference internal" href="../material/expansion.html#expansion"><em>Thermal Expansion</em></a>)</li>
@@ -103,6 +103,28 @@ classes, and symbolic constants.</p>
 <li><tt class="docutils literal"><span class="pre">UANISOHYPER_INV</span></tt> specifies that a user developed mode is of type &#8220;uanisohyper_inv&#8221;</li>
 </ul>
 </div>
+<div class="section" id="symbolic-constants-relating-to-matmodlab-permutator">
+<h4>Symbolic Constants Relating to Matmodlab.Permutator<a class="headerlink" href="#symbolic-constants-relating-to-matmodlab-permutator" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ZIP</span></tt>, apply the zip method to a permutation job.</li>
+<li><tt class="docutils literal"><span class="pre">COMBINATION</span></tt>, apply the combination method to a permutation job.</li>
+<li><tt class="docutils literal"><span class="pre">RANGE</span></tt>, permutated variables defined as a range</li>
+<li><tt class="docutils literal"><span class="pre">LIST</span></tt>, permutated variables defined as a list</li>
+<li><tt class="docutils literal"><span class="pre">WEIBULL</span></tt>, permutated variables permutated using a Weibull distribution</li>
+<li><tt class="docutils literal"><span class="pre">UNIFORM</span></tt>, permutated variables permutated using a Uniform distribution</li>
+<li><tt class="docutils literal"><span class="pre">NORMAL</span></tt>, permutated variables permutated using a NOrmal distribution</li>
+<li><tt class="docutils literal"><span class="pre">PERCENTAGE</span></tt>, permutated variables permutated +/- b% from the nominal value</li>
+<li><tt class="docutils literal"><span class="pre">UPERCENTAGE</span></tt>, permutated variables permutated using a uniform distribution with bounds +/- b% from the nominal value</li>
+<li><tt class="docutils literal"><span class="pre">NPERCENTAGE</span></tt>, permutated variables permutate using a normal distribution with bounds +/- b% from the nominal value</li>
+</ul>
+</div>
+<div class="section" id="symbolic-constants-relating-to-matmodlab-optimizer">
+<h4>Symbolic Constants Relating to Matmodlab.Optimizer<a class="headerlink" href="#symbolic-constants-relating-to-matmodlab-optimizer" title="Permalink to this headline">¶</a></h4>
+<p><tt class="docutils literal"><span class="pre">SIMPLEX</span></tt>, Simplex optimization method
+<tt class="docutils literal"><span class="pre">POWELL</span></tt>, Powell optimization method
+<tt class="docutils literal"><span class="pre">COBYLA</span></tt>, COBYLA optimization method
+<tt class="docutils literal"><span class="pre">BRUTE</span></tt>, brute force optimization method</p>
+</div>
 </div>
 </div>
 <div class="section" id="naming-conventions">
@@ -111,7 +133,7 @@ classes, and symbolic constants.</p>
 <ul class="simple">
 <li>Class names use the CapWords convention.</li>
 <li>Method names use lowercase with words separated by underscores as necessary to improve readability.</li>
-<li>Variable names adopt the rul as method names.</li>
+<li>Variable names adopt the same rule as method names.</li>
 <li>Symbolic constants are written in all capital letters with underscores separating words.</li>
 <li>Factory methods adopt the same rule as class names.</li>
 </ul>

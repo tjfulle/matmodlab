@@ -49,7 +49,7 @@ of uniaxial stress, using a mixed mode step. The example input below is found in
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="c"># Create the material point simulator</span>
-<span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="s">&#39;uniaxial_stress-1&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s">&#39;exo&#39;</span><span class="p">)</span>
+<span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="s">&#39;uniaxial_stress-1&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">EXO</span><span class="p">)</span>
 
 <span class="c"># Define the material</span>
 <span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;elastic&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mf">1.35e11</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="mf">5.3e10</span><span class="p">})</span>
@@ -70,8 +70,8 @@ of uniaxial stress, using a mixed mode step. The example input below is found in
 <p>This section describes each part of the example script</p>
 <p><tt class="docutils literal"><span class="pre">from</span> <span class="pre">matmodlab</span> <span class="pre">import</span> <span class="pre">*</span></tt></p>
 <p>This statement makes the Matmodlab objects accessible to the script.</p>
-<p><tt class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_stress-1',</span> <span class="pre">output='exo')</span></tt></p>
-<p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_stress-1</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.  The <tt class="docutils literal"><span class="pre">output</span></tt> format is <tt class="docutils literal"><span class="pre">exo</span></tt> (ExodusII) instead of the default dbx.</p>
+<p><tt class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_stress-1',</span> <span class="pre">output=EXO)</span></tt></p>
+<p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_stress-1</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.  The <tt class="docutils literal"><span class="pre">output</span></tt> format is <tt class="docutils literal"><span class="pre">EXO</span></tt> (ExodusII) instead of the default <tt class="docutils literal"><span class="pre">DBX</span></tt>.</p>
 <p><tt class="docutils literal"><span class="pre">mps.Material('elastic',</span> <span class="pre">{'K':</span> <span class="pre">1.35e11,</span> <span class="pre">'G':</span> <span class="pre">5.3e10})</span></tt></p>
 <p>This statement defines the material model to be the <tt class="docutils literal"><span class="pre">elastic</span></tt> material and
 defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to 1.35e11 and 5.3e10,

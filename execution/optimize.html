@@ -45,8 +45,8 @@
 <p>Optimize specified parameters against user specified objective function. Ideal
 for finding optimal model parameters. A optimizer instance is created through
 the <tt class="docutils literal"><span class="pre">Optimizer</span></tt> constructor. Minimally, the constructor requires a function
-to evaluate <tt class="docutils literal"><span class="pre">func</span></tt>, initial parameters <tt class="docutils literal"><span class="pre">xinit</span></tt>, and a <tt class="docutils literal"><span class="pre">runid</span></tt>.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">optimizer</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">runid</span><span class="p">)</span>
+to evaluate <tt class="docutils literal"><span class="pre">func</span></tt>, initial parameters <tt class="docutils literal"><span class="pre">xinit</span></tt>, and a <tt class="docutils literal"><span class="pre">job</span></tt>.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">optimizer</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><tt class="docutils literal"><span class="pre">func</span></tt> is called as <tt class="docutils literal"><span class="pre">func(x,</span> <span class="pre">*args)</span></tt> where <tt class="docutils literal"><span class="pre">x</span></tt> are the current values of
@@ -60,7 +60,7 @@ the permutated variables and <tt class="docutils literal"><span class="pre">args
 <p>The formal parameters to <tt class="docutils literal"><span class="pre">Optimizer</span></tt> are</p>
 <dl class="class">
 <dt id="Optimizer">
-<em class="property">class </em><tt class="descname">Optimizer</tt><big>(</big><em>func</em>, <em>xinit</em>, <em>runid</em>, <em>method=&quot;simplex&quot;</em>, <em>d=None</em>, <em>maxiter=50</em>, <em>tolerance=1.e-6</em>, <em>descriptor=None</em>, <em>funcargs=None</em><big>)</big><a class="headerlink" href="#Optimizer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">Optimizer</tt><big>(</big><em>func</em>, <em>xinit</em>, <em>job</em>, <em>method=SIMPLEX</em>, <em>d=None</em>, <em>maxiter=50</em>, <em>tolerance=1.e-6</em>, <em>descriptor=None</em>, <em>funcargs=None</em><big>)</big><a class="headerlink" href="#Optimizer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Optimizer object</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -69,7 +69,7 @@ the permutated variables and <tt class="docutils literal"><span class="pre">args
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>func</strong> &#8211; Function that evaluates a matmodlab simulation.  Must have signature <tt class="docutils literal"><span class="pre">func(x,</span> <span class="pre">*args)</span></tt>, where x are the current values of the permutated variable and funcargs are described below.</li>
 <li><strong>xinit</strong> (<em>List of PermutateVariable objects</em>) &#8211; Initial values of simulation parameters.</li>
-<li><strong>method</strong> (<em>str</em>) &#8211; The optimization method. One of simplex, powell, cobyla.</li>
+<li><strong>method</strong> (<em>symbolic constant</em>) &#8211; The optimization method. One of <tt class="docutils literal"><span class="pre">SIMPLEX,</span> <span class="pre">POWELL,</span> <span class="pre">COBYLA</span></tt>.</li>
 <li><strong>d</strong> (<em>str or None</em>) &#8211; Parent directory to run jobs.  If the directory does not exist, it will be created.  If not given, the current directory will be used.</li>
 <li><strong>maxiter</strong> (<em>int</em>) &#8211; Maximum number of iterations</li>
 <li><strong>tolerance</strong> (<em>float</em>) &#8211; The tolerance.</li>
@@ -82,11 +82,11 @@ the permutated variables and <tt class="docutils literal"><span class="pre">args
 </table>
 </dd></dl>
 
-<p>Each <tt class="docutils literal"><span class="pre">Optimzer</span></tt> job creates a directory <tt class="docutils literal"><span class="pre">runid.eval</span></tt> with the following
+<p>Each <tt class="docutils literal"><span class="pre">Optimzer</span></tt> job creates a directory <tt class="docutils literal"><span class="pre">job.eval</span></tt> with the following
 contents:</p>
-<div class="highlight-python"><div class="highlight"><pre>ls runid.eval
+<div class="highlight-python"><div class="highlight"><pre>ls job.eval
 eval_000/    eval_002/    mml-evaldb.xml
-eval_001/    ...          runid.log
+eval_001/    ...          job.log
 </pre></div>
 </div>
 <p>The <tt class="docutils literal"><span class="pre">eval_...</span></tt> directory holds the output of the ith job and a <tt class="docutils literal"><span class="pre">params.in</span></tt>
@@ -142,8 +142,8 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
 <span class="n">strain_exp</span><span class="p">,</span> <span class="n">stress_exp</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">ufio</span><span class="o">.</span><span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">sheet</span><span class="o">=</span><span class="s">&quot;MML&quot;</span><span class="p">,</span> <span class="n">disp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                             <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;STRAIN_XX&quot;</span><span class="p">,</span> <span class="s">&quot;STRESS_XX&quot;</span><span class="p">]))</span>
 
-<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[],</span> <span class="n">xnames</span><span class="o">=</span><span class="p">[],</span> <span class="n">evald</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">runid</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-    <span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[],</span> <span class="n">xnames</span><span class="o">=</span><span class="p">[],</span> <span class="n">evald</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
 
     <span class="n">xp</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">xnames</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
     <span class="n">NU</span> <span class="o">=</span> <span class="mf">0.32</span>  <span class="c"># poisson&#39;s ratio for aluminum</span>
@@ -179,7 +179,7 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
     <span class="n">xopt</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">xopt</span>
     <span class="k">return</span> <span class="n">xopt</span>
 
-<span class="n">runjob</span><span class="p">(</span><span class="s">&#39;powell&#39;</span><span class="p">)</span>
+<span class="n">runjob</span><span class="p">(</span><span class="n">POWELL</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

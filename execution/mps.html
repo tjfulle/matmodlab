@@ -62,11 +62,11 @@ described.</p>
 <h2>The MaterialPointSimulator Constructor<a class="headerlink" href="#the-materialpointsimulator-constructor" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="MaterialPointSimulator">
-<em class="property">class </em><tt class="descname">MaterialPointSimulator</tt><big>(</big><em>runid</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>inital_temperature=DEFAULT_TEMP</em>, <em>output='dbx'</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">MaterialPointSimulator</tt><big>(</big><em>job</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>inital_temperature=DEFAULT_TEMP</em>, <em>output=DBX</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a MaterialPointSimulator object and set up the simulation.</p>
-<p>The <em>runid</em> string is the simulation ID.  Generated files are named runid.ext, where ext is the file extension.</p>
+<p>The <em>job</em> string is the simulation ID.  Generated files are named job.ext, where ext is the file extension.</p>
 <p>The following arguments are optional.</p>
-<p>The <em>verbosity</em> integer set the simulation verbosity. Generally, 0=quiet, 2=noisy.  The <em>d</em> string is the simulation directory, the default is the working directory.  <em>initial_temperature</em> is the initial temperature, the default is 298 K.  The <em>output</em> string specifies the output type, it defaults to dbx if not specified.  See <a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab Output Formats</em></a> for a description of supported output formats.</p>
+<p>The <em>verbosity</em> integer set the simulation verbosity. Generally, 0=quiet, 2=noisy.  The <em>d</em> string is the simulation directory, the default is the working directory.  <em>initial_temperature</em> is the initial temperature, the default is 298 K.  The <em>output</em> symbolic constant specifies the output type, it defaults to <tt class="docutils literal"><span class="pre">DBX</span></tt> if not specified.  See <a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab Output Formats</em></a> for a description of supported output formats.</p>
 <p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="s">&#39;model&#39;</span><span class="p">)</span>
 
@@ -82,7 +82,7 @@ described.</p>
 <dt id="MaterialPointSimulator.Material">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>name=None</em>, <em>switch=None</em>, <em>rebuild=False</em>, <em>param_names=None</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>depvar=None</em>, <em>fiber_dirs=None</em>, <em>user_ics=False</em>, <em>order=None</em>, <em>response=None</em>, <em>libname=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.Material" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create and assign a material model</p>
-<p>The required arguments are a model name and material parameters.  The model name must be a recognized material model (see <a class="reference internal" href="../material/overview.html#mat-lib"><em>Material Library</em></a>).  <em>parameters</em> can either be a dictionary of key:value (key is the parameter name, value its numeric value) or ndarray.</p>
+<p>The required arguments are a model name and material parameters.  The model name must be a recognized material model (see <a class="reference internal" href="../material/overview.html#mat-lib"><em>Material Library</em></a>).  <em>parameters</em> is either a dictionary of <tt class="docutils literal"><span class="pre">key:value</span></tt> (<tt class="docutils literal"><span class="pre">key</span></tt> being the parameter name, <tt class="docutils literal"><span class="pre">value</span></tt> its numeric value) or ndarray.</p>
 <p>The following arguments are optional and applicable to all materials.</p>
 <p><em>rebuild</em> is a boolean that, when True, forces the material model to be rebuilt before the simulation.  <em>switch</em> is a tuple containing the material name and the name of another material to be switched in to its place.</p>
 <p>The following arguments are applicable to user materials</p>
@@ -90,7 +90,7 @@ described.</p>
 <p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;elastic&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mf">123e9</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="mf">53e9</span><span class="p">})</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;umat&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mf">10e6</span><span class="p">,</span> <span class="o">.</span><span class="mi">333</span><span class="p">,</span> <span class="mf">42e3</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="n">UMAT</span><span class="p">,</span> <span class="p">(</span><span class="mf">10e6</span><span class="p">,</span> <span class="o">.</span><span class="mi">333</span><span class="p">,</span> <span class="mf">42e3</span><span class="p">),</span>
 <span class="go">                 source_files=(&#39;umat.f&#39;, &#39;umat.pyf&#39;),</span>
 <span class="go">                 param_names=(&#39;E&#39;, &#39;nu&#39;, &#39;Y&#39;), user_ics=True,</span>
 <span class="go">                 depvar=(&#39;EQPS&#39;,))</span>
@@ -212,7 +212,7 @@ described.</p>
 <h2>Extracting Results from the Output Database<a class="headerlink" href="#extracting-results-from-the-output-database" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="MaterialPointSimulator.get">
-<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">get</tt><big>(</big><em>*variables</em>, <em>disp=0</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.get" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">get</tt><big>(</big><em>*variables</em>, <em>model=None</em>, <em>disp=0</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get variables from output database.</p>
 <p><em>variables</em> is a list of variables to extract.  If <em>disp</em> is 1, the variables are returned, in addition to a header describing the variables.</p>
 </dd></dl>
@@ -222,7 +222,7 @@ described.</p>
 <h2>View Simulation Results<a class="headerlink" href="#view-simulation-results" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="MaterialPointSimulator.view">
-<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">view</tt><big>(</big><big>)</big><a class="headerlink" href="#MaterialPointSimulator.view" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">view</tt><big>(</big><em>model=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.view" title="Permalink to this definition">¶</a></dt>
 <dd><p>Display simulation results in visualizer.</p>
 </dd></dl>
 

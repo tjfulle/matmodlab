@@ -6,9 +6,8 @@ Introduction: General
 Overview of the Material Model Laboratory
 =========================================
 
-The Material Model Laboratory (Matmodlab) is a collection of tools that
-provides capability to develop, parameterize, and test material constitutive
-models. Matmodlab includes:
+The Material Model Laboratory (Matmodlab) is a suite of tools designed for the development of material models intended for deployment in finite element codes.
+Matmodlab includes:
 
 * Matmodlab.Simulator, a specialized material model driver;
 * Matmodlab.Permutator, a toolkit for determining model sensitivities to
@@ -18,12 +17,12 @@ models. Matmodlab includes:
 * Matmodlab.Viewer, an interactive visualization tool.
 
 The material model simulator can be thought to drive a single material point
-of a finite element simulation through very specific user designed paths. This
+of a finite element simulation through specific user designed paths. This
 permits exercising material models in ways not possible in finite element
 calculations, desgining verification and validation tests of the material
 response, among others. Matmodlab is a small suite of tools at the developers
 disposal to aid in the design and implementation of material models in larger
-finite element host codes. It is also a useful tool to analysts for
+finite element host codes. It is also a useful tool for analysts for
 understanding and parameterizing a material's response to deformation.
 
 About Matmodlab
@@ -42,7 +41,7 @@ sources.
 Using Matmodlab
 ===============
 
-The Matmodlab.Simulator is run as a terminal application (see
+The Matmodlab.Simulator is run in batch mode from the command line (see
 :ref:`model_create_and_execute`, for details). The main input the
 Matmodlab.Simulator is a python script containing directives and data required
 for the simulation. Directions on generating input scripts are provided in
@@ -53,7 +52,6 @@ As you begin to use Matmodlab, it is recommended that you read and modify the ma
 Viewing the Results of a Matmodlab Simulation
 =============================================
 
-Since Matmodlab is designed to be used by material model developers, it is
-expected that the typical user will want access to *all* available output from
-a material model. Thus, all simulation data is written to the output database.
-Output files can be visualized in Matmodlab.Viewer.  See :ref:`viewer` for information on using the visualization tools.
+All simulation data is written to the output database. Output database files
+can be visualized in Matmodlab.Viewer. See :ref:`viewer` for information on
+using the visualization tools.

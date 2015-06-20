@@ -21,15 +21,15 @@ described.
 The MaterialPointSimulator Constructor
 ======================================
 
-.. class:: MaterialPointSimulator(runid, verbosity=1, d=None, inital_temperature=DEFAULT_TEMP, output='dbx')
+.. class:: MaterialPointSimulator(job, verbosity=1, d=None, inital_temperature=DEFAULT_TEMP, output=DBX)
 
    Create a MaterialPointSimulator object and set up the simulation.
 
-   The *runid* string is the simulation ID.  Generated files are named runid.ext, where ext is the file extension.
+   The *job* string is the simulation ID.  Generated files are named job.ext, where ext is the file extension.
 
    The following arguments are optional.
 
-   The *verbosity* integer set the simulation verbosity. Generally, 0=quiet, 2=noisy.  The *d* string is the simulation directory, the default is the working directory.  *initial_temperature* is the initial temperature, the default is 298 K.  The *output* string specifies the output type, it defaults to dbx if not specified.  See :ref:`mml_out_dbs` for a description of supported output formats.
+   The *verbosity* integer set the simulation verbosity. Generally, 0=quiet, 2=noisy.  The *d* string is the simulation directory, the default is the working directory.  *initial_temperature* is the initial temperature, the default is 298 K.  The *output* symbolic constant specifies the output type, it defaults to ``DBX`` if not specified.  See :ref:`mml_out_dbs` for a description of supported output formats.
 
    Examples::
 
@@ -47,7 +47,7 @@ Defining a Material Model
 
    Create and assign a material model
 
-   The required arguments are a model name and material parameters.  The model name must be a recognized material model (see :ref:`mat_lib`).  *parameters* can either be a dictionary of key:value (key is the parameter name, value its numeric value) or ndarray.
+   The required arguments are a model name and material parameters.  The model name must be a recognized material model (see :ref:`mat_lib`).  *parameters* is either a dictionary of ``key:value`` (``key`` being the parameter name, ``value`` its numeric value) or ndarray.
 
    The following arguments are optional and applicable to all materials.
 
@@ -61,7 +61,7 @@ Defining a Material Model
 
      >>> mps.Material('elastic', {'K': 123e9, 'G': 53e9})
 
-     >>> mps.Material('umat', (10e6, .333, 42e3),
+     >>> mps.Material(UMAT, (10e6, .333, 42e3),
                       source_files=('umat.f', 'umat.pyf'),
 		      param_names=('E', 'nu', 'Y'), user_ics=True,
 		      depvar=('EQPS',))
@@ -190,7 +190,7 @@ Running the Simulation
 Extracting Results from the Output Database
 ===========================================
 
-.. method:: MaterialPointSimulator.get(*variables, disp=0)
+.. method:: MaterialPointSimulator.get(*variables, model=None, disp=0)
 
    Get variables from output database.
 
@@ -199,6 +199,6 @@ Extracting Results from the Output Database
 
 View Simulation Results
 =======================
-.. method:: MaterialPointSimulator.view()
+.. method:: MaterialPointSimulator.view(model=None)
 
    Display simulation results in visualizer.

@@ -29,14 +29,14 @@ Standard Material Test
 
   class TestPathTable(TestBase):
       def __init__(self):
-          self.runid = path_table_id
+          self.job = path_table_id
           self.keywords = ["fast", "feature", "path", "table", "builtin"]
 
   @matmodlab
   def run_path_table():
 
-      runid = path_table_id
-      logger = Logger(runid)
+      job = path_table_id
+      logger = Logger(job)
       path = """0E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00
                 1E+00 1E-01 0E+00 0E+00 0E+00 0E+00 0E+00
                 2E+00 0E+00 0E+00 0E+00 0E+00 0E+00 0E+00"""
@@ -45,7 +45,7 @@ Standard Material Test
                       tfmt="time", logger=logger)
       parameters = {"K":1.350E+11, "G":5.300E+10}
       material = Material("elastic", parameters, logger=logger)
-      mps = MaterialPointSimulator(runid, driver, material, logger=logger, d=d)
+      mps = MaterialPointSimulator(job, driver, material, logger=logger, d=d)
       mps.run()
       return
 
@@ -53,16 +53,16 @@ Standard Material Test
       run_path_table()
 
 A test is created by subclassing ``TestBase``. Minimally, a test defines
-``runid`` and ``keywords`` attributes. The ``runid`` attribute is used
+``job`` and ``keywords`` attributes. The ``job`` attribute is used
 internally for test identification and ``keywords`` for test filtering and
 organization. The module containing the test must also define a
-``run_<runid>`` function (where ``<runid>`` is replaced with the actual
-``runid`` of the test) to run the actual simulation. For each test so defined,
-Matmodlab expects the existence of a base file ``<runid>.base_exo`` containing
+``run_<job>`` function (where ``<job>`` is replaced with the actual
+``job`` of the test) to run the actual simulation. For each test so defined,
+Matmodlab expects the existence of a base file ``<job>.base_exo`` containing
 the expected, or baseline, results. Matmodlab also expects, on exercising
-``run_<runid>``, the creation of the results file ``<runid>.exo``. At the
-completion of the test, ``<runid>.exo`` is compared to ``<runid>.base_exo`` and
-differences (if any) determined by :ref:`exodiff`.
+``run_<job>``, the creation of the results file ``<job>.exo``. At the
+completion of the test, ``<job>.exo`` is compared to ``<job>.base_exo`` and
+differences (if any) determined by ``exodiff``.
 
 Command-Line Interface
 ======================
@@ -143,7 +143,7 @@ Required Attributes of TestBase
    List of keywords identifying the test. Each test must define
    one of *long*, *medium*, *fast*.
 
-.. attribute:: TestBase.runid
+.. attribute:: TestBase.job
 
    The test identifier.
 
@@ -152,11 +152,11 @@ Definable Attributes of TestBase
 
 .. attribute:: TestBase.base_res
 
-   Base result file name  [default: ``runid.base_exo``]
+   Base result file name  [default: ``job.base_exo``]
 
 .. attribute:: TestBase.exodiff
 
-   :ref:`exodiff` diff file [default: ``tests/base.exodiff``]
+   ``exodiff`` diff file [default: ``tests/base.exodiff``]
 
 Useful Read-Only Attributes of TestBase
 ---------------------------------------
@@ -168,7 +168,7 @@ Useful Read-Only Attributes of TestBase
 Methods
 =======
 
-As described in :ref:`basic_test_ex`, minimally, a test subclasses ``TestBase`` and defines a ``runid`` and ``keywords``, Matmodlab will set up the test, run, and perform post processing.  Optionally, a test may define the following methods.
+As described in :ref:`basic_test_ex`, minimally, a test subclasses ``TestBase`` and defines a ``job`` and ``keywords``, Matmodlab will set up the test, run, and perform post processing.  Optionally, a test may define the following methods.
 
 .. method:: TestBase.setup(*args, **kwargs)
 

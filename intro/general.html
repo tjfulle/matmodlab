@@ -44,9 +44,8 @@
 <span id="intro-general"></span><h1>1.1. Introduction: General<a class="headerlink" href="#introduction-general" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="overview-of-the-material-model-laboratory">
 <h2>Overview of the Material Model Laboratory<a class="headerlink" href="#overview-of-the-material-model-laboratory" title="Permalink to this headline">¶</a></h2>
-<p>The Material Model Laboratory (Matmodlab) is a collection of tools that
-provides capability to develop, parameterize, and test material constitutive
-models. Matmodlab includes:</p>
+<p>The Material Model Laboratory (Matmodlab) is a suite of tools designed for the development of material models intended for deployment in finite element codes.
+Matmodlab includes:</p>
 <ul class="simple">
 <li>Matmodlab.Simulator, a specialized material model driver;</li>
 <li>Matmodlab.Permutator, a toolkit for determining model sensitivities to
@@ -56,12 +55,12 @@ parameters;</li>
 <li>Matmodlab.Viewer, an interactive visualization tool.</li>
 </ul>
 <p>The material model simulator can be thought to drive a single material point
-of a finite element simulation through very specific user designed paths. This
+of a finite element simulation through specific user designed paths. This
 permits exercising material models in ways not possible in finite element
 calculations, desgining verification and validation tests of the material
 response, among others. Matmodlab is a small suite of tools at the developers
 disposal to aid in the design and implementation of material models in larger
-finite element host codes. It is also a useful tool to analysts for
+finite element host codes. It is also a useful tool for analysts for
 understanding and parameterizing a material&#8217;s response to deformation.</p>
 </div>
 <div class="section" id="about-matmodlab">
@@ -77,7 +76,7 @@ sources.</p>
 </div>
 <div class="section" id="using-matmodlab">
 <h2>Using Matmodlab<a class="headerlink" href="#using-matmodlab" title="Permalink to this headline">¶</a></h2>
-<p>The Matmodlab.Simulator is run as a terminal application (see
+<p>The Matmodlab.Simulator is run in batch mode from the command line (see
 <a class="reference internal" href="../execution/index.html#model-create-and-execute"><em>Job Execution</em></a>, for details). The main input the
 Matmodlab.Simulator is a python script containing directives and data required
 for the simulation. Directions on generating input scripts are provided in
@@ -86,10 +85,9 @@ this guide.</p>
 </div>
 <div class="section" id="viewing-the-results-of-a-matmodlab-simulation">
 <h2>Viewing the Results of a Matmodlab Simulation<a class="headerlink" href="#viewing-the-results-of-a-matmodlab-simulation" title="Permalink to this headline">¶</a></h2>
-<p>Since Matmodlab is designed to be used by material model developers, it is
-expected that the typical user will want access to <em>all</em> available output from
-a material model. Thus, all simulation data is written to the output database.
-Output files can be visualized in Matmodlab.Viewer.  See <a class="reference internal" href="../execution/post.html#viewer"><em>Postprocessing Results</em></a> for information on using the visualization tools.</p>
+<p>All simulation data is written to the output database. Output database files
+can be visualized in Matmodlab.Viewer. See <a class="reference internal" href="../execution/post.html#viewer"><em>Postprocessing Results</em></a> for information on
+using the visualization tools.</p>
 </div>
 </div>
 

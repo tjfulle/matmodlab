@@ -16,7 +16,7 @@ After completion of a simulation, results can be viewed in one of two ways
 
 * The ``mml`` script::
 
-    mml view runid.exo
+    mml view job.exo
 
 Whichever method is chosen, a visualizer...
 

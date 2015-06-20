@@ -6,11 +6,11 @@ Optimizer
 Optimize specified parameters against user specified objective function. Ideal
 for finding optimal model parameters. A optimizer instance is created through
 the ``Optimizer`` constructor. Minimally, the constructor requires a function
-to evaluate ``func``, initial parameters ``xinit``, and a ``runid``.
+to evaluate ``func``, initial parameters ``xinit``, and a ``job``.
 
 .. code:: python
 
-   optimizer = Optimizer(func, xinit, runid)
+   optimizer = Optimizer(func, xinit, job)
 
 ``func`` is called as ``func(x, *args)`` where ``x`` are the current values of
 the permutated variables and ``args`` contains in its last component::
@@ -24,7 +24,7 @@ Optimizer Constructor
 
 The formal parameters to ``Optimizer`` are
 
-.. class:: Optimizer(func, xinit, runid, method="simplex", d=None, maxiter=50, tolerance=1.e-6, descriptor=None, funcargs=None)
+.. class:: Optimizer(func, xinit, job, method=SIMPLEX, d=None, maxiter=50, tolerance=1.e-6, descriptor=None, funcargs=None)
 
    Create a Optimizer object
 
@@ -32,8 +32,8 @@ The formal parameters to ``Optimizer`` are
    :type callable:
    :parameter xinit: Initial values of simulation parameters.
    :type xinit: List of PermutateVariable objects
-   :parameter method: The optimization method. One of simplex, powell, cobyla.
-   :type method: str
+   :parameter method: The optimization method. One of ``SIMPLEX, POWELL, COBYLA``.
+   :type method: symbolic constant
    :parameter d: Parent directory to run jobs.  If the directory does not exist, it will be created.  If not given, the current directory will be used.
    :type d: str or None
    :parameter maxiter: Maximum number of iterations
@@ -45,12 +45,12 @@ The formal parameters to ``Optimizer`` are
    :parameter funcargs: Additional arguments to be sent to func.  The directory of the current job is appended to the end of funcargs.  If None,
    :type funcargs: list or None
 
-Each ``Optimzer`` job creates a directory ``runid.eval`` with the following
+Each ``Optimzer`` job creates a directory ``job.eval`` with the following
 contents::
 
-   ls runid.eval
+   ls job.eval
    eval_000/    eval_002/    mml-evaldb.xml
-   eval_001/    ...          runid.log
+   eval_001/    ...          job.log
 
 The ``eval_...`` directory holds the output of the ith job and a ``params.in``
 file with the values of each parameter to optimize for that job.
@@ -105,8 +105,8 @@ parameters and can be found in ``matmodlab/examples/optimize.py``.  The objectiv
   strain_exp, stress_exp = zip(*ufio.loadfile(filename, sheet="MML", disp=0,
                                               columns=["STRAIN_XX", "STRESS_XX"]))
 
-  def func(x=[], xnames=[], evald="", runid="", *args):
-      mps = MaterialPointSimulator(runid)
+  def func(x=[], xnames=[], evald="", job="", *args):
+      mps = MaterialPointSimulator(job)
 
       xp = dict(zip(xnames, x))
       NU = 0.32  # poisson's ratio for aluminum
@@ -142,4 +142,4 @@ parameters and can be found in ``matmodlab/examples/optimize.py``.  The objectiv
       xopt = optimizer.xopt
       return xopt
 
-  runjob('powell')
+  runjob(POWELL)

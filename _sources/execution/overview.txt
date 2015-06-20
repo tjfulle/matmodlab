@@ -16,7 +16,7 @@ Overview
 An analysis in Matmodlab is defined by an input script, which
 
 * is a Python script that imports the Matmodlab namespace; and
-* is defines a ``MaterialPointSimulator`` object.
+* defines a ``MaterialPointSimulator`` object.
 
 Once defined, the input script is executed with the ``mml run`` procedure and results viewed with the ``mml view`` procedure.
 

@@ -52,8 +52,8 @@ Permutating values of model inputs involves running jobs with different
 realization of parameters. Ideal for investigating model sensitivities. A
 permutator instance is created through the <tt class="docutils literal"><span class="pre">Permutator</span></tt> constructor.
 Minimally, the constructor requires a function to evaluate <tt class="docutils literal"><span class="pre">func</span></tt>, initial
-parameters <tt class="docutils literal"><span class="pre">xinit</span></tt>, and a <tt class="docutils literal"><span class="pre">runid</span></tt>.</p>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">permutator</span> <span class="o">=</span> <span class="n">Permutator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">runid</span><span class="p">)</span>
+parameters <tt class="docutils literal"><span class="pre">xinit</span></tt>, and a <tt class="docutils literal"><span class="pre">job</span></tt>.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">permutator</span> <span class="o">=</span> <span class="n">Permutator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><tt class="docutils literal"><span class="pre">func</span></tt> is called as <tt class="docutils literal"><span class="pre">func(x,</span> <span class="pre">*args)</span></tt> where <tt class="docutils literal"><span class="pre">x</span></tt> are the current values of
@@ -67,7 +67,7 @@ the permutated variables and <tt class="docutils literal"><span class="pre">args
 <p>The formal parameters to <tt class="docutils literal"><span class="pre">Permutator</span></tt> are</p>
 <dl class="class">
 <dt id="Permutator">
-<em class="property">class </em><tt class="descname">Permutator</tt><big>(</big><em>func</em>, <em>xinit</em>, <em>runid</em>, <em>method=&quot;zip&quot;</em>, <em>correlations=False</em>, <em>verbosity=1</em>, <em>descriptor=None</em>, <em>nprocs=1</em>, <em>funcargs=None</em>, <em>d=None</em><big>)</big><a class="headerlink" href="#Permutator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">Permutator</tt><big>(</big><em>func</em>, <em>xinit</em>, <em>job</em>, <em>method=ZIP</em>, <em>correlations=False</em>, <em>verbosity=1</em>, <em>descriptor=None</em>, <em>nprocs=1</em>, <em>funcargs=None</em>, <em>d=None</em><big>)</big><a class="headerlink" href="#Permutator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Permutator object</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -76,8 +76,8 @@ the permutated variables and <tt class="docutils literal"><span class="pre">args
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>func</strong> &#8211; Function that evaluates a matmodlab simulation.  Must have signature <tt class="docutils literal"><span class="pre">func(x,</span> <span class="pre">*args)</span></tt>, where x are the current values of the permutated variable and funcargs are described below.</li>
 <li><strong>xinit</strong> (<em>List of PermutateVariable objects</em>) &#8211; Initial values of simulation parameters.</li>
-<li><strong>runid</strong> (<em>str</em>) &#8211; runid for the parent Permutation process.</li>
-<li><strong>method</strong> (<em>str</em>) &#8211; The method for determining how to combine parameter values. One of zip or combine. The zip method runs one job for each set of parameters (and, thus, the number of realizations for each parameter must be identical), the combine method runs every combination of parameters.</li>
+<li><strong>job</strong> (<em>str</em>) &#8211; job for the parent Permutation process.</li>
+<li><strong>method</strong> (<em>symbolic constant</em>) &#8211; The method for determining how to combine parameter values. One of <tt class="docutils literal"><span class="pre">ZIP</span></tt> or <tt class="docutils literal"><span class="pre">COMBINATION</span></tt>. The <tt class="docutils literal"><span class="pre">ZIP</span></tt> method runs one job for each set of parameters (and, thus, the number of realizations for each parameter must be identical), the <tt class="docutils literal"><span class="pre">COMBINATION</span></tt> method runs every combination of parameters.</li>
 <li><strong>correlations</strong> (<em>bool</em>) &#8211; Create correlation table and plots of relating permutated parameters and return value of func [default: False].</li>
 <li><strong>descriptor</strong> (<em>int of None</em>) &#8211; Descriptors of return values from func</li>
 <li><strong>nprocs</strong> &#8211; Number of simultaneous jobs [default: None]</li>
@@ -90,11 +90,11 @@ the permutated variables and <tt class="docutils literal"><span class="pre">args
 </table>
 </dd></dl>
 
-<p>Each <tt class="docutils literal"><span class="pre">Permutator</span></tt> job creates a directory <tt class="docutils literal"><span class="pre">runid.eval</span></tt> with the following
+<p>Each <tt class="docutils literal"><span class="pre">Permutator</span></tt> job creates a directory <tt class="docutils literal"><span class="pre">job.eval</span></tt> with the following
 contents:</p>
-<div class="highlight-python"><div class="highlight"><pre>ls runid.eval
+<div class="highlight-python"><div class="highlight"><pre>ls job.eval
 eval_000/    eval_002/    mml-evaldb.xml
-eval_001/    ...          runid.log
+eval_001/    ...          job.log
 </pre></div>
 </div>
 <p>The <tt class="docutils literal"><span class="pre">eval_...</span></tt> directory holds the output of the ith job and a <tt class="docutils literal"><span class="pre">params.in</span></tt>
@@ -108,7 +108,7 @@ recognizes <tt class="docutils literal"><span class="pre">mml-evaldb.xml</span><
 <p>The formal parameters to <tt class="docutils literal"><span class="pre">PermutateVariable</span></tt> are</p>
 <dl class="function">
 <dt id="PermutateVariable">
-<tt class="descname">PermutateVariable</tt><big>(</big><em>name</em>, <em>init</em>, <em>method=&quot;list&quot;</em>, <em>b=None</em>, <em>N=10</em><big>)</big><a class="headerlink" href="#PermutateVariable" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">PermutateVariable</tt><big>(</big><em>name</em>, <em>init</em>, <em>method=LIST</em>, <em>b=None</em>, <em>N=10</em><big>)</big><a class="headerlink" href="#PermutateVariable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a PermutateVariable object</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -117,9 +117,9 @@ recognizes <tt class="docutils literal"><span class="pre">mml-evaldb.xml</span><
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> (<em>str</em>) &#8211; Name of variable</li>
 <li><strong>init</strong> (<em>float or list</em>) &#8211; Initial value or values, dependending on method.</li>
-<li><strong>method</strong> (<em>str</em>) &#8211; Method used to generate all values.  If list, than all values shall be given in init.  Otherwise, values will be generated. Valid methods are list, weibull, uniform, normal, percentage.</li>
-<li><strong>b</strong> (<em>float</em>) &#8211; For methods other than list, values are generated from a function called as fun(init, b, N).  The meaning of b is dependent on which method fun represents.</li>
-<li><strong>N</strong> (<em>int</em>) &#8211; For methods other than list, the number of values to generate</li>
+<li><strong>method</strong> (<em>symbolic constant</em>) &#8211; Method used to generate all values.  If <tt class="docutils literal"><span class="pre">LIST</span></tt>, than all values shall be given in init.  Otherwise, values will be generated. Valid methods are <tt class="docutils literal"><span class="pre">LIST,</span> <span class="pre">WEIBULL,</span> <span class="pre">UNIFORM,</span> <span class="pre">NORMAL,</span> <span class="pre">PERCENTAGE</span></tt>.</li>
+<li><strong>b</strong> (<em>float</em>) &#8211; For methods other than <tt class="docutils literal"><span class="pre">LIST</span></tt>, values are generated from a function called as fun(init, b, N).  The meaning of b is dependent on which method fun represents.</li>
+<li><strong>N</strong> (<em>int</em>) &#8211; For methods other than <tt class="docutils literal"><span class="pre">LIST</span></tt>, the number of values to generate</li>
 </ul>
 </td>
 </tr>
@@ -133,10 +133,10 @@ recognizes <tt class="docutils literal"><span class="pre">mml-evaldb.xml</span><
 <div class="code python highlight-python"><div class="highlight"><pre><span class="n">K</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&quot;K&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">75</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="mi">155</span><span class="p">])</span>
 </pre></div>
 </div>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">K</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&quot;K&quot;</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&quot;weibull&quot;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">K</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&quot;K&quot;</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">WEIBULL</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="code python highlight-python"><div class="highlight"><pre><span class="n">K</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&quot;K&quot;</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&quot;percentage&quot;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">K</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&quot;K&quot;</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">PERCENTAGE</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -147,9 +147,9 @@ recognizes <tt class="docutils literal"><span class="pre">mml-evaldb.xml</span><
 parameters to the <tt class="docutils literal"><span class="pre">elastic</span></tt> model.  The input can be found in <tt class="docutils literal"><span class="pre">matmodlab/examples/permutate.py</span></tt>.</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
 
-<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">xnames</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">runid</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">xnames</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
 
-    <span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">runid</span><span class="p">)</span>
+    <span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
     <span class="n">mps</span><span class="o">.</span><span class="n">StrainStep</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">increment</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">scale</span><span class="o">=-.</span><span class="mi">5</span><span class="p">,</span> <span class="n">frames</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
     <span class="n">mps</span><span class="o">.</span><span class="n">StrainStep</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">increment</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">scale</span><span class="o">=-.</span><span class="mi">5</span><span class="p">,</span> <span class="n">frames</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
     <span class="n">mps</span><span class="o">.</span><span class="n">StrainStep</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">increment</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">scale</span><span class="o">=-.</span><span class="mi">5</span><span class="p">,</span> <span class="n">frames</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
@@ -167,10 +167,10 @@ parameters to the <tt class="docutils literal"><span class="pre">elastic</span><
 
 <span class="k">def</span> <span class="nf">runjob</span><span class="p">():</span>
     <span class="n">N</span> <span class="o">=</span> <span class="mi">15</span>
-    <span class="n">K</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&#39;K&#39;</span><span class="p">,</span> <span class="mf">125e9</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;weibull&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
-    <span class="n">G</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&#39;G&#39;</span><span class="p">,</span> <span class="mf">45e9</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;percentage&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&#39;K&#39;</span><span class="p">,</span> <span class="mf">125e9</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">WEIBULL</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&#39;G&#39;</span><span class="p">,</span> <span class="mf">45e9</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">PERCENTAGE</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
     <span class="n">xinit</span> <span class="o">=</span> <span class="p">[</span><span class="n">K</span><span class="p">,</span> <span class="n">G</span><span class="p">]</span>
-    <span class="n">permutator</span> <span class="o">=</span> <span class="n">Permutator</span><span class="p">(</span><span class="s">&#39;permutation&#39;</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;zip&#39;</span><span class="p">,</span>
+    <span class="n">permutator</span> <span class="o">=</span> <span class="n">Permutator</span><span class="p">(</span><span class="s">&#39;permutation&#39;</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">xinit</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">ZIP</span><span class="p">,</span>
                             <span class="n">descriptors</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;MAX_PRES&#39;</span><span class="p">],</span> <span class="n">correlations</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="n">permutator</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 

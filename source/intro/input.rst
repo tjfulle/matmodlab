@@ -46,8 +46,8 @@ Symbolic Constants
 
 The following are symbolic constants that are exposed by importing ``matmodlab``.
 
-Symbolic Constants Relating to MaterialPointSimulator
-.....................................................
+Symbolic Constants Relating to Matmodlab.Simulator
+..................................................
 
 * ``DBX, EXO, TXT, PKL, XLS, XLSX``, constants representing the output file formats.  See :ref:`mml_out_dbs`.
 
@@ -55,7 +55,7 @@ Symbolic Constants Relating to User Defined Materials
 .....................................................
 
 * ``XX, YY, ZZ, XY, YZ, XZ``, constants representing the *xx*, *yy*, *zz*, *xy*, *yz*, and *xz* components of second-order symmetric tensors.
-* ``MECHANICAL``, ``HYPERELASTIC``, ``ANISOHYPER`` are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material behaviors (see :ref:`user_mats`).
+* ``MECHANICAL``, ``HYPERELASTIC``, ``ANISOHYPER`` are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material responses, respectively (see :ref:`user_mats`).
 * ``WLF`` specifies a WLF time-temperature shift (see :ref:`trs`)
 * ``PRONY`` specifies a prony series input to the viscoelastic model (see :ref:`viscoelastic`)
 * ``ISOTROPIC`` specifies isotropic thermal expansion (see :ref:`expansion`)
@@ -64,6 +64,29 @@ Symbolic Constants Relating to User Defined Materials
 * ``UHYPER`` specifies that a user developed mode is of type "uhyper"
 * ``UANISOHYPER_INV`` specifies that a user developed mode is of type "uanisohyper_inv"
 
+Symbolic Constants Relating to Matmodlab.Permutator
+...................................................
+
+* ``ZIP``, apply the zip method to a permutation job.
+* ``COMBINATION``, apply the combination method to a permutation job.
+
+* ``RANGE``, permutated variables defined as a range
+* ``LIST``, permutated variables defined as a list
+* ``WEIBULL``, permutated variables permutated using a Weibull distribution
+* ``UNIFORM``, permutated variables permutated using a Uniform distribution
+* ``NORMAL``, permutated variables permutated using a NOrmal distribution
+* ``PERCENTAGE``, permutated variables permutated +/- b% from the nominal value
+* ``UPERCENTAGE``, permutated variables permutated using a uniform distribution with bounds +/- b% from the nominal value
+* ``NPERCENTAGE``, permutated variables permutate using a normal distribution with bounds +/- b% from the nominal value
+
+Symbolic Constants Relating to Matmodlab.Optimizer
+..................................................
+
+``SIMPLEX``, Simplex optimization method
+``POWELL``, Powell optimization method
+``COBYLA``, COBYLA optimization method
+``BRUTE``, brute force optimization method
+
 Naming Conventions
 ==================
 
@@ -71,6 +94,6 @@ Throughout Matmodlab, the following naming conventions are adopted (see the `PEP
 
 * Class names use the CapWords convention.
 * Method names use lowercase with words separated by underscores as necessary to improve readability.
-* Variable names adopt the rul as method names.
+* Variable names adopt the same rule as method names.
 * Symbolic constants are written in all capital letters with underscores separating words.
 * Factory methods adopt the same rule as class names.

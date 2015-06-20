@@ -83,11 +83,11 @@ names, specified in the order expected by the model. If given as a list, the
 number of state variables allocated is inferred from its length. Matmodlab
 allocates storage for the <em>depvar</em> state dependent variables and
 initializes their values to 0.</li>
-<li><em>behavior</em>, is a string specifying the type of model.  Must be one of &#8220;mechanical&#8221; (default), &#8220;hyperelastic&#8221;, or &#8220;anisohyper&#8221;.</li>
+<li><em>response</em>, is a string specifying the type of model.  Must be one of <tt class="docutils literal"><span class="pre">MECHANICAL</span></tt> (default), <tt class="docutils literal"><span class="pre">HYPERELASTIC</span></tt>, or <tt class="docutils literal"><span class="pre">ANISOHYPER</span></tt>.</li>
 <li><em>cmname</em>, is a string giving is the constitutive model name.</li>
 <li><em>ordering</em>, is a list of symbolic constants specifying the ordering of
 second-order symmetric tensors. The default ordering of symmetric
-second-order tensor components is <tt class="docutils literal"><span class="pre">XX,</span> <span class="pre">YY,</span> <span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">YZ,</span> <span class="pre">XZ</span></tt>. The <em>ordering</em>
+second-order tensor components is <tt class="docutils literal"><span class="pre">[XX,</span> <span class="pre">YY,</span> <span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">YZ,</span> <span class="pre">XZ]</span></tt>. The <em>ordering</em>
 argument can be used to change the ordering to be consistent with the
 assumptions of the material model.</li>
 </ul>
@@ -101,11 +101,11 @@ assumptions of the material model.</li>
 </div>
 <div class="topic">
 <p class="topic-title first">Abaqus Users:</p>
-<p>Setting the <em>model</em> name to one of &#8220;<em>umat</em>&#8221;, &#8220;<em>uhyper</em>&#8221;, or
-&#8220;<em>uanisohyper_inv</em>&#8221; is equivalient to <em>model=</em>&#8220;<em>user</em>&#8221;, with
-<em>behavior=</em>&#8220;<em>mechanical</em>&#8221;, <em>behavior=</em>&#8220;<em>hyperelastic</em>&#8221;, or
-<em>behavior=</em>&#8220;<em>anisohyperelastic</em>&#8221;, respectively, and <em>ordering=(XX, YY,
-ZZ, XY, XZ, YZ)</em>.</p>
+<p>Setting the <em>model</em> name to one of <tt class="docutils literal"><span class="pre">UMAT</span></tt>, <tt class="docutils literal"><span class="pre">UHYPER</span></tt>, or
+<tt class="docutils literal"><span class="pre">UANISOHYPER_INV</span></tt> is equivalient to <em>model=</em><tt class="docutils literal"><span class="pre">USER</span></tt>, with
+<em>response=</em><tt class="docutils literal"><span class="pre">MECHANICAL</span></tt>, <em>response=</em><tt class="docutils literal"><span class="pre">HYPERELASTIC</span></tt>, or
+<em>response=</em><tt class="docutils literal"><span class="pre">ANISOHYPER</span></tt>, respectively, and <em>ordering=</em><tt class="docutils literal"><span class="pre">[XX,</span> <span class="pre">YY,</span>
+<span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">XZ,</span> <span class="pre">YZ]</span></tt>.</p>
 </div>
 </div>
 </div>
@@ -152,7 +152,6 @@ ZZ, XY, XZ, YZ)</em>.</p>
 <li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Builtin Material Models</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="user.html">3.3. User Defined Materials</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="user.html#overview">Overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="user.html#references">References</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="user.html#user-material-interface">User Material Interface</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="python.html">Python User Material Interface</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="">Fortran User Material Interface</a></li>

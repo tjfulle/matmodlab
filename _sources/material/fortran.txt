@@ -48,11 +48,11 @@ Optional MaterialPointSimulator.Material Arguments
   number of state variables allocated is inferred from its length. Matmodlab
   allocates storage for the *depvar* state dependent variables and
   initializes their values to 0.
-* *behavior*, is a string specifying the type of model.  Must be one of "mechanical" (default), "hyperelastic", or "anisohyper".
+* *response*, is a string specifying the type of model.  Must be one of ``MECHANICAL`` (default), ``HYPERELASTIC``, or ``ANISOHYPER``.
 * *cmname*, is a string giving is the constitutive model name.
 * *ordering*, is a list of symbolic constants specifying the ordering of
   second-order symmetric tensors. The default ordering of symmetric
-  second-order tensor components is ``XX, YY, ZZ, XY, YZ, XZ``. The *ordering*
+  second-order tensor components is ``[XX, YY, ZZ, XY, YZ, XZ]``. The *ordering*
   argument can be used to change the ordering to be consistent with the
   assumptions of the material model.
 
@@ -68,11 +68,11 @@ Example
 
 .. topic:: Abaqus Users:
 
-   Setting the *model* name to one of "*umat*", "*uhyper*", or
-   "*uanisohyper_inv*" is equivalient to *model=*"*user*", with
-   *behavior=*"*mechanical*", *behavior=*"*hyperelastic*", or
-   *behavior=*"*anisohyperelastic*", respectively, and *ordering=(XX, YY,
-   ZZ, XY, XZ, YZ)*.
+   Setting the *model* name to one of ``UMAT``, ``UHYPER``, or
+   ``UANISOHYPER_INV`` is equivalient to *model=*\ ``USER``, with
+   *response=*\ ``MECHANICAL``, *response=*\ ``HYPERELASTIC``, or
+   *response=*\ ``ANISOHYPER``, respectively, and *ordering=*\ ``[XX, YY,
+   ZZ, XY, XZ, YZ]``.
 
 Compiling Fortran Sources
 =========================
