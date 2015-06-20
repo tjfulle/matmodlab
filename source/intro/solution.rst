@@ -1,7 +1,13 @@
-.. _Solution Method:
+.. _intro_solution:
 
-The Matmodlab Solution Method
-#############################
+Solution Method
+###############
+
+.. topic:: References
+
+   * :ref:`intro_conventions`
+   * :ref:`model_create_and_execute`
+   * `Introduction to the Finite Element Method using Python <http://nbviewer.ipython.org/github/tjfulle/fem-with-python/tree/master/Lessons>`_
 
 Overview
 ========

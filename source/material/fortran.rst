@@ -1,4 +1,6 @@
 
+.. _fortran_models:
+
 Fortran User Material Interface
 ###############################
 
@@ -12,7 +14,7 @@ References
 
 * :ref:`Role of Material Model`
 * :ref:`defining_a_material`
-* :ref:`Conventions`
+* :ref:`intro_conventions`
 * :ref:`comm_w_matmodlab`
 
 .. _invoke_user_f:

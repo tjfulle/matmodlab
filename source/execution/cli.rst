@@ -7,7 +7,7 @@ Execution Procedures
 Overview
 ========
 
-Matmodlab is executed by running the ``mml`` procedure.  Several parameters can be set either on the command line or in an environment file (see :ref:`basic_config`).
+Matmodlab is executed by running the ``mml`` procedure.  Several parameters can be set either on the command line or in an environment file (see :ref:`environment`).
 
 mml Summary
 ===========
@@ -23,6 +23,8 @@ mml Commands
 .......
 
 Launch the (empty) matmodlab gui
+
+.. _cli_build:
 
 build
 .....
@@ -77,6 +79,8 @@ Optional run arguments
   -W {std,all,error}    Warning level
   -w                    Wipe and rebuild material in Material factory before
                         running
+
+.. _cli_test:
 
 test
 ....

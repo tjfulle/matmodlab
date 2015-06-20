@@ -1,12 +1,13 @@
-.. _Conventions:
+.. _intro_conventions:
 
-Matmodlab Conventions
-#####################
+Conventions
+###########
 
 Overview
 ========
 
-Conventions used throught Matmodlab are described
+Conventions used through out Matmodlab are described.
+
 
 Dimension
 =========
@@ -48,7 +49,6 @@ ordering, i.e.,
 
    The tensor order is runtime configurable using *ordering* keyword to the ``MaterialModel`` constructor.  See :ref:`invoke_user_f` for details.
 
-
 Engineering Strains
 ===================
 
@@ -59,47 +59,3 @@ engineering strains, i.e.
 
    \epsilon_{ij} = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, 2\epsilon_{xy}, 2\epsilon_{xz}, 2\epsilon_{yz}\}
            = \{\epsilon_{xx}, \epsilon_{yy}, \epsilon_{zz}, \gamma_{xy}, \gamma_{xz}, \gamma_{yz}\}
-
-matmodlab Namespace
-===================
-
-Input scripts to Matmodlab should include::
-
-   from matmodlab import *
-
-to populate the script's namespace with Matmodlab specific parameters and methods.
-
-Parameters
-----------
-
-Some useful parameters exposed by importing ``matmodlab`` are
-
-* ``ROOT_D``, the root ``matmodlab`` directory
-* ``PKG_D``, the ``matmodlab/lib`` directory, the location shared objects are copied
-* ``MAT_D``, the directory where builtin materials are contained
-
-Methods
--------
-
-Some useful methods exposed by importing ``matmodlab`` are
-
-* ``MaterialPointSimulator``, the material point simulator constructor
-* ``Permutator``, the permutator constructor
-* ``Optimizer``, the optimizer constructor
-
-Each of these methods is described in more detail in the following sections.
-
-Symbolic Constants
-------------------
-
-The following symbolic constants are exposed by importing ``matmodlab``:
-
-* ``XX, YY, ZZ, XY, YZ, XZ``, constants representing the *xx*, *yy*, *zz*, *xy*, *yz*, and *xz* components of second-order symmetric tensors.
-* ``MECHANICAL``, ``HYPERELASTIC``, ``ANISOHYPER`` are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material behaviors (see :ref:`user_mats`).
-* ``WLF`` specifies a WLF time-temperature shift (see :ref:`trs`)
-* ``PRONY`` specifies a prony series input to the viscoelastic model (see :ref:`viscoelastic`)
-* ``ISOTROPIC`` specifies isotropic thermal expansion (see :ref:`expansion`)
-* ``USER`` specifies that a user developed mode is of type "user"
-* ``UMAT`` specifies that a user developed mode is of type "umat"
-* ``UHYPER`` specifies that a user developed mode is of type "uhyper"
-* ``UANISOHYPER_INV`` specifies that a user developed mode is of type "uanisohyper_inv"

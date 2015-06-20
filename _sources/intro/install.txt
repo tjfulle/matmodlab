@@ -1,7 +1,7 @@
-.. _Installing:
+.. _intro_install:
 
-Installing
-##########
+Installing Matmodlab
+####################
 
 Overview
 ========
@@ -31,20 +31,18 @@ for your platform:
 
 #) `SciPy <http://www.scipy.org/>`_ or newer (A, E)
 
-
 Matmodlab has further functionality that can be utilized if the appropriate
 packages are installed.
 
 #) `traits <http://pypi.python.org/pypi/traits>`_, `traitsui <http://pypi.python.org/pypi/traitsui>`_, and `chaco <http://pypi.python.org/pypi/chaco>`_ for data visualization (E)
 
-#) `pytest <http://pypi.python.org/pypi/pytest>`_ for running built-in benchmarks (A, E)
+#) `pytest <http://pypi.python.org/pypi/pytest>`_ for running tests (A, E)
 
 #) `openpyxl <http://pypi.python.org/pypi/openpyxl>`_ for simulation output and visualization of .xlsx data (A, E)
 
 #) `xlwt <http://pypi.python.org/pypi/xlwt>`_ for simulation output as .xls (A)
 
 #) `xlrd <http://pypi.python.org/pypi/xlrd>`_ for visualization of .xls data (A)
-
 
 The required software may be obtained in several ways, though most development
 has been made using the Anaconda `<http://www.continuum.io>`_ and Enthought
@@ -71,7 +69,7 @@ or, for Anaconda,
 
 and so on for each required package.
 
-If using a linux distribution's version of python, you might need to install the
+If using a linux distribution's version of python, you may need to install the
 python development headers in order to build fortran models or use the faster
 linear algebra package.
 
@@ -80,41 +78,35 @@ linear algebra package.
 Installation
 ============
 
-Ensure that all Matmodlab prerequisites are installed and working properly
-before proceeding.
+First, ensure that all Matmodlab prerequisites are installed and working
+properly before proceeding.
 
+Latest Stable Version
+---------------------
 
-The Easy Way
-------------
-
-Because Matmodlab is in `PyPI <http://pypi.python.org/pypi/matmodlab>`_, you
-can simply run
-
-::
-
-  easy_install matmodlab
-
-or
-
-::
+The latest stable version of Matmodlab can be installed via pip::
 
   pip install matmodlab
 
-and you're done! Note: you may have to have administrative privileges to
-install. If you don't know the difference between ``pip`` and ``easy_install``,
-try to use ``pip`` first.
+or ``easy_install``::
 
+  easy_install matmodlab
 
-The Manual Way
---------------
+.. note::
 
-After downloading and unpacking Matmodlab from
-`PyPI <http://pypi.python.org/pypi/matmodlab>`_ or from
-`github <http://github.com/tjfulle/matmodlab>`_, there will be a folder that
-contains, among other files, the directories ``femlib``, ``matmodlab``, and
-``tabfileio``.
+   You may have to have administrative privileges to install Matmodlab through a package manager.
 
-Using your preferred python interpreter, run
+If you are unsure of the the difference between ``pip`` and ``easy_install``, try to
+use ``pip`` first.
+
+Source Code Repository
+----------------------
+
+Matmodlab is maintained with git. The source code can be obtained from `<https://github.com/tjfulle/matmodlab>`_::
+
+  git clone https://github.com/tjfulle/matmodlab.git
+
+Change directories to ``matmodlab`` and run
 
 ::
 
@@ -126,22 +118,12 @@ or
 
   python setup.py develop
 
-Both commands make Matmodlab usable in the same way as using ``pip`` or
-``easy_install``. The only difference is that when you setup using the
-``develop`` argument the downloaded files are linked to, not moved, so changes
-are applied immediately and do not require you to re-install Matmodlab.
-
-
-
-The Hard Way
-------------
-
-Get Matmodlab as detailed in ``The Manual Way`` but do the following:
-
-#) Add ``path/to/files/matmodlab/bin`` to your ``PATH``
-
-#) Add ``path/to/files`` to your ``PYTHONPATH``
-
+Both commands make Matmodlab make Matmodlab visible to the Python interpreter,
+in the same way as using ``pip`` or ``easy_install``. However, when you setup
+using the ``develop`` argument, source files files are linked to the Python
+interpreter's site-packages, rather than copied. This way, changes made to
+source files are applied immediately and do not require you to re-install
+Matmodlab.
 
 Build (Optional)
 ----------------
@@ -149,21 +131,7 @@ Build (Optional)
 Fortran models are built as-needed when Matmodlab attempts to run a
 simulation and it cannot find the compiled model. However, if you want
 to build a model without running a simulation or if you want to build an
-extension pack you will need to use the ``mml build`` command.
-
-Building is performed by the ``mml build`` command::
-
-  usage: mml build [-h] [-v V] [-w] [-W] [-m M [M ...]] [-u]
-
-  mml build: build fortran utilities and materials.
-
-  optional arguments:
-    -h, --help    show this help message and exit
-    -v V          Verbosity [default: 1]
-    -w            Wipe before building [default: False]
-    -W            Wipe and exit [default: False]
-    -m M [M ...]  Materials to build [default: all]
-    -u            Build auxiliary support files only [default: False]
+extension pack you will need to use the ``mml build`` command.  See :ref:`cli_build` for details on the build command.
 
 Example
 .......
@@ -175,21 +143,27 @@ Example
 This will build the Matmodlab Fortran utilities and material libraries. The
 resultant shared object libraries are copied to ``matmodlab/lib``.
 
+Using Python Virtual Environments
+---------------------------------
+
+It is recommended that you install Matmodlab in a `Virtual Environment <http://docs.python-guide.org/en/latest/dev/virtualenvs>`_.  As an example, consider installing Matmodlab using Anaconda::
+
+  conda create -n matmodlab numpy scipy traitsui chaco xlrd pytest matplotlib
+  source activate matmodlab
+  cd ~/Developer/matmodlab
+  python setup.py develop
+  mml build
+
+In the preceding commands, a virtual environment named *matmodlab* was created with the required packages and then activated.  We then navigated in to the matmodlab directory (here, assumed to be in ``~/Developer``), executed the setup script and built the optional libraries.
 
 Testing the Installation
 ========================
 
-Testing is done through the ``mml test`` command. However, this is just a
-wrapper around the ``py.test`` command, which can also be used. To test
-Matmodlab after installation, execute::
+Testing requires that the ``pytest`` module be installed.  Tests are run by executing::
 
-	mml test -k fast
+  mml test
 
-which will run the "fast" tests. To run the full test suite execute::
-
-	mml test
-
-Please note that running all of the tests takes several minutes.
+See :ref:`cli_test` for details on the test command.
 
 Troubleshooting
 ===============

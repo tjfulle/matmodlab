@@ -1,33 +1,55 @@
 The Material Model Laboratory
 #############################
 
-This guide to the Material Model Laboratory is a work in progress.  The documentation is currently in a state of flux between describing version 2 and the new default version 3.  Section headings containing an asterisk (*) are not up to date with version 3.  Efforts are currently under way to update the documentation.
+The Material Model Laboratory (Matmodlab) is a single element material model
+driver aimed at developers of constitutive routines targeted for deployment in
+finite element codes.
 
-Obtaining Matmodlab
-===================
+This guide is separated into four main parts:
 
-Matmodlab is an open source project licensed under the MIT license. The source can be obtained from `<https://github.com/tjfulle/matmodlab>`_
-
-Matmodlab can be installed via pip::
-
-  pip install matmodlab
-
-See :ref:`Installing` for more installation details.
+* Part 1: :ref:`intro_and_overview`
+* Part 2: :ref:`model_create_and_execute`
+* Part 3: :ref:`mat_index`
+* Part 4: :ref:`rtest`
 
 About This Guide
 ================
 
-Matmodlab is developed as a tool for developers and analysts who care to
-understand the responses of material models to specific deformation paths. The
-target audience is assumed to have a basic knowledge of continuum mechanics
-and familiarity with other finite element codes. Accordingly, concepts of
-continuum mechanics and finite element methods are not described in detail and
-programing techniques are also not described.
+This guide serves as both a User's Guide and Application Programming Interface
+(API) guide to Matmodlab. The guide assumes a working knowledge of the
+computing languages Matmodlab is developed in, namely Python and fortran. No
+attempt to describe them is made. Online tutorials for each language are
+readily available. Likewise, the target audience is assumed to have a basic
+knowledge of continuum mechanics and familiarity with other finite element
+codes. These concepts are also not described in detail.
+
+License
+=======
+
+Matmodlab is an open source project licensed under the `MIT <http://opensource.org/licenses/MIT>`_ license.
+
+Obtaining Matmodlab
+===================
+
+Latest Stable Version
+---------------------
+
+The latest stable version of Matmodlab can be installed via pip::
+
+  pip install matmodlab
+
+Source Code Repository
+----------------------
+
+Matmodlab is maintained with git. The source code can be obtained from `<https://github.com/tjfulle/matmodlab>`_
+
+See :ref:`intro_install` for more installation details.
 
 Obtaining Additional Help
 =========================
 
-In addition to this guide, many example input files can be found in ``matmodlab/examples`` and ``matmodlab/tests``
+In addition to this guide, many examples can be found in
+``matmodlab/examples`` and ``matmodlab/tests``
 
 Indices and tables
 ==================
@@ -42,6 +64,6 @@ Indices and tables
    :numbered: 2
 
    intro/index
-   basic/index
+   execution/index
    material/index
    test

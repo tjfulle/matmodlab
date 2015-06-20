@@ -1,3 +1,4 @@
+.. _python_models:
 
 Python User Material Interface
 ##############################
@@ -13,7 +14,7 @@ References
 
 * :ref:`Role of Material Model`
 * :ref:`defining_a_material`
-* :ref:`Conventions`
+* :ref:`intro_conventions`
 * :ref:`comm_w_matmodlab`
 
 Invoking User Materials

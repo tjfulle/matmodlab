@@ -1,6 +1,8 @@
 
-Materials
-#########
+.. _mat_index:
+
+Material Model Library
+######################
 
 This chapter provides an overview of material models available in Matmodlab, as well as instructions on how to incorporate user defined material models.
 

@@ -1,6 +1,8 @@
 
-Matmodlab Execution
-###################
+.. _model_create_and_execute:
+
+Matmodlab Model Creation and Execution
+######################################
 
 A Matmodlab model is defined in a Python input script and is composed of
 several different components that together describe the conditions under which

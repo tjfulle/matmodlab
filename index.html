@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="#" />
-    <link rel="next" title="1. Introduction" href="intro/index.html" />
+    <link rel="next" title="1. Introduction and Overview" href="intro/index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,28 +40,49 @@
             
   <div class="section" id="the-material-model-laboratory">
 <h1>The Material Model Laboratory<a class="headerlink" href="#the-material-model-laboratory" title="Permalink to this headline">¶</a></h1>
-<p>This guide to the Material Model Laboratory is a work in progress.  The documentation is currently in a state of flux between describing version 2 and the new default version 3.  Section headings containing an asterisk (*) are not up to date with version 3.  Efforts are currently under way to update the documentation.</p>
+<p>The Material Model Laboratory (Matmodlab) is a single element material model
+driver aimed at developers of constitutive routines targeted for deployment in
+finite element codes.</p>
+<p>This guide is separated into four main parts:</p>
+<ul class="simple">
+<li>Part 1: <a class="reference internal" href="intro/index.html#intro-and-overview"><em>Introduction and Overview</em></a></li>
+<li>Part 2: <a class="reference internal" href="execution/index.html#model-create-and-execute"><em>Job Execution</em></a></li>
+<li>Part 3: <a class="reference internal" href="material/index.html#mat-index"><em>Material Model Library</em></a></li>
+<li>Part 4: <a class="reference internal" href="test.html#rtest"><em>Regression Testing*</em></a></li>
+</ul>
+<div class="section" id="about-this-guide">
+<h2>About This Guide<a class="headerlink" href="#about-this-guide" title="Permalink to this headline">¶</a></h2>
+<p>This guide serves as both a User&#8217;s Guide and Application Programming Interface
+(API) guide to Matmodlab. The guide assumes a working knowledge of the
+computing languages Matmodlab is developed in, namely Python and fortran. No
+attempt to describe them is made. Online tutorials for each language are
+readily available. Likewise, the target audience is assumed to have a basic
+knowledge of continuum mechanics and familiarity with other finite element
+codes. These concepts are also not described in detail.</p>
+</div>
+<div class="section" id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab is an open source project licensed under the <a class="reference external" href="http://opensource.org/licenses/MIT">MIT</a> license.</p>
+</div>
 <div class="section" id="obtaining-matmodlab">
 <h2>Obtaining Matmodlab<a class="headerlink" href="#obtaining-matmodlab" title="Permalink to this headline">¶</a></h2>
-<p>Matmodlab is an open source project licensed under the MIT license. The source can be obtained from <a class="reference external" href="https://github.com/tjfulle/matmodlab">https://github.com/tjfulle/matmodlab</a></p>
-<p>Matmodlab can be installed via pip:</p>
+<div class="section" id="latest-stable-version">
+<h3>Latest Stable Version<a class="headerlink" href="#latest-stable-version" title="Permalink to this headline">¶</a></h3>
+<p>The latest stable version of Matmodlab can be installed via pip:</p>
 <div class="highlight-python"><div class="highlight"><pre>pip install matmodlab
 </pre></div>
 </div>
-<p>See <a class="reference internal" href="intro/install.html#installing"><em>Installing</em></a> for more installation details.</p>
 </div>
-<div class="section" id="about-this-guide">
-<h2>About This Guide<a class="headerlink" href="#about-this-guide" title="Permalink to this headline">¶</a></h2>
-<p>Matmodlab is developed as a tool for developers and analysts who care to
-understand the responses of material models to specific deformation paths. The
-target audience is assumed to have a basic knowledge of continuum mechanics
-and familiarity with other finite element codes. Accordingly, concepts of
-continuum mechanics and finite element methods are not described in detail and
-programing techniques are also not described.</p>
+<div class="section" id="source-code-repository">
+<h3>Source Code Repository<a class="headerlink" href="#source-code-repository" title="Permalink to this headline">¶</a></h3>
+<p>Matmodlab is maintained with git. The source code can be obtained from <a class="reference external" href="https://github.com/tjfulle/matmodlab">https://github.com/tjfulle/matmodlab</a></p>
+<p>See <a class="reference internal" href="intro/install.html#intro-install"><em>Installing Matmodlab</em></a> for more installation details.</p>
+</div>
 </div>
 <div class="section" id="obtaining-additional-help">
 <h2>Obtaining Additional Help<a class="headerlink" href="#obtaining-additional-help" title="Permalink to this headline">¶</a></h2>
-<p>In addition to this guide, many example input files can be found in <tt class="docutils literal"><span class="pre">matmodlab/examples</span></tt> and <tt class="docutils literal"><span class="pre">matmodlab/tests</span></tt></p>
+<p>In addition to this guide, many examples can be found in
+<tt class="docutils literal"><span class="pre">matmodlab/examples</span></tt> and <tt class="docutils literal"><span class="pre">matmodlab/tests</span></tt></p>
 </div>
 <div class="section" id="indices-and-tables">
 <h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
@@ -94,9 +115,9 @@ programing techniques are also not described.</p>
 
 <h3>Navigation</h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro/index.html">1. Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="basic/index.html">2. Matmodlab Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="material/index.html">3. Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro/index.html">1. Introduction and Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execution/index.html">2. Job Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material/index.html">3. Material Model Library</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">4. Regression Testing*</a></li>
 </ul>
 
