@@ -46,6 +46,7 @@
 <p class="topic-title first">References</p>
 <ul class="simple">
 <li><a class="reference internal" href="../execution/index.html#model-create-and-execute"><em>Job Execution</em></a></li>
+<li><a class="reference internal" href="output.html#mml-out-dbs"><em>Matmodlab Output Formats</em></a></li>
 </ul>
 </div>
 <div class="section" id="overview">
@@ -81,7 +82,15 @@ classes, and symbolic constants.</p>
 </div>
 <div class="section" id="symbolic-constants">
 <h3>Symbolic Constants<a class="headerlink" href="#symbolic-constants" title="Permalink to this headline">¶</a></h3>
-<p>The following symbolic constants are exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt>:</p>
+<p>The following are symbolic constants that are exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt>.</p>
+<div class="section" id="symbolic-constants-relating-to-materialpointsimulator">
+<h4>Symbolic Constants Relating to MaterialPointSimulator<a class="headerlink" href="#symbolic-constants-relating-to-materialpointsimulator" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">DBX,</span> <span class="pre">EXO,</span> <span class="pre">TXT,</span> <span class="pre">PKL,</span> <span class="pre">XLS,</span> <span class="pre">XLSX</span></tt>, constants representing the output file formats.  See <a class="reference internal" href="output.html#mml-out-dbs"><em>Matmodlab Output Formats</em></a>.</li>
+</ul>
+</div>
+<div class="section" id="symbolic-constants-relating-to-user-defined-materials">
+<h4>Symbolic Constants Relating to User Defined Materials<a class="headerlink" href="#symbolic-constants-relating-to-user-defined-materials" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">XX,</span> <span class="pre">YY,</span> <span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">YZ,</span> <span class="pre">XZ</span></tt>, constants representing the <em>xx</em>, <em>yy</em>, <em>zz</em>, <em>xy</em>, <em>yz</em>, and <em>xz</em> components of second-order symmetric tensors.</li>
 <li><tt class="docutils literal"><span class="pre">MECHANICAL</span></tt>, <tt class="docutils literal"><span class="pre">HYPERELASTIC</span></tt>, <tt class="docutils literal"><span class="pre">ANISOHYPER</span></tt> are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material behaviors (see <a class="reference internal" href="../material/user.html#user-mats"><em>User Defined Materials</em></a>).</li>
@@ -93,6 +102,7 @@ classes, and symbolic constants.</p>
 <li><tt class="docutils literal"><span class="pre">UHYPER</span></tt> specifies that a user developed mode is of type &#8220;uhyper&#8221;</li>
 <li><tt class="docutils literal"><span class="pre">UANISOHYPER_INV</span></tt> specifies that a user developed mode is of type &#8220;uanisohyper_inv&#8221;</li>
 </ul>
+</div>
 </div>
 </div>
 <div class="section" id="naming-conventions">

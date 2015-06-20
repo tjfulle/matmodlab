@@ -3,6 +3,11 @@
 User Defined Materials
 ######################
 
+.. topic:: References
+
+   .
+
+
 Overview
 ========
 
@@ -10,9 +15,6 @@ Matmodlab calls user defined materials at each deformation increment through all
 
 * written in fortran or python
 * called from python
-
-References
-==========
 
 User Material Interface
 =======================

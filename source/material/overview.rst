@@ -3,14 +3,15 @@
 Material Library
 ################
 
+.. topic:: References
+
+   * :ref:`Role of Material Model`
+   * :ref:`defining_a_material`
+
 Overview
 ========
 
-References
-==========
-
-* :ref:`Role of Material Model`
-* :ref:`defining_a_material`
+This chapter provides an overview of material models available in Matmodlab, as well as instructions on how to incorporate user defined material models.
 
 Other Material Behaviors
 ========================

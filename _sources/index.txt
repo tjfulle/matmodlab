@@ -17,7 +17,9 @@ About This Guide
 
 This guide serves as both a User's Guide and Application Programming Interface
 (API) guide to Matmodlab. The guide assumes a working knowledge of the
-computing languages Matmodlab is developed in, namely Python and fortran. No
+computing languages Matmodlab is developed in, namely `Python
+<https://www.python.org>`_ and `Fortran
+<http://www.fortran.com/the-fortran-company-homepage/fortran-tutorials>`_. No
 attempt to describe them is made. Online tutorials for each language are
 readily available. Likewise, the target audience is assumed to have a basic
 knowledge of continuum mechanics and familiarity with other finite element

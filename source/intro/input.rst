@@ -4,6 +4,7 @@ Input Syntax Guidelines
 .. topic:: References
 
    * :ref:`model_create_and_execute`
+   * :ref:`mml_out_dbs`
 
 Overview
 ========
@@ -43,7 +44,15 @@ Each of these classes is described in more detail in the following sections.
 Symbolic Constants
 ------------------
 
-The following symbolic constants are exposed by importing ``matmodlab``:
+The following are symbolic constants that are exposed by importing ``matmodlab``.
+
+Symbolic Constants Relating to MaterialPointSimulator
+.....................................................
+
+* ``DBX, EXO, TXT, PKL, XLS, XLSX``, constants representing the output file formats.  See :ref:`mml_out_dbs`.
+
+Symbolic Constants Relating to User Defined Materials
+.....................................................
 
 * ``XX, YY, ZZ, XY, YZ, XZ``, constants representing the *xx*, *yy*, *zz*, *xy*, *yz*, and *xz* components of second-order symmetric tensors.
 * ``MECHANICAL``, ``HYPERELASTIC``, ``ANISOHYPER`` are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material behaviors (see :ref:`user_mats`).

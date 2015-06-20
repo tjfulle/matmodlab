@@ -78,8 +78,18 @@ linear algebra package.
 Installation
 ============
 
-First, ensure that all Matmodlab prerequisites are installed and working
-properly before proceeding.
+.. note::
+
+   Ensure that all Matmodlab prerequisites are installed and working properly before proceeding.
+
+There are several options for installing Matmodlab, the two recommonded are
+
+* Installing the :ref:`stable_v` from `PyPI <https://pypi.python.org/pypi>`_.
+* Installing the :ref:`dev_v` from source.
+
+Whichever method is chosen, it is recommended to install Matmodlab in a :ref:`venv`.
+
+.. _stable_v:
 
 Latest Stable Version
 ---------------------
@@ -99,10 +109,12 @@ or ``easy_install``::
 If you are unsure of the the difference between ``pip`` and ``easy_install``, try to
 use ``pip`` first.
 
-Source Code Repository
-----------------------
+.. _dev_v:
 
-Matmodlab is maintained with git. The source code can be obtained from `<https://github.com/tjfulle/matmodlab>`_::
+Latest Development Branch
+-------------------------
+
+Installing the latest development version consists of retrieving the source code from the online code repository and installing it. The source code can be obtained from `<https://github.com/tjfulle/matmodlab>`_::
 
   git clone https://github.com/tjfulle/matmodlab.git
 
@@ -143,8 +155,10 @@ Example
 This will build the Matmodlab Fortran utilities and material libraries. The
 resultant shared object libraries are copied to ``matmodlab/lib``.
 
-Using Python Virtual Environments
----------------------------------
+.. _venv:
+
+Python Virtual Environment
+--------------------------
 
 It is recommended that you install Matmodlab in a `Virtual Environment <http://docs.python-guide.org/en/latest/dev/virtualenvs>`_.  As an example, consider installing Matmodlab using Anaconda::
 
@@ -155,6 +169,8 @@ It is recommended that you install Matmodlab in a `Virtual Environment <http://d
   mml build
 
 In the preceding commands, a virtual environment named *matmodlab* was created with the required packages and then activated.  We then navigated in to the matmodlab directory (here, assumed to be in ``~/Developer``), executed the setup script and built the optional libraries.
+
+Consult your Python distribution's documentations for instructions to create and use virtual environments.
 
 Testing the Installation
 ========================

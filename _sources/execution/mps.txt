@@ -14,7 +14,7 @@ Overview
 ========
 
 A model in Matmodlab is defined by a ``MaterialPointSimulator`` object. The
-``MaterialPointSimulator`` object manages and allocates memory for materials
+``MaterialPointSimulator`` object manages and allocates memory for materials and
 analysis steps. In this section, the ``MaterialPointSimulator`` object is
 described.
 
