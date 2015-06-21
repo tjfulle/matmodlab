@@ -3,113 +3,72 @@
 Permutator
 ##########
 
-.. todo::
+.. topic:: References
 
-   clean up the description to be more clear what func is (a function that
-   runs a simulation)
+   * :ref:`mps`
 
-It is useful to investiage sensitivities of models to model inputs.
-Permutating values of model inputs involves running jobs with different
-realization of parameters. Ideal for investigating model sensitivities. A
-permutator instance is created through the ``Permutator`` constructor.
-Minimally, the constructor requires a function to evaluate ``func``, initial
-parameters ``xinit``, and a ``job``.
+Overview
+========
 
-.. code:: python
+It is useful to investiage sensitivities of models to model inputs. The ``Permutator`` runs jobs with different realization of parameters.  The ``Permutator`` is designed as a tool for discovering and investigating model sensitivities.
 
-   permutator = Permutator(func, xinit, job)
+The Permutator Constructor
+==========================
 
-``func`` is called as ``func(x, *args)`` where ``x`` are the current values of
-the permutated variables and ``args`` contains in its last component::
+.. class:: Permutator(job, func, xinit, method=ZIP, correlations=False, verbosity=None, descriptors=None, nprocs=1, funcargs=[], d=None, shotgun=False, bu=False)
 
-   dirname = args[-1]
+   Create a Permutator object and set up the simulation.
 
-where ``dirname`` is the directory where simulations should is to be run.
+   The *job* string is the simulation ID.  The Permutator creates a job.eval/ directory in the simulation directory. The ith individual job is then run in job.eval/eval_i/.
 
-Permutator Constructor
+   The Permutator writes relevant simulation information to job.eval/job.xml.  The Matmodlab.Visualizer can read the job.xml file and display the permutated job.
+
+   *func* is a function that evaluates a Matmodlab simulation.  It is called as *func(x, xnames, d, job, *funcargs)*, where *x* are the current values of the permutated variables, *xnames* are their names, *d* is the simulation directory of the current job, *job* is the job ID, and *funcargs* are additional arguments to be sent to *func*.
+
+   *xinit* is a list of initial values of the simulation parameters to be permutated.  Each member of the list must be a PermutateVariable instance.
+
+   The following arguments are optional
+
+   *method* is the method for determining how to combine parameter values. One of ``ZIP`` or ``COMBINATION``. The ``ZIP`` method runs one job for each set of parameters (and, thus, the number of realizations for each parameter must be identical), the ``COMBINATION`` method runs every combination of parameters.
+
+   *correlations* is a boolean that, if True, instructs the Permutator to create a correlation table and plots relating permutated parameters and return value of *func*.
+
+   *descriptors* is a list of descriptors for the values returned from *func*.
+
+   *nprocs* is the integer number of simultaneous jobs to run.
+
+   *d* is the parent directory to run jobs.  If the directory does not exist, it will be created.  If the directory exists and *bu* is *False*, the directory will be first erased and then re-created.  If the directory exists but *bu* is *True*, the directory is archived.
+
+   If *shotgun* is *True*, input parameters are randomized.
+
+Running the Permutator
 ======================
 
-The formal parameters to ``Permutator`` are
+.. method:: Permutator.run()
 
-.. class:: Permutator(func, xinit, job, method=ZIP, correlations=False, verbosity=1, descriptor=None, nprocs=1, funcargs=None, d=None)
-
-   Create a Permutator object
-
-   :parameter func: Function that evaluates a matmodlab simulation.  Must have signature ``func(x, *args)``, where x are the current values of the permutated variable and funcargs are described below.
-   :type callable:
-   :parameter xinit: Initial values of simulation parameters.
-   :type xinit: List of PermutateVariable objects
-   :parameter job: job for the parent Permutation process.
-   :type job: str
-   :parameter method: The method for determining how to combine parameter values. One of ``ZIP`` or ``COMBINATION``. The ``ZIP`` method runs one job for each set of parameters (and, thus, the number of realizations for each parameter must be identical), the ``COMBINATION`` method runs every combination of parameters.
-   :type method: symbolic constant
-   :parameter correlations: Create correlation table and plots of relating permutated parameters and return value of func [default: False].
-   :type correlations: bool
-   :parameter descriptor: Descriptors of return values from func
-   :type descriptor: list of str or None
-   :parameter nprocs: Number of simultaneous jobs [default: None]
-   :type descriptor: int of None
-   :parameter funcargs: Additional arguments to be sent to func.  The directory of the current job is appended to the end of funcargs.  If None,
-   :type funcargs: list or None
-   :parameter d: Parent directory to run jobs.  If the directory does not exist, it will be created.  If not given, the current directory will be used.
-   :type d: str or None
-
-Each ``Permutator`` job creates a directory ``job.eval`` with the following
-contents::
-
-   ls job.eval
-   eval_000/    eval_002/    mml-evaldb.xml
-   eval_001/    ...          job.log
-
-The ``eval_...`` directory holds the output of the ith job and a ``params.in``
-file with the values of each permutated parameter for that job.
-``mml-evaldb.xml`` contains a summary of each job run. ``mml view``
-recognizes ``mml-evaldb.xml`` files.
-
-Run a permutation job by invoking the ``Permutator.run()`` method.
+   Run the simulation
 
 PermutateVariable Factory Method
 ================================
-
-The formal parameters to ``PermutateVariable`` are
 
 .. function:: PermutateVariable(name, init, method=LIST, b=None, N=10)
 
    Create a PermutateVariable object
 
-   :parameter name: Name of variable
-   :type name: str
-   :parameter init: Initial value or values, dependending on method.
-   :type init: float or list
-   :parameter method: Method used to generate all values.  If ``LIST``, than all values shall be given in init.  Otherwise, values will be generated. Valid methods are ``LIST, WEIBULL, UNIFORM, NORMAL, PERCENTAGE``.
-   :type method: symbolic constant
-   :parameter b: For methods other than ``LIST``, values are generated from a function called as fun(init, b, N).  The meaning of b is dependent on which method fun represents.
-   :type b: float
-   :parameter N: For methods other than ``LIST``, the number of values to generate
-   :type N: int
+   *name* is the name of variable and *init* is its initial value (or values).  *method* is the method use to generate all values. If *method* is ``LIST``, then all values shall be given in *init*.  Otherwise, values will be generated. Valid methods are ``LIST, WEIBULL, UNIFORM, NORMAL, PERCENTAGE``.
 
-Examples
---------
+   The interpretation of the following arguments depends on *method*
 
-The following input stub demonstrates how to permutate the ``K`` parameter
-
-.. code:: python
-
-   K = PermutateVariable("K", [75, 125, 155])
-
-.. code:: python
-
-   K = PermutateVariable("K", 125, method=WEIBULL, b=14)
-
-.. code:: python
-
-   K = PermutateVariable("K", 125, method=PERCENTAGE, b=10, N=10)
+   For methods other than ``LIST``, values are generated from a function called as *fun(init, b, N)*.  The interpretation of *b* is dependent on which method fun represents.  *N* is the number of values to generate.
 
 Example
 =======
 
 The following input demonstrates how to permutate the ``K`` and ``G``
 parameters to the ``elastic`` model.  The input can be found in ``matmodlab/examples/permutate.py``.
+
+The Example Script
+------------------
 
 .. code:: python
 
@@ -133,13 +92,71 @@ parameters to the ``elastic`` model.  The input can be found in ``matmodlab/exam
       s = mps.get('STRESS_XX')
       return np.amax(s)
 
-  def runjob():
-      N = 15
-      K = PermutateVariable('K', 125e9, method=WEIBULL, b=14, N=N)
-      G = PermutateVariable('G', 45e9, method=PERCENTAGE, b=10, N=N)
-      xinit = [K, G]
-      permutator = Permutator('permutation', func, xinit, method=ZIP,
-                              descriptors=['MAX_PRES'], correlations=True)
-      permutator.run()
+  K = PermutateVariable('K', 125e9, method=WEIBULL, b=14, N=15)
+  G = PermutateVariable('G', 45e9, method=PERCENTAGE, b=10, N=15)
+  permutator = Permutator('permutation', func, [K, G], method=ZIP,
+                          descriptors=['MAX_PRES'], correlations=True)
+  permutator.run()
 
-  runjob()
+
+How Does the Script Work?
+-------------------------
+
+This section describes each part of the example script
+
+.. code:: python
+
+  from matmodlab import *
+
+This statement makes the Matmodlab objects accessible to the script.
+
+.. code:: python
+
+  K = PermutateVariable('K', 125e9, method=WEIBULL, b=14, N=15)
+  G = PermutateVariable('G', 45e9, method=PERCENTAGE, b=10, N=15)
+
+These statements define parameters ``K`` and ``G`` to be permutated by the ``WEIBULL`` method with a Weibull modulus of 14 (``b``) and ``PERCENTAGE`` method with parameters chosen between +/- 10% of the initial (``b``), respectively.
+
+.. code:: python
+
+  permutator = Permutator('permutation', func, [K, G], method=ZIP,
+                          descriptors=['MAX_PRES'], correlations=True)
+
+This statement instantiates the ``Permutator`` object, using the ``ZIP`` method.  Correlations between ``K``, ``G`` and the output variable ``MAX_PRES`` are requested.  Note that ``MAX_PRES`` is returned by ``func`` and not Matmodlab.
+
+.. code:: python
+
+  permutator.run()
+
+This statement runs the job.
+
+.. code:: python
+
+  def func(x, xnames, d, job, *args):
+
+      mps = MaterialPointSimulator(job)
+      mps.StrainStep(components=(1, 0, 0), increment=1., scale=-.5, frames=10)
+      mps.StrainStep(components=(2, 0, 0), increment=1., scale=-.5, frames=10)
+      mps.StrainStep(components=(1, 0, 0), increment=1., scale=-.5, frames=10)
+      mps.StrainStep(components=(0, 0, 0), increment=1., scale=-.5, frames=10)
+
+      # set up the material
+      parameters = dict(zip(xnames, x))
+
+These statements define the function exercised by the Permutator.  The first lines are the instantiation of the MaterialPointSimulator, and specification of the analysis steps.  In the last line, the *parameters* dictionary is assembled with the current values of the permutated variables in *x* and their names *xnames*.
+
+.. code:: python
+
+      mps.Material('elastic', parameters)
+
+      # set up and run the model
+      mps.run()
+
+These statements set up the simulators material and run the job.
+
+.. code:: python
+
+      s = mps.get('STRESS_XX')
+      return np.amax(s)
+
+These statements get the maximum axial stress from the simulation and return it.

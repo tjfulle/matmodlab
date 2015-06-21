@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>1.8. Matmodlab Output Formats &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>1.8. Matmodlab File Formats &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -40,28 +40,43 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="matmodlab-output-formats">
-<span id="mml-out-dbs"></span><h1>1.8. Matmodlab Output Formats<a class="headerlink" href="#matmodlab-output-formats" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="matmodlab-file-formats">
+<span id="mml-out-dbs"></span><h1>1.8. Matmodlab File Formats<a class="headerlink" href="#matmodlab-file-formats" title="Permalink to this headline">¶</a></h1>
+<div class="topic">
+<p class="topic-title first">References</p>
+<ul class="simple">
+<li><a class="reference internal" href="../execution/mps.html#mps"><em>MaterialPointSimulator</em></a></li>
+</ul>
+</div>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab.Simulator writes to and Matmodlab.Viewer reads from a variety of output file formats.  The format of output is determined by the <em>output</em> keyword to the <tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt>.  This section describes the different file formats.</p>
 </div>
-<div class="section" id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="binary-output-formats">
-<h2>Binary Output Formats<a class="headerlink" href="#binary-output-formats" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="output-file-formats">
+<h2>Output File Formats<a class="headerlink" href="#output-file-formats" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="dbx">
 <h3>dbx<a class="headerlink" href="#dbx" title="Permalink to this headline">¶</a></h3>
+<p>The default output database format.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer.  Output is written to dbx format if <em>output =</em> <tt class="docutils literal"><span class="pre">DBX</span></tt>.</p>
 </div>
-<div class="section" id="exodusii">
-<h3>ExodusII<a class="headerlink" href="#exodusii" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="exo">
+<h3>exo<a class="headerlink" href="#exo" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="http://sourceforge.net/projects/exodusii">ExodusII</a> output database format.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer.  Output is written to exo format if <em>output =</em> <tt class="docutils literal"><span class="pre">EXO</span></tt>.</p>
+</div>
+<div class="section" id="xls">
+<h3>xls<a class="headerlink" href="#xls" title="Permalink to this headline">¶</a></h3>
+<p>Microsoft Excel spreadsheet.  It is written by Matmodlab.Simulator if the <a class="reference external" href="http://pypi.python.org/pypi/xlwt">xlwt</a> module is installed and read by Matmodlab.Viewer if the <a class="reference external" href="http://pypi.python.org/pypi/xlrd">xlrd</a> module is installed. Output is written to xls format if <em>output =</em> <tt class="docutils literal"><span class="pre">XLS</span></tt>.</p>
+</div>
+<div class="section" id="xlsx">
+<h3>xlsx<a class="headerlink" href="#xlsx" title="Permalink to this headline">¶</a></h3>
+<p>Microsoft Excel spreadsheet.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer if the <a class="reference external" href="http://pypi.python.org/pypi/openpyxl">openpyxl</a> module is installed. Output is written to xlsx format if <em>output =</em> <tt class="docutils literal"><span class="pre">XLSX</span></tt>.</p>
 </div>
 </div>
-<div class="section" id="ascii-output-formats">
-<h2>Ascii Output Formats<a class="headerlink" href="#ascii-output-formats" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="other-file-formats">
+<h2>Other File Formats<a class="headerlink" href="#other-file-formats" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="log">
+<h3>log<a class="headerlink" href="#log" title="Permalink to this headline">¶</a></h3>
+<p>Log file.  It is written by Matmodlab.Simulator.</p>
 </div>
-<div class="section" id="excel-output-format">
-<h2>Excel Output Format<a class="headerlink" href="#excel-output-format" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -93,16 +108,19 @@
 <li class="toctree-l2"><a class="reference internal" href="conventions.html">1.5. Conventions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="environment.html">1.6. Environment Settings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solution.html">1.7. Solution Method</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">1.8. Matmodlab Output Formats</a><ul>
+<li class="toctree-l2 current"><a class="current reference internal" href="">1.8. Matmodlab File Formats</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#binary-output-formats">Binary Output Formats</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#output-file-formats">Output File Formats</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#dbx">dbx</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#exodusii">ExodusII</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#exo">exo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#xls">xls</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#xlsx">xlsx</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#ascii-output-formats">Ascii Output Formats</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#excel-output-format">Excel Output Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-file-formats">Other File Formats</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#log">log</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

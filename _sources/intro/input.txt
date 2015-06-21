@@ -44,7 +44,7 @@ Each of these classes is described in more detail in the following sections.
 Symbolic Constants
 ------------------
 
-The following are symbolic constants that are exposed by importing ``matmodlab``.
+The following symbolic constants are exposed by importing ``matmodlab``.
 
 Symbolic Constants Relating to Matmodlab.Simulator
 ..................................................
@@ -59,10 +59,10 @@ Symbolic Constants Relating to User Defined Materials
 * ``WLF`` specifies a WLF time-temperature shift (see :ref:`trs`)
 * ``PRONY`` specifies a prony series input to the viscoelastic model (see :ref:`viscoelastic`)
 * ``ISOTROPIC`` specifies isotropic thermal expansion (see :ref:`expansion`)
-* ``USER`` specifies that a user developed mode is of type "user"
-* ``UMAT`` specifies that a user developed mode is of type "umat"
-* ``UHYPER`` specifies that a user developed mode is of type "uhyper"
-* ``UANISOHYPER_INV`` specifies that a user developed mode is of type "uanisohyper_inv"
+* ``USER`` specifies that a user developed model is of type "user"
+* ``UMAT`` specifies that a user developed model is of type "umat"
+* ``UHYPER`` specifies that a user developed model is of type "uhyper"
+* ``UANISOHYPER_INV`` specifies that a user developed model is of type "uanisohyper_inv"
 
 Symbolic Constants Relating to Matmodlab.Permutator
 ...................................................
@@ -74,7 +74,7 @@ Symbolic Constants Relating to Matmodlab.Permutator
 * ``LIST``, permutated variables defined as a list
 * ``WEIBULL``, permutated variables permutated using a Weibull distribution
 * ``UNIFORM``, permutated variables permutated using a Uniform distribution
-* ``NORMAL``, permutated variables permutated using a NOrmal distribution
+* ``NORMAL``, permutated variables permutated using a Normal distribution
 * ``PERCENTAGE``, permutated variables permutated +/- b% from the nominal value
 * ``UPERCENTAGE``, permutated variables permutated using a uniform distribution with bounds +/- b% from the nominal value
 * ``NPERCENTAGE``, permutated variables permutate using a normal distribution with bounds +/- b% from the nominal value

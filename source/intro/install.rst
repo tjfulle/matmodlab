@@ -25,11 +25,11 @@ Required Software
 The basic functionality of Matmodlab requires the following software installed
 for your platform:
 
-#) `Python 2.7 <http://www.python.org/>`_ or newer (A, E)
+#) `Python 2.7 <http://www.python.org/>`_ (A, E)
 
-#) `NumPy <http://www.numpy.org/>`_ or newer (A, E)
+#) `NumPy <http://www.numpy.org/>`_ (A, E)
 
-#) `SciPy <http://www.scipy.org/>`_ or newer (A, E)
+#) `SciPy <http://www.scipy.org/>`_ (A, E)
 
 Matmodlab has further functionality that can be utilized if the appropriate
 packages are installed.
@@ -130,7 +130,7 @@ or
 
   python setup.py develop
 
-Both commands make Matmodlab make Matmodlab visible to the Python interpreter,
+Both commands make Matmodlab visible to the Python interpreter,
 in the same way as using ``pip`` or ``easy_install``. However, when you setup
 using the ``develop`` argument, source files files are linked to the Python
 interpreter's site-packages, rather than copied. This way, changes made to
@@ -168,7 +168,7 @@ It is recommended that you install Matmodlab in a `Virtual Environment <http://d
   python setup.py develop
   mml build
 
-In the preceding commands, a virtual environment named *matmodlab* was created with the required packages and then activated.  We then navigated in to the matmodlab directory (here, assumed to be in ``~/Developer``), executed the setup script and built the optional libraries.
+In the preceding commands, a virtual environment named *matmodlab* was created with the required packages and then activated.  We then navigated in to the matmodlab directory (``~/Developer`` in this example), executed the setup script and built the optional libraries.
 
 Consult your Python distribution's documentations for instructions to create and use virtual environments.
 

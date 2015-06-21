@@ -39,8 +39,8 @@ problems almost insignificant.
 
 For numeric computations, the `NumPy <http://www.numpy.org>`_ and `SciPy
 <http://www.scipy.org>`_ modules allow programs written in Python to leverage
-a large set of numerical routines provided by ``LAPACK``, ``BLASPACK``,
-``EIGPACK``, etc. Python's APIs also allow for calling subroutines written in
+a large set of numerical routines provided by lapack, blas,
+eigpack, etc. Python's APIs also allow for calling subroutines written in
 C or Fortran (in addition to a number of other languages), a prerequisite for
 model development as most legacy material models are written in Fortran. In
 fact, most modern material models are still written in Fortran to this day.

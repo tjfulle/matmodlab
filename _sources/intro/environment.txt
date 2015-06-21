@@ -53,11 +53,11 @@ IO Settings
 
 verbosity
 
-  Matmodlab will print more, or less, information during job execution. Possible values are ``0``, ``1``, and ``2``. Set the value to 0 to suppress printing of information. Set the value to ``2``, or higher, to print increase the amount of information printed. The default value is ``1``.
+  Matmodlab will print more, or less, information during job execution. Possible values are ``0``, ``1``, and ``2``. Set the value to ``0`` to suppress printing of information. Set the value to ``2``, or higher, to print increase the amount of information printed. The default value is ``1``.
 
 warn
 
-  Define how Matmodlab is to interpret warnings.  Possible values are ``WARN``, ``IGNORE``, ``ERROR``.  Set the value to ``IGNORE`` to suppress warnings and to 'error' to treat warnings as errors.  The default ``WARN`` prints warning messages.
+  Define how Matmodlab is to interpret warnings.  Possible values are ``WARN``, ``IGNORE``, ``ERROR``.  Set the value to ``IGNORE`` to suppress warnings and to ``ERROR`` to treat warnings as errors.  The default ``WARN`` prints warning messages.
 
 Wlimit
 
@@ -105,11 +105,11 @@ User Material Models
 
 materials
 
-  A dictionary describing user material models.  The dictionary consists of ``{model:information}`` key, value pairs. ``information`` is itself a dictionary containing material model meta data needed by Matmodlab.  The default is ``{}``.
+  A dictionary describing user material models.  The dictionary consists of ``model:information`` key:value pairs where ``information`` is a dictionary containing material model meta data needed by Matmodlab.  The default is ``{}``.  User values update and do not overwrite this variable.
 
 std_materials
 
-  A list containing directories and files to search for standard material models.  The default is ``[MAT_D]``.
+  A list containing directories and files to search for standard material models.  The default is ``[MAT_D]``.  User values are appended to and do not overwrite this variable.
 
 A Note on Defining User Material Models
 .......................................

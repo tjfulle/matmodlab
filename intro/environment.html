@@ -87,10 +87,10 @@ it is updated with the user setting.</p>
 <h3>IO Settings<a class="headerlink" href="#io-settings" title="Permalink to this headline">¶</a></h3>
 <p>verbosity</p>
 <blockquote>
-<div>Matmodlab will print more, or less, information during job execution. Possible values are <tt class="docutils literal"><span class="pre">0</span></tt>, <tt class="docutils literal"><span class="pre">1</span></tt>, and <tt class="docutils literal"><span class="pre">2</span></tt>. Set the value to 0 to suppress printing of information. Set the value to <tt class="docutils literal"><span class="pre">2</span></tt>, or higher, to print increase the amount of information printed. The default value is <tt class="docutils literal"><span class="pre">1</span></tt>.</div></blockquote>
+<div>Matmodlab will print more, or less, information during job execution. Possible values are <tt class="docutils literal"><span class="pre">0</span></tt>, <tt class="docutils literal"><span class="pre">1</span></tt>, and <tt class="docutils literal"><span class="pre">2</span></tt>. Set the value to <tt class="docutils literal"><span class="pre">0</span></tt> to suppress printing of information. Set the value to <tt class="docutils literal"><span class="pre">2</span></tt>, or higher, to print increase the amount of information printed. The default value is <tt class="docutils literal"><span class="pre">1</span></tt>.</div></blockquote>
 <p>warn</p>
 <blockquote>
-<div>Define how Matmodlab is to interpret warnings.  Possible values are <tt class="docutils literal"><span class="pre">WARN</span></tt>, <tt class="docutils literal"><span class="pre">IGNORE</span></tt>, <tt class="docutils literal"><span class="pre">ERROR</span></tt>.  Set the value to <tt class="docutils literal"><span class="pre">IGNORE</span></tt> to suppress warnings and to &#8216;error&#8217; to treat warnings as errors.  The default <tt class="docutils literal"><span class="pre">WARN</span></tt> prints warning messages.</div></blockquote>
+<div>Define how Matmodlab is to interpret warnings.  Possible values are <tt class="docutils literal"><span class="pre">WARN</span></tt>, <tt class="docutils literal"><span class="pre">IGNORE</span></tt>, <tt class="docutils literal"><span class="pre">ERROR</span></tt>.  Set the value to <tt class="docutils literal"><span class="pre">IGNORE</span></tt> to suppress warnings and to <tt class="docutils literal"><span class="pre">ERROR</span></tt> to treat warnings as errors.  The default <tt class="docutils literal"><span class="pre">WARN</span></tt> prints warning messages.</div></blockquote>
 <p>Wlimit</p>
 <blockquote>
 <div>Define the number of warnings can be printed.  The default is <tt class="docutils literal"><span class="pre">10</span></tt>.</div></blockquote>
@@ -128,10 +128,10 @@ it is updated with the user setting.</p>
 <h3>User Material Models<a class="headerlink" href="#user-material-models" title="Permalink to this headline">¶</a></h3>
 <p>materials</p>
 <blockquote>
-<div>A dictionary describing user material models.  The dictionary consists of <tt class="docutils literal"><span class="pre">{model:information}</span></tt> key, value pairs. <tt class="docutils literal"><span class="pre">information</span></tt> is itself a dictionary containing material model meta data needed by Matmodlab.  The default is <tt class="docutils literal"><span class="pre">{}</span></tt>.</div></blockquote>
+<div>A dictionary describing user material models.  The dictionary consists of <tt class="docutils literal"><span class="pre">model:information</span></tt> key:value pairs where <tt class="docutils literal"><span class="pre">information</span></tt> is a dictionary containing material model meta data needed by Matmodlab.  The default is <tt class="docutils literal"><span class="pre">{}</span></tt>.  User values update and do not overwrite this variable.</div></blockquote>
 <p>std_materials</p>
 <blockquote>
-<div>A list containing directories and files to search for standard material models.  The default is <tt class="docutils literal"><span class="pre">[MAT_D]</span></tt>.</div></blockquote>
+<div>A list containing directories and files to search for standard material models.  The default is <tt class="docutils literal"><span class="pre">[MAT_D]</span></tt>.  User values are appended to and do not overwrite this variable.</div></blockquote>
 <div class="section" id="a-note-on-defining-user-material-models">
 <h4>A Note on Defining User Material Models<a class="headerlink" href="#a-note-on-defining-user-material-models" title="Permalink to this headline">¶</a></h4>
 <p><tt class="docutils literal"><span class="pre">std_materials</span></tt> and <tt class="docutils literal"><span class="pre">materials</span></tt>  user settings are used to inform Matmodlab concerning user defined materials.  <tt class="docutils literal"><span class="pre">std_materials</span></tt> is a list of python interface files for standard models.  The <tt class="docutils literal"><span class="pre">materials</span></tt> dictionary is a dictionary of <tt class="docutils literal"><span class="pre">model_name:</span> <span class="pre">attribute_dict</span></tt> key:value pairs with the dictionary of model attributes containing the following information:</p>
@@ -205,7 +205,7 @@ it is updated with the user setting.</p>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="solution.html">1.7. Solution Method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="output.html">1.8. Matmodlab Output Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html">1.8. Matmodlab File Formats</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../execution/index.html">2. Job Execution</a></li>
