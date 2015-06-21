@@ -46,7 +46,7 @@
 <p class="topic-title first">References</p>
 <ul class="simple">
 <li><a class="reference internal" href="../intro/conventions.html#intro-conventions"><em>Conventions</em></a></li>
-<li><a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab Output Formats</em></a></li>
+<li><a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab File Formats</em></a></li>
 <li><a class="reference internal" href="../material/overview.html#mat-lib"><em>Material Library</em></a></li>
 <li><a class="reference internal" href="../material/user.html#user-mats"><em>User Defined Materials</em></a></li>
 </ul>
@@ -66,7 +66,7 @@ described.</p>
 <dd><p>Create a MaterialPointSimulator object and set up the simulation.</p>
 <p>The <em>job</em> string is the simulation ID.  Generated files are named job.ext, where ext is the file extension.</p>
 <p>The following arguments are optional.</p>
-<p>The <em>verbosity</em> integer set the simulation verbosity. Generally, 0=quiet, 2=noisy.  The <em>d</em> string is the simulation directory, the default is the working directory.  <em>initial_temperature</em> is the initial temperature, the default is 298 K.  The <em>output</em> symbolic constant specifies the output type, it defaults to <tt class="docutils literal"><span class="pre">DBX</span></tt> if not specified.  See <a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab Output Formats</em></a> for a description of supported output formats.</p>
+<p>The <em>verbosity</em> integer set the simulation verbosity. Generally, 0=quiet, 2=noisy.  The <em>d</em> string is the simulation directory, the default is the working directory.  <em>initial_temperature</em> is the initial temperature, the default is 298 K.  The <em>output</em> symbolic constant specifies the output type, it defaults to <tt class="docutils literal"><span class="pre">DBX</span></tt> if not specified.  See <a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab File Formats</em></a> for a description of supported output formats.</p>
 <p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="s">&#39;model&#39;</span><span class="p">)</span>
 

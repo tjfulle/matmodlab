@@ -51,31 +51,4 @@ models.
 Historical Background
 =====================
 
-When I was a graduate student at the University of Utah I had the good fortune
-to have as my advisor Dr. Rebecca Brannon `Rebecca Brannon's
-<http://www.mech.utah.edu/~brannon/>`_. Prof. Brannon instilled in me the
-necessity to develop material models in small special purpose drivers, free
-from the complexities of larger finite element codes. To this end, I began
-developing material models in Prof. Brannon's *MED* driver (available upon
-request from Prof. Brannon). The *MED* driver was a special purpose driver for
-driving material models through predefined strain paths. After completing
-graduate school I began employment as a member of the Technical Staff at
-Sandia National Labs. Among the many projects I worked on was the development
-of material models for geologic applications. There, I found need to drive the
-material models through prescribed stress paths to match experimental records.
-This capability was not present in the *MED* and I sought a different
-solution. The solution came from the *MMD* driver, created years earlier at
-Sandia, by Tom Pucick. The *MMD* driver had the capability to drive material
-models through prescribed stress and strain paths, but also lacked many of the
-IO features of the *MED*. And so, for some time I used both the *MED* and
-*MMD* drivers in applications that suited their respective strengths. After
-some time using both drivers, I decided to combine the best features of each
-in to my own driver. Both the *MED* and *MMD* drivers were written in Fortran
-and I decided to write the new driver in Python so that I could leverage the
-large number of builtin libraries. The Numpy and Scipy Python libraries would
-be used for handling most number crunching. The new driver came to be known as
-Matmodlab. Matmodlab added many unique capabilities and became a capable piece
-of software used by other staff members at Sandia. But, Matmodlab suffered
-from the fact that it was my first foray in to programming with Python. After
-some time, the bloat and bad programming practices with Matmodlab caused me to
-spend a few weekends re-writing it in to what is now known as Matmodlab.
+Matmodlab is an outgrowth of the *MED* material driver developed by Dr. Rebecca Brannon `Rebecca Brannon's <http://www.mech.utah.edu/~brannon/>`_ and the *MMD* driver developed by Tom Pucick at Sandia National Labs.

@@ -84,33 +84,7 @@ models.</p>
 </div>
 <div class="section" id="historical-background">
 <h2>Historical Background<a class="headerlink" href="#historical-background" title="Permalink to this headline">¶</a></h2>
-<p>When I was a graduate student at the University of Utah I had the good fortune
-to have as my advisor Dr. Rebecca Brannon <a class="reference external" href="http://www.mech.utah.edu/~brannon/">Rebecca Brannon&#8217;s</a>. Prof. Brannon instilled in me the
-necessity to develop material models in small special purpose drivers, free
-from the complexities of larger finite element codes. To this end, I began
-developing material models in Prof. Brannon&#8217;s <em>MED</em> driver (available upon
-request from Prof. Brannon). The <em>MED</em> driver was a special purpose driver for
-driving material models through predefined strain paths. After completing
-graduate school I began employment as a member of the Technical Staff at
-Sandia National Labs. Among the many projects I worked on was the development
-of material models for geologic applications. There, I found need to drive the
-material models through prescribed stress paths to match experimental records.
-This capability was not present in the <em>MED</em> and I sought a different
-solution. The solution came from the <em>MMD</em> driver, created years earlier at
-Sandia, by Tom Pucick. The <em>MMD</em> driver had the capability to drive material
-models through prescribed stress and strain paths, but also lacked many of the
-IO features of the <em>MED</em>. And so, for some time I used both the <em>MED</em> and
-<em>MMD</em> drivers in applications that suited their respective strengths. After
-some time using both drivers, I decided to combine the best features of each
-in to my own driver. Both the <em>MED</em> and <em>MMD</em> drivers were written in Fortran
-and I decided to write the new driver in Python so that I could leverage the
-large number of builtin libraries. The Numpy and Scipy Python libraries would
-be used for handling most number crunching. The new driver came to be known as
-Matmodlab. Matmodlab added many unique capabilities and became a capable piece
-of software used by other staff members at Sandia. But, Matmodlab suffered
-from the fact that it was my first foray in to programming with Python. After
-some time, the bloat and bad programming practices with Matmodlab caused me to
-spend a few weekends re-writing it in to what is now known as Matmodlab.</p>
+<p>Matmodlab is an outgrowth of the <em>MED</em> material driver developed by Dr. Rebecca Brannon <a class="reference external" href="http://www.mech.utah.edu/~brannon/">Rebecca Brannon&#8217;s</a> and the <em>MMD</em> driver developed by Tom Pucick at Sandia National Labs.</p>
 </div>
 </div>
 
@@ -147,7 +121,7 @@ spend a few weekends re-writing it in to what is now known as Matmodlab.</p>
 <li class="toctree-l2"><a class="reference internal" href="conventions.html">1.5. Conventions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="environment.html">1.6. Environment Settings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solution.html">1.7. Solution Method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="output.html">1.8. Matmodlab Output Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html">1.8. Matmodlab File Formats</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../execution/index.html">2. Job Execution</a></li>
