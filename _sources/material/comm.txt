@@ -1,8 +1,8 @@
 
 .. _comm_w_matmodlab:
 
-Writing to Messages to the Console and/or Log File
-##################################################
+Writing Messages to the Console and/or Log File
+###############################################
 
 Overview
 ========

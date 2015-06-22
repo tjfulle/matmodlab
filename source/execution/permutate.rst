@@ -3,7 +3,7 @@
 Permutator
 ##########
 
-.. topic:: References
+.. topic:: See Also
 
    * :ref:`mps`
 

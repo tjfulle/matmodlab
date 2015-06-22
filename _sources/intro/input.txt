@@ -1,7 +1,7 @@
 Input Syntax Guidelines
 #######################
 
-.. topic:: References
+.. topic:: See Also
 
    * :ref:`model_create_and_execute`
    * :ref:`mml_out_dbs`

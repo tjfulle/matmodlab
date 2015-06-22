@@ -1,20 +1,31 @@
-.. _mat_lib:
+.. _mat_overview:
 
-Material Library
-################
+Materials: Introduction
+#######################
 
-.. topic:: References
+Material constitutive models provide the material's the complete mechanical response. In other words, given the current mechanical state and an increment in deformation, the material model returns
 
-   * :ref:`Role of Material Model`
-   * :ref:`defining_a_material`
+* the updated stress,
+* the material stiffness, and
+* the updated state dependent variable, if applicable.
 
-Overview
-========
+Matmodlab Material Library
+==========================
 
-This chapter provides an overview of material models available in Matmodlab, as well as instructions on how to incorporate user defined material models.
+Matmodlab has a limited :ref:`library of material models <mat_builtin>`.
 
-Other Material Behaviors
+User Developed Materials
 ========================
+
+Matmodlab provides an API for :ref:`user developed materials <user_mats>`.
+
+
+Combining Material Responses
+============================
+
+Generally, constitutive models are treated as defining the entire mechanical
+response of a material and cannot be combined with other models. However,
+material models can be combined with the following behaviors:
 
 .. toctree::
    :maxdepth: 1

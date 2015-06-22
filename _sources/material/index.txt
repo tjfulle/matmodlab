@@ -1,11 +1,11 @@
-
 .. _mat_index:
 
-Material Model Library
-######################
+Materials
+#########
 
 .. toctree::
    :maxdepth: 1
+   :titlesonly:
 
    overview
    builtin

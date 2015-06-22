@@ -32,6 +32,92 @@ Interface
      real(kind=dp), intent(in) :: props(nprops),fiber_dir(nfibers,3)
      real(kind=dp), intent(in) :: drot(3, 3), f0(3, 3), f1(3, 3)
 
-     ! User coding
+   ! User coding
 
    end subroutine umat
+
+Output Only Variables
+=====================
+
+*ddsdde(6,6)*
+
+   The material stiffness :math:`\partial\Delta\sigma / \partial\Delta\epsilon`
+
+Input and Output Variables
+==========================
+
+*stress(6)*
+
+   On input, the stress at the beginning of the increment.  On output, the stress at the end of the increment.
+
+*statev(nstatv)*
+
+   On ipnut, the values of the state dependent variables at the beginning of the increment.  On output, their values at the end of the increment.
+
+Input Only Variables
+====================
+
+*stran(ntens)*
+
+   The strain at the beginning of the increment.  The definition of strain depends on the value of the user input kappa. If thermal expansion is included, the strains passed are the mechanical strains only.
+
+*dstran(ntens)*
+
+   The strain increments. If thermal expansion is included, the strain increments passed are the mechanical strain increments only.
+
+*time(1)*
+
+   The step time at the beginning of the current increment
+
+*time(2)*
+
+   The total time at the beginning of the current increment
+
+*dtime*
+
+   Time increment
+
+*temp*
+
+   The temperature at the beginning of the increment.
+
+*dtemp*
+
+   The temperature increment.
+
+*ndi*
+
+   Number of direct stress components.  Always set to 3.
+
+*nshr*
+
+   Number of shear stress components.  Always set to 3.
+
+*ntens*
+
+   Size of the stress tensor.  Always set to 6.
+
+*nstatv*
+
+   Number of state dependent state variables.
+
+*props(nprops)*
+
+   The material property array.
+
+*nprops*
+
+   The number of material properties.
+
+F0(3,3)
+
+   The deformation gradient at the beginning of the increment.
+
+F1(3,3)
+
+   The deformation gradient at the end of the increment.
+
+Other Variables
+===============
+
+The other variables in the ``umat`` definition are present to be consistent with popular commercial finite element codes but are not used by Matmodlab.

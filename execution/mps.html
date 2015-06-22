@@ -43,11 +43,11 @@
   <div class="section" id="materialpointsimulator">
 <span id="mps"></span><h1>2.3. MaterialPointSimulator<a class="headerlink" href="#materialpointsimulator" title="Permalink to this headline">¶</a></h1>
 <div class="topic">
-<p class="topic-title first">References</p>
+<p class="topic-title first">See Also</p>
 <ul class="simple">
 <li><a class="reference internal" href="../intro/conventions.html#intro-conventions"><em>Conventions</em></a></li>
 <li><a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab File Formats</em></a></li>
-<li><a class="reference internal" href="../material/overview.html#mat-lib"><em>Material Library</em></a></li>
+<li><a class="reference internal" href="../material/builtin.html#mat-builtin"><em>Material Library</em></a></li>
 <li><a class="reference internal" href="../material/user.html#user-mats"><em>User Defined Materials</em></a></li>
 </ul>
 </div>
@@ -80,13 +80,13 @@ described.</p>
 <span id="defining-a-material"></span><h2>Defining a Material Model<a class="headerlink" href="#defining-a-material-model" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="MaterialPointSimulator.Material">
-<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>name=None</em>, <em>switch=None</em>, <em>rebuild=False</em>, <em>param_names=None</em>, <em>source_files=None</em>, <em>source_directory=None</em>, <em>depvar=None</em>, <em>fiber_dirs=None</em>, <em>user_ics=False</em>, <em>order=None</em>, <em>response=None</em>, <em>libname=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.Material" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>name=None</em>, <em>switch=None</em>, <em>rebuild=False</em>, <em>param_names=None</em>, <em>source_files=None</em>, <em>depvar=None</em>, <em>fiber_dirs=None</em>, <em>user_ics=False</em>, <em>order=None</em>, <em>response=None</em>, <em>libname=None</em>, <em>param_names=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.Material" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create and assign a material model</p>
-<p>The required arguments are a model name and material parameters.  The model name must be a recognized material model (see <a class="reference internal" href="../material/overview.html#mat-lib"><em>Material Library</em></a>).  <em>parameters</em> is either a dictionary of <tt class="docutils literal"><span class="pre">key:value</span></tt> (<tt class="docutils literal"><span class="pre">key</span></tt> being the parameter name, <tt class="docutils literal"><span class="pre">value</span></tt> its numeric value) or ndarray.</p>
+<p>The required arguments are a model name and material parameters.  The model name must be a recognized material model (see <a class="reference internal" href="../material/index.html#mat-index"><em>Materials</em></a>).  <em>parameters</em> is either a dictionary of <tt class="docutils literal"><span class="pre">key:value</span></tt> (<tt class="docutils literal"><span class="pre">key</span></tt> being the parameter name, <tt class="docutils literal"><span class="pre">value</span></tt> its numeric value) or ndarray.</p>
 <p>The following arguments are optional and applicable to all materials.</p>
 <p><em>rebuild</em> is a boolean that, when True, forces the material model to be rebuilt before the simulation.  <em>switch</em> is a tuple containing the material name and the name of another material to be switched in to its place.</p>
 <p>The following arguments are applicable to user materials</p>
-<p><em>source_files</em> is a list of model source files.  Each file must exist and be readable on the file system.  If the optional <em>source_directory</em> is given, source files are looked for there. <em>depvar</em> is either the integer number of state dependent variables or a list of state dependent variable names. <em>fiber_dirs</em> is an array of fiber directions (applicable only to uanisohyper_inv models). <em>param_names</em> is a list of parameter names. If <em>user_ics</em> is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.  <em>order</em> is a list of strings specifying the component ordering of second order tensors.  <em>response</em> is one of &#8220;mechanical&#8221;, &#8220;hyperelastic&#8221;, or &#8220;anisotropic hyperelastic&#8221; and is used to determine which type of response the model will describe.</p>
+<p><em>source_files</em> is a list of model source files.  Each file must exist and be readable on the file system.  <em>depvar</em> is either the integer number of state dependent variables or a list of state dependent variable names. <em>fiber_dirs</em> is an array of fiber directions (applicable only to uanisohyper_inv models). <em>param_names</em> is a list of parameter names. If <em>user_ics</em> is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.  <em>order</em> is a list of strings specifying the component ordering of second order tensors.  <em>response</em> is one of &#8220;mechanical&#8221;, &#8220;hyperelastic&#8221;, or &#8220;anisotropic hyperelastic&#8221; and is used to determine which type of response the model will describe.</p>
 <p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;elastic&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mf">123e9</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="mf">53e9</span><span class="p">})</span>
 
@@ -275,7 +275,7 @@ described.</p>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">2.7. Annotated Examples</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Material Model Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>
 </ul>
 

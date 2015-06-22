@@ -1,11 +1,13 @@
 Transversely Isotropic Elastic Material
 #######################################
 
+.. topic:: See Also
+
+	   .
+
+
 Overview
 ========
-
-References
-==========
 
 Usage
 =====

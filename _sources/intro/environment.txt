@@ -4,7 +4,7 @@
 Environment Settings
 ####################
 
-.. topic:: References
+.. topic:: See Also
 
    * :ref:`intro_conventions`
    * :ref:`basic_cli`
@@ -117,11 +117,11 @@ A Note on Defining User Material Models
 ``std_materials`` and ``materials``  user settings are used to inform Matmodlab concerning user defined materials.  ``std_materials`` is a list of python interface files for standard models.  The ``materials`` dictionary is a dictionary of ``model_name: attribute_dict`` key:value pairs with the dictionary of model attributes containing the following information:
 
 * *source_files*: [list, required] A list of model source files
-* *model*: [symbolic constant, optional] The model type.  One of ``USER``, ``UMAT``, ``UHYPER``, ``UANISOHYPER``.  The default is ``USER``.
+* *model*: [symbolic constant, optional] the model type.  One of ``USER``, ``UMAT``, ``UHYPER``, ``UANISOHYPER``.  The default is ``USER``.
 * *response*: [symbolic constant, optional] The model response, one of ``MECHANICAL``, ``HPERELASTIC``, ``ANISOHYPER``.  The default is ``MECHANICAL``.
-* *source_directory*: [string, optional] Directory to find source files. Useful for defining files in *source_files* relative to *source_directory*.
 * *ordering*: [list of symbolic constants, optional] Symmetric tensor ordering.  The default is ``[XX, YY, ZZ, XY, YZ, XZ]``.
 * *user_ics*: [boolean, optional] If ``True``, the user model provides a SDVINI subroutine.
+* *param_names*: [list of string, optional] A list of model parameter names.  If given, parameters should be sent to the ``MaterialPointSimulator.Material`` constructor as a dictionary of ``key:value`` pairs, where ``key`` is the parameter name.  Otherwise, parameters should be sent to the constructor as an array in the order expected by the model.
 
 Example
 '''''''
@@ -129,8 +129,7 @@ Example
 The following is a portion of the user environment file found in ``matmodlab/examples`` and is used by ``examples/users.py`` to define the material model's attributes::
 
   materials = {'neohooke': {'model': USER, 'response': HYPERELASTIC,
-                            'source_directory': ROOT_D + '/materials/abaumats',
-                            'source_files': ['uhyper.f90'],
+                            'source_files': [join(MAT_D, 'abaumats/uhyper.f90')],
                             'ordering': [XX, YY, ZZ, XY, XZ, YZ]}}
 
 Simulation Directory

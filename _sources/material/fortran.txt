@@ -4,18 +4,17 @@
 Fortran User Material Interface
 ###############################
 
+.. topic:: See Also
+
+   * :ref:`Role of Material Model`
+   * :ref:`defining_a_material`
+   * :ref:`intro_conventions`
+   * :ref:`comm_w_matmodlab`
+
 Overview
 ========
 
 Procedures ``UMAT``, ``UHYPER``, and ``UANISOHYPER_INV`` are called for user defined materials defining the mechanical, hyperelastic, or anisotropic hyperelastic material responses, respectively.  Regardles of the interface procedure used, a fortran compiler must be available for Matmodlab to compile and link user procedures.
-
-References
-==========
-
-* :ref:`Role of Material Model`
-* :ref:`defining_a_material`
-* :ref:`intro_conventions`
-* :ref:`comm_w_matmodlab`
 
 .. _invoke_user_f:
 
@@ -29,7 +28,7 @@ with additional required and optional arguments.
 Required MaterialPointSimulator.Material Agruments
 --------------------------------------------------
 
-* The *model* argument must be set to *user*
+* The *model* argument must be set to one of ``USER``, ``UMAT``, ``UHYPER``, or ``UANISOHYPER_INV``.
 * The *parameters* must be a ndarray of model constants (specified in the
   order expected by the model).
 * *source_files*, a list of model source files. The source files must exist
@@ -38,7 +37,6 @@ Required MaterialPointSimulator.Material Agruments
 Optional MaterialPointSimulator.Material Arguments
 --------------------------------------------------
 
-* *source_directory*, is a directory containing source files.
 * *param_names*, is a list of parameter names in the order expected by the model.
   If given, *parameters* must be given as dict of ``name:value`` pairs as for
   builtin models.

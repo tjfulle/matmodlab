@@ -68,11 +68,78 @@
   real(kind=dp), intent(in) :: props(nprops),fiber_dir(nfibers,3)
   real(kind=dp), intent(in) :: drot(3, 3), f0(3, 3), f1(3, 3)
 
-  ! User coding
+! User coding
 
 end subroutine umat
 </pre></div>
 </div>
+</div>
+<div class="section" id="output-only-variables">
+<h2>Output Only Variables<a class="headerlink" href="#output-only-variables" title="Permalink to this headline">¶</a></h2>
+<p><em>ddsdde(6,6)</em></p>
+<blockquote>
+<div>The material stiffness <span class="math">\(\partial\Delta\sigma / \partial\Delta\epsilon\)</span></div></blockquote>
+</div>
+<div class="section" id="input-and-output-variables">
+<h2>Input and Output Variables<a class="headerlink" href="#input-and-output-variables" title="Permalink to this headline">¶</a></h2>
+<p><em>stress(6)</em></p>
+<blockquote>
+<div>On input, the stress at the beginning of the increment.  On output, the stress at the end of the increment.</div></blockquote>
+<p><em>statev(nstatv)</em></p>
+<blockquote>
+<div>On ipnut, the values of the state dependent variables at the beginning of the increment.  On output, their values at the end of the increment.</div></blockquote>
+</div>
+<div class="section" id="input-only-variables">
+<h2>Input Only Variables<a class="headerlink" href="#input-only-variables" title="Permalink to this headline">¶</a></h2>
+<p><em>stran(ntens)</em></p>
+<blockquote>
+<div>The strain at the beginning of the increment.  The definition of strain depends on the value of the user input kappa. If thermal expansion is included, the strains passed are the mechanical strains only.</div></blockquote>
+<p><em>dstran(ntens)</em></p>
+<blockquote>
+<div>The strain increments. If thermal expansion is included, the strain increments passed are the mechanical strain increments only.</div></blockquote>
+<p><em>time(1)</em></p>
+<blockquote>
+<div>The step time at the beginning of the current increment</div></blockquote>
+<p><em>time(2)</em></p>
+<blockquote>
+<div>The total time at the beginning of the current increment</div></blockquote>
+<p><em>dtime</em></p>
+<blockquote>
+<div>Time increment</div></blockquote>
+<p><em>temp</em></p>
+<blockquote>
+<div>The temperature at the beginning of the increment.</div></blockquote>
+<p><em>dtemp</em></p>
+<blockquote>
+<div>The temperature increment.</div></blockquote>
+<p><em>ndi</em></p>
+<blockquote>
+<div>Number of direct stress components.  Always set to 3.</div></blockquote>
+<p><em>nshr</em></p>
+<blockquote>
+<div>Number of shear stress components.  Always set to 3.</div></blockquote>
+<p><em>ntens</em></p>
+<blockquote>
+<div>Size of the stress tensor.  Always set to 6.</div></blockquote>
+<p><em>nstatv</em></p>
+<blockquote>
+<div>Number of state dependent state variables.</div></blockquote>
+<p><em>props(nprops)</em></p>
+<blockquote>
+<div>The material property array.</div></blockquote>
+<p><em>nprops</em></p>
+<blockquote>
+<div>The number of material properties.</div></blockquote>
+<p>F0(3,3)</p>
+<blockquote>
+<div>The deformation gradient at the beginning of the increment.</div></blockquote>
+<p>F1(3,3)</p>
+<blockquote>
+<div>The deformation gradient at the end of the increment.</div></blockquote>
+</div>
+<div class="section" id="other-variables">
+<h2>Other Variables<a class="headerlink" href="#other-variables" title="Permalink to this headline">¶</a></h2>
+<p>The other variables in the <tt class="docutils literal"><span class="pre">umat</span></tt> definition are present to be consistent with popular commercial finite element codes but are not used by Matmodlab.</p>
 </div>
 </div>
 
@@ -98,19 +165,19 @@ end subroutine umat
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro/index.html">1. Introduction and Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../execution/index.html">2. Job Execution</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Material Model Library</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="overview.html">3.1. Material Library</a></li>
-<li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Builtin Material Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Materials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">3.1. Materials: Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Material Library</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="user.html">3.3. User Defined Materials</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="user.html#overview">Overview</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="user.html#user-material-interface">User Material Interface</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="user.html#material-model-api">Material Model API</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="python.html">Python User Material Interface</a></li>
 <li class="toctree-l4 current"><a class="reference internal" href="fortran.html">Fortran User Material Interface</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing to Messages to the Console and/or Log File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing Messages to the Console and/or Log File</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>

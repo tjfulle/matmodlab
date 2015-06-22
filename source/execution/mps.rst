@@ -3,11 +3,11 @@
 MaterialPointSimulator
 ######################
 
-.. topic:: References
+.. topic:: See Also
 
    * :ref:`intro_conventions`
    * :ref:`mml_out_dbs`
-   * :ref:`mat_lib`
+   * :ref:`mat_builtin`
    * :ref:`user_mats`
 
 Overview
@@ -43,11 +43,11 @@ The MaterialPointSimulator Constructor
 Defining a Material Model
 =========================
 
-.. method:: MaterialPointSimulator.Material(model, parameters, name=None, switch=None, rebuild=False, param_names=None, source_files=None, source_directory=None, depvar=None, fiber_dirs=None, user_ics=False, order=None, response=None, libname=None)
+.. method:: MaterialPointSimulator.Material(model, parameters, name=None, switch=None, rebuild=False, param_names=None, source_files=None, depvar=None, fiber_dirs=None, user_ics=False, order=None, response=None, libname=None, param_names=None)
 
    Create and assign a material model
 
-   The required arguments are a model name and material parameters.  The model name must be a recognized material model (see :ref:`mat_lib`).  *parameters* is either a dictionary of ``key:value`` (``key`` being the parameter name, ``value`` its numeric value) or ndarray.
+   The required arguments are a model name and material parameters.  The model name must be a recognized material model (see :ref:`mat_index`).  *parameters* is either a dictionary of ``key:value`` (``key`` being the parameter name, ``value`` its numeric value) or ndarray.
 
    The following arguments are optional and applicable to all materials.
 
@@ -55,7 +55,7 @@ Defining a Material Model
 
    The following arguments are applicable to user materials
 
-   *source_files* is a list of model source files.  Each file must exist and be readable on the file system.  If the optional *source_directory* is given, source files are looked for there. *depvar* is either the integer number of state dependent variables or a list of state dependent variable names. *fiber_dirs* is an array of fiber directions (applicable only to uanisohyper_inv models). *param_names* is a list of parameter names. If *user_ics* is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.  *order* is a list of strings specifying the component ordering of second order tensors.  *response* is one of "mechanical", "hyperelastic", or "anisotropic hyperelastic" and is used to determine which type of response the model will describe.
+   *source_files* is a list of model source files.  Each file must exist and be readable on the file system.  *depvar* is either the integer number of state dependent variables or a list of state dependent variable names. *fiber_dirs* is an array of fiber directions (applicable only to uanisohyper_inv models). *param_names* is a list of parameter names. If *user_ics* is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.  *order* is a list of strings specifying the component ordering of second order tensors.  *response* is one of "mechanical", "hyperelastic", or "anisotropic hyperelastic" and is used to determine which type of response the model will describe.
 
    Examples::
 

@@ -43,7 +43,7 @@
   <div class="section" id="environment-settings">
 <span id="environment"></span><h1>1.6. Environment Settings<a class="headerlink" href="#environment-settings" title="Permalink to this headline">¶</a></h1>
 <div class="topic">
-<p class="topic-title first">References</p>
+<p class="topic-title first">See Also</p>
 <ul class="simple">
 <li><a class="reference internal" href="conventions.html#intro-conventions"><em>Conventions</em></a></li>
 <li><a class="reference internal" href="../execution/cli.html#basic-cli"><em>Execution Procedures</em></a></li>
@@ -137,18 +137,17 @@ it is updated with the user setting.</p>
 <p><tt class="docutils literal"><span class="pre">std_materials</span></tt> and <tt class="docutils literal"><span class="pre">materials</span></tt>  user settings are used to inform Matmodlab concerning user defined materials.  <tt class="docutils literal"><span class="pre">std_materials</span></tt> is a list of python interface files for standard models.  The <tt class="docutils literal"><span class="pre">materials</span></tt> dictionary is a dictionary of <tt class="docutils literal"><span class="pre">model_name:</span> <span class="pre">attribute_dict</span></tt> key:value pairs with the dictionary of model attributes containing the following information:</p>
 <ul class="simple">
 <li><em>source_files</em>: [list, required] A list of model source files</li>
-<li><em>model</em>: [symbolic constant, optional] The model type.  One of <tt class="docutils literal"><span class="pre">USER</span></tt>, <tt class="docutils literal"><span class="pre">UMAT</span></tt>, <tt class="docutils literal"><span class="pre">UHYPER</span></tt>, <tt class="docutils literal"><span class="pre">UANISOHYPER</span></tt>.  The default is <tt class="docutils literal"><span class="pre">USER</span></tt>.</li>
+<li><em>model</em>: [symbolic constant, optional] the model type.  One of <tt class="docutils literal"><span class="pre">USER</span></tt>, <tt class="docutils literal"><span class="pre">UMAT</span></tt>, <tt class="docutils literal"><span class="pre">UHYPER</span></tt>, <tt class="docutils literal"><span class="pre">UANISOHYPER</span></tt>.  The default is <tt class="docutils literal"><span class="pre">USER</span></tt>.</li>
 <li><em>response</em>: [symbolic constant, optional] The model response, one of <tt class="docutils literal"><span class="pre">MECHANICAL</span></tt>, <tt class="docutils literal"><span class="pre">HPERELASTIC</span></tt>, <tt class="docutils literal"><span class="pre">ANISOHYPER</span></tt>.  The default is <tt class="docutils literal"><span class="pre">MECHANICAL</span></tt>.</li>
-<li><em>source_directory</em>: [string, optional] Directory to find source files. Useful for defining files in <em>source_files</em> relative to <em>source_directory</em>.</li>
 <li><em>ordering</em>: [list of symbolic constants, optional] Symmetric tensor ordering.  The default is <tt class="docutils literal"><span class="pre">[XX,</span> <span class="pre">YY,</span> <span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">YZ,</span> <span class="pre">XZ]</span></tt>.</li>
 <li><em>user_ics</em>: [boolean, optional] If <tt class="docutils literal"><span class="pre">True</span></tt>, the user model provides a SDVINI subroutine.</li>
+<li><em>param_names</em>: [list of string, optional] A list of model parameter names.  If given, parameters should be sent to the <tt class="docutils literal"><span class="pre">MaterialPointSimulator.Material</span></tt> constructor as a dictionary of <tt class="docutils literal"><span class="pre">key:value</span></tt> pairs, where <tt class="docutils literal"><span class="pre">key</span></tt> is the parameter name.  Otherwise, parameters should be sent to the constructor as an array in the order expected by the model.</li>
 </ul>
 <div class="section" id="example">
 <h5>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h5>
 <p>The following is a portion of the user environment file found in <tt class="docutils literal"><span class="pre">matmodlab/examples</span></tt> and is used by <tt class="docutils literal"><span class="pre">examples/users.py</span></tt> to define the material model&#8217;s attributes:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">materials</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;neohooke&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;model&#39;</span><span class="p">:</span> <span class="n">USER</span><span class="p">,</span> <span class="s">&#39;response&#39;</span><span class="p">:</span> <span class="n">HYPERELASTIC</span><span class="p">,</span>
-                          <span class="s">&#39;source_directory&#39;</span><span class="p">:</span> <span class="n">ROOT_D</span> <span class="o">+</span> <span class="s">&#39;/materials/abaumats&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;source_files&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;uhyper.f90&#39;</span><span class="p">],</span>
+                          <span class="s">&#39;source_files&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">join</span><span class="p">(</span><span class="n">MAT_D</span><span class="p">,</span> <span class="s">&#39;abaumats/uhyper.f90&#39;</span><span class="p">)],</span>
                           <span class="s">&#39;ordering&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">XX</span><span class="p">,</span> <span class="n">YY</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">,</span> <span class="n">XY</span><span class="p">,</span> <span class="n">XZ</span><span class="p">,</span> <span class="n">YZ</span><span class="p">]}}</span>
 </pre></div>
 </div>
@@ -209,7 +208,7 @@ it is updated with the user setting.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../execution/index.html">2. Job Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Material Model Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>
 </ul>
 

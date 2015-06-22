@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>3.2. Builtin Material Models &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>3.2. Material Library &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
-    <link rel="up" title="3. Material Model Library" href="index.html" />
+    <link rel="up" title="3. Materials" href="index.html" />
     <link rel="next" title="Linear Elastic Material" href="elastic.html" />
     <link rel="prev" title="Viscoelasticity" href="viscoelastic.html" />
    
@@ -40,8 +40,27 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="builtin-material-models">
-<h1>3.2. Builtin Material Models<a class="headerlink" href="#builtin-material-models" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="material-library">
+<span id="mat-builtin"></span><h1>3.2. Material Library<a class="headerlink" href="#material-library" title="Permalink to this headline">¶</a></h1>
+<div class="topic">
+<p class="topic-title first">See Also</p>
+<ul class="simple">
+<li><a class="reference internal" href="../intro/solution.html#role-of-material-model"><em>The Role of the Material Model in Continuum Mechanics</em></a></li>
+<li><a class="reference internal" href="../execution/mps.html#defining-a-material"><em>Defining a Material Model</em></a></li>
+<li><a class="reference internal" href="../intro/conventions.html#intro-conventions"><em>Conventions</em></a></li>
+</ul>
+</div>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The library of available material models in Matmodlab is not intended to
+provide comprehensive coverage of material behaviors. Rather, it provides
+enough coverage to</p>
+<ul class="simple">
+<li>test Matmodlab capabilities; and</li>
+<li>demonstrate the material model interface to be adopted by user materials.</li>
+</ul>
+<div class="section" id="available-materials">
+<h3>Available Materials<a class="headerlink" href="#available-materials" title="Permalink to this headline">¶</a></h3>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="elastic.html">Linear Elastic Material</a></li>
@@ -49,6 +68,8 @@
 <li class="toctree-l1"><a class="reference internal" href="transverse_elastic.html">Transversely Isotropic Elastic Material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mooney_rivlin.html">Mooney-Rivlin Hyperelastic Material</a></li>
 </ul>
+</div>
+</div>
 </div>
 </div>
 
@@ -74,17 +95,17 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro/index.html">1. Introduction and Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../execution/index.html">2. Job Execution</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Material Model Library</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="overview.html">3.1. Material Library</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">3.2. Builtin Material Models</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="elastic.html">Linear Elastic Material</a></li>
-<li class="toctree-l3"><a class="reference internal" href="plastic.html">Perfectly Plastic Material</a></li>
-<li class="toctree-l3"><a class="reference internal" href="transverse_elastic.html">Transversely Isotropic Elastic Material</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mooney_rivlin.html">Mooney-Rivlin Hyperelastic Material</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Materials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">3.1. Materials: Introduction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">3.2. Material Library</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#available-materials">Available Materials</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="user.html">3.3. User Defined Materials</a></li>
-<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing to Messages to the Console and/or Log File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing Messages to the Console and/or Log File</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>

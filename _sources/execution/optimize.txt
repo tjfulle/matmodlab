@@ -3,7 +3,7 @@
 Optimizer
 #########
 
-.. topic:: References
+.. topic:: See Also
 
    * :ref:`mps`
 

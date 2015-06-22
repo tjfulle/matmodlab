@@ -3,7 +3,7 @@
 Matmodlab File Formats
 ######################
 
-.. topic:: References
+.. topic:: See Also
 
    * :ref:`mps`
 

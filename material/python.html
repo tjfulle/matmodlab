@@ -42,34 +42,39 @@
             
   <div class="section" id="python-user-material-interface">
 <span id="python-models"></span><h1>Python User Material Interface<a class="headerlink" href="#python-user-material-interface" title="Permalink to this headline">¶</a></h1>
+<div class="topic">
+<p class="topic-title first">See Also</p>
+<ul class="simple">
+<li><a class="reference internal" href="../intro/solution.html#role-of-material-model"><em>The Role of the Material Model in Continuum Mechanics</em></a></li>
+<li><a class="reference internal" href="../execution/mps.html#defining-a-material"><em>Defining a Material Model</em></a></li>
+<li><a class="reference internal" href="../intro/conventions.html#intro-conventions"><em>Conventions</em></a></li>
+<li><a class="reference internal" href="comm.html#comm-w-matmodlab"><em>Writing Messages to the Console and/or Log File</em></a></li>
+</ul>
+</div>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>Material models written in Python are implemented as subclasses
 <tt class="docutils literal"><span class="pre">matmodlab.mmd.material.MaterialModel</span></tt> and are treated as builtin materials.</p>
 </div>
-<div class="section" id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><a class="reference internal" href="../intro/solution.html#role-of-material-model"><em>The Role of the Material Model in Continuum Mechanics</em></a></li>
-<li><a class="reference internal" href="../execution/mps.html#defining-a-material"><em>Defining a Material Model</em></a></li>
-<li><a class="reference internal" href="../intro/conventions.html#intro-conventions"><em>Conventions</em></a></li>
-<li><a class="reference internal" href="comm.html#comm-w-matmodlab"><em>Writing to Messages to the Console and/or Log File</em></a></li>
-</ul>
-</div>
 <div class="section" id="invoking-user-materials">
 <h2>Invoking User Materials<a class="headerlink" href="#invoking-user-materials" title="Permalink to this headline">¶</a></h2>
-<p>User materials that subclass <tt class="docutils literal"><span class="pre">MaterialModel</span></tt> are invoked using <em>model=&#8221;*name</em>&#8221;, where <em>name</em> is the material model&#8217;s name.</p>
+<p>User materials that subclass <tt class="docutils literal"><span class="pre">MaterialModel</span></tt> are invoked by assigning the <em>model</em> argument of the <tt class="docutils literal"><span class="pre">MaterialPointSimulator.Material</span></tt> factory method to the name of the material model.</p>
 </div>
 <div class="section" id="required-attributes">
 <h2>Required Attributes<a class="headerlink" href="#required-attributes" title="Permalink to this headline">¶</a></h2>
 <p>Material models that subclass <tt class="docutils literal"><span class="pre">MaterialModel</span></tt> must provide the following class attributes:</p>
 <ul class="simple">
 <li><em>name</em>, as string defining the material&#8217;s name.  Must be unique.</li>
-<li><em>param_names</em>, a list of parameter names, in the order expected by the model.</li>
 </ul>
 </div>
 <div class="section" id="required-methods">
 <h2>Required Methods<a class="headerlink" href="#required-methods" title="Permalink to this headline">¶</a></h2>
+<dl class="classmethod">
+<dt id="MaterialModel.param_names">
+<em class="property">classmethod </em><tt class="descclassname">MaterialModel.</tt><tt class="descname">param_names</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#MaterialModel.param_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class method that returns a list of parameter names. <em>n</em> is the number of parameters and is used to set the names of parameters for user defined materials at run time.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="MaterialModel.setup">
 <tt class="descclassname">MaterialModel.</tt><tt class="descname">setup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#MaterialModel.setup" title="Permalink to this definition">¶</a></dt>
@@ -87,35 +92,83 @@ model.</dd>
 
 <dl class="method">
 <dt id="MaterialModel.update_state">
-<tt class="descclassname">MaterialModel.</tt><tt class="descname">update_state</tt><big>(</big><em>time</em>, <em>dtime</em>, <em>temp</em>, <em>dtemp</em>, <em>energy</em>, <em>density</em>, <em>F0</em>, <em>F1</em>, <em>strain</em>, <em>dstrain</em>, <em>elec_field</em>, <em>user_field</em>, <em>stress</em>, <em>xtra</em>, <em>last=False</em><big>)</big><a class="headerlink" href="#MaterialModel.update_state" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">MaterialModel.</tt><tt class="descname">update_state</tt><big>(</big><em>time</em>, <em>dtime</em>, <em>temp</em>, <em>dtemp</em>, <em>energy</em>, <em>density</em>, <em>F0</em>, <em>F1</em>, <em>strain</em>, <em>dstrain</em>, <em>elec_field</em>, <em>stress</em>, <em>statev</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#MaterialModel.update_state" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the the material state</p>
 <p>The following parameters are sent in for information and should not be
 updated:</p>
 <ul class="simple">
-<li><em>time</em> The time at the beginning of the time step</li>
-<li><em>dtime</em> Step time step size</li>
-<li><em>temp</em> The temperature at the beginning of the time step</li>
-<li><em>dtemp</em> Step temperature increment</li>
-<li><em>energy</em> The energy at the beginning of the time step</li>
-<li><em>density</em> The material density</li>
-<li><em>F0</em> The deformation gradient at the beginning of the time step</li>
-<li><em>F1</em> The deformation gradient at the beginning of the time step</li>
-<li><em>strain</em> The strain at the beginning of the time step</li>
-<li><em>dstrain</em> The strain increment over the step</li>
-<li><em>elec_field</em> The electric field at the end of the step</li>
-<li><em>user_field</em> The user defined field at the end of the step</li>
+<li><em>time</em>, the time at the beginning of the time step</li>
+<li><em>dtime</em>, Step time step size</li>
+<li><em>temp</em>, the temperature at the beginning of the time step</li>
+<li><em>dtemp</em>, step temperature increment</li>
+<li><em>energy</em>, the energy at the beginning of the time step</li>
+<li><em>density</em>, the material density</li>
+<li><em>F0</em>, the deformation gradient at the beginning of the time step</li>
+<li><em>F1</em>, the deformation gradient at the beginning of the time step</li>
+<li><em>strain</em>, the strain at the beginning of the time step</li>
+<li><em>dstrain</em>, the strain increment over the step</li>
+<li><em>elec_field</em>, the electric field at the end of the step</li>
 </ul>
 <p>The following parameter are sent in for information and should be
 updated to the end of the step:</p>
 <ul class="simple">
-<li><em>stress</em> The stress at the beginning of the step</li>
-<li><em>xtra</em> The state dependent variables at the beginning of the step</li>
+<li><em>stress</em>, the stress at the beginning of the step</li>
+<li><em>statev</em>, the state dependent variables at the beginning of the step</li>
 </ul>
-<p>The following variables should be calculated:</p>
+<p>The following variables are updated and returned</p>
 <p><em>stiff</em>, the 6x6 material stiffness</p>
 <p><em>update_state</em> must return <em>stress</em>, <em>statev</em>, <em>stiff</em></p>
 </dd></dl>
 
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">dot</span>
+<span class="kn">from</span> <span class="nn">mmd.material</span> <span class="kn">import</span> <span class="n">MaterialModel</span>
+<span class="kn">from</span> <span class="nn">utils.errors</span> <span class="kn">import</span> <span class="n">MatModLabError</span>
+
+<span class="k">class</span> <span class="nc">MyElastic</span><span class="p">(</span><span class="n">MaterialModel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Linear elastic material model&quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;my_elastic&#39;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">param_names</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&#39;K&#39;</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">K</span><span class="p">,</span> <span class="n">Nu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;E&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;Nu&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">E</span> <span class="o">&lt;=</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MatModLabError</span><span class="p">(</span><span class="s">&quot;negative Young&#39;s modulus&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="o">-</span><span class="mf">1.</span> <span class="o">&gt;=</span> <span class="n">Nu</span> <span class="o">&lt;</span> <span class="o">.</span><span class="mi">5</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MatModLabError</span><span class="p">(</span><span class="s">&quot;invalid Poisson&#39;s ratio&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">dtime</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">dtemp</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span>
+                     <span class="n">F0</span><span class="p">,</span> <span class="n">F1</span><span class="p">,</span> <span class="n">strain</span><span class="p">,</span> <span class="n">dstrain</span><span class="p">,</span> <span class="n">elec_field</span><span class="p">,</span>
+                     <span class="n">stress</span><span class="p">,</span> <span class="n">statev</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># elastic properties</span>
+        <span class="n">E</span><span class="p">,</span> <span class="n">Nu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;E&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;Nu&#39;</span><span class="p">]</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">E</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Nu</span><span class="p">)</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">E</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">Nu</span><span class="p">)</span>
+
+        <span class="n">K3</span> <span class="o">=</span> <span class="mf">3.</span> <span class="o">*</span> <span class="n">K</span>
+        <span class="n">G2</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">G</span>
+        <span class="n">Lam</span> <span class="o">=</span> <span class="p">(</span><span class="n">K3</span> <span class="o">-</span> <span class="n">G2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">3.</span>
+
+        <span class="c"># elastic stiffness</span>
+        <span class="n">ddsdde</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">ddsdde</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Lam</span>
+            <span class="n">ddsdde</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2</span> <span class="o">+</span> <span class="n">Lam</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">):</span>
+            <span class="n">ddsdde</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">G</span>
+
+        <span class="c"># stress update</span>
+        <span class="n">stress</span> <span class="o">+=</span> <span class="n">dot</span><span class="p">(</span><span class="n">ddsdde</span><span class="p">,</span> <span class="n">dstrain</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">stress</span><span class="p">,</span> <span class="n">statev</span><span class="p">,</span> <span class="n">ddsdde</span>
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -141,19 +194,19 @@ updated to the end of the step:</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro/index.html">1. Introduction and Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../execution/index.html">2. Job Execution</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Material Model Library</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="overview.html">3.1. Material Library</a></li>
-<li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Builtin Material Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Materials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">3.1. Materials: Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Material Library</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="user.html">3.3. User Defined Materials</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="user.html#overview">Overview</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="user.html#user-material-interface">User Material Interface</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="user.html#material-model-api">Material Model API</a><ul class="current">
 <li class="toctree-l4 current"><a class="current reference internal" href="">Python User Material Interface</a></li>
 <li class="toctree-l4"><a class="reference internal" href="fortran.html">Fortran User Material Interface</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing to Messages to the Console and/or Log File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing Messages to the Console and/or Log File</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>

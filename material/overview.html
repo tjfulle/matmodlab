@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>3.1. Material Library &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>3.1. Materials: Introduction &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -25,9 +25,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
-    <link rel="up" title="3. Material Model Library" href="index.html" />
+    <link rel="up" title="3. Materials" href="index.html" />
     <link rel="next" title="Thermal Expansion" href="expansion.html" />
-    <link rel="prev" title="3. Material Model Library" href="index.html" />
+    <link rel="prev" title="3. Materials" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,21 +40,27 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="material-library">
-<span id="mat-lib"></span><h1>3.1. Material Library<a class="headerlink" href="#material-library" title="Permalink to this headline">¶</a></h1>
-<div class="topic">
-<p class="topic-title first">References</p>
+  <div class="section" id="materials-introduction">
+<span id="mat-overview"></span><h1>3.1. Materials: Introduction<a class="headerlink" href="#materials-introduction" title="Permalink to this headline">¶</a></h1>
+<p>Material constitutive models provide the material&#8217;s the complete mechanical response. In other words, given the current mechanical state and an increment in deformation, the material model returns</p>
 <ul class="simple">
-<li><a class="reference internal" href="../intro/solution.html#role-of-material-model"><em>The Role of the Material Model in Continuum Mechanics</em></a></li>
-<li><a class="reference internal" href="../execution/mps.html#defining-a-material"><em>Defining a Material Model</em></a></li>
+<li>the updated stress,</li>
+<li>the material stiffness, and</li>
+<li>the updated state dependent variable, if applicable.</li>
 </ul>
+<div class="section" id="matmodlab-material-library">
+<h2>Matmodlab Material Library<a class="headerlink" href="#matmodlab-material-library" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab has a limited <a class="reference internal" href="builtin.html#mat-builtin"><em>library of material models</em></a>.</p>
 </div>
-<div class="section" id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
-<p>This chapter provides an overview of material models available in Matmodlab, as well as instructions on how to incorporate user defined material models.</p>
+<div class="section" id="user-developed-materials">
+<h2>User Developed Materials<a class="headerlink" href="#user-developed-materials" title="Permalink to this headline">¶</a></h2>
+<p>Matmodlab provides an API for <a class="reference internal" href="user.html#user-mats"><em>user developed materials</em></a>.</p>
 </div>
-<div class="section" id="other-material-behaviors">
-<h2>Other Material Behaviors<a class="headerlink" href="#other-material-behaviors" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="combining-material-responses">
+<h2>Combining Material Responses<a class="headerlink" href="#combining-material-responses" title="Permalink to this headline">¶</a></h2>
+<p>Generally, constitutive models are treated as defining the entire mechanical
+response of a material and cannot be combined with other models. However,
+material models can be combined with the following behaviors:</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="expansion.html">Thermal Expansion</a></li>
@@ -87,10 +93,11 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro/index.html">1. Introduction and Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../execution/index.html">2. Job Execution</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Material Model Library</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="">3.1. Material Library</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#other-material-behaviors">Other Material Behaviors</a><ul>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Materials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="">3.1. Materials: Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#matmodlab-material-library">Matmodlab Material Library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#user-developed-materials">User Developed Materials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#combining-material-responses">Combining Material Responses</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="expansion.html">Thermal Expansion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="trs.html">Time Temperature Shift</a></li>
 <li class="toctree-l4"><a class="reference internal" href="viscoelastic.html">Viscoelasticity</a></li>
@@ -98,9 +105,9 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Builtin Material Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Material Library</a></li>
 <li class="toctree-l2"><a class="reference internal" href="user.html">3.3. User Defined Materials</a></li>
-<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing to Messages to the Console and/or Log File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing Messages to the Console and/or Log File</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>

@@ -3,7 +3,7 @@
 Solution Method
 ###############
 
-.. topic:: References
+.. topic:: See Also
 
    * :ref:`intro_conventions`
    * :ref:`model_create_and_execute`
