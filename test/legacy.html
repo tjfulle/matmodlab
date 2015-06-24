@@ -6,26 +6,27 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>4. Regression Testing* &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>4.2. Regression Testing* &mdash; Material Model Laboratory 3.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
+        URL_ROOT:    '../',
         VERSION:     '3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Material Model Laboratory 3.0 documentation" href="index.html" />
-    <link rel="prev" title="3.4. Writing Messages to the Console and/or Log File" href="material/comm.html" />
+    <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
+    <link rel="up" title="4. Constitutive Model Testing" href="index.html" />
+    <link rel="prev" title="4.1. Constitutive Model Testing: Introduction" href="intro.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -39,7 +40,7 @@
           <div class="body">
             
   <div class="section" id="regression-testing">
-<span id="rtest"></span><h1>4. Regression Testing*<a class="headerlink" href="#regression-testing" title="Permalink to this headline">¶</a></h1>
+<span id="rtest"></span><h1>4.2. Regression Testing*<a class="headerlink" href="#regression-testing" title="Permalink to this headline">¶</a></h1>
 <p>Regression testing is crucial to the model development process. Regression
 tests in Matmodlab are special purpose problems that serve several purposes.
 Most notably, component tests for the core capabilities of Matmodlab and
@@ -50,7 +51,7 @@ specific paths with known, or expected outcomes. Each type of test is
 supported through the <tt class="docutils literal"><span class="pre">core.test.TestBase</span></tt>. New tests are created as
 subclasses of <tt class="docutils literal"><span class="pre">TestBase</span></tt>.</p>
 <div class="section" id="basic-examples">
-<span id="basic-test-ex"></span><h2>4.1. Basic Examples<a class="headerlink" href="#basic-examples" title="Permalink to this headline">¶</a></h2>
+<span id="basic-test-ex"></span><h2>Basic Examples<a class="headerlink" href="#basic-examples" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="standard-material-test">
 <h3>Standard Material Test<a class="headerlink" href="#standard-material-test" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
@@ -97,7 +98,7 @@ differences (if any) determined by <tt class="docutils literal"><span class="pre
 </div>
 </div>
 <div class="section" id="command-line-interface">
-<h2>4.2. Command-Line Interface<a class="headerlink" href="#command-line-interface" title="Permalink to this headline">¶</a></h2>
+<h2>Command-Line Interface<a class="headerlink" href="#command-line-interface" title="Permalink to this headline">¶</a></h2>
 <p>The <tt class="docutils literal"><span class="pre">test</span></tt> subcommand of <tt class="docutils literal"><span class="pre">mml</span></tt> gathers, runs, and analyzes tests. To run
 tests with Matmodlab, be sure that <tt class="docutils literal"><span class="pre">matmodlab/bin</span></tt> is on your path and
 execute:</p>
@@ -154,7 +155,7 @@ optional arguments:
 </div>
 </div>
 <div class="section" id="testbase-api">
-<h2>4.3. TestBase API<a class="headerlink" href="#testbase-api" title="Permalink to this headline">¶</a></h2>
+<h2>TestBase API<a class="headerlink" href="#testbase-api" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="TestBase">
 <em class="property">class </em><tt class="descname">TestBase</tt><a class="headerlink" href="#TestBase" title="Permalink to this definition">¶</a></dt>
@@ -208,7 +209,7 @@ one of <em>long</em>, <em>medium</em>, <em>fast</em>.</p>
 </div>
 </div>
 <div class="section" id="methods">
-<h2>4.4. Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
 <p>As described in <a class="reference internal" href="#basic-test-ex"><em>Basic Examples</em></a>, minimally, a test subclasses <tt class="docutils literal"><span class="pre">TestBase</span></tt> and defines a <tt class="docutils literal"><span class="pre">job</span></tt> and <tt class="docutils literal"><span class="pre">keywords</span></tt>, Matmodlab will set up the test, run, and perform post processing.  Optionally, a test may define the following methods.</p>
 <dl class="method">
 <dt id="TestBase.setup">
@@ -264,7 +265,7 @@ create the test directory.</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">Material Model Laboratory</a></h1>
+<h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
 
 
 
@@ -278,25 +279,29 @@ create the test directory.</p>
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="intro/index.html">1. Introduction and Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution/index.html">2. Job Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="material/index.html">3. Materials</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">4. Regression Testing*</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#basic-examples">4.1. Basic Examples</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#standard-material-test">Standard Material Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro/index.html">1. Introduction and Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../execution/index.html">2. Job Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Materials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">4. Constitutive Model Testing</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="intro.html">4.1. Constitutive Model Testing: Introduction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">4.2. Regression Testing*</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-examples">Basic Examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#standard-material-test">Standard Material Test</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#command-line-interface">4.2. Command-Line Interface</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mml-test-options">mml test Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#command-line-interface">Command-Line Interface</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#mml-test-options">mml test Options</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#testbase-api">4.3. TestBase API</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#required-attributes-of-testbase">Required Attributes of TestBase</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#definable-attributes-of-testbase">Definable Attributes of TestBase</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#useful-read-only-attributes-of-testbase">Useful Read-Only Attributes of TestBase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testbase-api">TestBase API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#required-attributes-of-testbase">Required Attributes of TestBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#definable-attributes-of-testbase">Definable Attributes of TestBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#useful-read-only-attributes-of-testbase">Useful Read-Only Attributes of TestBase</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#methods">4.4. Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -304,7 +309,7 @@ create the test directory.</p>
 
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
+    <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
@@ -327,7 +332,7 @@ create the test directory.</p>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |
-      <a href="_sources/test.txt"
+      <a href="../_sources/test/legacy.txt"
           rel="nofollow">Page source</a></li>
     </div>
 

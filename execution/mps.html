@@ -64,9 +64,9 @@ described.</p>
 <dt id="MaterialPointSimulator">
 <em class="property">class </em><tt class="descname">MaterialPointSimulator</tt><big>(</big><em>job</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>inital_temperature=DEFAULT_TEMP</em>, <em>output=DBX</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a MaterialPointSimulator object and set up the simulation.</p>
-<p>The <em>job</em> string is the simulation ID.  Generated files are named job.ext, where ext is the file extension.</p>
+<p>The <tt class="docutils literal"><span class="pre">job</span></tt> string is the simulation ID.  Generated files are named job.ext, where ext is the file extension.</p>
 <p>The following arguments are optional.</p>
-<p>The <em>verbosity</em> integer set the simulation verbosity. Generally, 0=quiet, 2=noisy.  The <em>d</em> string is the simulation directory, the default is the working directory.  <em>initial_temperature</em> is the initial temperature, the default is 298 K.  The <em>output</em> symbolic constant specifies the output type, it defaults to <tt class="docutils literal"><span class="pre">DBX</span></tt> if not specified.  See <a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab File Formats</em></a> for a description of supported output formats.</p>
+<p>The <tt class="docutils literal"><span class="pre">verbosity</span></tt> integer set the simulation verbosity. Generally, 0=quiet, 2=noisy.  The <tt class="docutils literal"><span class="pre">d</span></tt> string is the simulation directory, the default is the working directory.  <tt class="docutils literal"><span class="pre">initial_temperature</span></tt> is the initial temperature, the default is <tt class="docutils literal"><span class="pre">298</span></tt> K.  The <tt class="docutils literal"><span class="pre">output</span></tt> symbolic constant specifies the output type, it defaults to <tt class="docutils literal"><span class="pre">DBX</span></tt> if not specified.  See <a class="reference internal" href="../intro/output.html#mml-out-dbs"><em>Matmodlab File Formats</em></a> for a description of supported output formats.</p>
 <p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span> <span class="o">=</span> <span class="n">MaterialPointSimulator</span><span class="p">(</span><span class="s">&#39;model&#39;</span><span class="p">)</span>
 
@@ -82,11 +82,11 @@ described.</p>
 <dt id="MaterialPointSimulator.Material">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">Material</tt><big>(</big><em>model</em>, <em>parameters</em>, <em>name=None</em>, <em>switch=None</em>, <em>rebuild=False</em>, <em>param_names=None</em>, <em>source_files=None</em>, <em>depvar=None</em>, <em>fiber_dirs=None</em>, <em>user_ics=False</em>, <em>order=None</em>, <em>response=None</em>, <em>libname=None</em>, <em>param_names=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.Material" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create and assign a material model</p>
-<p>The required arguments are a model name and material parameters.  The model name must be a recognized material model (see <a class="reference internal" href="../material/index.html#mat-index"><em>Materials</em></a>).  <em>parameters</em> is either a dictionary of <tt class="docutils literal"><span class="pre">key:value</span></tt> (<tt class="docutils literal"><span class="pre">key</span></tt> being the parameter name, <tt class="docutils literal"><span class="pre">value</span></tt> its numeric value) or ndarray.</p>
+<p>The required arguments are a model name and material parameters.  The model name must be a recognized material model (see <a class="reference internal" href="../material/index.html#mat-index"><em>Materials</em></a>).  <tt class="docutils literal"><span class="pre">parameters</span></tt> is either a dictionary of <tt class="docutils literal"><span class="pre">key:value</span></tt> (<tt class="docutils literal"><span class="pre">key</span></tt> being the parameter name, <tt class="docutils literal"><span class="pre">value</span></tt> its numeric value) or ndarray.</p>
 <p>The following arguments are optional and applicable to all materials.</p>
-<p><em>rebuild</em> is a boolean that, when True, forces the material model to be rebuilt before the simulation.  <em>switch</em> is a tuple containing the material name and the name of another material to be switched in to its place.</p>
-<p>The following arguments are applicable to user materials</p>
-<p><em>source_files</em> is a list of model source files.  Each file must exist and be readable on the file system.  <em>depvar</em> is either the integer number of state dependent variables or a list of state dependent variable names. <em>fiber_dirs</em> is an array of fiber directions (applicable only to uanisohyper_inv models). <em>param_names</em> is a list of parameter names. If <em>user_ics</em> is True, Matmodlab calls the user supplied SDVINI subroutine to initialize state dependent variables - otherwise they are set to 0.  <em>order</em> is a list of strings specifying the component ordering of second order tensors.  <em>response</em> is one of &#8220;mechanical&#8221;, &#8220;hyperelastic&#8221;, or &#8220;anisotropic hyperelastic&#8221; and is used to determine which type of response the model will describe.</p>
+<p><tt class="docutils literal"><span class="pre">rebuild</span></tt> is a boolean that, when <tt class="docutils literal"><span class="pre">True</span></tt>, forces the material model to be rebuilt before the simulation.  <tt class="docutils literal"><span class="pre">switch</span></tt> is a tuple containing the material name and the name of another material to be switched in to its place.</p>
+<p>A user material is invoked by setting <tt class="docutils literal"><span class="pre">model</span></tt> to one of <tt class="docutils literal"><span class="pre">USER</span></tt>, <tt class="docutils literal"><span class="pre">UMAT</span></tt>, <tt class="docutils literal"><span class="pre">UHYPER</span></tt>, <tt class="docutils literal"><span class="pre">UANISOHYPER_INV</span></tt> (see <a class="reference internal" href="../material/user.html#user-mats"><em>User Defined Materials</em></a> for details).  The following arguments are applicable to user materials.</p>
+<p><tt class="docutils literal"><span class="pre">source_files</span></tt> is a list of model source files.  Each file must exist and be readable on the file system.  <tt class="docutils literal"><span class="pre">depvar</span></tt> is either the integer number of state dependent variables or a list of state dependent variable names. <tt class="docutils literal"><span class="pre">fiber_dirs</span></tt> is an array of fiber directions (applicable only to uanisohyper_inv models). <tt class="docutils literal"><span class="pre">param_names</span></tt> is a list of parameter names. If <tt class="docutils literal"><span class="pre">user_ics</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>, Matmodlab calls the user supplied <tt class="docutils literal"><span class="pre">SDVINI</span></tt> subroutine to initialize state dependent variables - otherwise they are set to <tt class="docutils literal"><span class="pre">0</span></tt>.  <tt class="docutils literal"><span class="pre">order</span></tt> is a list of strings specifying the component ordering of second order tensors.  <tt class="docutils literal"><span class="pre">response</span></tt> is one of <tt class="docutils literal"><span class="pre">MECHANICAL</span></tt>, <tt class="docutils literal"><span class="pre">HYPERELASTIC</span></tt>, or <tt class="docutils literal"><span class="pre">ANISOHYPER</span></tt> and is used to determine which type of response the model will describe.</p>
 <p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mps</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="s">&#39;elastic&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mf">123e9</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="mf">53e9</span><span class="p">})</span>
 
@@ -138,7 +138,7 @@ described.</p>
 <p>The arguments represented by the * are common to all other step methods and are described in <a class="reference internal" href="#common-args"><em>Common Step Arguments</em></a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last"><em>kappa</em> is set to 0 for stress steps</p>
+<p class="last"><tt class="docutils literal"><span class="pre">kappa</span></tt> is set to <tt class="docutils literal"><span class="pre">0</span></tt> for stress steps</p>
 </div>
 </dd></dl>
 
@@ -149,7 +149,7 @@ described.</p>
 <p>The arguments represented by the * are common to all other step methods and are described in <a class="reference internal" href="#common-args"><em>Common Step Arguments</em></a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last"><em>kappa</em> is set to 0 for stress rate steps</p>
+<p class="last"><tt class="docutils literal"><span class="pre">kappa</span></tt> is set to <tt class="docutils literal"><span class="pre">0</span></tt> for stress rate steps</p>
 </div>
 </dd></dl>
 
@@ -170,9 +170,9 @@ described.</p>
 <dt id="MaterialPointSimulator.DataSteps">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">DataSteps</tt><big>(</big><em>filename</em>, <em>tc=0</em>, <em>columns=None</em>, <em>descriptors=None</em>, <em>skiprows=0</em>, <em>comments='#'</em>, <em>sheet=None</em>, <em>*</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.DataSteps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate steps from a data file.</p>
-<p><em>filename</em> is the name of a file containing the data.  <em>tc</em> is the integer index of the column containing time.  <em>columns</em> are the indices of the columns containing data.  If not given, <em>columns</em> is taken to be the first six columns of the file, that are not <em>tc</em>.</p>
-<p><em>skiprows</em> is the integer number of rows to skip before reading data, <em>comments</em> is the comment delimiter.  <em>sheet</em> is the sheet from which to read data, if <em>filename</em> is an excel file.</p>
-<p>The i<sup>th</sup> <em>descriptor</em> designates the physical interpretation of the i<sup>th</sup>.  <em>descriptors</em> must be one of &#8216;E&#8217; (strain), &#8216;D&#8217; (strain rate), &#8216;S&#8217; (stress), &#8216;R&#8217; (stress rate), &#8216;P&#8217; (electric field), &#8216;T&#8217; (temperature).</p>
+<p><tt class="docutils literal"><span class="pre">filename</span></tt> is the name of a file containing the data.  <tt class="docutils literal"><span class="pre">tc</span></tt> is the integer index of the column containing time.  <tt class="docutils literal"><span class="pre">columns</span></tt> are the indices of the columns containing data.  If not given, <tt class="docutils literal"><span class="pre">columns</span></tt> is taken to be the first six columns of the file, that are not <tt class="docutils literal"><span class="pre">tc</span></tt>.</p>
+<p><tt class="docutils literal"><span class="pre">skiprows</span></tt> is the integer number of rows to skip before reading data, <tt class="docutils literal"><span class="pre">comments</span></tt> is the comment delimiter.  <tt class="docutils literal"><span class="pre">sheet</span></tt> is the sheet from which to read data, if <tt class="docutils literal"><span class="pre">filename</span></tt> is an excel file.</p>
+<p>The i<sup>th</sup> <tt class="docutils literal"><span class="pre">descriptor</span></tt> designates the physical interpretation of the i<sup>th</sup>.  <tt class="docutils literal"><span class="pre">descriptors</span></tt> must be one of <tt class="docutils literal"><span class="pre">'E'</span></tt> (strain), <tt class="docutils literal"><span class="pre">'D'</span></tt> (strain rate), <tt class="docutils literal"><span class="pre">'S'</span></tt> (stress), <tt class="docutils literal"><span class="pre">'R'</span></tt> (stress rate), <tt class="docutils literal"><span class="pre">'P'</span></tt> (electric field), <tt class="docutils literal"><span class="pre">'T'</span></tt> (temperature).</p>
 <p>The arguments represented by the * are common to all other step methods and are described in <a class="reference internal" href="#common-args"><em>Common Step Arguments</em></a>.</p>
 </dd></dl>
 
@@ -180,7 +180,7 @@ described.</p>
 <dt id="MaterialPointSimulator.MixedStep">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">MixedStep</tt><big>(</big><em>descriptors=None</em>, <em>*</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.MixedStep" title="Permalink to this definition">¶</a></dt>
 <dd><p>All step components are interpreted as components of stress and/or strain.</p>
-<p>The i<sup>th</sup> <em>descriptor</em> designates the physical interpretation of the i<sup>th</sup>.  <em>descriptors</em> must be one of &#8216;E&#8217; or &#8216;S&#8217; with &#8216;E&#8217; representing strain and &#8216;S&#8217; representing stress.</p>
+<p>The i<sup>th</sup> <tt class="docutils literal"><span class="pre">descriptor</span></tt> designates the physical interpretation of the i<sup>th</sup>.  <tt class="docutils literal"><span class="pre">descriptors</span></tt> must be one of <tt class="docutils literal"><span class="pre">'E'</span></tt> or <tt class="docutils literal"><span class="pre">'S'</span></tt> with <tt class="docutils literal"><span class="pre">'E'</span></tt> representing strain and <tt class="docutils literal"><span class="pre">'S'</span></tt> representing stress.</p>
 <p>The arguments represented by the * are common to all other step methods and are described in <a class="reference internal" href="#common-args"><em>Common Step Arguments</em></a>.</p>
 </dd></dl>
 
@@ -188,13 +188,13 @@ described.</p>
 <span id="common-args"></span><h3>Common Step Arguments<a class="headerlink" href="#common-step-arguments" title="Permalink to this headline">¶</a></h3>
 <p>The arguments common to all step functions are:</p>
 <blockquote>
-<div><p><em>components</em> are the components of the tensor defining the step.  Tensor ordering is described in <a class="reference internal" href="../intro/conventions.html#intro-conventions"><em>Conventions</em></a>.  For all tensors, the components are assumed to be the &#8220;tensor values&#8221;, as opposed to the &#8220;engineering values&#8221;.  For symmetric tensors, specifying only the three diagonal components implicitly assigns the off-diagonal components a value of zero.  For strain type tensors, if only a single component is given, it is assumed to be a volumetric deformation.  For stress type tensors, if only a single component is given, it is assumed to be a pressure.</p>
-<p><em>scale</em> is a multiplier applied to all components.  It can be a float or a numpy ndarray (so that a different scale could be applied to each component separately).</p>
-<p><em>frames</em> is the integer number of increments that the step is subdivided in to.</p>
-<p><em>kappa</em> the Seth-Hill strain parameter.  See <a class="reference internal" href="../intro/solution.html#strain-tensor"><em>The Strain Tensor</em></a> for details.</p>
-<p><em>temperature</em> is the temperature.  If not specified, the step is assigned the same temperature as the previous step.</p>
-<p><em>elec_field</em> is the electric field vector.  If none is given, it is set to (0, 0, 0).</p>
-<p><em>num_dumps</em> is the integer number of times to write the output database.  If not specified, all step increments are written.</p>
+<div><p><tt class="docutils literal"><span class="pre">components</span></tt> are the components of the tensor defining the step.  Tensor ordering is described in <a class="reference internal" href="../intro/conventions.html#intro-conventions"><em>Conventions</em></a>.  For all tensors, the components are assumed to be the &#8220;tensor values&#8221;, as opposed to the &#8220;engineering values&#8221;.  For symmetric tensors, specifying only the three diagonal components implicitly assigns the off-diagonal components a value of zero.  For strain type tensors, if only a single component is given, it is assumed to be a volumetric deformation.  For stress type tensors, if only a single component is given, it is assumed to be a pressure.</p>
+<p><tt class="docutils literal"><span class="pre">scale</span></tt> is a multiplier applied to all components.  It can be a float or a numpy ndarray (so that a different scale could be applied to each component separately).</p>
+<p><tt class="docutils literal"><span class="pre">frames</span></tt> is the integer number of increments that the step is subdivided in to.</p>
+<p><tt class="docutils literal"><span class="pre">kappa</span></tt> the Seth-Hill strain parameter.  See <a class="reference internal" href="../intro/solution.html#strain-tensor"><em>The Strain Tensor</em></a> for details.</p>
+<p><tt class="docutils literal"><span class="pre">temperature</span></tt> is the temperature.  If not specified, the step is assigned the same temperature as the previous step.</p>
+<p><tt class="docutils literal"><span class="pre">elec_field</span></tt> is the electric field vector.  If none is given, it is set to <tt class="docutils literal"><span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">0)</span></tt>.</p>
+<p><tt class="docutils literal"><span class="pre">num_dumps</span></tt> is the integer number of times to write the output database.  If not specified, all step increments are written.</p>
 </div></blockquote>
 </div>
 </div>
@@ -204,7 +204,7 @@ described.</p>
 <dt id="MaterialPointSimulator.run">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">run</tt><big>(</big><em>termination_time=None</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the simulation</p>
-<p><em>termination_time</em> is the termination time.  If not given, the final time from the last step is used.</p>
+<p><tt class="docutils literal"><span class="pre">termination_time</span></tt> is the termination time.  If not given, the final time from the last step is used.</p>
 </dd></dl>
 
 </div>
@@ -214,7 +214,7 @@ described.</p>
 <dt id="MaterialPointSimulator.get">
 <tt class="descclassname">MaterialPointSimulator.</tt><tt class="descname">get</tt><big>(</big><em>*variables</em>, <em>model=None</em>, <em>disp=0</em><big>)</big><a class="headerlink" href="#MaterialPointSimulator.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get variables from output database.</p>
-<p><em>variables</em> is a list of variables to extract.  If <em>disp</em> is 1, the variables are returned, in addition to a header describing the variables.</p>
+<p><tt class="docutils literal"><span class="pre">variables</span></tt> is a list of variables to extract.  If <tt class="docutils literal"><span class="pre">disp</span></tt> is <tt class="docutils literal"><span class="pre">1</span></tt>, the variables are returned, in addition to a header describing the variables.</p>
 </dd></dl>
 
 </div>
@@ -276,7 +276,7 @@ described.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Materials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../test.html">4. Regression Testing*</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test/index.html">4. Material Model Testing</a></li>
 </ul>
 
 

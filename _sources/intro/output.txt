@@ -18,22 +18,22 @@ Output File Formats
 dbx
 ---
 
-The default output database format.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer.  Output is written to dbx format if *output =* ``DBX``.
+The default output database format.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer.  Output is written to dbx format if ``output=DBX``.
 
 exo
 ---
 
-`ExodusII <http://sourceforge.net/projects/exodusii>`_ output database format.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer.  Output is written to exo format if *output =* ``EXO``.
+`ExodusII <http://sourceforge.net/projects/exodusii>`_ output database format.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer.  Output is written to exo format if ``output=EXO``.
 
 xls
 ---
 
-Microsoft Excel spreadsheet.  It is written by Matmodlab.Simulator if the `xlwt <http://pypi.python.org/pypi/xlwt>`_ module is installed and read by Matmodlab.Viewer if the `xlrd <http://pypi.python.org/pypi/xlrd>`_ module is installed. Output is written to xls format if *output =* ``XLS``.
+Microsoft Excel spreadsheet.  It is written by Matmodlab.Simulator if the `xlwt <http://pypi.python.org/pypi/xlwt>`_ module is installed and read by Matmodlab.Viewer if the `xlrd <http://pypi.python.org/pypi/xlrd>`_ module is installed. Output is written to xls format if ``output=XLS``.
 
 xlsx
 ----
 
-Microsoft Excel spreadsheet.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer if the `openpyxl <http://pypi.python.org/pypi/openpyxl>`_ module is installed. Output is written to xlsx format if *output =* ``XLSX``.
+Microsoft Excel spreadsheet.  It is written by Matmodlab.Simulator and read by Matmodlab.Viewer if the `openpyxl <http://pypi.python.org/pypi/openpyxl>`_ module is installed. Output is written to xlsx format if ``output=XLSX``.
 
 Other File Formats
 ==================

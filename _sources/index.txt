@@ -10,7 +10,7 @@ This guide is separated into four main parts:
 * Part 1: :ref:`intro_and_overview`
 * Part 2: :ref:`model_create_and_execute`
 * Part 3: :ref:`mat_index`
-* Part 4: :ref:`rtest`
+* Part 4: :ref:`test_index`
 
 About This Guide
 ================
@@ -24,6 +24,11 @@ attempt to describe them is made. Online tutorials for each language are
 readily available. Likewise, the target audience is assumed to have a basic
 knowledge of continuum mechanics and familiarity with other finite element
 codes. These concepts are also not described in detail.
+
+Conventions Used in the Guide
+-----------------------------
+
+* Python objects are typeset in ``fixed point font``.
 
 License
 =======
@@ -68,4 +73,4 @@ Indices and tables
    intro/index
    execution/index
    material/index
-   test
+   test/index

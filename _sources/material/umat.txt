@@ -5,7 +5,7 @@ User Model to Define a Material's Mechanical Response
 Overview
 ========
 
-*umat* is a material model that completely describes the material behavior.
+``UMAT`` is a material model that completely describes the material behavior.
 
 Interface
 =========
