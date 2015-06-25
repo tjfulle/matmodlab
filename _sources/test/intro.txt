@@ -2,7 +2,7 @@
 Material Model Testing: Introduction
 ####################################
 
-.. topic:: References
+.. topic:: See Also
 
    * `http://pytest.org/latest/ <Pytest>`_
 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>3.4. Writing Messages to the Console and/or Log File &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>Writing Messages to the Console and/or Log File &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -25,8 +25,8 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
-    <link rel="up" title="3. Materials" href="index.html" />
-    <link rel="next" title="4. Material Model Testing" href="../test/index.html" />
+    <link rel="up" title="3.3. User Defined Materials" href="user.html" />
+    <link rel="next" title="User Defined Initial Conditions" href="sdvini.html" />
     <link rel="prev" title="User Model to Define a Material’s Anisotropic Hyperelastic Response" href="uanisohyper_inv.html" />
    
   
@@ -41,7 +41,7 @@
           <div class="body">
             
   <div class="section" id="writing-messages-to-the-console-and-or-log-file">
-<span id="comm-w-matmodlab"></span><h1>3.4. Writing Messages to the Console and/or Log File<a class="headerlink" href="#writing-messages-to-the-console-and-or-log-file" title="Permalink to this headline">¶</a></h1>
+<span id="comm-w-matmodlab"></span><h1>Writing Messages to the Console and/or Log File<a class="headerlink" href="#writing-messages-to-the-console-and-or-log-file" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>Procedure <em>mml_comm</em> can be called from any user procedure to write messages
@@ -49,12 +49,16 @@ to the console and log file.</p>
 </div>
 <div class="section" id="interface">
 <h2>Interface<a class="headerlink" href="#interface" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre>mml_comm(lop, string, intv, realv, charv)
+<div class="highlight-python"><div class="highlight"><pre>subroutine mml_comm(lop, string, intv, realv, charv)
    integer, intent(in) :: ierr
    character(120), intent(in) :: msg
    integer, intent(in) :: intv(*)
    real(8), intent(in) :: realv(*)
    character(8), intent(in) :: charv(*)
+
+   ! coding
+
+end subroutine mml_comm
 </pre></div>
 </div>
 </div>
@@ -108,11 +112,16 @@ compiled and linked to user defined materials.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Materials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="overview.html">3.1. Materials: Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Material Library</a></li>
-<li class="toctree-l2"><a class="reference internal" href="user.html">3.3. User Defined Materials</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">3.4. Writing Messages to the Console and/or Log File</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#interface">Interface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="user.html">3.3. User Defined Materials</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="user.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user.html#material-model-api">Material Model API</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="user.html#auxiliary-subroutines">Auxiliary Subroutines</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="python.html">Python User Material Interface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="fortran.html">Fortran User Material Interface</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="">Writing Messages to the Console and/or Log File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sdvini.html">User Defined Initial Conditions</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

@@ -67,27 +67,26 @@ of uniaxial stress, using a mixed mode step. The example input below is found in
 </div>
 <div class="section" id="how-does-the-script-work">
 <h2>How Does the Script Work?<a class="headerlink" href="#how-does-the-script-work" title="Permalink to this headline">¶</a></h2>
-<p>This section describes each part of the example script</p>
+<p>This section describes each part of the example script.</p>
 <p><tt class="docutils literal"><span class="pre">from</span> <span class="pre">matmodlab</span> <span class="pre">import</span> <span class="pre">*</span></tt></p>
 <p>This statement makes the Matmodlab objects accessible to the script.</p>
 <p><tt class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_stress-1',</span> <span class="pre">output=EXO)</span></tt></p>
 <p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_stress-1</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.  The <tt class="docutils literal"><span class="pre">output</span></tt> format is <tt class="docutils literal"><span class="pre">EXO</span></tt> (ExodusII) instead of the default <tt class="docutils literal"><span class="pre">DBX</span></tt>.</p>
 <p><tt class="docutils literal"><span class="pre">mps.Material('elastic',</span> <span class="pre">{'K':</span> <span class="pre">1.35e11,</span> <span class="pre">'G':</span> <span class="pre">5.3e10})</span></tt></p>
 <p>This statement defines the material model to be the <tt class="docutils literal"><span class="pre">elastic</span></tt> material and
-defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to 1.35e11 and 5.3e10,
-respectively.</p>
+defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to <tt class="docutils literal"><span class="pre">1.35e11</span></tt> and
+<tt class="docutils literal"><span class="pre">5.3e10</span></tt>, respectively.</p>
 <p><tt class="docutils literal"><span class="pre">mps.MixedStep(components=(1,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">descriptors='ESS',</span> <span class="pre">frames=25,</span> <span class="pre">scale=.02)</span></tt></p>
-<p>This statement defines an analysis step during which the material will be
-exercised. The step is defined by a deformation path with tensor
-<tt class="docutils literal"><span class="pre">components</span></tt> <span class="math">\(\{1, 0, 0, 0, 0, 0\}\)</span>. The <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and <tt class="docutils literal"><span class="pre">zz</span></tt>
-components represent strain, stress, and stress, respectively, as designated
-by the <tt class="docutils literal"><span class="pre">descriptors</span></tt> <tt class="docutils literal"><span class="pre">&quot;ESS&quot;</span></tt>. The step is run in 25 <tt class="docutils literal"><span class="pre">frames</span></tt>
-(increments) and a <tt class="docutils literal"><span class="pre">scale</span></tt> of .02 is applied to each component. Note the
-following:</p>
+<p>This statement defines an analysis step through which the material will be
+exercised. The step is defined by the tensor <tt class="docutils literal"><span class="pre">components</span></tt> <span class="math">\((1, 0, 0)\)</span>,
+representing the <tt class="docutils literal"><span class="pre">xx</span></tt> component of the strain tensor and the <tt class="docutils literal"><span class="pre">yy</span></tt>, and
+<tt class="docutils literal"><span class="pre">zz</span></tt> components of the stress tensor (as designated by the <tt class="docutils literal"><span class="pre">descriptors</span></tt>
+<tt class="docutils literal"><span class="pre">&quot;ESS&quot;</span></tt>). The step is run in <tt class="docutils literal"><span class="pre">25</span></tt> <tt class="docutils literal"><span class="pre">frames</span></tt> (increments) and a <tt class="docutils literal"><span class="pre">scale</span></tt> of
+<tt class="docutils literal"><span class="pre">.02</span></tt> is applied to each component. Note the following:</p>
 <ul class="simple">
 <li>The first 3 values of <tt class="docutils literal"><span class="pre">components</span></tt> represent the <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and
 <tt class="docutils literal"><span class="pre">zz</span></tt> components of the tensor describing the deformation path. The <tt class="docutils literal"><span class="pre">xy</span></tt>,
-<tt class="docutils literal"><span class="pre">yz</span></tt>, and <tt class="docutils literal"><span class="pre">xz</span></tt> components are implicitly 0.</li>
+<tt class="docutils literal"><span class="pre">yz</span></tt>, and <tt class="docutils literal"><span class="pre">xz</span></tt> components are implicitly <tt class="docutils literal"><span class="pre">0</span></tt>.</li>
 <li>The i<sup>th</sup> <tt class="docutils literal"><span class="pre">descriptor</span></tt> designates the physical
 interpretation of the i<sup>th</sup> <tt class="docutils literal"><span class="pre">component</span></tt> with <tt class="docutils literal"><span class="pre">E</span></tt>
 representing strain and <tt class="docutils literal"><span class="pre">S</span></tt> representing stress.</li>

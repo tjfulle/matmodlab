@@ -26,7 +26,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="Fortran User Material Interface" href="fortran.html" />
-    <link rel="next" title="3.4. Writing Messages to the Console and/or Log File" href="comm.html" />
+    <link rel="next" title="Writing Messages to the Console and/or Log File" href="comm.html" />
     <link rel="prev" title="User Model to Define a Material’s Hyperelastic Response" href="uhyper.html" />
    
   
@@ -48,22 +48,22 @@
 </div>
 <div class="section" id="interface">
 <h2>Interface<a class="headerlink" href="#interface" title="Permalink to this headline">¶</a></h2>
-<div class="code fortran highlight-python"><div class="highlight"><pre> subroutine uanisohyper_inv(ainv, u, zeta, nfibers, ninv, &amp;
-      ui1, ui2, ui3, temp, noel, cmname, incmpflag, ihybflag, &amp;
-      nstatev, statev, nfieldv, fieldv, fieldvinc, &amp;
-      nprops, props)
-   implicit none
-   integer, parameter :: dp=selected_real_kind(14)
-   real(kind=dp), parameter :: zero=0._dp, one=1._dp, two=2._dp, three=3._dp
-   character*8, intent(in) :: cmname
-   integer, intent(in) :: nprops, noel, nstatev, incmpflag, nfieldv
-   real(kind=dp), intent(in) :: ainv(ninv), props(nprops), temp
-   real(kind=dp), intent(inout) ui1(ninv)
-   real(kind=dp), intent(inout) :: ui2(ninv*(ninv+1)/2), ui3(ninv*(ninv+1)/2),
-   real(kind=dp), intent(inout) :: statev(nstatev)
-   real(kind=dp), intent(inout) :: fieldv(nfieldv), fieldvinc(nfieldv)
+<div class="code fortran highlight-python"><div class="highlight"><pre>subroutine uanisohyper_inv(ainv, u, zeta, nfibers, ninv, &amp;
+     ui1, ui2, ui3, temp, noel, cmname, incmpflag, ihybflag, &amp;
+     nstatev, statev, nfieldv, fieldv, fieldvinc, &amp;
+     nprops, props)
+  implicit none
+  integer, parameter :: dp=selected_real_kind(14)
+  real(kind=dp), parameter :: zero=0._dp, one=1._dp, two=2._dp, three=3._dp
+  character*8, intent(in) :: cmname
+  integer, intent(in) :: nprops, noel, nstatev, incmpflag, nfieldv
+  real(kind=dp), intent(in) :: ainv(ninv), props(nprops), temp
+  real(kind=dp), intent(inout) ui1(ninv)
+  real(kind=dp), intent(inout) :: ui2(ninv*(ninv+1)/2), ui3(ninv*(ninv+1)/2),
+  real(kind=dp), intent(inout) :: statev(nstatev)
+  real(kind=dp), intent(inout) :: fieldv(nfieldv), fieldvinc(nfieldv)
 
-   ! User coding
+  ! User coding
 
 end subroutine uanisohyper_inv
 </pre></div>
@@ -98,14 +98,16 @@ end subroutine uanisohyper_inv
 <li class="toctree-l2"><a class="reference internal" href="builtin.html">3.2. Material Library</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="user.html">3.3. User Defined Materials</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="user.html#overview">Overview</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="user.html#material-model-api">Material Model API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="user.html#material-model-api">Material Model API</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="user.html#auxiliary-subroutines">Auxiliary Subroutines</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="python.html">Python User Material Interface</a></li>
 <li class="toctree-l4 current"><a class="reference internal" href="fortran.html">Fortran User Material Interface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="comm.html">Writing Messages to the Console and/or Log File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="sdvini.html">User Defined Initial Conditions</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="comm.html">3.4. Writing Messages to the Console and/or Log File</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../test/index.html">4. Material Model Testing</a></li>

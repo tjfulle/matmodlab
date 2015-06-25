@@ -2,7 +2,7 @@
 Verification
 ############
 
-.. topic:: References
+.. topic:: See Also
 
    .
 

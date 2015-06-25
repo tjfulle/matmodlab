@@ -64,25 +64,24 @@ of uniaxial strain. The example input below is found in <tt class="docutils lite
 </div>
 <div class="section" id="how-does-the-script-work">
 <h2>How Does the Script Work?<a class="headerlink" href="#how-does-the-script-work" title="Permalink to this headline">¶</a></h2>
-<p>This section describes each part of the example script</p>
+<p>This section describes each part of the example script.</p>
 <p><tt class="docutils literal"><span class="pre">from</span> <span class="pre">matmodlab</span> <span class="pre">import</span> <span class="pre">*</span></tt></p>
 <p>This statement makes the Matmodlab objects accessible to the script.</p>
 <p><tt class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_strain')</span></tt></p>
 <p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_strain</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.</p>
 <p><tt class="docutils literal"><span class="pre">mps.Material('elastic',</span> <span class="pre">{'K':</span> <span class="pre">1.35e11,</span> <span class="pre">'G':</span> <span class="pre">5.3e10})</span></tt></p>
 <p>This statement defines the material model to be the <tt class="docutils literal"><span class="pre">elastic</span></tt> material and
-defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to 1.35e11 and 5.3e10,
-respectively.</p>
+defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to <tt class="docutils literal"><span class="pre">1.35e11</span></tt> and
+<tt class="docutils literal"><span class="pre">5.3e10</span></tt>, respectively.</p>
 <p><tt class="docutils literal"><span class="pre">mps.StrainStep(components=(1,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">scale=.02)</span></tt></p>
-<p>This statement defines an analysis step during which the material will be
-exercised. The step is defined by a deformation path with tensor
-<tt class="docutils literal"><span class="pre">components</span></tt> <span class="math">\(\{1, 0, 0, 0, 0, 0\}\)</span>. The <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and <tt class="docutils literal"><span class="pre">zz</span></tt>
-components represent strain. The <tt class="docutils literal"><span class="pre">scale</span></tt> of .02 is applied to each
-component.</p>
+<p>This statement defines an analysis step through which the material will be
+exercised. The step is defined by the tensor <tt class="docutils literal"><span class="pre">components</span></tt> <span class="math">\((1, 0, 0)\)</span>,
+representing the <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and <tt class="docutils literal"><span class="pre">zz</span></tt> components of the strain tensor. A
+<tt class="docutils literal"><span class="pre">scale</span></tt> factor of <tt class="docutils literal"><span class="pre">.02</span></tt> is applied to each component.</p>
 <ul class="simple">
 <li>The first 3 values of <tt class="docutils literal"><span class="pre">components</span></tt> represent the <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and
 <tt class="docutils literal"><span class="pre">zz</span></tt> components of the tensor describing the deformation path. The <tt class="docutils literal"><span class="pre">xy</span></tt>,
-<tt class="docutils literal"><span class="pre">yz</span></tt>, and <tt class="docutils literal"><span class="pre">xz</span></tt> components are implicitly 0.</li>
+<tt class="docutils literal"><span class="pre">yz</span></tt>, and <tt class="docutils literal"><span class="pre">xz</span></tt> components are implicitly <tt class="docutils literal"><span class="pre">0</span></tt>.</li>
 </ul>
 <p><tt class="docutils literal"><span class="pre">mps.run()</span></tt></p>
 <p>This statement runs the material through the defined deformation path.</p>

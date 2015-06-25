@@ -2,7 +2,7 @@
 Validation
 ##########
 
-.. topic:: References
+.. topic:: See Also
 
    .
 

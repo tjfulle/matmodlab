@@ -71,14 +71,13 @@ of uniaxial stress. The example input below is found in <tt class="docutils lite
 <p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_stress</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.</p>
 <p><tt class="docutils literal"><span class="pre">mps.Material('elastic',</span> <span class="pre">{'K':</span> <span class="pre">1.35e11,</span> <span class="pre">'G':</span> <span class="pre">5.3e10})</span></tt></p>
 <p>This statement defines the material model to be the <tt class="docutils literal"><span class="pre">elastic</span></tt> material and
-defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to 1.35e11 and 5.3e10,
-respectively.</p>
+defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to <tt class="docutils literal"><span class="pre">1.35e11</span></tt> and
+<tt class="docutils literal"><span class="pre">5.3e10</span></tt>, respectively.</p>
 <p><tt class="docutils literal"><span class="pre">mps.StressStep(components=(1,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">frames=25,</span> <span class="pre">scale=1e6)</span></tt></p>
-<p>This statement defines an analysis step during which the material will be
-exercised. The step is defined by a deformation path with tensor
-<tt class="docutils literal"><span class="pre">components</span></tt> <span class="math">\(\{1, 0, 0, 0, 0, 0\}\)</span>. The <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and <tt class="docutils literal"><span class="pre">zz</span></tt>
-components represent stress. The step is run in 25 <tt class="docutils literal"><span class="pre">frames</span></tt> (increments) and
-a <tt class="docutils literal"><span class="pre">scale</span></tt> of 1e6 is applied to each component. Note the following:</p>
+<p>This statement defines an analysis step through which the material will be
+exercised. The step is defined by the tensor <tt class="docutils literal"><span class="pre">components</span></tt> <span class="math">\((1, 0, 0)\)</span>,
+representing the <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and <tt class="docutils literal"><span class="pre">zz</span></tt> components of the stress tensor. A
+<tt class="docutils literal"><span class="pre">scale</span></tt> factor of <tt class="docutils literal"><span class="pre">1e6</span></tt> is applied to each component.</p>
 <ul class="simple">
 <li>The first 3 values of <tt class="docutils literal"><span class="pre">components</span></tt> represent the <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and
 <tt class="docutils literal"><span class="pre">zz</span></tt> components of the tensor describing the deformation path. The <tt class="docutils literal"><span class="pre">xy</span></tt>,

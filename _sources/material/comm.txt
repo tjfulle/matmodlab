@@ -15,12 +15,16 @@ Interface
 
 ::
 
-   mml_comm(lop, string, intv, realv, charv)
+   subroutine mml_comm(lop, string, intv, realv, charv)
       integer, intent(in) :: ierr
       character(120), intent(in) :: msg
       integer, intent(in) :: intv(*)
       real(8), intent(in) :: realv(*)
       character(8), intent(in) :: charv(*)
+
+      ! coding
+
+   end subroutine mml_comm
 
 Parameters
 ==========

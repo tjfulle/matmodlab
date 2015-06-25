@@ -40,16 +40,15 @@ This statement creates a new material point simlator object named ``uniaxial_str
 ``mps.Material('elastic', {'K': 1.35e11, 'G': 5.3e10})``
 
 This statement defines the material model to be the ``elastic`` material and
-defines the bulk modulus ``K`` and shear modulus ``G`` to 1.35e11 and 5.3e10,
-respectively.
+defines the bulk modulus ``K`` and shear modulus ``G`` to ``1.35e11`` and
+``5.3e10``, respectively.
 
 ``mps.StressStep(components=(1, 0, 0), frames=25, scale=1e6)``
 
-This statement defines an analysis step during which the material will be
-exercised. The step is defined by a deformation path with tensor
-``components`` :math:`\{1, 0, 0, 0, 0, 0\}`. The ``xx``, ``yy``, and ``zz``
-components represent stress. The step is run in 25 ``frames`` (increments) and
-a ``scale`` of 1e6 is applied to each component. Note the following:
+This statement defines an analysis step through which the material will be
+exercised. The step is defined by the tensor ``components`` :math:`(1, 0, 0)`,
+representing the ``xx``, ``yy``, and ``zz`` components of the stress tensor. A
+``scale`` factor of ``1e6`` is applied to each component.
 
 * The first 3 values of ``components`` represent the ``xx``, ``yy``, and
   ``zz`` components of the tensor describing the deformation path. The ``xy``,

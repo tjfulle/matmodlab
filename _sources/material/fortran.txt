@@ -10,6 +10,7 @@ Fortran User Material Interface
    * :ref:`defining_a_material`
    * :ref:`intro_conventions`
    * :ref:`comm_w_matmodlab`
+   * :ref:`sdvini`
 
 Overview
 ========

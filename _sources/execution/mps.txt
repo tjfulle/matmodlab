@@ -43,7 +43,7 @@ The MaterialPointSimulator Constructor
 Defining a Material Model
 =========================
 
-.. method:: MaterialPointSimulator.Material(model, parameters, name=None, switch=None, rebuild=False, param_names=None, source_files=None, depvar=None, fiber_dirs=None, user_ics=False, order=None, response=None, libname=None, param_names=None)
+.. method:: MaterialPointSimulator.Material(model, parameters, name=None, switch=None, rebuild=False, source_files=None, depvar=None, fiber_dirs=None, user_ics=False, order=None, response=None, libname=None, param_names=None)
 
    Create and assign a material model
 
@@ -53,7 +53,9 @@ Defining a Material Model
 
    ``rebuild`` is a boolean that, when ``True``, forces the material model to be rebuilt before the simulation.  ``switch`` is a tuple containing the material name and the name of another material to be switched in to its place.
 
-   A user material is invoked by setting ``model`` to one of ``USER``, ``UMAT``, ``UHYPER``, ``UANISOHYPER_INV`` (see :ref:`user_mats` for details).  The following arguments are applicable to user materials.
+   **The following arguments are applicable to user materials:**
+
+   A user material is invoked by setting ``model`` to one of ``USER``, ``UMAT``, ``UHYPER``, ``UANISOHYPER_INV`` (see :ref:`user_mats` for details).
 
    ``source_files`` is a list of model source files.  Each file must exist and be readable on the file system.  ``depvar`` is either the integer number of state dependent variables or a list of state dependent variable names. ``fiber_dirs`` is an array of fiber directions (applicable only to uanisohyper_inv models). ``param_names`` is a list of parameter names. If ``user_ics`` is ``True``, Matmodlab calls the user supplied ``SDVINI`` subroutine to initialize state dependent variables - otherwise they are set to ``0``.  ``order`` is a list of strings specifying the component ordering of second order tensors.  ``response`` is one of ``MECHANICAL``, ``HYPERELASTIC``, or ``ANISOHYPER`` and is used to determine which type of response the model will describe.
 
@@ -74,7 +76,7 @@ Optional Material Addons
 Thermal Expansion
 .................
 
-An :ref:`expan_model` object, enabling the computation of thermal strains associated with thermal expansion.
+A :ref:`expan_model` object, enabling the computation of thermal strains associated with thermal expansion.
 
 .. _visco_model:
 
