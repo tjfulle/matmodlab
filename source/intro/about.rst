@@ -47,8 +47,3 @@ fact, most modern material models are still written in Fortran to this day.
 
 Python's object oriented nature allows for rapid installation of new material
 models.
-
-Historical Background
-=====================
-
-Matmodlab is an outgrowth of the *MED* material driver developed by Dr. Rebecca Brannon `Rebecca Brannon's <http://www.mech.utah.edu/~brannon/>`_ and the *MMD* driver developed by Tom Pucick at Sandia National Labs.

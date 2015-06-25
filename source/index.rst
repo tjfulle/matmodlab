@@ -52,6 +52,13 @@ Matmodlab is maintained with git. The source code can be obtained from `<https:/
 
 See :ref:`intro_install` for more installation details.
 
+Acknowledgments
+===============
+
+Matmodlab is an outgrowth of the *MED* material driver developed by Dr. Rebecca Brannon `Rebecca Brannon's <http://www.mech.utah.edu/~brannon/>`_ and the *MMD* driver developed by Tom Pucik at Sandia National Labs.
+
+The syntax and documentation have been greatly influenced by the authors' exposure and use of research codes at Sandia National Labs and other commercial finite element codes, notably `Abaqus <http://www.3ds.com/products-services/simulia/products/abaqus/latest-release>`_.
+
 Obtaining Additional Help
 =========================
 
