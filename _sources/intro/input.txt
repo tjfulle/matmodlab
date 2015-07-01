@@ -9,7 +9,7 @@ Input Syntax Guidelines
 Overview
 ========
 
-This section describes the conventions used in the Matmodlab API.
+This section describes some conventions used in the Matmodlab API and adopted in user input scripts.
 
 matmodlab Namespace
 ===================

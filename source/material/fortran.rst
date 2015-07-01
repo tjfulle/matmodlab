@@ -62,7 +62,7 @@ Example
 
    mps = MaterialPointSimulator('user_material')
    parameters = np.array([135e9, 53e9, 200e6])
-   mps.Material('user', parameters)
+   mps.Material(USER, parameters)
 
 
 .. topic:: Abaqus Users:

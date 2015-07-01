@@ -10,7 +10,6 @@ Matmodlab's code base is largely written in Python and requires no
 additional compiling. However, several [optional] linear algebra packages and
 material models are written in Fortran and require a seperate compile step.
 
-
 System Requirements
 ===================
 
@@ -45,8 +44,7 @@ packages are installed.
 #) `xlrd <http://pypi.python.org/pypi/xlrd>`_ for visualization of .xls data (A)
 
 The required software may be obtained in several ways, though most development
-has been made using the Anaconda `<http://www.continuum.io>`_ and Enthought
-Canopy `<http://www.enthought.com>`_ Python Distributions (E=available in
+has been made using the `Anaconda <http://www.continuum.io>`_ and `Enthought Canopy <http://www.enthought.com>`_ Python Distributions (E=available in
 base Enthought Canopy distribution, A=available in base Anaconda distribution).
 It is also possible to get all of the required packages through a linux
 distribution's package manager or, for all installations of python, by running

@@ -60,7 +60,7 @@ Input Only Variables
 
 *stran(ntens)*
 
-   The strain at the beginning of the increment.  The definition of strain depends on the value of the user input kappa. If thermal expansion is included, the strains passed are the mechanical strains only.
+   The strain at the end of the increment.  The definition of strain depends on the value of the user input kappa. If thermal expansion is included, the strains passed are the mechanical strains only.
 
 *dstran(ntens)*
 
