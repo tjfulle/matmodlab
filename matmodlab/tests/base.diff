@@ -1,0 +1,14 @@
+<ExDiff>
+  <Variable name="S.XX"/>
+  <Variable name="S.YY"/>
+  <Variable name="S.ZZ"/>
+  <Variable name="S.XY"/>
+  <Variable name="S.YZ"/>
+  <Variable name="S.XZ"/>
+  <Variable name="E.XX"/>
+  <Variable name="E.YY"/>
+  <Variable name="E.ZZ"/>
+  <Variable name="E.XY"/>
+  <Variable name="E.YZ"/>
+  <Variable name="E.XZ"/>
+</ExDiff>

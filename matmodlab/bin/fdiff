@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+import os
+import sys
+d = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.dirname(d))
+from matmodlab import *
+from matmodlab.utils.fileio import filediff_entry as main
+sys.exit(main(argv=sys.argv[1:]))
