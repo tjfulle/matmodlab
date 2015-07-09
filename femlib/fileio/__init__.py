@@ -35,8 +35,8 @@ def loaddb_single_element(filename, variables=None, disp=1,
     root, ext = splitext(filename)
     if ext == '.base_exo':
         # punt and use old reader
-        return read_exodus_legacy(filename, variables=variables,
-                                  disp=disp, blk_num=blk_num, elem_num=elem_num)
+        return read_exodus_legacy(filename, variables=variables, disp=disp,
+                                  blk_num=blk_num, elem_num=elem_num, upcase=upcase)
 
     elif ext in ('.dbx', '.base_dbx'):
         fh = dbx.File(filename, mode='r')
@@ -79,7 +79,8 @@ def loaddb_single_element(filename, variables=None, disp=1,
 
     return data
 
-def read_exodus_legacy(filename, variables=None, disp=1, blk_num=1, elem_num=1):
+def read_exodus_legacy(filename, variables=None, disp=1, blk_num=1, elem_num=1,
+                       upcase=1):
     '''Read the specified variables from the exodus file in filepath
 
     '''
@@ -100,8 +101,8 @@ def read_exodus_legacy(filename, variables=None, disp=1, blk_num=1, elem_num=1):
     # retrieve the data from the database
     head = ['TIME']
     if num_glo_var:
-        head.extend([H.upper() for H in name_glo_var])
-    head.extend([H.upper() for H in name_elem_var])
+        head.extend([_upcase(H, upcase) for H in name_glo_var])
+    head.extend([_upcase(H, upcase) for H in name_elem_var])
 
     data = []
     times = fh.variables['time_whole'].data.flatten()
@@ -126,7 +127,7 @@ def read_exodus_legacy(filename, variables=None, disp=1, blk_num=1, elem_num=1):
     data = np.array(data)
 
     if variables is not None:
-        variables = [x.upper() for x in variables]
+        variables = [_upcase(x, upcase) for x in variables]
         idx = []
         for name in variables:
             try:
@@ -211,7 +212,7 @@ def loaddb_single_element_x(filename, variables=None, disp=1,
     data = np.column_stack((np.asarray(times), np.array(fields.values()).T))
 
     if variables is not None:
-        variables = [x.upper() for x in variables]
+        variables = [_upcase(x, upcase) for x in variables]
         idx = []
         for name in variables:
             try:
