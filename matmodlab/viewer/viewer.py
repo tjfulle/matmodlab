@@ -458,7 +458,7 @@ class SingleSelect(HasTraits):
         self.plot.change_axis(self.choices.index(self.selected))
 
 class MultiSelectAdapter(TabularAdapter):
-    columns = [('Plotable Variables', 'myvalue')]
+    columns = [('Output Fields', 'myvalue')]
     myvalue_text = Property
     def _get_myvalue_text(self):
         return self.item
@@ -484,6 +484,10 @@ class MultiSelect(HasPrivateTraits):
         for i in object.selected:
             ind.append(object.choices.index(i))
         self.plot.change_plot(ind)
+
+    @on_trait_change('plot.choices')
+    def _choices_modified(self, object, name, new):
+        self.choices = [x for x in self.plot.choices]
 
 
 def f_index(a, b):
