@@ -357,10 +357,11 @@ Material: {5}
         points = self.get(xvar, yvar, model=model)
         plt.xlabel(xvar)
         plt.ylabel(yvar)
-        plt.plot(points[:,0], points[:,1], label=model, **kwargs)
+        kwargs['label'] = kwargs.get('label', model)
+        a = plt.plot(points[:,0], points[:,1], **kwargs)
         if legend:
             plt.legend(loc='best')
-        plt.show()
+        return a
 
     def visualize_results(self, model=None, overlay=None):
         from matmodlab.viewer.main import launch

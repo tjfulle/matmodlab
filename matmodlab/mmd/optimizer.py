@@ -22,10 +22,11 @@ TOL = 1.E-06
 class Optimizer(object):
     def __init__(self, job, func, xinit, method=SIMPLEX, verbosity=None, d=None,
                  maxiter=MAXITER, tolerance=TOL, descriptors=None,
-                 funcargs=[], Ns=10):
+                 funcargs=[], Ns=10, keep_intermediate=True):
         environ.raise_e = True
         self.job = job
         self.func = func
+        self.ran = False
 
         d = os.path.realpath(d or os.getcwd())
         self.directory = d
@@ -206,6 +207,7 @@ Response descriptors:
         """ finish up the optimization job """
         logger = logging.getLogger("optimizer")
         self.tabular.close()
+        self.ran = True
         opt_pars = "\n".join("  {0}={1:12.6E}".format(name, self.xopt[i])
                              for (i, name) in enumerate(self.names))
         opt_time = self.timing["end"] - self.timing["start"]
@@ -223,6 +225,17 @@ Optimized parameters
         with open(os.path.join(self.rootd, "params.opt"), "w") as fobj:
             for (i, name) in enumerate(self.names):
                 fobj.write("{0} = {1: .18f}\n".format(name, self.xopt[i]))
+
+    def todict(self):
+        if not self.ran:
+            return None
+        return dict(zip(self.names, self.xopt))
+
+    @property
+    def duration(self):
+        if not self.ran:
+            return None
+        return self.timing["end"] - self.timing["start"]
 
 def catd(d, i):
     N = 3
