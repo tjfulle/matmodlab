@@ -25,8 +25,8 @@ class OutputDB(HasTraits):
         if name is None:
             name = basename(filename)
         filepath = realpath(filename)
-        names, data = loadfile(filepath)
-        vmap = dict([(s.upper(), i) for (i, s) in enumerate(names)])
+        names, data = loadfile(filepath, upcase=0)
+        vmap = dict([(s, i) for (i, s) in enumerate(names)])
         kwds = {'name': name, "filepath": filepath,
                 'info': info or '', 'names': names, 'data': data,
                 'vmap': vmap, 'id': hashf(filename), 'hidden': False}
@@ -34,7 +34,7 @@ class OutputDB(HasTraits):
         super(OutputDB, self).__init__(**kwds)
 
     def get(self, name, time=None):
-        j = self.vmap.get(name.upper())
+        j = self.vmap.get(name)
         if j is None:
             return
         data = self.data[:, j]
@@ -44,9 +44,9 @@ class OutputDB(HasTraits):
         return data[i]
 
     def legend(self, name):
-        if name.upper() not in self.vmap:
+        if name not in self.vmap:
             return
-        legend = name.upper()
+        legend = name
         if self.info:
             legend += " ({0})".format(self.info)
         return legend
@@ -56,7 +56,7 @@ class OutputDB(HasTraits):
         return sorted(self.vmap.keys(), key=lambda k: self.vmap[k])
 
     def reload_data(self):
-        _, data = loadfile(self.filepath)
+        _, data = loadfile(self.filepath, upcase=0)
         self.data[:] = data
         return
 

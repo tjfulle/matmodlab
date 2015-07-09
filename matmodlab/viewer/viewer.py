@@ -24,7 +24,7 @@ icns = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icon')
 def Ones(n):
     return [1. for _ in range(n)]
 
-__all__ = ["MMLPostViewer", "FieldVariables"]
+__all__ = ["MMLPostViewer", "SingleSelect", 'MultiSelect']
 
 LS = ['solid', 'dot dash', 'dash', 'long dash'] # , 'dot']
 LDICT = {"sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan,
@@ -414,7 +414,7 @@ class MMLPostViewer(HasTraits):
     def nfiles(self):
         return len(self.ipane.outputdbs)
 
-class FVHandler(Handler):
+class SingleSelectHandler(Handler):
     def closed(self, info, is_ok):
         if hasattr(info.object, 'caller'):
             info.object.caller.can_fire = True
@@ -425,20 +425,12 @@ class FVHandler(Handler):
             return
         selected = info.object.selected
         is_string = 1
-        try: selected + ''
-        except TypeError: is_string = 0
-        if is_string:
-            i = info.object.choices.index(selected)
-            info.object.plot.change_axis(i)
-        else:
-            i = [info.object.choices.index(s) for s in selected]
-            info.object.plot.change_plot(i)
-            info.object.caller.multi_select = selected
+        i = info.object.choices.index(selected)
+        info.object.plot.change_axis(i)
 
-class FieldVariables(HasTraits):
+class SingleSelect(HasTraits):
     choices = List(Str)
     selected = Str
-    multi_select = List(Str)
     plot = Instance(MMLPostViewer)
     can_fire = Bool(True)
     traits_view = View(
@@ -446,15 +438,7 @@ class FieldVariables(HasTraits):
         buttons   = ['OK'],
         style     = 'simple',
         resizable = True,
-        handler   = FVHandler())
-
-    def update_multi(self):
-        self.can_fire = False
-        window = FVWindow(caller=self)
-        window.configure_traits(view='edit_view', handler=FVHandler())
-
-    def update_single(self):
-        self.edit_traits(view='traits_view')
+        handler   = SingleSelectHandler())
 
     @on_trait_change('plot.choices')
     def _on_plot_choices_change(self):
@@ -462,36 +446,45 @@ class FieldVariables(HasTraits):
         self.choices = self.plot.choices
         if not self.choices:
             return
-        single, multi = None, None
+        single = None
         good = lambda s: 'time' not in s and 'step' not in s
         for (i, label) in enumerate(self.choices):
             l = label.lower()
             if single is None and l == 'time':
                 single = label
-            if multi is None and good(l):
-                multi = [label]
         self.selected = single or self.choices[0]
-        self.multi_select = multi or [self.choices[0]]
 
         # update the plot
         self.plot.change_axis(self.choices.index(self.selected))
-        self.plot.change_plot([self.choices.index(s) for s in self.multi_select])
 
-class FVWindow(HasTraits):
+class MultiSelectAdapter(TabularAdapter):
+    columns = [('Plotable Variables', 'myvalue')]
+    myvalue_text = Property
+    def _get_myvalue_text(self):
+        return self.item
+
+class MultiSelect(HasPrivateTraits):
     choices = List(Str)
     selected = List(Str)
     plot = Instance(MMLPostViewer)
-    caller = Instance(FieldVariables)
-    def __init__(self, caller):
-        kwds = {'caller': caller, 'choices': caller.choices, 'plot': caller.plot,
-                'selected': caller.multi_select}
-        super(FVWindow, self).__init__(**kwds)
-    edit_view = View(
-        Item('choices', editor=ListStrEditor(selected='selected',
-                                             multi_select=True,
-                                             horizontal_lines=False),
-             show_label=False), resizable=True, title='Field Variables',
-        width=300, height=500, buttons=['OK', 'Cancel'])
+    view = View(HGroup(
+            UItem('choices',
+                         editor=TabularEditor(
+                             show_titles=True,
+                             selected='selected',
+                             editable=False,
+                             multi_select=True,
+                             horizontal_lines=True,
+                             adapter=MultiSelectAdapter()))),
+        width=224, height=568, resizable=True)
+
+    @on_trait_change('selected')
+    def _selected_modified(self, object, name, new):
+        ind = []
+        for i in object.selected:
+            ind.append(object.choices.index(i))
+        self.plot.change_plot(ind)
+
 
 def f_index(a, b):
     a = np.asarray(a)

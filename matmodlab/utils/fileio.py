@@ -11,11 +11,12 @@ from numerix import *
 from femlib.fileio import loaddb_single_element
 
 def loadfile(filename, disp=1, skiprows=0, sheet="MML", columns=None,
-             comments='#', variables=None, at_step=0):
+             comments='#', variables=None, at_step=0, upcase=1):
     db = ('.exo', '.base_exo', '.dbx', '.base_dbx')
     if isinstance(filename, basestring) and filename.endswith(db):
         return loaddb_single_element(filename, variables=variables, disp=disp,
-                                     blk_num=1, elem_num=1, at_step=at_step)
+                                     blk_num=1, elem_num=1, at_step=at_step,
+                                     upcase=upcase)
     else:
         if columns is not None and variables is not None:
             raise ValueError('columns and variables arguments are exclusive')

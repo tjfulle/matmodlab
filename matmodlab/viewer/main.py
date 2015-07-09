@@ -24,7 +24,7 @@ from enable.api import ComponentEditor
 from pyface.api import FileDialog, OK as pyOK
 from chaco.example_support import COLOR_PALETTE
 from traitsui.tabular_adapter import TabularAdapter
-from traitsui.menu import MenuBar, ToolBar, Menu, Action, NoButtons
+from traitsui.menu import MenuBar, Menu, Action, NoButtons
 
 from builder import *
 from viewer import *
@@ -69,7 +69,8 @@ def main(argv=None):
 
 class Application(HasStrictTraits):
     plot = Instance(MMLPostViewer)
-    field_variables = Instance(FieldVariables)
+    xaxis = Instance(SingleSelect)
+    yaxis = Instance(MultiSelect)
     xscale = String("1.0")
     yscale = String("1.0")
     ipane = Instance(InfoPane)
@@ -87,7 +88,6 @@ class Application(HasStrictTraits):
     plotp = Button(image=join(icns,'camera.png'), style='toolbar')
     plotl = Button(image=join(icns,'legend.png'), style='toolbar')
     plotr = Button(image=join(icns,'random.png'), style='toolbar')
-    plotf = Button(image=join(icns,'field.png'), style='toolbar')
 
     def __init__(self, sources):
         """Put together information to be sent to MMLPostViewer information
@@ -102,7 +102,8 @@ class Application(HasStrictTraits):
         traits = {"ipane": self.init(sources)}
         HasStrictTraits.__init__(self, **traits)
         self.plot = MMLPostViewer(ipane=self.ipane)
-        self.field_variables = FieldVariables(plot=self.plot)
+        self.xaxis = SingleSelect(plot=self.plot)
+        self.yaxis = MultiSelect(choices=self.plot.choices, plot=self.plot)
 
     def init(self, sources):
 
@@ -297,16 +298,6 @@ class Application(HasStrictTraits):
         self.plot.update(frame=-1)
         self.time = self.plot.Time
 
-    def _plotf_fired(self):
-        self.field_variables.update_multi()
-
-    def change_xaxis(self):
-        self.field_variables.update_single()
-
-    @on_trait_change('field_variables.can_fire')
-    def _a(self):
-        self.can_fire = self.field_variables.can_fire
-
     def open_file(self):
         self.ipane.open_outputdb()
 
@@ -362,7 +353,11 @@ def launch(sources=None):
     info_pane = Item('ipane', show_label=False, resizable=False)
     plot_window = VGroup(
         HGroup(
-            Item("field_variables", show_label=False),
+            Item("xaxis", show_label=False),
+            Item('plotscale', show_label=False),
+            Item('plotl', show_label=False),
+            Item('plotr', show_label=False),
+            Item('plotp', show_label=False),
             spring,
             Item('time', show_label=False,
                  editor=RangeEditor(low_name='low', high_name='high',
@@ -372,47 +367,13 @@ def launch(sources=None):
             Item('frame_next', show_label=False),
             Item('frame_last', show_label=False),
             ),
-        HGroup(
-            VGroup(
-                Item('plotf', show_label=False, enabled_when='can_fire==True'),
-                Item('plotscale', show_label=False),
-                Item('plotl', show_label=False),
-                Item('plotr', show_label=False),
-                '_',
-                Item('plotp', show_label=False)),
-        Item('plot', show_label=False, springy=True, resizable=True,
-             width=900, height=600)))
+            Item('plot', show_label=False, springy=True, resizable=True,
+                 width=900, height=600))
 
-    menubar = MenuBar(
-        Menu(
-            #Action(name = 'Open Output Database', action='open_file'),
-             Action(name = 'Take Screenshot', action='print_screen'),
-             Action(name = 'Display Log', action='display_log'),
-             Action(name = 'Quit', action='quit'),
-             name='File'),
-        Menu(name='Edit'),
-        Menu(
-            Menu(
-                Action(name='Random', action='random_coloring',
-                       enabled_when='not handler.randomly_colored'),
-                Action(name='Uniform', action='uniform_coloring',
-                       enabled_when='handler.randomly_colored'),
-                name='Coloring'),
-            Menu(Action(name='Show', action='show_legend',
-                        enabled_when='not handler.legend_visible'),
-                 Action(name='Hide', action='hide_legend',
-                         enabled_when='handler.legend_visible'),
-                 name='Legend'),
-             Action(name = 'X Axis', action='change_xaxis'),
-             Action(name = 'Plot Scales', action='adjust_plot_scales'),
-             name='Plot Options'),
-        Menu(name='Help')
-        )
-    toolbar = None
     title = "Material Model Laboratory"
-    view = View(HSplit(info_pane, plot_window),
-                style='custom', resizable=True, title=title,
-                menubar=menubar, toolbar=toolbar)
+    ms = Item('yaxis', show_label=False, height=.75)
+    view = View(HSplit(VSplit(info_pane, ms), plot_window),
+                style='custom', resizable=True, title=title)
     main_window = Application(sources=sources)
     main_window.configure_traits(view=view, handler=ApplicationHandler)
     return main_window

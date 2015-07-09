@@ -21,8 +21,13 @@ def File(filename, mode='r'):
     else:
         return tabular.File(filename, mode=mode)
 
+def _upcase(string, doit):
+    if doit:
+        string = string.upper()
+    return string
+
 def loaddb_single_element(filename, variables=None, disp=1,
-                          elem_num=1, blk_num=1, at_step=0):
+                          elem_num=1, blk_num=1, at_step=0, upcase=1):
     '''Read all field variables through time for elem_num'''
     #loaddb_single_element_x(filename, variables=variables, disp=disp,
     #                      elem_num=elem_num, blk_num=blk_num, at_step=at_step)
@@ -55,11 +60,11 @@ def loaddb_single_element(filename, variables=None, disp=1,
                 for (i, key) in enumerate(keys):
                     fields.setdefault(key, []).append(values[i])
 
-    head = ['TIME'] + [x.upper() for x in fields.keys()]
+    head = ['TIME'] + [_upcase(x, upcase) for x in fields.keys()]
     data = np.column_stack((np.asarray(times), np.array(fields.values()).T))
 
     if variables is not None:
-        variables = [x.upper() for x in variables]
+        variables = [_upcase(x, upcase) for x in variables]
         idx = []
         for name in variables:
             try:
