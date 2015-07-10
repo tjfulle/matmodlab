@@ -120,7 +120,7 @@ def run(argv):
     environment. Simulation scripts can be run directly by the python
     interpreter if {1} is on your PYTHONPATH.""".format(prog, ROOT_D)
     p = ArgumentParser(prog=prog, description=desc)
-    p.add_argument("-v", default=environ.verbosity,
+    p.add_argument("-v", default=1,
        type=int, help="Verbosity [default: %(default)s]")
     p.add_argument("--debug", default=environ.debug, action="store_true",
        help="Debug mode [default: %(default)s]")
@@ -160,7 +160,7 @@ def run(argv):
         print 'warning: multiprocessing not finished, nprocs set to 1.'
         args.nprocs = 1
     environ.nprocs = args.nprocs
-    environ.verbosity = args.v
+    environ.log_level = args.v
     if args.w:
         environ.rebuild_mat_lib.append(args.w)
     environ.warn = args.W
@@ -177,7 +177,6 @@ def run(argv):
 
     if args.B:
         name = args.B.strip()
-        verbosity = 3 if args.v > 1 else 0
         if os.path.isfile(os.path.join(PKG_D, "{0}.so".format(name))):
             # removing is sufficient since the material class will attempt
             # to build non-existent materials

@@ -87,3 +87,18 @@ def get_my_directory():
     stack = inspect.stack()[1]
     d = dirname(realpath(stack[1]))
     return d
+
+def init_notebook():
+    try:
+        from bokeh.plotting import output_notebook
+        output_notebook()
+        i = 2
+    except ImportError:
+        i = 1
+    environ.notebook = i
+    environ.log_level = logging.WARNING
+    try:
+        from sympy import init_printing
+        init_printing()
+    except ImportError:
+        pass

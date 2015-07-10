@@ -14,7 +14,7 @@ from matmodlab.mml_siteenv import environ
 import matmodlab.utils.mmlabpack as mml
 from matmodlab.utils.errors import MatModLabError
 from matmodlab.utils.fileio import loadfile
-from matmodlab.product import SPLASH
+from matmodlab.utils.logio import setup_logger
 from material import MaterialModel, Material
 from bp import BreakPoint, BreakPointStop as BreakPointStop
 from mdb import mdb, ModelCaptured as ModelCaptured
@@ -33,6 +33,7 @@ class SimulatorModel:
     def __init__(self):
         self._m = None
         self._f = None
+        self.ran = False
     @property
     def material(self):
         return self._m
@@ -54,7 +55,6 @@ class MaterialPointSimulator(object):
         '''
         self.job = job
         self.bp = None
-        self.ran = False
 
         self.models = OrderedDict()
         self.initial_temperature = initial_temperature
@@ -66,25 +66,8 @@ class MaterialPointSimulator(object):
 	self.title = 'matmodlab single element simulation'
 
         # basic logger
-        environ.verbosity = verbosity
-        logger = logging.getLogger('mps')
-        logger.propagate = False
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
-        logger.setLevel(logging.DEBUG)
-
-        ch = logging.StreamHandler()
-        level = {0: logging.CRITICAL,
-                 1: logging.INFO,
-                 2: logging.DEBUG}.get(min(abs(environ.verbosity),2))
-        ch.setLevel(level)
-        logger.addHandler(ch)
-
-        filename = os.path.join(environ.simulation_dir, self.job + '.log')
-        fh = logging.FileHandler(filename, mode='w')
-        fh.setLevel(logging.DEBUG)
-        logger.addHandler(fh)
-        logger.info(SPLASH)
+        logfile = os.path.join(environ.simulation_dir, self.job + '.log')
+        logger = setup_logger('mps', logfile, verbosity=verbosity)
 
         if output not in DB_FMTS:
             raise MatModLabError('invalid output format request')
@@ -94,6 +77,7 @@ class MaterialPointSimulator(object):
         self.steps = StepRepository()
         p = {'temperature': initial_temperature}
         self.steps['Step-0'] = InitialStep('Step-0', **p)
+        self.istress = Z6
 
     def filename(self, model=None):
         if model is None:
@@ -116,6 +100,30 @@ class MaterialPointSimulator(object):
         self.models[name].material = Material(model, parameters, **kwargs)
         self.current_mat = self.models[name].material
         return self.models[name].material
+
+    @property
+    def initial_stress(self):
+        return np.array(self.istress)
+
+    @initial_stress.setter
+    def initial_stress(self, value):
+        self.istress = value
+        self.steps['Step-0'].components = value
+        self.steps['Step-0'].descriptors = [4] * NUM_TENSOR_3D
+
+    def InitialStress(self, components, scale=1.):
+        if len(components) > NUM_TENSOR_3D:
+            raise MatModLabError('expected stress to have at most {0}'
+                                 ' components '.format(NUM_TENSOR_3D))
+        components = np.array(components) * scale
+        if len(components) == 1:
+            # only one stress value given -> pressure
+            Sij = -components[0]
+            components = np.array([Sij, Sij, Sij, 0., 0., 0.], dtype=np.float64)
+
+        N = NUM_TENSOR_3D - len(components)
+        components = np.append(components, [0.] * N)
+        self.initial_stress = components
 
     # --- Factor methods for creating steps ---
     def StrainStep(self, **kwargs):
@@ -244,10 +252,11 @@ Material: {5}
         start = tt()
 
         # set up the material
-        if not self.models:
-            raise MatModLabError('no material assigned')
         if model is None:
-            model = self.models.keys()[0]
+            try:
+                model = self.models.keys()[0]
+            except IndexError:
+                raise MatModLabError('no material assigned')
         self.current_mat = self.models[model].material
 
 	# register variables
@@ -286,11 +295,11 @@ Material: {5}
             self.run_steps(db, termination_time=termination_time)
             dt = tt() - start
             log.info('\n...calculations completed ({0:.4f}s)'.format(dt))
-            self.ran = True
+            self.models[model].ran = True
         except StopSteps:
             dt = tt() - start
             log.info('\n...calculations completed ({0:.4f}s)'.format(dt))
-            self.ran = True
+            self.models[model].ran = True
         except BreakPointStop:
             log.info('\nCalculations terminated at break point')
         finally:
@@ -313,7 +322,8 @@ Material: {5}
 
         F = np.array([I9, I9])
         strain = np.array([Z6, Z6, Z6])
-        stress = np.array([Z6, Z6, Z6])
+        S0 = self.initial_stress
+        stress = np.array([S0, S0, S0])
         sdv = self.current_mat.initial_sdv
         statev = np.array([sdv, sdv])
         efield = np.array([step.elec_field] * 3)
@@ -351,20 +361,51 @@ Material: {5}
         return loadfile(filename, variables=variables, disp=disp, **kwargs)
 
     def plot(self, xvar, yvar, model=None, legend=True, **kwargs):
-        import matplotlib.pyplot as plt
         if model is None:
             model = self.models.keys()[0]
         points = self.get(xvar, yvar, model=model)
+        kwargs['label'] = kwargs.get('label', model)
+        if environ.notebook == 2:
+            self.bokeh_plot((xvar, yvar), points, legend, **kwargs)
+        else:
+            self.matplotlib_plot(points, legend, **kwargs)
+
+    def bokeh_plot(self, keys, points, legend, **kwargs):
+        from bokeh.plotting import figure
+        kwds = dict(kwargs)
+        plot = kwds.pop('plot', None)
+        if legend:
+            label = kwds.pop('label', None)
+        if plot is None:
+            TOOLS=('resize,crosshair,pan,wheel_zoom,box_zoom,'
+                   'reset,box_select,lasso_select')
+            w = 1000
+            aspect = 4./6.
+            plot = figure(tools=TOOLS,
+                          x_axis_label=keys[0], y_axis_label=keys[1],
+                          plot_width=w, plot_height=w*aspect)
+            if legend:
+                kwds['legend'] = label
+        plot.line(points[:,0], points[:,1], **kwds)
+        return plot
+
+    def matplotlib_plot(self, points, legend, **kwargs):
+        import matplotlib.pyplot as plt
+        plt.plot(points[:,0], points[:,1], **kwargs)
         plt.xlabel(xvar)
         plt.ylabel(yvar)
-        kwargs['label'] = kwargs.get('label', model)
-        a = plt.plot(points[:,0], points[:,1], **kwargs)
+        if environ.notebook:
+            return
         if legend:
             plt.legend(loc='best')
-        return a
+        plt.show()
 
     def visualize_results(self, model=None, overlay=None):
         from matmodlab.viewer.main import launch
+        if model is None:
+            model = self.models.keys()[0]
+        if not self.models[model].ran:
+            raise MatModLabError('model must first be run')
         launch([self.filename(model)])
 
     def view(self):
@@ -454,7 +495,6 @@ Material: {5}
                 nv += 1
 
             continue
-
         v = v[:nv]
         vx = [x for x in range(6) if x not in v]
         if step.increment < 1.e-14:

@@ -11,6 +11,7 @@ import numpy as np
 from matmodlab.constants import *
 from matmodlab.product import SPLASH
 from matmodlab.mml_siteenv import environ
+from matmodlab.utils.logio import setup_logger
 from matmodlab.utils.mmltab import MMLTabularWriter
 from mdb import mdb, ModelCaptured as ModelCaptured
 
@@ -59,31 +60,12 @@ class Optimizer(object):
             shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
 
-        if environ.verbosity is not None and verbosity is None:
-            verbosity = environ.verbosity
-        if verbosity is None:
-            verbosity = 1
+        # basic logger
+        logfile = os.path.join(self.rootd, self.job + '.log')
+        logger = setup_logger('optimizer', logfile, verbosity=verbosity)
 
-        logger = logging.getLogger('optimizer')
-        logger.propagate = False
-        logger.setLevel(logging.DEBUG)
-
-        ch = logging.StreamHandler()
-        level = {0: logging.CRITICAL,
-                 1: logging.INFO,
-                 2: logging.DEBUG}.get(min(abs(verbosity),2))
-        ch.setLevel(level)
-        logger.addHandler(ch)
-
-        filename = os.path.join(self.rootd, self.job + '.log')
-        fh = logging.FileHandler(filename, mode='w')
-        fh.setLevel(logging.DEBUG)
-        logger.addHandler(fh)
-        logger.info(SPLASH)
-
-        # set verbosity to zero so that individual sims only log to file and
-        # not the console
-        environ.verbosity = 0
+        # individual sims only log to file and not the console
+        environ.parent_process = 1
 
         # check xinit
         self.names = []
@@ -225,6 +207,7 @@ Optimized parameters
         with open(os.path.join(self.rootd, "params.opt"), "w") as fobj:
             for (i, name) in enumerate(self.names):
                 fobj.write("{0} = {1: .18f}\n".format(name, self.xopt[i]))
+        environ.parent_process = 0
 
     def todict(self):
         if not self.ran:

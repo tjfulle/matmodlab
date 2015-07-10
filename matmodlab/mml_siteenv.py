@@ -1,4 +1,5 @@
 import os
+import logging
 from constants import *
 from matmodlab.product import *
 from matmodlab.materials.product import *
@@ -7,7 +8,7 @@ __all__ = ['environ']
 
 class Environment(object):
     # --- IO type variables
-    verbosity = 1
+    _log_level = logging.DEBUG
     warn = WARN
     Wall = False
     Werror = False
@@ -23,6 +24,9 @@ class Environment(object):
     nprocs = 1
 
     viz_on_completion = False
+
+    # --- IPython notebook
+    notebook = 0
 
     # --- Material switching
     switch = []
@@ -52,6 +56,8 @@ class Environment(object):
     gui_mode = False
     do_not_fork = False
 
+    parent_process = 0
+
     # Fortran compiling
     fflags = [x for x in os.getenv('FFLAGS', '').split() if x.split()]
     fc = which(os.getenv('FC', 'gfortran'))
@@ -59,23 +65,44 @@ class Environment(object):
     # --- Test search directories
     test_dirs = [TEST_D]
 
+    @property
+    def log_level(self):
+        return self._log_level
+
+    @log_level.setter
+    def log_level(self, value):
+        choices = {-2: logging.CRITICAL,
+                   -1: logging.ERROR,
+                    0: logging.WARNING,
+                    1: logging.INFO,
+                    2: logging.DEBUG}
+        if value in choices.values():
+            log_level = value
+        else:
+            log_level = choices[value]
+        self._log_level = log_level
+
     def __contains__(self, item):
         try:
             getattr(self, item)
             return True
         except AttributeError:
             return False
+
     def __getitem__(self, name):
         return getattr(self, '{0}'.format(name))
+
     def __setattr__(self, name, item):
         if name in self and item is None:
             return
         return super(Environment, self).__setattr__(name, item)
+
     def __str__(self):
         string = ', '.join('{0}={1!r}'.format(k, self[k])
                            for k in dir(self)
                            if not k.startswith('_'))
         return 'Environment({0})'.format(string)
+
     def _update(self, d):
         for (k, v) in d.items():
             setattr(self, k, v)

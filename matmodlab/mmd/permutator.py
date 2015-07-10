@@ -17,10 +17,10 @@ from matmodlab.constants import *
 from matmodlab.product import SPLASH
 from matmodlab.utils.misc import backup
 from matmodlab.mml_siteenv import environ
+from matmodlab.utils.logio import setup_logger
 from matmodlab.utils.errors import MatModLabError
 from matmodlab.mmd.mdb import mdb, ModelCaptured as ModelCaptured
 from matmodlab.utils.mmltab import MMLTabularWriter, correlations, plot_correlations
-
 
 RAND = np.random.RandomState()
 
@@ -75,27 +75,12 @@ class Permutator(object):
                 shutil.rmtree(self.rootd)
         os.makedirs(self.rootd)
 
-        environ.verbosity = verbosity
-        logger = logging.getLogger('permutator')
-        logger.propagate = False
-        logger.setLevel(logging.DEBUG)
+        # basic logger
+        logfile = os.path.join(self.rootd, self.job + '.log')
+        logger = setup_logger('permutator', logfile, verbosity=verbosity)
 
-        ch = logging.StreamHandler()
-        level = {0: logging.CRITICAL,
-                 1: logging.INFO,
-                 2: logging.DEBUG}.get(min(abs(environ.verbosity),2))
-        ch.setLevel(level)
-        logger.addHandler(ch)
-
-        filename = os.path.join(self.rootd, self.job + '.log')
-        fh = logging.FileHandler(filename, mode='w')
-        fh.setLevel(logging.DEBUG)
-        logger.addHandler(fh)
-        logger.info(SPLASH)
-
-        # set verbosity to zero so that individual sims only log to file and
-        # not the console
-        environ.verbosity = 0
+        # individual sims only log to file and not the console
+        environ.parent_process = 1
 
         # check method
         if method not in (ZIP, COMBINATION):
@@ -207,6 +192,8 @@ Variables:
             if not environ.do_not_fork:
                 plot_correlations(self.tabular.filename)
             logger.info("done")
+
+        environ.parent_process = 0
 
     @staticmethod
     def set_random_seed(seed, seedset=[0]):
