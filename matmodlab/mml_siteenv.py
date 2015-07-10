@@ -69,6 +69,14 @@ class Environment(object):
     def log_level(self):
         return self._log_level
 
+    @property
+    def verbosity(self):
+        return {logging.CRITICAL: 0,
+                logging.ERROR: 0,
+                logging.WARNING: 0,
+                logging.INFO: 1,
+                logging.DEBUG: 2}[self._log_level]
+
     @log_level.setter
     def log_level(self, value):
         choices = {-2: logging.CRITICAL,

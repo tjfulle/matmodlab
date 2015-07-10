@@ -518,9 +518,11 @@ def Material(model, parameters, switch=None, response=None,
             logging.getLogger('mps').info('{0}: rebuilding material '
                                           'library'.format(libname))
             import matmodlab.mmd.builder as bb
+            #@tjfulle: verbosity
             bb.Builder.build_material(libname, source_files,
                                       lapack=TheMaterial.lapack,
                                       verbosity=environ.verbosity)
+
         if not os.path.isfile(so_lib):
             raise MatModLabError('model library for {0} '
                                  'not found'.format(libname))
