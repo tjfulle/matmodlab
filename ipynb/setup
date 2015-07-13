@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# create the default profile
+D=${HOME}/.ipython/profile_default/startup
+ipython profile create
+cp matmodlab.ipy ${D}/
+cp -r styles ${D}/

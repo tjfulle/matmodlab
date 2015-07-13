@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import logging
 
-from matmodlab.product import PKG_D
+from matmodlab.product import PKG_D, BIN_D, ROOT_D
 
 from matmodlab.mml_siteenv import environ
 from matmodlab.utils.errors import MatModLabError
@@ -579,3 +579,15 @@ def switch_materials(model_1, model_2, parameters):
                              'built.'.format(material_1.name))
 
     return material_2
+
+def build_material(model, verbosity=1):
+    import subprocess
+    x = os.path.join(BIN_D, 'mml')
+    assert os.path.isfile(x)
+    command = '{0} build -m {1}'.format(x, model)
+    fh = open('foo', 'w')
+    env = dict(os.environ)
+    p = ':'.join([os.path.dirname(ROOT_D), env.get('PYTHONPATH', '')])
+    env['PYTHONPATH'] = p
+    proc = subprocess.Popen(command.split(), env=env)
+    proc.wait()

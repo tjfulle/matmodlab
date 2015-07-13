@@ -58,6 +58,7 @@ from numpy import array, float64
 from mmd.mdb import mdb
 from mmd.simulator import *
 from mml_siteenv import environ
+from mmd.material import build_material
 from mmd.permutator import Permutator, PermutateVariable
 from mmd.optimizer import Optimizer, OptimizeVariable
 from constants import *

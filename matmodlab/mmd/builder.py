@@ -116,6 +116,10 @@ class Builder(object):
             if user_env >= 2 and mat.builtin:
                 continue
 
+            if mats_to_fetch != 'all' and name not in mats_to_fetch:
+                continue
+            mats_fetched.append(name)
+
             if mat.libname is not None:
                 libname = mat.libname
                 # need to build with new libname
@@ -140,6 +144,7 @@ class Builder(object):
             I = list(set([os.path.dirname(f) for f in mat.source_files]))
             if IO_F90 not in mat.source_files:
                 mat.source_files.append(IO_F90)
+
             for f in mat.source_files:
                 if not os.path.isfile(f):
                     raise MatModLabError('{0!r}: no such file'.format(f))

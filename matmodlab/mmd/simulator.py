@@ -112,9 +112,14 @@ class MaterialPointSimulator(object):
         self.steps['Step-0'].descriptors = [4] * NUM_TENSOR_3D
 
     def InitialStress(self, components, scale=1.):
-        if len(components) > NUM_TENSOR_3D:
-            raise MatModLabError('expected stress to have at most {0}'
-                                 ' components '.format(NUM_TENSOR_3D))
+        try:
+            if len(components) > NUM_TENSOR_3D:
+                raise MatModLabError('expected stress to have at most {0}'
+                                     ' components '.format(NUM_TENSOR_3D))
+        except TypeError:
+            # scalar -> pressure
+            components = [components]
+
         components = np.array(components) * scale
         if len(components) == 1:
             # only one stress value given -> pressure
@@ -377,17 +382,21 @@ Material: {5}
             return self.matplotlib_plot(points, legend, **kwargs)
 
     def bokeh_plot(self, keys, points, legend, **kwargs):
-        from bokeh.plotting import figure
         kwds = dict(kwargs)
         plot = kwds.pop('plot', None)
         if legend:
             kwds['legend'] = legend
         if plot is None:
-            TOOLS = ('resize,crosshair,pan,wheel_zoom,box_zoom,'
-                     'reset,box_select,lasso_select')
-            TOOLS = 'resize,pan,wheel_zoom,box_zoom,reset'
-            plot = figure(tools=TOOLS, x_axis_label=keys[0], y_axis_label=keys[1])
+            plot = self.figure(x_axis_label=keys[0], y_axis_label=keys[1])
         plot.line(points[:,0], points[:,1], **kwds)
+        return plot
+
+    def figure(self, **kwargs):
+        from bokeh.plotting import figure
+        TOOLS = ('resize,crosshair,pan,wheel_zoom,box_zoom,'
+                 'reset,box_select,lasso_select')
+        TOOLS = 'resize,pan,wheel_zoom,box_zoom,reset,save'
+        plot = figure(tools=TOOLS, **kwargs)
         return plot
 
     def matplotlib_plot(self, points, legend, **kwargs):

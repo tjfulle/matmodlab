@@ -2,12 +2,12 @@
 from __future__ import print_function
 import os
 import sys
+from os.path import dirname, realpath, join
 from IPython.core import magic_arguments
-from IPython.core.magic import Magics, magics_class, line_magic
 from IPython.utils.warn import warn, error
+from IPython.core.magic import Magics, magics_class, line_magic
 
-magic_plt_args = magic_arguments.argument(
-        'plot', nargs='?',
+magic_gui_arg = magic_arguments.argument('plot', nargs='?',
         help='Name of the plotting tool to use (bokeh, matplotlib)')
 
 @magics_class
@@ -15,7 +15,9 @@ class MatmodlabMagics(Magics):
 
     @line_magic
     @magic_arguments.magic_arguments()
-    @magic_plt_args
+    @magic_arguments.argument('--no-style', action='store_true', default=None,
+                              help='Do not load style file')
+    @magic_gui_arg
     def matmodlab(self, line='', cache=[0, 0]):
         """matmodlab line magic"""
         args = magic_arguments.parse_argstring(self.matmodlab, line)
@@ -43,13 +45,22 @@ class MatmodlabMagics(Magics):
         if d or d not in sys.path:
             sys.path.insert(0, d)
 
+        # Key imports
         user_ns = {}
-        s = ('import numpy\n'
+        s = ('import os\n'
+             'import re\n'
+             'import sys\n'
+             'import logging\n'
+             'import numpy\n'
              'np = numpy\n'
              'from numpy import *\n'
+             'from numpy.linalg import inv, det\n'
              'from matmodlab import *\n'
+             'from matmodlab.utils.numerix import *\n'
+             'from matmodlab.utils.fileio import loadfile\n'
             )
 
+        # load the plotting back end
         if args.plot == 'bokeh':
             if not cache[0]:
                 s += ('from bokeh.plotting import *\n'
@@ -62,6 +73,14 @@ class MatmodlabMagics(Magics):
                   'plt = pyplot\n'
                   'from matplotlib.pylab import *\n'
                   'init_from_matmodlab_magic("matplotlib")\n')
+
+        # Load the matplotlib colors for use in other plots
+        try:
+            from matplotlib import colors
+            s += ('from matplotlib import colors\n'
+                  'colors = colors.cnames.values()\n')
+        except ImportError:
+            pass
 
         exec(s, user_ns)
 
@@ -80,6 +99,14 @@ class MatmodlabMagics(Magics):
         self.shell.user_ns.update(user_ns)
 
         cache[1] += 1
+
+	# custom style
+	if not args.no_style:
+	    from IPython.core.display import HTML
+	    d = join(self.config['ProfileDir']['location'], 'startup')
+            f = os.path.join(d, 'styles/custom2.css')
+            style = open(f, 'r').read()
+	    return HTML(style)
 
 # In order to actually use these magics, you must register them with a
 # running IPython.  This code must be placed in a file that is loaded once

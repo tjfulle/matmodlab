@@ -23,11 +23,12 @@ TOL = 1.E-06
 class Optimizer(object):
     def __init__(self, job, func, xinit, method=SIMPLEX, verbosity=None, d=None,
                  maxiter=MAXITER, tolerance=TOL, descriptors=None,
-                 funcargs=[], Ns=10, keep_intermediate=True):
+                 funcargs=[], Ns=10, dryrun=0, keep_intermediate=True):
         environ.raise_e = True
         self.job = job
         self.func = func
         self.ran = False
+        self.dryrun = dryrun
 
         d = os.path.realpath(d or os.getcwd())
         self.directory = d
@@ -156,6 +157,20 @@ Response descriptors:
         args = (self.func, self.funcargs, self.rootd, self.job, self.names,
                 self.descriptors, self.tabular, xfac)
 
+        if self.dryrun:
+            # do a dry run of the function
+            err = run_job(x0, *args)
+            if err == np.nan:
+                s = 'Optimization dry run failed'
+                logger.error(s)
+            else:
+                s = 'Optimization dry run successful'
+                logger.info(s)
+            if environ.notebook:
+                print s
+            self.dryrun_error = err
+            return
+
         if self.method == SIMPLEX:
             xopt = scipy.optimize.fmin(
                 run_job, x0, xtol=self.tolerance, ftol=self.tolerance,
@@ -209,6 +224,9 @@ Optimized parameters
                 fobj.write("{0} = {1: .18f}\n".format(name, self.xopt[i]))
         environ.parent_process = 0
 
+        if environ.notebook:
+            print '\rDone'
+
     def todict(self):
         if not self.ran:
             return None
@@ -258,6 +276,9 @@ def run_job(xcall, *args):
     logger.info("starting job {0} with {1}... ".format(
         IOPT, ",".join("{0}={1:.2g}".format(n, p) for n, p in parameters)),
         extra={'continued':1})
+
+    if environ.notebook:
+        print '\rRunning job {0}'.format(IOPT),
 
     try:
         err = func(x, xnames, evald, job, *funcargs)
