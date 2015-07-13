@@ -42,7 +42,7 @@ def func(x=[], xnames=[], evald='', job='', *args):
                   columns=('E.XX',), descriptors='ESS')
 
     mps.run()
-    if not mps.ran:
+    if not mps.ran():
         return 1.0e9
 
     sim_data = mps.get('E.XX', 'S.XX')

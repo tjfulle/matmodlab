@@ -52,9 +52,11 @@ def whoami():
     """ return name of calling function """
     return inspect.stack()[1][3]
 
-def who_is_calling():
+def who_is_calling(disp=0):
     """return the name of the calling function"""
     stack = inspect.stack()[2]
+    if disp:
+        return stack
     return "{0}.{1}".format(
         splitext(basename(stack[1]))[0], stack[3])
 

@@ -1,0 +1,91 @@
+# -*- python -*-
+from __future__ import print_function
+import os
+import sys
+from IPython.core import magic_arguments
+from IPython.core.magic import Magics, magics_class, line_magic
+from IPython.utils.warn import warn, error
+
+magic_plt_args = magic_arguments.argument(
+        'plot', nargs='?',
+        help='Name of the plotting tool to use (bokeh, matplotlib)')
+
+@magics_class
+class MatmodlabMagics(Magics):
+
+    @line_magic
+    @magic_arguments.magic_arguments()
+    @magic_plt_args
+    def matmodlab(self, line='', cache=[0, 0]):
+        """matmodlab line magic"""
+        args = magic_arguments.parse_argstring(self.matmodlab, line)
+
+        if not args.plot:
+            args.plot = 'bokeh'
+
+        if args.plot == 'bokeh':
+            try:
+                import bokeh
+            except ImportError:
+                error('bokeh not imported')
+                args.plot = None
+        elif args.plot == 'matplotlib':
+            try:
+                import matplotlib
+            except ImportError:
+                error('matplotlib not imported')
+                args.plot = None
+        else:
+            error('unknown matmodlab argument %s' % args.plot)
+            args.plot = None
+
+        d = os.getenv('MATMODLAB', '')
+        if d or d not in sys.path:
+            sys.path.insert(0, d)
+
+        user_ns = {}
+        s = ('import numpy\n'
+             'np = numpy\n'
+             'from numpy import *\n'
+             'from matmodlab import *\n'
+            )
+
+        if args.plot == 'bokeh':
+            if not cache[0]:
+                s += ('from bokeh.plotting import *\n'
+                      'init_from_matmodlab_magic("bokeh")\n')
+                cache[0] += 1
+
+        elif args.plot == 'matplotlib':
+            s += ('import matplotlib\n'
+                  'from matplotlib import pylab, mlab, pyplot\n'
+                  'plt = pyplot\n'
+                  'from matplotlib.pylab import *\n'
+                  'init_from_matmodlab_magic("matplotlib")\n')
+
+        exec(s, user_ns)
+
+        # warn about clobbered names
+        ignored = set(['__builtins__'])
+        both = set(user_ns).intersection(self.shell.user_ns).difference(ignored)
+        clobbered = [name for name in both
+                     if self.shell.user_ns[name] is not user_ns[name] ]
+
+        # warn about clobbered names
+        print ('Populating the interactive namespace '
+               'from matmodlab and %s' % args.plot)
+        if clobbered and not cache[1]:
+            warn('matmodlab import has clobbered these variables: %s'  % clobbered)
+
+        self.shell.user_ns.update(user_ns)
+
+        cache[1] += 1
+
+# In order to actually use these magics, you must register them with a
+# running IPython.  This code must be placed in a file that is loaded once
+# IPython is up and running:
+ip = get_ipython()
+
+# You can register the class itself without instantiating it.  IPython will
+# call the default constructor on it.
+ip.register_magics(MatmodlabMagics)

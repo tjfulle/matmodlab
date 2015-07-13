@@ -88,13 +88,14 @@ def get_my_directory():
     d = dirname(realpath(stack[1]))
     return d
 
-def init_notebook():
-    try:
+def init_from_matmodlab_magic(p):
+    if p == 'bokeh':
         from bokeh.plotting import output_notebook
         output_notebook()
         i = 2
-    except ImportError:
+    elif p == 'matplotlib':
         i = 1
+
     environ.notebook = i
     environ.log_level = logging.WARNING
     try:

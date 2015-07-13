@@ -312,6 +312,11 @@ Material: {5}
     def finish(self):
         pass
 
+    def ran(self, model=None):
+        if model is None:
+            model = self.models.keys()[0]
+        return self.models[model].ran
+
     def run_steps(self, db, termination_time):
 
         time_0 = tt()
@@ -360,32 +365,28 @@ Material: {5}
             variables = None
         return loadfile(filename, variables=variables, disp=disp, **kwargs)
 
-    def plot(self, xvar, yvar, model=None, legend=True, **kwargs):
+    def plot(self, xvar, yvar, model=None, legend=None, label=None, **kwargs):
         if model is None:
             model = self.models.keys()[0]
         points = self.get(xvar, yvar, model=model)
-        kwargs['label'] = kwargs.get('label', model)
         if environ.notebook == 2:
-            self.bokeh_plot((xvar, yvar), points, legend, **kwargs)
+            return self.bokeh_plot((xvar, yvar), points, legend, **kwargs)
         else:
-            self.matplotlib_plot(points, legend, **kwargs)
+            if legend:
+                kwargs['label'] = label or model
+            return self.matplotlib_plot(points, legend, **kwargs)
 
     def bokeh_plot(self, keys, points, legend, **kwargs):
         from bokeh.plotting import figure
         kwds = dict(kwargs)
         plot = kwds.pop('plot', None)
         if legend:
-            label = kwds.pop('label', None)
+            kwds['legend'] = legend
         if plot is None:
-            TOOLS=('resize,crosshair,pan,wheel_zoom,box_zoom,'
-                   'reset,box_select,lasso_select')
-            w = 1000
-            aspect = 4./6.
-            plot = figure(tools=TOOLS,
-                          x_axis_label=keys[0], y_axis_label=keys[1],
-                          plot_width=w, plot_height=w*aspect)
-            if legend:
-                kwds['legend'] = label
+            TOOLS = ('resize,crosshair,pan,wheel_zoom,box_zoom,'
+                     'reset,box_select,lasso_select')
+            TOOLS = 'resize,pan,wheel_zoom,box_zoom,reset'
+            plot = figure(tools=TOOLS, x_axis_label=keys[0], y_axis_label=keys[1])
         plot.line(points[:,0], points[:,1], **kwds)
         return plot
 
