@@ -64,6 +64,7 @@ from mmd.optimizer import Optimizer, OptimizeVariable
 from constants import *
 from materials.product import *
 from utils.elas import elas
+from utils.plotting import *
 RAND = np.random.RandomState()
 
 def genrand():
@@ -90,11 +91,13 @@ def get_my_directory():
     return d
 
 def init_from_matmodlab_magic(p):
-    if p == 'bokeh':
+    if p == BOKEH:
         from bokeh.plotting import output_notebook
         output_notebook()
+        environ.plotter = BOKEH
         i = 2
-    elif p == 'matplotlib':
+    elif p == MATPLOTLIB:
+        environ.plotter = MATPLOTLIB
         i = 1
 
     environ.notebook = i

@@ -41,3 +41,7 @@ UANISOHYPER_INV = 'Uanisohyper_inv'
 ISOTROPIC = 'Isotropic'
 WLF = 'WLF'
 PRONY = 'Prony'
+
+# plotting
+BOKEH = 'bokeh'
+MATPLOTLIB = 'matplotlib'

@@ -7,6 +7,8 @@ from IPython.core import magic_arguments
 from IPython.utils.warn import warn, error
 from IPython.core.magic import Magics, magics_class, line_magic
 
+from matmodlab.constants import BOKEH, MATPLOTLIB
+
 magic_gui_arg = magic_arguments.argument('plot', nargs='?',
         help='Name of the plotting tool to use (bokeh, matplotlib)')
 
@@ -23,15 +25,19 @@ class MatmodlabMagics(Magics):
         args = magic_arguments.parse_argstring(self.matmodlab, line)
 
         if not args.plot:
-            args.plot = 'bokeh'
+            try:
+                import bokeh
+                args.plot = BOKEH
+            except ImportError:
+                args.plot = MATPLOTLIB
 
-        if args.plot == 'bokeh':
+        if args.plot == BOKEH:
             try:
                 import bokeh
             except ImportError:
                 error('bokeh not imported')
                 args.plot = None
-        elif args.plot == 'matplotlib':
+        elif args.plot == MATPLOTLIB:
             try:
                 import matplotlib
             except ImportError:
@@ -99,14 +105,6 @@ class MatmodlabMagics(Magics):
         self.shell.user_ns.update(user_ns)
 
         cache[1] += 1
-
-	# custom style
-	if not args.no_style:
-	    from IPython.core.display import HTML
-	    d = join(self.config['ProfileDir']['location'], 'startup')
-            f = os.path.join(d, 'styles/custom2.css')
-            style = open(f, 'r').read()
-	    return HTML(style)
 
 # In order to actually use these magics, you must register them with a
 # running IPython.  This code must be placed in a file that is loaded once

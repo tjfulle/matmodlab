@@ -19,6 +19,8 @@ PKG_D = join(ROOT_D, "lib")
 LIB_D = join(ROOT_D, "lib")
 MAT_D = join(ROOT_D, "materials")
 BLD_D = join(LIB_D, "build")
+EXMPL_D = join(ROOT_D, "examples")
+IPY_D = join(ROOT_D, "ipynb")
 
 SPLASH = """\
                   M           M    M           M    L

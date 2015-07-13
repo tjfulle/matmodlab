@@ -10,16 +10,17 @@ from collections import namedtuple, OrderedDict
 from numpy.linalg import solve, lstsq
 from numpy.linalg import LinAlgError as LinAlgError
 
+from matmodlab.constants import *
 from matmodlab.mml_siteenv import environ
 import matmodlab.utils.mmlabpack as mml
 from matmodlab.utils.errors import MatModLabError
 from matmodlab.utils.fileio import loadfile
 from matmodlab.utils.logio import setup_logger
+from matmodlab.utils.plotting import create_figure
 from material import MaterialModel, Material
 from bp import BreakPoint, BreakPointStop as BreakPointStop
 from mdb import mdb, ModelCaptured as ModelCaptured
 
-from femlib.constants import *
 from femlib.mesh import SingleElementMesh3D
 from femlib.data import Step, StepRepository, FieldOutputs
 from femlib.fileio import File
@@ -371,44 +372,33 @@ Material: {5}
         return loadfile(filename, variables=variables, disp=disp, **kwargs)
 
     def plot(self, xvar, yvar, model=None, legend=None, label=None, **kwargs):
+
         if model is None:
             model = self.models.keys()[0]
         points = self.get(xvar, yvar, model=model)
-        if environ.notebook == 2:
-            return self.bokeh_plot((xvar, yvar), points, legend, **kwargs)
+
+        if environ.plotter == BOKEH:
+            kwds = dict(kwargs)
+            plot = kwds.pop('plot', None)
+            if legend:
+                kwds['legend'] = legend
+            if plot is None:
+                plot = create_figure(x_axis_label=xvar, y_axis_label=yvar)
+            plot.line(points[:,0], points[:,1], **kwds)
+            return plot
+
         else:
+            import matplotlib.pyplot as plt
             if legend:
                 kwargs['label'] = label or model
-            return self.matplotlib_plot(points, legend, **kwargs)
-
-    def bokeh_plot(self, keys, points, legend, **kwargs):
-        kwds = dict(kwargs)
-        plot = kwds.pop('plot', None)
-        if legend:
-            kwds['legend'] = legend
-        if plot is None:
-            plot = self.figure(x_axis_label=keys[0], y_axis_label=keys[1])
-        plot.line(points[:,0], points[:,1], **kwds)
-        return plot
-
-    def figure(self, **kwargs):
-        from bokeh.plotting import figure
-        TOOLS = ('resize,crosshair,pan,wheel_zoom,box_zoom,'
-                 'reset,box_select,lasso_select')
-        TOOLS = 'resize,pan,wheel_zoom,box_zoom,reset,save'
-        plot = figure(tools=TOOLS, **kwargs)
-        return plot
-
-    def matplotlib_plot(self, points, legend, **kwargs):
-        import matplotlib.pyplot as plt
-        plt.plot(points[:,0], points[:,1], **kwargs)
-        plt.xlabel(xvar)
-        plt.ylabel(yvar)
-        if environ.notebook:
-            return
-        if legend:
-            plt.legend(loc='best')
-        plt.show()
+            plt.plot(points[:,0], points[:,1], **kwargs)
+            plt.xlabel(xvar)
+            plt.ylabel(yvar)
+            if environ.notebook:
+                return
+            if legend:
+                plt.legend(loc='best')
+            plt.show()
 
     def visualize_results(self, model=None, overlay=None):
         from matmodlab.viewer.main import launch
