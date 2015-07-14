@@ -6,6 +6,7 @@ import numpy as np
 import xml.dom.minidom as xdom
 from os.path import realpath, join, isdir, isfile, dirname, splitext
 from matmodlab.constants import DB_FMTS
+from matmodlab.mml_siteenv import environ
 
 U_ROOT = u"MMLTabular"
 U_JOB = u"job"
@@ -206,7 +207,10 @@ def correlations(filepath, nonan=1):
             i += 1
     return
 
-def plot_correlations(filepath, nonan=1):
+def plot_correlations(filepath, nonan=1, pdf=0):
+    if environ.notebook == 2 and not pdf:
+        return plot_bokeh_correlations(filepath, nonan)
+
     try:
         import matplotlib.pyplot as plt
         from matplotlib.ticker import FormatStrFormatter
@@ -246,6 +250,34 @@ def plot_correlations(filepath, nonan=1):
     plt.savefig(pdf, transparent=True)
 
     return
+
+def plot_bokeh_correlations(filepath, nonan=1):
+    from bokeh.plotting import figure, gridplot
+    head, data, nresp = read_mml_evaldb_nd(filepath, nonan=nonan)
+
+    # create xy scatter plots
+    y = data[:, -nresp]
+    sort = np.argsort(y)
+    y = y[sort]
+
+    keys = head[:-nresp]
+    colors = ('blue', 'green', 'red', 'cyan',
+              'maroon', 'yellow', 'black', 'white')
+
+    ylabel = r"{0}".format(head[-1])
+    plots = []
+    for i, key in enumerate(keys):
+        x = data[:, i][sort]
+        m2, m, b = np.polyfit(x, y, 2)
+        m2, (m, b) = 0, np.polyfit(x, y, 1)
+        TOOLS = "pan,wheel_zoom,box_zoom,reset,save,resize"
+        y_axis_label = ylabel if not i else None
+        p = figure(tools=TOOLS, x_axis_label=r'{0}'.format(key),
+                   y_axis_label=y_axis_label)
+        p.scatter(x, y, color=colors[i])
+        p.line(x, m2 * x * x + m * x + b, color='black')
+        plots.append(p)
+    return gridplot([plots])
 
 def is_evaldb(filename):
     if not isfile(filename) or not filename.endswith('.xml'):

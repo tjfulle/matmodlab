@@ -190,10 +190,16 @@ Variables:
             logger.info("Creating correlation matrix... ", extra={'continued':1})
             correlations(self.tabular.filename)
             if not environ.do_not_fork:
-                plot_correlations(self.tabular.filename)
+                plot_correlations(self.tabular.filename, pdf=1)
             logger.info("done")
 
         environ.parent_process = 0
+
+        if environ.notebook:
+            print '\nDone'
+
+    def plot_correlations(self):
+        return plot_correlations(self.tabular.filename)
 
     @staticmethod
     def set_random_seed(seed, seedset=[0]):
@@ -300,6 +306,9 @@ def run_job(args):
         line = line[:84].split(",")
         line = ",".join(line[:-1]) + ",..."
     logger.info(line)
+
+    if environ.notebook:
+        print '\rRunning job {0}'.format(ps.job_num),
 
     try:
         resp = func(x, names, evald, job, *funcargs)

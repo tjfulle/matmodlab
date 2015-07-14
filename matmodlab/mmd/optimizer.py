@@ -225,7 +225,7 @@ Optimized parameters
         environ.parent_process = 0
 
         if environ.notebook:
-            print '\rDone'
+            print '\nDone'
 
     def todict(self):
         if not self.ran:
