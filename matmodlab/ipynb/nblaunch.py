@@ -3,8 +3,11 @@ import sys
 from subprocess import Popen
 from argparse import ArgumentParser
 from os.path import dirname, isdir, isfile, join
-from IPython.html import notebookapp
-from IPython.html.utils import url_path_join
+try:
+    from IPython.html import notebookapp
+    from IPython.html.utils import url_path_join
+except ImportError:
+    raise SystemExit('IPython.html not found')
 
 from matmodlab.product import EXMPL_D, PYEXE, IPY_D
 
