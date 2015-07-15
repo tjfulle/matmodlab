@@ -57,6 +57,7 @@ class MatmodlabMagics(Magics):
              'import re\n'
              'import sys\n'
              'import logging\n'
+             'import random\n'
              'import numpy\n'
              'np = numpy\n'
              'from numpy import *\n'
@@ -81,12 +82,25 @@ class MatmodlabMagics(Magics):
                   'init_from_matmodlab_magic("matplotlib")\n')
 
         # Load the matplotlib colors for use in other plots
-        try:
-            from matplotlib import colors
-            s += ('from matplotlib import colors\n'
-                  'colors = colors.cnames.values()\n')
-        except ImportError:
-            pass
+        c = ['blue', 'red', 'purple', 'green', 'orange', 'hotpink', 'cyan',
+             'magenta', 'chocolate', 'yellow', 'black', 'dodgerblue', 'darkred',
+             'darkviolet', 'darkgreen', 'orangered', 'teal', 'darkslategray',
+             'royalblue', 'crimson', 'seagreen', 'plum', 'darkgoldenrod',
+             'midnightblue', 'darkolivegreen', 'darkmagenta', 'darkorchid',
+             'darkturquoise', 'lime', 'turquoise', 'darkcyan', 'maroon']
+	s += 'COLORS = {0}\n'.format(c)
+	s += ('def get_color(i=None, rand=False, _i=[0], reset=False):\n'
+	      '    if reset:\n'
+	      '        _i[0] = 0\n'
+	      '        return\n'
+	      '    if rand:\n'
+	      '        color = COLORS[random.randint(0, len(COLORS)-1)]\n'
+	      '    else:\n'
+	      '        if i is None:\n'
+	      '            i = _i[0]\n'
+	      '            _i[0] += 1\n'
+	      '        color = COLORS[i % (len(COLORS) - 1)]\n'
+	      '    return color.lower()\n')
 
         exec(s, user_ns)
 
