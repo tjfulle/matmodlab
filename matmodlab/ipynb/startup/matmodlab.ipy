@@ -7,8 +7,6 @@ from IPython.core import magic_arguments
 from IPython.utils.warn import warn, error
 from IPython.core.magic import Magics, magics_class, line_magic
 
-from matmodlab.constants import BOKEH, MATPLOTLIB
-
 magic_gui_arg = magic_arguments.argument('plot', nargs='?',
         help='Name of the plotting tool to use (bokeh, matplotlib)')
 
@@ -23,6 +21,11 @@ class MatmodlabMagics(Magics):
     def matmodlab(self, line='', cache=[0, 0]):
         """matmodlab line magic"""
         args = magic_arguments.parse_argstring(self.matmodlab, line)
+
+        d = os.getenv('MATMODLAB', '')
+        if d or d not in sys.path:
+            sys.path.insert(0, d)
+        from matmodlab.constants import BOKEH, MATPLOTLIB
 
         if not args.plot:
             try:
@@ -46,10 +49,6 @@ class MatmodlabMagics(Magics):
         else:
             error('unknown matmodlab argument %s' % args.plot)
             args.plot = None
-
-        d = os.getenv('MATMODLAB', '')
-        if d or d not in sys.path:
-            sys.path.insert(0, d)
 
         # Key imports
         user_ns = {}
