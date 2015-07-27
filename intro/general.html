@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="1. Introduction and Overview" href="index.html" />
     <link rel="next" title="1.2. Introduction: Background" href="about.html" />
@@ -33,12 +33,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="introduction-general">
 <span id="intro-general"></span><h1>1.1. Introduction: General<a class="headerlink" href="#introduction-general" title="Permalink to this headline">¶</a></h1>
@@ -52,16 +52,17 @@ Matmodlab includes:</p>
 parameters;</li>
 <li>Matmodlab.Optimizer, an optimization toolkit for optimizing material model
 parameters;</li>
-<li>Matmodlab.Viewer, an interactive visualization tool.</li>
+<li>Matmodlab.Viewer, an interactive visualization tool;</li>
+<li>Matmodlab.Notebook, a customized <a class="reference external" href="http://ipython.org/notebook.html">IPython Notebook</a> environment.</li>
 </ul>
-<p>The material model simulator can be thought to drive a single material point
-of a finite element simulation through specific user designed paths. This
-permits exercising material models in ways not possible in finite element
+<p>The Matmodlab.Simulator can be thought to drive a single material point of a
+finite element simulation through specific user defined paths. This permits
+exercising material models in ways not possible in finite element
 calculations, desgining verification and validation tests of the material
 response, among others. Matmodlab is a small suite of tools at the developers
 disposal to aid in the design and implementation of material models in larger
-finite element host codes. It is also a useful tool for analysts for
-understanding and parameterizing a material&#8217;s response to deformation.</p>
+finite element host codes. It is also a useful tool for analysts to understand
+and parameterize a material&#8217;s response to deformation.</p>
 </div>
 <div class="section" id="about-matmodlab">
 <h2>About Matmodlab<a class="headerlink" href="#about-matmodlab" title="Permalink to this headline">¶</a></h2>
@@ -76,18 +77,20 @@ sources.</p>
 </div>
 <div class="section" id="using-matmodlab">
 <h2>Using Matmodlab<a class="headerlink" href="#using-matmodlab" title="Permalink to this headline">¶</a></h2>
-<p>The Matmodlab.Simulator is run in batch mode from the command line (see
-<a class="reference internal" href="../execution/index.html#model-create-and-execute"><em>Job Execution</em></a>, for details). The main input the
+<p>The Matmodlab.Simulator is run in the Matmodlab computational environment. The
+environment is invoked by executing input scripts from the command line (see
+<a class="reference internal" href="../execution/index.html#model-create-and-execute"><span>Job Execution</span></a>, for details) or from the
+<a class="reference internal" href="../execution/notebook.html#notebook"><span>Matmodlab.Notebook</span></a> environment. The main input the
 Matmodlab.Simulator is a python script containing directives and data required
 for the simulation. Directions on generating input scripts are provided in
 this guide.</p>
-<p>As you begin to use Matmodlab, it is recommended that you read and modify the many examples in the <tt class="docutils literal"><span class="pre">examples/</span></tt> directory in the root directory of Matmodlab.</p>
+<p>As you begin to use Matmodlab, it is recommended that you read and modify the many examples in the <code class="docutils literal"><span class="pre">matmodlab/examples</span></code> directory in the root directory of Matmodlab.</p>
 </div>
 <div class="section" id="viewing-the-results-of-a-matmodlab-simulation">
 <h2>Viewing the Results of a Matmodlab Simulation<a class="headerlink" href="#viewing-the-results-of-a-matmodlab-simulation" title="Permalink to this headline">¶</a></h2>
-<p>All simulation data is written to the output database. Output database files
-can be visualized in Matmodlab.Viewer. See <a class="reference internal" href="../execution/post.html#viewer"><em>Postprocessing Results</em></a> for information on
-using the visualization tools.</p>
+<p>Simulation data is written to an output database. Output database files can be
+visualized in <a class="reference internal" href="../execution/post.html#viewer"><span>Matmodlab.Viewer</span></a> or interactively in the
+<a class="reference internal" href="../execution/notebook.html#notebook"><span>Matmodlab.Notebook</span></a>.</p>
 </div>
 </div>
 
@@ -95,7 +98,7 @@ using the visualization tools.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
 
@@ -134,7 +137,7 @@ using the visualization tools.</p>
 </ul>
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -155,8 +158,8 @@ using the visualization tools.</p>
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="../_sources/intro/general.txt"

@@ -15,12 +15,12 @@ This guide is separated into four main parts:
 About This Guide
 ================
 
-This guide serves as both a User's Guide and Application Programming Interface
-(API) guide to Matmodlab. The guide assumes a working knowledge of the
-computing languages Matmodlab is developed in, namely `Python
-<https://www.python.org>`_ and `Fortran
+This guide is both a User's Guide and Application Programming Interface (API)
+guide to Matmodlab. The guide assumes a working knowledge of the computing
+languages Matmodlab is developed in, namely `Python <https://www.python.org>`_
+and `Fortran
 <http://www.fortran.com/the-fortran-company-homepage/fortran-tutorials>`_. No
-attempt to describe them is made. Online tutorials for each language are
+attempt to describe either is made. Online tutorials for each language are
 readily available. Likewise, the target audience is assumed to have a basic
 knowledge of continuum mechanics and familiarity with other finite element
 codes. These concepts are also not described in detail.
@@ -29,6 +29,7 @@ Conventions Used in the Guide
 -----------------------------
 
 * Python objects are typeset in ``fixed point font``.
+* ``$`` is used to denote a terminal prompt, e.g. ``$ cd`` is interpreted as executing the ``cd`` (change directory) command at a command prompt.
 
 License
 =======
@@ -55,7 +56,7 @@ See :ref:`intro_install` for more installation details.
 Acknowledgments
 ===============
 
-Matmodlab is an outgrowth of the *MED* material driver developed by Dr. `Rebecca Brannon <http://www.mech.utah.edu/~brannon/>`_ and the *MMD* driver developed by Tom Pucik at Sandia National Labs.
+The inspiration for Matmodlab came from Dr. `Rebecca Brannon's <http://www.mech.utah.edu/~brannon/>`_ *MED* material point driver and Tom Pucicks's *MMD* driver, developed at Sandia National Labs.
 
 The syntax and documentation have been greatly influenced by the authors' exposure and use of research codes at Sandia National Labs and other commercial finite element codes, notably `Abaqus <http://www.3ds.com/products-services/simulia/products/abaqus/latest-release>`_.
 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>2.6. Optimizer &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>2.7. Optimizer &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -23,47 +23,47 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="2. Job Execution" href="index.html" />
-    <link rel="next" title="2.7. Annotated Examples" href="examples.html" />
-    <link rel="prev" title="2.5. Permutator" href="permutate.html" />
+    <link rel="next" title="2.8. Annotated Examples" href="examples.html" />
+    <link rel="prev" title="2.6. Permutator" href="permutate.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="optimizer">
-<span id="optimize"></span><h1>2.6. Optimizer<a class="headerlink" href="#optimizer" title="Permalink to this headline">¶</a></h1>
+<span id="optimize"></span><h1>2.7. Optimizer<a class="headerlink" href="#optimizer" title="Permalink to this headline">¶</a></h1>
 <div class="topic">
 <p class="topic-title first">See Also</p>
 <ul class="simple">
-<li><a class="reference internal" href="mps.html#mps"><em>MaterialPointSimulator</em></a></li>
+<li><a class="reference internal" href="mps.html#mps"><span>MaterialPointSimulator</span></a></li>
 </ul>
 </div>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
-<p>Optimize specified parameters against user specified objective function. Ideal for finding optimal model parameters. A optimizer instance is created through the <tt class="docutils literal"><span class="pre">Optimizer</span></tt> constructor.</p>
+<p>Optimize specified parameters against user specified objective function. Ideal for finding optimal model parameters. A optimizer instance is created through the <code class="docutils literal"><span class="pre">Optimizer</span></code> constructor.</p>
 </div>
 <div class="section" id="the-optimizer-constructor">
 <h2>The Optimizer Constructor<a class="headerlink" href="#the-optimizer-constructor" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="Optimzer">
-<em class="property">class </em><tt class="descname">Optimzer</tt><big>(</big><em>job</em>, <em>func</em>, <em>xinit</em>, <em>method=SIMPLEX</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>maxiter=MAXITER</em>, <em>tolerance=TOL</em>, <em>descriptors=None</em>, <em>funcargs=[]</em>, <em>Ns=10</em><big>)</big><a class="headerlink" href="#Optimzer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">Optimzer</code><span class="sig-paren">(</span><em>job</em>, <em>func</em>, <em>xinit</em>, <em>method=SIMPLEX</em>, <em>verbosity=1</em>, <em>d=None</em>, <em>maxiter=MAXITER</em>, <em>tolerance=TOL</em>, <em>descriptors=None</em>, <em>funcargs=[]</em>, <em>Ns=10</em><span class="sig-paren">)</span><a class="headerlink" href="#Optimzer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Optimzer object and set up the simulation.</p>
 <p>The <em>job</em> string is the simulation ID.  The Permutator creates a job.eval/ directory in the simulation directory. The ith individual job is then run in job.eval/eval_i/.</p>
 <p>The Optimzer writes relevant simulation information to job.eval/job.xml.  The Matmodlab.Visualizer can read the job.xml file and display the permutated job.</p>
 <p><em>func</em> is a function that evaluates a Matmodlab simulation.  It is called as <em>func(x, xnames, d, job, *funcargs)</em>, where <em>x</em> are the current values of the permutated variables, <em>xnames</em> are their names, <em>d</em> is the simulation directory of the current job, <em>job</em> is the job ID, and <em>funcargs</em> are additional arguments to be sent to <em>func</em>.</p>
 <p><em>xinit</em> is a list of initial values of the simulation parameters to be optimized.  Each member of the list must be a OptimizeVariable instance.</p>
 <p>The following arguments are optional</p>
-<p><em>method</em> is the method for determining how to combine parameter values. One of <tt class="docutils literal"><span class="pre">SIMPLEX</span></tt>, <tt class="docutils literal"><span class="pre">POWELL</span></tt>, <tt class="docutils literal"><span class="pre">COBYLA</span></tt>, or <tt class="docutils literal"><span class="pre">BRUTE</span></tt>.</p>
+<p><em>method</em> is the method for determining how to combine parameter values. One of <code class="docutils literal"><span class="pre">SIMPLEX</span></code>, <code class="docutils literal"><span class="pre">POWELL</span></code>, <code class="docutils literal"><span class="pre">COBYLA</span></code>, or <code class="docutils literal"><span class="pre">BRUTE</span></code>.</p>
 <p><em>maxiter</em> is the integer maximum number of iterations and <em>tolerance</em> is the tolerance.  The default tolerance is 1e-8.</p>
 <p><em>descriptors</em> is a list of descriptors for the values returned from <em>func</em>.</p>
 <p><em>d</em> is the parent directory to run jobs.  If the directory does not exist, it will be created.  If the directory exists and <em>bu</em> is <em>False</em>, the directory will be first erased and then re-created.  If the directory exists but <em>bu</em> is <em>True</em>, the directory is archived.</p>
@@ -75,7 +75,7 @@
 <h2>Running the Optimizer<a class="headerlink" href="#running-the-optimizer" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="Optimizer.run">
-<tt class="descclassname">Optimizer.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#Optimizer.run" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">Optimizer.</code><code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Optimizer.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the simulation</p>
 </dd></dl>
 
@@ -84,16 +84,16 @@
 <h2>OptimizeVariable Factory Method<a class="headerlink" href="#optimizevariable-factory-method" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="OptimizeVariable">
-<tt class="descname">OptimizeVariable</tt><big>(</big><em>name</em>, <em>initial_value</em>, <em>bounds=None</em><big>)</big><a class="headerlink" href="#OptimizeVariable" title="Permalink to this definition">¶</a></dt>
+<code class="descname">OptimizeVariable</code><span class="sig-paren">(</span><em>name</em>, <em>initial_value</em>, <em>bounds=None</em><span class="sig-paren">)</span><a class="headerlink" href="#OptimizeVariable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a OptimizeVariable object</p>
-<p><em>name</em> is the name of variable and <em>initial_value</em> is its initial value.  <em>bounds</em> are the bounds on the variable given as (lower_bound, upper_bound).  Bounds are only applicable if the optimizer method is <tt class="docutils literal"><span class="pre">COBYLA</span></tt>.</p>
+<p><em>name</em> is the name of variable and <em>initial_value</em> is its initial value.  <em>bounds</em> are the bounds on the variable given as (lower_bound, upper_bound).  Bounds are only applicable if the optimizer method is <code class="docutils literal"><span class="pre">COBYLA</span></code>.</p>
 </dd></dl>
 
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>The following input demonstrates how to optimize the <tt class="docutils literal"><span class="pre">K</span></tt> and <tt class="docutils literal"><span class="pre">G</span></tt>
-parameters and can be found in <tt class="docutils literal"><span class="pre">matmodlab/examples/optimize.py</span></tt>.  The objective function calls <tt class="docutils literal"><span class="pre">calculate_bounded_area</span></tt> to find the area between the calculated stress strain curve and the experimental.</p>
+<p>The following input demonstrates how to optimize the <code class="docutils literal"><span class="pre">K</span></code> and <code class="docutils literal"><span class="pre">G</span></code>
+parameters and can be found in <code class="docutils literal"><span class="pre">matmodlab/examples/optimize.py</span></code>.  The objective function calls <code class="docutils literal"><span class="pre">calculate_bounded_area</span></code> to find the area between the calculated stress strain curve and the experimental.</p>
 <div class="section" id="the-example-script">
 <h3>The Example Script<a class="headerlink" href="#the-example-script" title="Permalink to this headline">¶</a></h3>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
@@ -160,12 +160,12 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
 <span class="n">H</span> <span class="o">=</span> <span class="n">OptimizeVariable</span><span class="p">(</span><span class="s">&quot;H&quot;</span><span class="p">,</span>  <span class="mf">1.0e6</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0e4</span><span class="p">,</span> <span class="mf">1.0e7</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>These statements define parameters <tt class="docutils literal"><span class="pre">E</span></tt>, <tt class="docutils literal"><span class="pre">Y0</span></tt>, and <tt class="docutils literal"><span class="pre">H</span></tt> to be the variable to be optimized.</p>
+<p>These statements define parameters <code class="docutils literal"><span class="pre">E</span></code>, <code class="docutils literal"><span class="pre">Y0</span></code>, and <code class="docutils literal"><span class="pre">H</span></code> to be the variable to be optimized.</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="n">optimizer</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span><span class="s">&quot;optimize&quot;</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="p">[</span><span class="n">E</span><span class="p">,</span> <span class="n">Y0</span><span class="p">,</span> <span class="n">H</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="n">POWELL</span><span class="p">,</span>
                       <span class="n">maxiter</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">1.e-3</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This statement instantiates the <tt class="docutils literal"><span class="pre">Optimzer</span></tt> object, using the <tt class="docutils literal"><span class="pre">POWELL</span></tt> method.</p>
+<p>This statement instantiates the <code class="docutils literal"><span class="pre">Optimzer</span></code> object, using the <code class="docutils literal"><span class="pre">POWELL</span></code> method.</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="n">optimizer</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -203,7 +203,7 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
 
@@ -225,8 +225,9 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
 <li class="toctree-l2"><a class="reference internal" href="cli.html">2.2. Execution Procedures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mps.html">2.3. MaterialPointSimulator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">2.4. Postprocessing Results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="permutate.html">2.5. Permutator</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">2.6. Optimizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="notebook.html">2.5. Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutate.html">2.6. Permutator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">2.7. Optimizer</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#the-optimizer-constructor">The Optimizer Constructor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-the-optimizer">Running the Optimizer</a></li>
@@ -238,7 +239,7 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html">2.7. Annotated Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html">2.8. Annotated Examples</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../material/index.html">3. Materials</a></li>
@@ -246,7 +247,7 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
 </ul>
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -267,8 +268,8 @@ parameters and can be found in <tt class="docutils literal"><span class="pre">ma
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="../_sources/execution/optimize.txt"

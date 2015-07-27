@@ -111,8 +111,15 @@ std_materials
 
   A list containing directories and files to search for standard material models.  The default is ``[MAT_D]``.  User values are appended to and do not overwrite this variable.
 
+Simulation Directory
+--------------------
+
+simulation_dir
+
+  The directory to run the simulation.  The default is the current working directory.
+
 A Note on Defining User Material Models
-.......................................
+---------------------------------------
 
 ``std_materials`` and ``materials``  user settings are used to inform Matmodlab concerning user defined materials.  ``std_materials`` is a list of python interface files for standard models.  The ``materials`` dictionary is a dictionary of ``model_name: attribute_dict`` key:value pairs with the dictionary of model attributes containing the following information:
 
@@ -124,17 +131,11 @@ A Note on Defining User Material Models
 * *param_names*: [list of string, optional] A list of model parameter names.  If given, parameters should be sent to the ``MaterialPointSimulator.Material`` constructor as a dictionary of ``key:value`` pairs, where ``key`` is the parameter name.  Otherwise, parameters should be sent to the constructor as an array in the order expected by the model.
 
 Example
-'''''''
+.......
 
-The following is a portion of the user environment file found in ``matmodlab/examples`` and is used by ``examples/users.py`` to define the material model's attributes::
+The following is a portion of the user environment file found in ``matmodlab/examples`` and is used by ``matmodlab/examples/users.py`` to define the material model's attributes::
 
-  materials = {'neohooke': {'model': USER, 'response': HYPERELASTIC,
-                            'source_files': [join(MAT_D, 'abaumats/uhyper.f90')],
-                            'ordering': [XX, YY, ZZ, XY, XZ, YZ]}}
-
-Simulation Directory
---------------------
-
-simulation_dir
-
-  The directory to run the simulation.  The default is the current working directory.
+  materials = {'neohooke_u': {'model': USER, 'response': HYPERELASTIC,
+                              'libname': 'neohooke_u',
+                              'source_files': [join(MAT_D, 'src/uhyper_neohooke.f90')],
+                              'ordering': [XX, YY, ZZ, XY, XZ, YZ]}}

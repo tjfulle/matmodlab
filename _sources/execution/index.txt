@@ -11,6 +11,7 @@ Job Execution
    cli
    mps
    post
+   notebook
    permutate
    optimize
    examples

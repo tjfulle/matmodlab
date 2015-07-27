@@ -12,7 +12,7 @@ Overview
 
 This section describes the ``StandardMaterialTest`` class in ``matmodlab.tests.testconf``.
 
-.. note::
+.. todo::
 
    This documentation is out of date.
 

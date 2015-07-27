@@ -33,7 +33,7 @@ Most input scripts have the same basic layout:
 
      mps = MaterialPointSimulator('jobname')
 
-3) Define the simulation steps. For example, a step of uniaxial strain::
+3) Define the simulation steps. For example, a single step of uniaxial strain::
 
      mps.StrainStep(components=(1, 0, 0))
 

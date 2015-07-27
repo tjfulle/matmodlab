@@ -14,16 +14,17 @@ Matmodlab includes:
   parameters;
 * Matmodlab.Optimizer, an optimization toolkit for optimizing material model
   parameters;
-* Matmodlab.Viewer, an interactive visualization tool.
+* Matmodlab.Viewer, an interactive visualization tool;
+* Matmodlab.Notebook, a customized `IPython Notebook <http://ipython.org/notebook.html>`_ environment.
 
-The material model simulator can be thought to drive a single material point
-of a finite element simulation through specific user designed paths. This
-permits exercising material models in ways not possible in finite element
+The Matmodlab.Simulator can be thought to drive a single material point of a
+finite element simulation through specific user defined paths. This permits
+exercising material models in ways not possible in finite element
 calculations, desgining verification and validation tests of the material
 response, among others. Matmodlab is a small suite of tools at the developers
 disposal to aid in the design and implementation of material models in larger
-finite element host codes. It is also a useful tool for analysts for
-understanding and parameterizing a material's response to deformation.
+finite element host codes. It is also a useful tool for analysts to understand
+and parameterize a material's response to deformation.
 
 About Matmodlab
 ===============
@@ -41,17 +42,19 @@ sources.
 Using Matmodlab
 ===============
 
-The Matmodlab.Simulator is run in batch mode from the command line (see
-:ref:`model_create_and_execute`, for details). The main input the
+The Matmodlab.Simulator is run in the Matmodlab computational environment. The
+environment is invoked by executing input scripts from the command line (see
+:ref:`model_create_and_execute`, for details) or from the
+:ref:`Matmodlab.Notebook <notebook>` environment. The main input the
 Matmodlab.Simulator is a python script containing directives and data required
 for the simulation. Directions on generating input scripts are provided in
 this guide.
 
-As you begin to use Matmodlab, it is recommended that you read and modify the many examples in the ``examples/`` directory in the root directory of Matmodlab.
+As you begin to use Matmodlab, it is recommended that you read and modify the many examples in the ``matmodlab/examples`` directory in the root directory of Matmodlab.
 
 Viewing the Results of a Matmodlab Simulation
 =============================================
 
-All simulation data is written to the output database. Output database files
-can be visualized in Matmodlab.Viewer. See :ref:`viewer` for information on
-using the visualization tools.
+Simulation data is written to an output database. Output database files can be
+visualized in :ref:`Matmodlab.Viewer <viewer>` or interactively in the
+:ref:`Matmodlab.Notebook <notebook>`.

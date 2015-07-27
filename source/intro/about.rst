@@ -11,29 +11,29 @@ Matmodlab (or, more generally, of any stand-alone constitutive model driver)
 are
 
   * Matmodlab is a very small, special purpose, code. Thus, maintaining
-    and adding new features to Matmodlab is very easy.
+    and adding new features to Matmodlab is very easy;
 
-  * Simulations are not affected by irrelevant artifacts such as artificial
-    viscosity or uncertainty in the handling of boundary conditions.
+  * simulations are not affected by irrelevant artifacts such as artificial
+    viscosity or uncertainty in the handling of boundary conditions;
 
-  * It is straightforward to produce supplemental output for deep analysis of
+  * it is straightforward to produce supplemental output for deep analysis of
     the results that would otherwise constitute an unnecessary overhead in a
-    finite element code.
+    finite element code;
 
-  * Specific material benchmarks may be developed and automatically run
-    quickly any time the model is changed.
+  * specific material benchmarks may be developed and automatically run
+    quickly any time the model is changed; and
 
-  * Specific features of a material model may be exercised easily by the model
+  * specific features of a material model may be exercised easily by the model
     developer by prescribing strains, strain rates, stresses, stress rates, and
     deformation gradients as functions of time.
 
 Why Python?
 ===========
 
-Python is an interpreted, high level object oriented language. It allows for
-writing programs rapidly and, because it is an interpreted language, does not
-require a compiling step. While this might make programs written in python slower
-than those written in a compiled language, modern packages and computers make the
+Python is an interpreted, high level object oriented language. Programs can be
+written rapidly and, because it is an interpreted language, do not require a
+compiling step. While this might make programs written in python slower than
+those written in a compiled language, modern packages and computers make the
 speed up difference between python and a compiled language for single element
 problems almost insignificant.
 

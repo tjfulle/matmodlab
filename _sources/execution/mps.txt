@@ -25,7 +25,7 @@ The MaterialPointSimulator Constructor
 
    Create a MaterialPointSimulator object and set up the simulation.
 
-   The ``job`` string is the simulation ID.  Generated files are named job.ext, where ext is the file extension.
+   The ``job`` string is the simulation ID.  Generated files are named ``job.ext``, where ext is the file extension.
 
    The following arguments are optional.
 
@@ -204,3 +204,12 @@ View Simulation Results
 .. method:: MaterialPointSimulator.view(model=None)
 
    Display simulation results in visualizer.
+
+Exporting Results to Other Formats
+==================================
+
+.. method:: MaterialPointSimulator.dump(variables, model=None, format='ascii', ffmt='%.18f')
+
+   Writes simulation results for the requested ``variables`` to the requested ``format``.
+
+   ``variables`` is a list of variables to extract from the database and are written the ``MaterialPointSimulator.job.ext``, where ``ext`` is a file extension that depends on the requested output ``format``.

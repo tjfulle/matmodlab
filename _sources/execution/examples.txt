@@ -22,7 +22,7 @@ Job Execution
 Simulations are run by processing Matmodlab input scripts with the ``mml``
 command line utility::
 
-  mml run filename.py
+  $ mml run filename.py
 
 where ``filename.py`` is the name of the input script.
 

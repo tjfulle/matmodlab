@@ -11,7 +11,7 @@ Overview
 
 This section describes some conventions used in the Matmodlab API and adopted in user input scripts.
 
-matmodlab Namespace
+Matmodlab Namespace
 ===================
 
 Input scripts to Matmodlab should include::
@@ -82,10 +82,10 @@ Symbolic Constants Relating to Matmodlab.Permutator
 Symbolic Constants Relating to Matmodlab.Optimizer
 ..................................................
 
-``SIMPLEX``, Simplex optimization method
-``POWELL``, Powell optimization method
-``COBYLA``, COBYLA optimization method
-``BRUTE``, brute force optimization method
+* ``SIMPLEX``, Simplex optimization method
+* ``POWELL``, Powell optimization method
+* ``COBYLA``, COBYLA optimization method
+* ``BRUTE``, brute force optimization method
 
 Naming Conventions
 ==================

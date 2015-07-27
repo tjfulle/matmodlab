@@ -7,14 +7,14 @@ Overview
 ========
 
 Matmodlab's code base is largely written in Python and requires no
-additional compiling. However, several [optional] linear algebra packages and
+additional compiling. However, several (optional) linear algebra packages and
 material models are written in Fortran and require a seperate compile step.
 
 System Requirements
 ===================
 
 Matmodlab has been built and tested extensively on several versions of Linux
-and the Apple Mac OSX 10.9 operating systems. It is unknown whether or not
+and the Apple Mac OS X 10.9 operating systems. It is unknown whether or not
 Matmodlab will run on Windows.
 
 
@@ -35,13 +35,17 @@ packages are installed.
 
 #) `traits <http://pypi.python.org/pypi/traits>`_, `traitsui <http://pypi.python.org/pypi/traitsui>`_, and `chaco <http://pypi.python.org/pypi/chaco>`_ for data visualization (E)
 
-#) `pytest <http://pypi.python.org/pypi/pytest>`_ for running tests (A, E)
+#) `pytest <http://pytest.org/latest>`_ for running tests (A, E)
 
 #) `openpyxl <http://pypi.python.org/pypi/openpyxl>`_ for simulation output and visualization of .xlsx data (A, E)
 
 #) `xlwt <http://pypi.python.org/pypi/xlwt>`_ for simulation output as .xls (A)
 
 #) `xlrd <http://pypi.python.org/pypi/xlrd>`_ for visualization of .xls data (A)
+
+#) `matplotlib <http://matplotlib.org>`_ for data visualization in :ref:`Matmodlab.Notebook <notebook>`  (A, E)
+
+#) `bokeh <http://bokeh.pydata.org/en/latest>`_ for interactive data visualization in :ref:`Matmodlab.Notebook <notebook>`  (A)
 
 The required software may be obtained in several ways, though most development
 has been made using the `Anaconda <http://www.continuum.io>`_ and `Enthought Canopy <http://www.enthought.com>`_ Python Distributions (E=available in
@@ -148,7 +152,7 @@ Example
 
 ::
 
-  mml build
+  $ mml build
 
 This will build the Matmodlab Fortran utilities and material libraries. The
 resultant shared object libraries are copied to ``matmodlab/lib``.
@@ -160,22 +164,22 @@ Python Virtual Environment
 
 It is recommended that you install Matmodlab in a `Virtual Environment <http://docs.python-guide.org/en/latest/dev/virtualenvs>`_.  As an example, consider installing Matmodlab using Anaconda::
 
-  conda create -n matmodlab numpy scipy traitsui chaco xlrd pytest matplotlib
-  source activate matmodlab
-  cd ~/Developer/matmodlab
-  python setup.py develop
-  mml build
+  $ conda create -n matmodlab numpy scipy traitsui chaco xlrd pytest matplotlib
+  $ source activate matmodlab
+  $ cd ~/Developer/matmodlab
+  $ python setup.py develop
+  $ mml build
 
-In the preceding commands, a virtual environment named *matmodlab* was created with the required packages and then activated.  We then navigated in to the matmodlab directory (``~/Developer`` in this example), executed the setup script and built the optional libraries.
+In the preceding commands, a virtual environment named *matmodlab* was created with the required packages and then activated.  We then navigated in to the ``matmodlab`` directory (in ``~/Developer/matmodlab`` in this example), executed the setup script and built the optional libraries.
 
 Consult your Python distribution's documentations for instructions to create and use virtual environments.
 
 Testing the Installation
 ========================
 
-Testing requires that the ``pytest`` module be installed.  Tests are run by executing::
+Testing requires that the `pytest <http://pytest.org/latest>`_ module be installed.  Tests are run by executing::
 
-  mml test
+  $ mml test
 
 See :ref:`cli_test` for details on the test command.
 

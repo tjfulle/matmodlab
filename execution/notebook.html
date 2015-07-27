@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>2. Job Execution &mdash; Material Model Laboratory 3.0 documentation</title>
+    <title>2.5. Notebook &mdash; Material Model Laboratory 3.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -25,8 +25,9 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
-    <link rel="next" title="2.1. Job Execution: Overview" href="overview.html" />
-    <link rel="prev" title="1.8. Matmodlab File Formats" href="../intro/output.html" />
+    <link rel="up" title="2. Job Execution" href="index.html" />
+    <link rel="next" title="2.6. Permutator" href="permutate.html" />
+    <link rel="prev" title="2.4. Postprocessing Results" href="post.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -39,19 +40,46 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="job-execution">
-<span id="model-create-and-execute"></span><h1>2. Job Execution<a class="headerlink" href="#job-execution" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="overview.html">2.1. Job Execution: Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">2.2. Execution Procedures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mps.html">2.3. MaterialPointSimulator</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">2.4. Postprocessing Results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="notebook.html">2.5. Notebook</a></li>
-<li class="toctree-l1"><a class="reference internal" href="permutate.html">2.6. Permutator</a></li>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">2.7. Optimizer</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">2.8. Annotated Examples</a></li>
+  <div class="section" id="notebook">
+<span id="id1"></span><h1>2.5. Notebook<a class="headerlink" href="#notebook" title="Permalink to this headline">¶</a></h1>
+<div class="topic">
+<p class="topic-title first">See Also</p>
+<ul class="simple">
+<li><a class="reference internal" href="cli.html#basic-cli"><span>Execution Procedures</span></a></li>
+<li><a class="reference internal" href="../intro/conventions.html#intro-conventions"><span>Conventions</span></a></li>
+<li><a class="reference internal" href="mps.html#mps"><span>MaterialPointSimulator</span></a></li>
+<li><a class="reference internal" href="post.html#viewer"><span>Postprocessing Results</span></a></li>
 </ul>
+</div>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The Matmodlab.Notebook</p>
+<ul class="simple">
+<li>is an <a class="reference external" href="http://ipython.org/notebook.html">IPython Notebook</a> environment;</li>
+<li>requires the <code class="docutils literal"><span class="pre">ipython</span></code> and <code class="docutils literal"><span class="pre">ipython-notebook</span></code> modules;</li>
+<li>requires the <a class="reference external" href="http://matplotlib.org">matplotlib</a> and/or <a class="reference external" href="http://bokeh.pydata.org/en/latest">Bokeh</a> modules for data visualization; and</li>
+<li>allows interactive material model development.</li>
+</ul>
+<p>The full power of the Matmodlab.Notebook is realized by interactive data visualization using <a class="reference external" href="http://bokeh.pydata.org/en/latest">Bokeh</a>, which is a recommended install.</p>
+</div>
+<div class="section" id="the-matmodlab-notebook-environment">
+<h2>The Matmodlab.Notebook Environment<a class="headerlink" href="#the-matmodlab-notebook-environment" title="Permalink to this headline">¶</a></h2>
+<p>The Matmodlab.Notebook environment is invoked by launching the IPython Notebook through the <code class="docutils literal"><span class="pre">mml</span></code> procedure:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ mml notebook
+</pre></div>
+</div>
+<p>After launching the notebook server and starting a new notebook, the following IPython magic should be executed in the notebook&#8217;s first cell:</p>
+<div class="highlight-python"><div class="highlight"><pre>%matmodlab
+</pre></div>
+</div>
+<p>If Bokeh is installed, the <a class="reference internal" href="mps.html#mps"><span>MaterialPointSimulator</span></a>&#8216;s plotting methods use Bokeh for data visualization.  Otherwise, matplotlib is used as the plotting backend.  Matplotlib can be explicitly used as the plotting backend by specifying:</p>
+<div class="highlight-python"><div class="highlight"><pre>%matmodlab matplotlib
+</pre></div>
+</div>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Finish this section</p>
+</div>
 </div>
 </div>
 
@@ -76,12 +104,16 @@
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro/index.html">1. Introduction and Overview</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">2. Job Execution</a><ul>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Job Execution</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="overview.html">2.1. Job Execution: Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cli.html">2.2. Execution Procedures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mps.html">2.3. MaterialPointSimulator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="post.html">2.4. Postprocessing Results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebook.html">2.5. Notebook</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">2.5. Notebook</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-matmodlab-notebook-environment">The Matmodlab.Notebook Environment</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="permutate.html">2.6. Permutator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="optimize.html">2.7. Optimizer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html">2.8. Annotated Examples</a></li>
@@ -117,7 +149,7 @@
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
-      <a href="../_sources/execution/index.txt"
+      <a href="../_sources/execution/notebook.txt"
           rel="nofollow">Page source</a></li>
     </div>
 
