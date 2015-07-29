@@ -70,7 +70,8 @@ def loaddb_single_element(filename, variables=None, disp=1,
             try:
                 idx.append(head.index(name))
             except (IndexError, ValueError):
-                raise KeyError('{0} not in output database'.format(name))
+                raise KeyError('{0} not in output database.'
+                               ' Found {1}'.format(name, repr(head)))
         head = [head[i] for i in idx]
         data = data[:, idx]
 
@@ -133,7 +134,8 @@ def read_exodus_legacy(filename, variables=None, disp=1, blk_num=1, elem_num=1,
             try:
                 idx.append(head.index(name))
             except IndexError:
-                raise KeyError('{0} not in output database'.format(name))
+                raise KeyError('{0} not in output database.'
+                               ' Found {1}'.format(name, repr(head)))
         head = [head[i] for i in idx]
         data = data[:, idx]
 
@@ -218,7 +220,8 @@ def loaddb_single_element_x(filename, variables=None, disp=1,
             try:
                 idx.append(head.index(name))
             except IndexError:
-                raise KeyError('{0} not in output database'.format(name))
+                raise KeyError('{0} not in output database.'
+                               ' Found {1}'.format(name, repr(head)))
         head = [head[i] for i in idx]
         data = data[:, idx]
 
