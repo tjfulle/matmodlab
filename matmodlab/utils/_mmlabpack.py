@@ -239,7 +239,7 @@ def f_from_e(kappa, E):
     R = numpy.eye(3)
     I = numpy.eye(3)
     E = asmat(E / VOIGHT)
-    if k == 0:
+    if kappa == 0:
         U = expm(E)
     else:
         U = powm(k * E + I, 1. / k)
