@@ -153,7 +153,9 @@ class MaterialModel(object):
                                        stress, self.initial_sdv, disp=2)
         # property completions
         b = self.completions_map()
-        if b is not None:
+
+        # Check if None or empty dict
+        if b is not None and b:
             a = self.params
         else:
             C = mmlabpack.isotropic_part(ddsdde)
