@@ -379,7 +379,7 @@ def import_models(filename):
         model.initial_temperature = item.initial_temperature
 
         # Its material
-        mat = item.current_mat
+        mat = item.material
         parameters = dict(zip(mat.parameter_names, mat.initial_parameters))
         model.material.update(mat.name, parameters, {})
 

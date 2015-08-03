@@ -57,6 +57,8 @@ def loaddb_single_element(filename, variables=None, disp=1,
             times.append(frame.value)
             for fo in frame.field_outputs.values():
                 keys, values = fo.get_data(element=elem_num)
+                if fo.type == SCALAR:
+                    keys, values = [keys], [values]
                 for (i, key) in enumerate(keys):
                     fields.setdefault(key, []).append(values[i])
 
@@ -171,61 +173,3 @@ def expand_var_names(master, slave):
         vt = sorted(vt, key=lambda x: endsort(x))
         matches.extend(vt)
     return matches
-
-def loaddb_single_element_x(filename, variables=None, disp=1,
-                            elem_num=1, blk_num=1, at_step=0):
-    '''Read all field variables through time for elem_num'''
-
-    root, ext = splitext(filename)
-    if ext == '.base_exo':
-        # punt and use old reader
-        return read_exodus_legacy(filename, variables=variables,
-                                  disp=disp, blk_num=blk_num, elem_num=elem_num)
-
-    elif ext in ('.dbx', '.base_dbx'):
-        fh = dbx.File(filename, mode='r')
-    else:
-        fh = exodus.File(filename, mode='r')
-
-    fields = OrderedDict()
-    times = []
-    for step in fh.steps.values():
-        if at_step:
-            frames = [-1] if times else [0, -1]
-        else:
-            frames = range(len(step.frames))
-        for I in frames:
-            frame = step.frames[I]
-            if times and abs(times[-1] - frame.value) < 1.e-14:
-                continue
-            times.append(frame.value)
-            for fo in frame.field_outputs.values():
-                keys, values = fo.get_data(element=elem_num)
-                d = fields.setdefault(fo.name, {})
-                if fo.type != SCALAR:
-                    d.setdefault('components', keys)
-                d.setdefault('data', []).append(values)
-
-    print fields.keys()
-    print fields.values()
-    exit()
-
-    head = ['TIME'] + [x for x in fields.keys()]
-    data = np.column_stack((np.asarray(times), np.array(fields.values()).T))
-
-    if variables is not None:
-        variables = [_upcase(x, upcase) for x in variables]
-        idx = []
-        for name in variables:
-            try:
-                idx.append(head.index(name))
-            except IndexError:
-                raise KeyError('{0} not in output database.'
-                               ' Found {1}'.format(name, repr(head)))
-        head = [head[i] for i in idx]
-        data = data[:, idx]
-
-    if disp:
-        return head, data
-
-    return data

@@ -90,7 +90,7 @@ class BreakPoint:
         return
 
     def generate_summary(self, frame):
-        material = self.mps.current_mat
+        material = self.mps.material
         params = zip(material.parameter_names, material.params)
         params = "\n".join("  {0} = {1}".format(a, b) for a, b in params)
         time = frame.value

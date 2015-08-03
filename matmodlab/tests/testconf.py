@@ -52,7 +52,7 @@ class StandardMatmodlabTest(object):
                     break
             else:
                 raise OSError('no base file found for {0}'.format(job.job))
-        f = splitext(job.filename())[0] + '.difflog'
+        f = splitext(job.filename)[0] + '.difflog'
         with open(f, 'w') as fh:
-            return filediff(job.filename(), base, control_file=cf, stream=fh,
+            return filediff(job.filename, base, control_file=cf, stream=fh,
                             interp=interp)

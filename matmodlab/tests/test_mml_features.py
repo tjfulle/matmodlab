@@ -120,8 +120,8 @@ class TestOptimization(StandardMatmodlabTest):
         mps.DataSteps(TestOptimization.path_file, tc=0,
                       columns=[2,3,4], descriptors='EEE')
         mps.run()
-        error = opt_sig_v_time(mps.filename())
-        #error = opt_pres_v_evol(mps.filename())
+        error = opt_sig_v_time(mps.filename)
+        #error = opt_pres_v_evol(mps.filename)
         return error
 
     @staticmethod

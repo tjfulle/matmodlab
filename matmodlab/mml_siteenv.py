@@ -118,11 +118,10 @@ class Environment(object):
 environ = Environment()
 
 # --- Read in the user environment
-files = (os.path.expanduser('~/mml_userenv.py'),
-         os.getenv('MML_USERENV', ''),
-         os.path.join(os.getcwd(), 'mml_userenv.py'))
-
-for filename in files:
+__f1 = [os.path.expanduser('~/mml_userenv.py')]
+__f2 = os.getenv('MML_USERENV', '').split(os.pathsep)
+__f3 = [os.path.join(os.getcwd(), 'mml_userenv.py')]
+for filename in __f1 + __f2 + __f3:
     if not os.path.isfile(filename):
         continue
     THIS_D = dirname(realpath(filename))

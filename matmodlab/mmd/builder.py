@@ -61,7 +61,7 @@ class Builder(object):
         fb.build_extension_modules(verbosity=verbosity)
         return
 
-    def fetch_fort_libs_to_build(self, mats_to_fetch='all', user_env=0):
+    def fetch_fort_libs_to_build(self, mats_to_fetch='all', user_env=0, force=0):
         '''Add the fortran utilities to items to be built
 
         '''
@@ -83,6 +83,9 @@ class Builder(object):
                     if name in fort_libs:
                         raise MatModLabError('duplicate extension '
                                              'module {0}'.format(name))
+                    if (os.path.isfile(os.path.join(PKG_D, name + '.so'))
+                        and not force):
+                        continue
                     fort_libs.update({name: libs[name]})
 
         from loader import MaterialLoader

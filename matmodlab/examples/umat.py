@@ -16,14 +16,16 @@ parameters = np.array([0.110e12, .340])
 #  * XLS or 'xlsx' for excel file
 #  * PKL for python pickle
 
-mps = MaterialPointSimulator('umat', output=DBX)
-mps.StrainStep(components=(.2, .0, .0), frames=50)
-mps.StrainStep(components=(.0, .0, .0), frames=50)
+models = {}
+models['mps-1'] = MaterialPointSimulator('umat', output=DBX)
+models['mps-1'].StrainStep(components=(.2, .0, .0), frames=50)
+models['mps-1'].StrainStep(components=(.0, .0, .0), frames=50)
+models['mps-1'].Material(UMAT, parameters, depvar=0,
+                         source_files=[join(MAT_D, 'umat.f')])
+models['mps-1'].run()
 
-mps.Material(UMAT, parameters, name='umat', depvar=0,
-             source_files=[join(MAT_D, 'umat.f')])
-mps.Material(USER, parameters, name='user', libname='user', depvar=0,
-             response=MECHANICAL, source_files=[join(MAT_D, 'umat.f')],
-             ordering=(XX,YY,ZZ,XY,XZ,YZ))
-mps.run(model='umat')
-mps.run(model='user')
+models['mps-2'] = models['mps-1'].copy('user')
+models['mps-2'].Material(USER, parameters, libname='user', depvar=0,
+                         response=MECHANICAL, source_files=[join(MAT_D, 'umat.f')],
+                         ordering=(XX,YY,ZZ,XY,XZ,YZ))
+models['mps-2'].run()

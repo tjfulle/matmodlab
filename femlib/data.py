@@ -9,10 +9,27 @@ class StepRepository(OrderedDict):
     def Step(self, name):
         self[name] = Step(name)
         return self[name]
+
     def reset(self):
         for (name, step) in self.items():
             for frame in step.frames:
                 frame.field_outputs = FieldOutputs()
+
+    def get_field_output_history(self, key, elem_num, invariants=0):
+        time = []
+        fo_data = []
+        for step in self.values():
+            for frame in step.frames:
+                if time and abs(time[-1] - frame.value) < 1.e-14:
+                    continue
+                time.append(frame.value)
+                fo = frame.field_outputs[key]
+                #@tjfulle _a is a hack
+                keys, values = fo.get_data(element=elem_num, invariants=invariants)
+                fo_data.append(values)
+        time = np.asarray(time)
+        return FieldOutputHistory(key, fo.type, time, fo_data,
+                                  fo.component_labels, fo.valid_invariants)
 
 class Step(object):
     def __init__(self, name):
@@ -170,30 +187,15 @@ class FieldOutput:
 
     @staticmethod
     def compute_invariants(a, invariants):
-        values = []
-        mag = lambda x: np.sqrt(np.dot(x, x))
-        for (i, invariant) in enumerate(invariants):
-            if invariant == MISES:
-                dev = a - np.sum(a[:3]) * I6
-                value = np.sqrt(3./2.) * mag(dev)
-            elif invariant == PRES:
-                value = -np.sum(a[:3]) / 3.
-            elif invariant == EQ:
-                value = np.sqrt(2./3.*(np.sum(a[:3]**2) + .5*np.sum(a[3:]**2)))
-            elif invariant == EQ:
-                value = foo
-            elif invariant == V:
-                value = np.sum(a[:3])
-            elif invariant == MAGNITUDE:
-                value = mag(a)
-            values.append(value)
-        return values
+        return compute_invariants(a, invariants)
 
     def get_value_from_label(self, label):
         return self.values[self.labels.index(label)]
 
-    def get_data(self, sort=0, coords=0, invariants=0, element=None, block=None,
-                 flatten=0):
+    def get_data(self, sort=0, coords=0, invariants=None, element=None,
+                 block=None, flatten=0):
+
+        get_invariants = invariants is None or invariants
 
         data = self.data
         if flatten:
@@ -208,13 +210,17 @@ class FieldOutput:
             # Return values for element number element
             e = self.mesh_instance.elements.index(element)
             if self.type == SCALAR:
-                return [self.name], [data]
+                return self.name, data
             keys = [x for x in self.keys]
             data = aslist(data[e])
-            if self.valid_invariants:
+            if get_invariants and self.valid_invariants:
                 keys.extend(['%s.%s' % (self.name, INVARIANTS[x])
                              for x in self.valid_invariants])
-                data.extend(aslist(self.invariants[e]))
+                if self.invariants is not None:
+                    a = self.invariants[e]
+                else:
+                    a = self.compute_invariants(data, self.valid_invariants)
+                data.extend(aslist(a))
             if len(keys) != len(data):
                 raise ValueError('keys and data not consistent')
             return keys, data
@@ -244,3 +250,66 @@ class FieldValue:
         self.label = label
         self.data = data
         self.invariants = invariants
+
+class FieldOutputHistory(np.ndarray):
+    def __new__(cls, name, fo_type, time, data, component_labels, valid_invariants):
+        data = np.asarray(data)
+        if fo_type == SCALAR:
+            data = data.flatten()
+        obj = np.asarray(data).view(cls)
+        obj.name = name
+        obj.fo_type = type
+        obj.time = time
+        if valid_invariants:
+            a = [compute_invariants(x, valid_invariants) for x in data]
+            obj.invariants = np.array(a)
+        else:
+            obj.invariants = None
+        obj.component_labels = component_labels or []
+        obj.the_invariants = [INVARIANTS[x] for x in valid_invariants or []]
+        return obj
+
+    def __getattr__(self, key):
+        if key in self.component_labels:
+            i = self.component_labels.index(key)
+            return self[:,i]
+        if key in self.the_invariants:
+            i = self.the_invariants.index(key)
+            return self.invariants[:, i]
+        raise AttributeError('{0!r} object has no attribute '
+                             '{1!r}'.format(self.__class__, key))
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+        self.name = getattr(obj, 'name', None)
+        self.fo_type = getattr(obj, 'fo_type', None)
+        self.time = getattr(obj, 'time', None)
+        self.the_invariants = getattr(obj, 'the_invariants', [])
+        if self.the_invariants:
+            self.invariants = np.array(obj.invariants)
+        else:
+            self.invariants = None
+        self.component_labels = getattr(obj, 'component_labels', [])
+
+def compute_invariants(a, invariants):
+    values = []
+    mag = lambda x: np.sqrt(np.dot(x, x))
+    for (i, invariant) in enumerate(invariants):
+        if invariant in INVARIANTS.values():
+            invariant = INVARIANTS.keys()[INVARIANTS.values().index(invariant)]
+        if invariant == MISES:
+            dev = a - np.sum(a[:3]) * I6
+            value = np.sqrt(3./2.) * mag(dev)
+        elif invariant == PRES:
+            value = -np.sum(a[:3]) / 3.
+        elif invariant == EQ:
+            value = np.sqrt(2./3.*(np.sum(a[:3]**2) + .5*np.sum(a[3:]**2)))
+        elif invariant == V:
+            value = np.sum(a[:3])
+        elif invariant == MAGNITUDE:
+            value = mag(a)
+        else:
+            raise ValueError('Unknown invariant {0!r}'.format(invariant))
+        values.append(value)
+    return values

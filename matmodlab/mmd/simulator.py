@@ -30,24 +30,6 @@ EPS = np.finfo(np.float).eps
 __all__ = ['MaterialPointSimulator', 'StrainStep', 'StressStep', 'MixedStep',
            'DefGradStep', 'DisplacementStep', 'piecewise_linear']
 
-class SimulatorModel:
-    def __init__(self):
-        self._m = None
-        self._f = None
-        self.ran = False
-    @property
-    def material(self):
-        return self._m
-    @material.setter
-    def material(self, m):
-        self._m = m
-    @property
-    def filename(self):
-        return self._f
-    @filename.setter
-    def filename(self, f):
-        self._f = f
-
 class MaterialPointSimulator(object):
     def __init__(self, job, verbosity=None, d=None,
                  initial_temperature=DEFAULT_TEMP, output=DBX):
@@ -57,7 +39,7 @@ class MaterialPointSimulator(object):
         self.job = job
         self.bp = None
 
-        self.models = OrderedDict()
+        self.verbosity = verbosity
         self.initial_temperature = initial_temperature
 
         # setup IO
@@ -80,27 +62,32 @@ class MaterialPointSimulator(object):
         self.steps['Step-0'] = InitialStep('Step-0', **p)
         self.istress = Z6
 
-    def filename(self, model=None):
-        if model is None:
-            model = self.models.keys()[0]
-        return self.models[model].filename
+    def __getattr__(self, key):
+        try:
+            return self.get_var_time(key)
+        except:
+            raise AttributeError('{0!r} object has no attribute '
+                                 '{1!r}'.format(self.__class__, key))
+
+    def copy(self, job):
+        model = MaterialPointSimulator(job, verbosity=self.verbosity,
+                   d=self.directory, initial_temperature=self.initial_temperature,
+                   output=self.output_type)
+        for s in self.steps.values()[1:]:
+            step = AnalysisStep(s.kind, s.name, s.previous, s.increment,
+                                len(s.frames), s.components, s.descriptors,
+                                s.kappa, s.temperature, s.elec_field,
+                                s.num_dumps, s.start)
+            model.steps[s.name] = step
+        return model
 
     def Material(self, model, parameters, **kwargs):
         '''Method that delays the instantiation of the material model
 
         '''
         kwargs['initial_temp'] = self.initial_temperature
-        name = kwargs.pop('name', None)
-        if name is None:
-            i = 2
-            name = 'Material-1'
-            while name in self.models:
-                name = 'Material-{0}'.format(i)
-                i += 1
-        self.models[name] = SimulatorModel()
-        self.models[name].material = Material(model, parameters, **kwargs)
-        self.current_mat = self.models[name].material
-        return self.models[name].material
+        self.material = Material(model, parameters, **kwargs)
+        return self.material
 
     @property
     def initial_stress(self):
@@ -197,7 +184,7 @@ class MaterialPointSimulator(object):
     def write_summary(self):
         num_frames = sum([len(s.frames) for s in self.steps.values()])
         s = '\n   '.join('{0}'.format(x) for x in environ.std_materials)
-        filename = inspect.getfile(self.current_mat.__class__)
+        filename = inspect.getfile(self.material.__class__)
         summary = '''
 Simulation Summary
 ---------- -------
@@ -212,8 +199,8 @@ Material: {5}
   Number of props: {6}
     Number of sdv: {7}
 '''.format(self.job, s, filename, len(self.steps)-1, num_frames,
-           self.current_mat.name, self.current_mat.num_prop,
-           self.current_mat.num_sdv)
+           self.material.name, self.material.num_prop,
+           self.material.num_sdv)
         logging.getLogger('mps').info(summary)
 
     def setup_io(self, filename):
@@ -226,10 +213,10 @@ Material: {5}
 
         # Write info to log file
         L = max(max(len(n) for n in self.field_outputs), 10)
-        param_names = self.current_mat.parameter_names
-        self.param_vals = np.array(self.current_mat.parameters)
-        iparam_vals = self.current_mat.initial_parameters
-        param_vals = self.current_mat.parameters
+        param_names = self.material.parameter_names
+        self.param_vals = np.array(self.material.parameters)
+        iparam_vals = self.material.initial_parameters
+        param_vals = self.material.parameters
 
         logging.getLogger('mps').debug('Material Parameters')
         logging.getLogger('mps').debug('  {1:{0}s}  {2:12}  {3:12}'.format(
@@ -245,7 +232,7 @@ Material: {5}
 
         return db
 
-    def run(self, model=None, termination_time=None):
+    def run(self, termination_time=None):
         '''Run the problem
 
         '''
@@ -256,14 +243,6 @@ Material: {5}
             raise ModelCaptured
 
         start = tt()
-
-        # set up the material
-        if model is None:
-            try:
-                model = self.models.keys()[0]
-            except IndexError:
-                raise MatModLabError('no material assigned')
-        self.current_mat = self.models[model].material
 
 	# register variables
         self.field_outputs = FieldOutputs()
@@ -279,20 +258,16 @@ Material: {5}
         self.field_outputs.add('T', SCALAR, ELEMENT, self.mesh)
 
         # material variables
-        if self.current_mat.sdv_keys:
+        if self.material.sdv_keys:
             self.field_outputs.add('SDV', ARRAY, ELEMENT, self.mesh,
-                                   component_labels=self.current_mat.sdv_keys)
+                                   component_labels=self.material.sdv_keys)
 
-        if len(self.models) > 1:
-            filename = '{0}_{1}.{2}'.format(self.job, model, self.output_type)
-        else:
-            filename = '{0}.{2}'.format(self.job, model, self.output_type)
+        filename = '{0}.{1}'.format(self.job, self.output_type)
         filename = os.path.join(self.directory, filename)
         db = self.setup_io(filename)
-        self.models[model].filename = db.filename
+        self.filename = db.filename
         self.write_summary()
         self.check_break_points()
-        self.steps.reset()
 
         log.info('Starting calculations...')
 
@@ -301,11 +276,11 @@ Material: {5}
             self.run_steps(db, termination_time=termination_time)
             dt = tt() - start
             log.info('\n...calculations completed ({0:.4f}s)'.format(dt))
-            self.models[model].ran = True
+            self.ran = True
         except StopSteps:
             dt = tt() - start
             log.info('\n...calculations completed ({0:.4f}s)'.format(dt))
-            self.models[model].ran = True
+            self.ran = True
         except BreakPointStop:
             log.info('\nCalculations terminated at break point')
         finally:
@@ -313,15 +288,10 @@ Material: {5}
             self.finish()
 
         if environ.viz_on_completion:
-            self.visualize_results(model)
+            self.visualize_results()
 
     def finish(self):
         pass
-
-    def ran(self, model=None):
-        if model is None:
-            model = self.models.keys()[0]
-        return self.models[model].ran
 
     def run_steps(self, db, termination_time):
 
@@ -335,7 +305,7 @@ Material: {5}
         strain = np.array([Z6, Z6, Z6])
         S0 = self.initial_stress
         stress = np.array([S0, S0, S0])
-        sdv = self.current_mat.initial_sdv
+        sdv = self.material.initial_sdv
         statev = np.array([sdv, sdv])
         efield = np.array([step.elec_field] * 3)
 
@@ -356,26 +326,33 @@ Material: {5}
 
         return
 
-    def dump(self, variables, model=None, format='ascii', ffmt='%.18f'):
+    def dump(self, variables, format='ascii', ffmt='%.18f'):
         from matmodlab.utils.fileio import filedump
-        filename = self.filename(model)
-        root, ext = os.path.splitext(filename)
+        root, ext = os.path.splitext(self.filename)
         e = {'ascii': '.out', 'mathematica': '.math', 'ndarray': '.npy'}
-        filedump(filename, root + e.get(format, '.out'), ffmt=ffmt,
+        filedump(self.filename, root + e.get(format, '.out'), ffmt=ffmt,
                  variables=variables)
+
+    def get_var_time(self, var):
+        return self.steps.get_field_output_history(var, 1)
 
     def get(self, *variables, **kwargs):
         disp = kwargs.pop('disp', 0)
-        filename = self.filename(kwargs.pop('model', None))
         if not variables:
             variables = None
-        return loadfile(filename, variables=variables, disp=disp, **kwargs)
+        return loadfile(self.filename, variables=variables, disp=disp, **kwargs)
 
-    def plot(self, xvar, yvar, model=None, legend=None, label=None, **kwargs):
+    def plot(self, xvar, yvar, legend=None, label=None, scale=None, **kwargs):
 
-        if model is None:
-            model = self.models.keys()[0]
-        points = self.get(xvar, yvar, model=model)
+        points = self.get(xvar, yvar)
+
+        if scale is not None:
+            try:
+                xs, ys = scale
+            except ValueError:
+                xs = ys = scale
+            points[:,0] *= xs
+            points[:,1] *= ys
 
         if environ.plotter == BOKEH:
             kwds = dict(kwargs)
@@ -390,7 +367,7 @@ Material: {5}
         else:
             import matplotlib.pyplot as plt
             if legend:
-                kwargs['label'] = label or model
+                kwargs['label'] = label or legend
             plt.plot(points[:,0], points[:,1], **kwargs)
             plt.xlabel(xvar)
             plt.ylabel(yvar)
@@ -400,13 +377,11 @@ Material: {5}
                 plt.legend(loc='best')
             plt.show()
 
-    def visualize_results(self, model=None, overlay=None):
+    def visualize_results(self, overlay=None):
         from matmodlab.viewer.main import launch
-        if model is None:
-            model = self.models.keys()[0]
-        if not self.models[model].ran:
+        if not self.ran:
             raise MatModLabError('model must first be run')
-        launch([self.filename(model)])
+        launch([self.filename])
 
     def view(self):
         self.visualize_results()
@@ -433,7 +408,7 @@ Material: {5}
 
         for (key, data) in kwargs.items():
             name = key.upper()
-            if name == 'SDV' and not self.current_mat.sdv_keys:
+            if name == 'SDV' and not self.material.sdv_keys:
                 continue
             fo = self.field_outputs[name]
             frame.FieldOutput(name, fo.type, fo.position, fo.mesh_instance,
@@ -468,7 +443,7 @@ Material: {5}
         efield[1] = step.elec_field
 
         # compute the initial jacobian
-        J0 = self.current_mat.J0
+        J0 = self.material.J0
         if J0 is None:
             raise MatModLabError('J0 has not been initialized')
 
@@ -542,7 +517,7 @@ Material: {5}
 
             if nv:
                 # One or more stresses prescribed
-                d = sig2d(self.current_mat, time[2], dtime, temp[2], dtemp,
+                d = sig2d(self.material, time[2], dtime, temp[2], dtemp,
                           kappa, F[0], F[1], strain[2], dedt, stress[2],
                           statev[0], efield[2], v, pstress[v],
                           proportional)
@@ -558,7 +533,7 @@ Material: {5}
 
             # update material state
             s = np.array(stress[2])
-            stress[2], statev[1] = self.current_mat.compute_updated_state(
+            stress[2], statev[1] = self.material.compute_updated_state(
                 time[2], dtime, temp[2], dtemp, kappa, F[0], F[1], strain[2], d,
                 efield[2], stress[2], statev[0],
                 last=True, disp=1)
@@ -585,7 +560,7 @@ Material: {5}
                 sigerr = np.sqrt(np.sum((stress[2,v] - pstress[v]) ** 2))
                 warned = True
                 _tol = np.amax(np.abs(stress[2,v]))
-                _tol /= self.current_mat.completions['K']
+                _tol /= self.material.completions['K']
                 _tol = max(_tol, 1e-4)
                 if sigerr > _tol:
                     log.warn('{0}, frame {1}, '
@@ -921,6 +896,7 @@ class AnalysisStep(Step):
 
         if start is None:
             start = previous.frames[-1].value
+        self.start = start
 
         for i in range(frames):
             self.Frame(start, frame_increment)

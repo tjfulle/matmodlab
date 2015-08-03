@@ -138,7 +138,7 @@ class MaterialModel(object):
         self.num_sdv = len(sdv_keys)
         if len(sdv_vals) != len(sdv_keys):
             raise MatModLabError('len(sdv_values) != len(sdv_keys)')
-        self.sdv_keys = [s.upper() for s in sdv_keys]
+        self.sdv_keys = [s for s in sdv_keys]
         self.initial_sdv = np.array(sdv_vals)
 
         # call model with zero strain rate to get initial jacobian
