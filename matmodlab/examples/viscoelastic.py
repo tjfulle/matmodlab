@@ -6,8 +6,12 @@ E, Nu = 500, .45
 
 mps = MaterialPointSimulator('viscoelastic', initial_temperature=75)
 parameters = [E, Nu]
-prony_series =  np.array([[.35, 600.], [.15, 20.], [.25, 30.],
-                          [.05, 40.], [.05, 50.], [.15, 60.]])
+prony_series =  np.array([[.35, 600.],
+                          [.15, 20.],
+                          [.25, 30.],
+                          [.05, 40.],
+                          [.05, 50.],
+                          [.15, 60.]])
 mat = mps.Material(UMAT, parameters, libname='umat_neohooke',
                    source_files=[join(MAT_D, 'src/umat_neohooke.f90')])
 
