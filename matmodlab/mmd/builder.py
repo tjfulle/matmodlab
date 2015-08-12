@@ -8,16 +8,6 @@ import logging
 import argparse
 import importlib
 
-logging.basicConfig(format='%(message)s', level=logging.DEBUG)
-def emit(self, record):
-    fs = '%s' if getattr(record, 'continued', False) else '%s\n'
-    self.stream.write(fs % self.format(record))
-    self.flush()
-logging.StreamHandler.emit = emit
-logger = logging.getLogger('build')
-logger.propagate = False
-logger.addHandler(logging.StreamHandler())
-
 from matmodlab.constants import *
 from matmodlab.materials.product import *
 from matmodlab.utils.misc import load_file, remove
@@ -25,6 +15,9 @@ from matmodlab.product import ROOT_D, PKG_D
 from matmodlab.utils.errors import MatModLabError
 from matmodlab.utils.fortran.extbuilder import FortranExtBuilder
 from matmodlab.utils.fortran.product import IO_F90
+from utils.logio import setup_logger
+
+logger = setup_logger('matmodlab.mmd.builder')
 
 class Builder(object):
     def __init__(self, name, fc=None, verbosity=1):

@@ -78,7 +78,8 @@ class MaterialModel(object):
         if self.name is None:
             raise MatModLabError('material did not define name attribute')
 
-        logging.getLogger('mps').info('setting up {0} material'.format(self.name))
+        logging.getLogger('matmodlab.mmd.simulator').info(
+            'setting up {0} material'.format(self.name))
 
         # --- parse the input parameters
         if kwargs.get('param_names') is not None:
@@ -373,8 +374,9 @@ class MaterialModel(object):
                         Fm, Em, dm, elec_field, stress, sdv, V)
             err = np.amax(np.abs(ddsdde - c)) / np.amax(ddsdde)
             if err > 5.E-03: # .5 percent error
-                logging.getLogger('mps').warn('error in material stiffness: '
-                             '{0:.4E} ({1:.2f})'.format(err, time))
+                logging.getLogger('matmodlab.mmd.simulator').warn(
+                    'error in material stiffness: '
+                    '{0:.4E} ({1:.2f})'.format(err, time))
 
         if disp == 2:
             return ddsdde
@@ -469,7 +471,8 @@ def Material(model, parameters, switch=None, response=None,
             filename = os.path.realpath(f)
             if not os.path.isfile(filename):
                 errors += 1
-                logging.getLogger('mps').error('{0}: file not found'.format(f))
+                logging.getLogger('matmodlab.mmd.simulator').error(
+                    '{0}: file not found'.format(f))
             source_files[i] = filename
 
         if not user_ics:
@@ -517,8 +520,8 @@ def Material(model, parameters, switch=None, response=None,
             remove(so_lib)
             environ.rebuild_mat_lib.append(libname)
         if not os.path.isfile(so_lib):
-            logging.getLogger('mps').info('{0}: rebuilding material '
-                                          'library'.format(libname))
+            logging.getLogger('matmodlab.mmd.simulator').info(
+                '{0}: rebuilding material library'.format(libname))
             import matmodlab.mmd.builder as bb
             #@tjfulle: verbosity
             bb.Builder.build_material(libname, source_files,
@@ -571,8 +574,8 @@ def switch_materials(model_1, model_2, parameters):
                              'built.'.format(material_1.name))
 
     # instantiate the second from the first
-    logging.getLogger('mps').warn('switching material {0} '
-                                  'for {1}'.format(model_1, model_2))
+    logging.getLogger('matmodlab.mmd.simulator').warn(
+        'switching material {0} for {1}'.format(model_1, model_2))
     try:
         material_2 = TheMaterial_2.from_other(material_1)
     except ImportError:

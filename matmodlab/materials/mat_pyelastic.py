@@ -20,15 +20,16 @@ class PyElastic(MaterialModel):
         iparray[0] = other_mat.completions['K'] or 0.
         iparray[1] = other_mat.completions['G'] or 0.
         if other_mat.completions['YT']:
-            logging.getLogger('mps').warn('{0!r} cannot mimic a strength limit, '
-                     'only an elastic response will occur'.format(cls.name))
+            logging.getLogger('matmodlab.mmd.simulator').warn(
+                '{0!r} cannot mimic a strength limit, '
+                'only an elastic response will occur'.format(cls.name))
         return cls(iparray)
 
     def setup(self, **kwargs):
         """Set up the Elastic material
 
         """
-        logger = logging.getLogger('mps')
+        logger = logging.getLogger('matmodlab.mmd.simulator')
         # Check inputs
         K, G, = self.params
         errors = 0

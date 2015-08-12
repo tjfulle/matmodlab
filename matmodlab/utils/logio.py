@@ -2,14 +2,27 @@ import logging
 from matmodlab.product import SPLASH
 from matmodlab.mml_siteenv import environ
 
-def setup_logger(name, filename, verbosity=None, splashed=[0]):
+# Monkey path the logging stream handler emit function
+logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+def emit(self, record):
+    '''Monkey-patch the logging StreamHandler emit function. Allows omiting
+    trailing newline when not wanted'''
+    if hasattr(self, 'baseFilename'):
+        fs = '%s\n'
+    else:
+        fs = '%s' if getattr(record, 'continued', False) else '%s\n'
+    self.stream.write(fs % self.format(record))
+    self.flush()
+logging.StreamHandler.emit = emit
+
+def setup_logger(name, filename=None, verbosity=None, splashed=[0]):
     """Set up the logger"""
 
-    if environ.parent_process or environ.notebook:
-        level = logging.CRITICAL
-
-    elif environ.notebook:
+    if environ.notebook:
         level = logging.WARNING
+
+    elif environ.parent_process:
+        level = logging.CRITICAL
 
     elif verbosity is not None:
         environ.log_level = verbosity
@@ -28,14 +41,15 @@ def setup_logger(name, filename, verbosity=None, splashed=[0]):
     ch.setLevel(level)
     logger.addHandler(ch)
 
-    fh = logging.FileHandler(filename, mode='w')
-    fh.setLevel(logging.DEBUG)
-    logger.addHandler(fh)
+    if filename is not None:
+        fh = logging.FileHandler(filename, mode='w')
+        fh.setLevel(logging.DEBUG)
+        logger.addHandler(fh)
 
     if not splashed[0]:
         logger.info(SPLASH)
         splashed[0] += 1
-    else:
+    elif filename is not None:
         fh.stream.write(SPLASH)
 
     return logger

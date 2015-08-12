@@ -41,14 +41,15 @@ class Elastic(MaterialModel):
         iparray[0] = other_mat.completions['K'] or 0.
         iparray[1] = other_mat.completions['G'] or 0.
         if other_mat.completions['YT']:
-            logging.getLogger('mps').warn('{0} cannot mimic a strength limit, only '
-                             'an elastic response will occur'.format(cls.name))
+            logging.getLogger('matmodlab.mmd.simulator').warn(
+                '{0} cannot mimic a strength limit, only '
+                'an elastic response will occur'.format(cls.name))
         return cls(iparray)
 
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, stress, statev, **kwargs):
         """Compute updated stress given strain increment"""
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         # defaults
         cmname = '{0:8s}'.format('umat')

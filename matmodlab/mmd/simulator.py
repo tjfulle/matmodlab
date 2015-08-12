@@ -50,7 +50,8 @@ class MaterialPointSimulator(object):
 
         # basic logger
         logfile = os.path.join(environ.simulation_dir, self.job + '.log')
-        logger = setup_logger('mps', logfile, verbosity=verbosity)
+        logger = setup_logger('matmodlab.mmd.simulator', logfile,
+                              verbosity=verbosity)
 
         if output not in DB_FMTS:
             raise MatModLabError('invalid output format request')
@@ -61,6 +62,8 @@ class MaterialPointSimulator(object):
         p = {'temperature': initial_temperature}
         self.steps['Step-0'] = InitialStep('Step-0', **p)
         self.istress = Z6
+
+        logger.info('Setting up simulator for job {0!r}'.format(job))
 
     def __getattr__(self, key):
         try:
@@ -201,7 +204,7 @@ Material: {5}
 '''.format(self.job, s, filename, len(self.steps)-1, num_frames,
            self.material.name, self.material.num_prop,
            self.material.num_sdv)
-        logging.getLogger('mps').info(summary)
+        logging.getLogger('matmodlab.mmd.simulator').info(summary)
 
     def setup_io(self, filename):
         db = File(filename, mode='w')
@@ -218,17 +221,17 @@ Material: {5}
         iparam_vals = self.material.initial_parameters
         param_vals = self.material.parameters
 
-        logging.getLogger('mps').debug('Material Parameters')
-        logging.getLogger('mps').debug('  {1:{0}s}  {2:12}  {3:12}'.format(
-            L, 'Name', 'iValue', 'Value'))
+        logging.getLogger('matmodlab.mmd.simulator').debug('Material Parameters')
+        logging.getLogger('matmodlab.mmd.simulator').debug(
+            '  {1:{0}s}  {2:12}  {3:12}'.format(L, 'Name', 'iValue', 'Value'))
         for p in zip(param_names, iparam_vals, param_vals):
-            logging.getLogger('mps').debug(
+            logging.getLogger('matmodlab.mmd.simulator').debug(
                 '  {1:{0}s} {2: 12.6E} {3: 12.6E}'.format(L, *p))
 
         # write out plotable data
-        logging.getLogger('mps').debug('Field Variables:')
+        logging.getLogger('matmodlab.mmd.simulator').debug('Field Variables:')
         for key in self.field_outputs:
-            logging.getLogger('mps').debug('  ' + key)
+            logging.getLogger('matmodlab.mmd.simulator').debug('  ' + key)
 
         return db
 
@@ -236,7 +239,7 @@ Material: {5}
         '''Run the problem
 
         '''
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         if environ.capture_model:
             mdb.add_model(self)
@@ -275,14 +278,14 @@ Material: {5}
             start = tt()
             self.run_steps(db, termination_time=termination_time)
             dt = tt() - start
-            log.info('\n...calculations completed ({0:.4f}s)'.format(dt))
+            log.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
             self.ran = True
         except StopSteps:
             dt = tt() - start
-            log.info('\n...calculations completed ({0:.4f}s)'.format(dt))
+            log.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
             self.ran = True
         except BreakPointStop:
-            log.info('\nCalculations terminated at break point')
+            log.info('\nCalculations terminated at break point\n')
         finally:
             db.close()
             self.finish()
@@ -399,8 +402,9 @@ Material: {5}
         for name in self.bp.names:
             if name.upper() not in ['TIME'] + self.field_outputs.keys(expand=1):
                 errors += 1
-                logging.getLogger('mps').error('break point variable {0} not a '
-                                               'simulation variable'.format(name))
+                logging.getLogger('matmodlab.mmd.simulator').error(
+                    'break point variable {0} not a '
+                    'simulation variable'.format(name))
         if errors:
             raise MatModLabError('stopping due to previous errors')
 
@@ -426,7 +430,7 @@ Material: {5}
         '''Process this step '''
 
         # @tjfulle
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
         ti = tt()
         warned = False
         num_frame = len(step.frames)

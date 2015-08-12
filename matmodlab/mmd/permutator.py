@@ -77,7 +77,8 @@ class Permutator(object):
 
         # basic logger
         logfile = os.path.join(self.rootd, self.job + '.log')
-        logger = setup_logger('permutator', logfile, verbosity=verbosity)
+        logger = setup_logger('matmodlab.mmd.permutator', logfile,
+                              verbosity=verbosity)
 
         # individual sims only log to file and not the console
         environ.parent_process = 1
@@ -137,7 +138,7 @@ Variables:
 
     def run(self):
 
-        logger = logging.getLogger("permutator")
+        logger = logging.getLogger('matmodlab.mmd.permutator')
         self.timing["start"] = time.time()
         logger.info("{0}: Starting permutation jobs...".format(self.job))
         args = [(self.func, x, self.funcargs, i, self.rootd, self.job,
@@ -175,7 +176,7 @@ Variables:
 
         self.timing["end"] = time.time()
 
-        logger = logging.getLogger("permutator")
+        logger = logging.getLogger('matmodlab.mmd.permutator')
 
         # write the summary
         self.tabular.close()
@@ -281,7 +282,7 @@ def run_job(args):
     """Run the single permutation job
 
     """
-    logger = logging.getLogger("permutator")
+    logger = logging.getLogger('matmodlab.mmd.permutator')
     (func, x, funcargs, i, rootd, job, names, descriptors, tabular) = args
     #func = getattr(sys.modules[func[0]], func[1])
 

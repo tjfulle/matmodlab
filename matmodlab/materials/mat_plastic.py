@@ -51,7 +51,7 @@ class Plastic(MaterialModel):
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, stress, statev, **kwargs):
         """Compute updated stress given strain increment"""
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         # defaults
         cmname = '{0:8s}'.format('umat')

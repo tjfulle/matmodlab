@@ -23,7 +23,7 @@ class Expansion(object):
             raise ImportError('lib.expansion.so not imported')
 
     def update_state(self, temp, dtemp, F, kappa):
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
         Fm, Em = xpansion.mechdef(self.data, temp, dtemp, kappa, F,
                                   log.info, log.warn, StopFortran)
         return Fm, Em

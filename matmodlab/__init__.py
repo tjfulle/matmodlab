@@ -40,19 +40,6 @@ if errors:
 # --- ADD CWD TO sys.path
 sys.path.insert(0, os.getcwd())
 
-# Monkey path the logging stream handler emit function
-logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-def emit(self, record):
-    '''Monkey-patch the logging StreamHandler emit function. Allows omiting
-    trailing newline when not wanted'''
-    if hasattr(self, 'baseFilename'):
-        fs = '%s\n'
-    else:
-        fs = '%s' if getattr(record, 'continued', False) else '%s\n'
-    self.stream.write(fs % self.format(record))
-    self.flush()
-logging.StreamHandler.emit = emit
-
 # ------------------------ FACTORY METHODS TO SET UP AND RUN A SIMULATION --- #
 from numpy import array, float64
 from mmd.mdb import mdb

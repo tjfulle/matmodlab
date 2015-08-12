@@ -113,7 +113,7 @@ class Viscoelastic(object):
             self.params[1] = trs_model.wlf_coeffs[1] # C2
             self.params[2] = trs_model.temp_ref # REF TEMP
 
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         #visco.propcheck(self.params, log.info, log.warn, StopFortran)
         # Check property array for viscoelastic model

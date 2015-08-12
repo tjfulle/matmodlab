@@ -35,7 +35,8 @@ class VonMises(MaterialModel):
         iparray[3] = other_mat.completions['HM'] or 0.
         iparray[4] = other_mat.completions['HP'] or 0.
         if other_mat.completions['FRICTION_ANGLE']:
-            logging.getLogger('mps').warn('model {0} cannot mimic {1} with '
+            logging.getLogger('matmodlab.mmd.simulator').warn(
+                'model {0} cannot mimic {1} with '
                 'pressure dependence'.format(cls.name, other_mat.name))
         return cls(iparray)
 
@@ -43,7 +44,7 @@ class VonMises(MaterialModel):
         '''Set up the von Mises material
 
         '''
-        logger = logging.getLogger('mps')
+        logger = logging.getLogger('matmodlab.mmd.simulator')
         # Check inputs
         K, G, Y0, H, BETA = self.params
 

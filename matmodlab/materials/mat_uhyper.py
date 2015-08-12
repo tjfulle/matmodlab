@@ -29,7 +29,7 @@ class UHyper(MaterialModel):
 
     def setup(self, **kwargs):
         '''initialize the material state'''
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         self.ordering = kwargs.get('ordering', [0, 1, 2, 3, 5, 4])
 
@@ -57,7 +57,7 @@ class UHyper(MaterialModel):
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, stress, statev, num_sdv=None, **kwargs):
 
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         # abaqus defaults
         w = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)

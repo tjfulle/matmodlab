@@ -62,7 +62,7 @@ class FortranExtBuilder(object):
         for source in sources:
             if not os.path.isfile(source):
                 message = '{0!r}: file not found'.format(source)
-                logging.getLogger('build').error(message)
+                logging.getLogger('matmodlab.mmd.builder').error(message)
                 errors += 1
         if errors:
             raise ExtModuleNotBuilt
@@ -79,7 +79,7 @@ class FortranExtBuilder(object):
             else:
                 lapack = self._find_lapack()
                 if not lapack:
-                    logging.getLogger('build').warn(
+                    logging.getLogger('matmodlab.mmd.builder').warn(
                         '{0}: required lapack package '
                         'not found, skipping'.format(name))
                     return -1
@@ -107,7 +107,7 @@ class FortranExtBuilder(object):
         to_build = [x[0] for x in self.exts_to_build]
         if self._build_blas_lapack and not isfile(LAPACK_OBJ):
             to_build.insert(0, "blas_lapack-lite")
-        logging.getLogger('build').info(
+        logging.getLogger('matmodlab.mmd.builder').info(
             'The following fortran extension modules will be built:\n'
             '    {0}'.format(','.join(to_build)))
 
@@ -115,7 +115,7 @@ class FortranExtBuilder(object):
             if not isfile(LAPACK_OBJ):
                 stat = build_blas_lapack()
                 if stat != 0:
-                    logging.getLogger('build').error(
+                    logging.getLogger('matmodlab.mmd.builder').error(
                         'failed to build blas_lapack, dependent '
                         'libraries will not be importable')
 
@@ -141,23 +141,23 @@ class FortranExtBuilder(object):
         argv.extend("build_ext -i".split())
 
         # build the extension modules with distutils setup
-        logging.getLogger('build').info(
+        logging.getLogger('matmodlab.mmd.builder').info(
             'building extension module[s]... ', extra={'continued':1})
         f = join(PKG_D, "build.log") if not self.chatty else sys.stdout
         try:
             sys.argv = [x for x in argv]
             with stdout_redirected(to=f), merged_stderr_stdout():
                 setup(**config.todict())
-            logging.getLogger('build').info('done')
+            logging.getLogger('matmodlab.mmd.builder').info('done')
         except:
-            logging.getLogger('build').error('failed')
+            logging.getLogger('matmodlab.mmd.builder').error('failed')
         finally:
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
             sys.argv = [x for x in hold]
 
         # move files
-        logging.getLogger('build').info('staging extension module[s]... ',
-                                        extra={'continued':1})
+        logging.getLogger('matmodlab.mmd.builder').info(
+            'staging extension module[s]... ', extra={'continued':1})
         d = config.package_dir[config.name]
         for mod in glob.glob(d + "/*.so"):
             self.exts_built.append(module_name(mod))
@@ -165,7 +165,7 @@ class FortranExtBuilder(object):
                             if n[0] not in self.exts_built]
         self.ext_modules_built = True
         self.exts_to_build = []
-        logging.getLogger('build').info('done')
+        logging.getLogger('matmodlab.mmd.builder').info('done')
         if self.exts_failed:
             raise ExtModuleNotBuilt("{0}: failed to build".format(
                     ", ".join(self.exts_failed)))
@@ -192,14 +192,14 @@ def build_blas_lapack():
     """Build the blas_lapack-lite object
 
     """
-    logging.getLogger('build').info('building blas_lapack-lite... ',
-                                    extra={'continued':1})
+    logging.getLogger('matmodlab.mmd.builder').info(
+        'building blas_lapack-lite... ', extra={'continued':1})
     cmd = [FORT_COMPILER, "-fPIC", "-shared", "-O3", LAPACK, "-o" + LAPACK_OBJ]
     build = subprocess.Popen(cmd, stdout=open(os.devnull, "a"),
                              stderr=subprocess.STDOUT)
     build.wait()
     if build.returncode == 0:
-        logging.getLogger('build').info('done')
+        logging.getLogger('matmodlab.mmd.builder').info('done')
     else:
-        logging.getLogger('build').info('no')
+        logging.getLogger('matmodlab.mmd.builder').info('no')
     return build.returncode

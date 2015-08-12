@@ -31,7 +31,7 @@ class UMat(MaterialModel):
 
     def setup(self, **kwargs):
         '''initialize the material state'''
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         self.ordering = kwargs.get('ordering', [0, 1, 2, 3, 5, 4])
 
@@ -59,7 +59,7 @@ class UMat(MaterialModel):
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, stress, statev, **kwargs):
 
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         # abaqus defaults
         cmname = '{0:8s}'.format('umat')

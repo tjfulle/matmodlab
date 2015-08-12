@@ -12,6 +12,7 @@ from matmodlab.constants import *
 from matmodlab.product import SPLASH
 from matmodlab.mml_siteenv import environ
 from matmodlab.utils.logio import setup_logger
+from matmodlab.utils.errors import MatModLabError
 from matmodlab.utils.mmltab import MMLTabularWriter
 from mdb import mdb, ModelCaptured as ModelCaptured
 
@@ -25,6 +26,8 @@ class Optimizer(object):
                  maxiter=MAXITER, tolerance=TOL, descriptors=None,
                  funcargs=[], Ns=10, dryrun=0, keep_intermediate=True):
         environ.raise_e = True
+        global IOPT
+        IOPT = 0
         self.job = job
         self.func = func
         self.ran = False
@@ -63,7 +66,8 @@ class Optimizer(object):
 
         # basic logger
         logfile = os.path.join(self.rootd, self.job + '.log')
-        logger = setup_logger('optimizer', logfile, verbosity=verbosity)
+        logger = setup_logger('matmodlab.mmd.optimizer',
+                              logfile, verbosity=verbosity)
 
         # individual sims only log to file and not the console
         environ.parent_process = 1
@@ -124,7 +128,7 @@ Response descriptors:
 
         """
         import scipy.optimize
-        logger = logging.getLogger("optimizer")
+        logger = logging.getLogger('matmodlab.mmd.optimizer')
 
         self.timing["start"] = time.time()
         logger.info("{0}: Starting optimization jobs...".format(self.job))
@@ -202,7 +206,7 @@ Response descriptors:
 
     def finish(self):
         """ finish up the optimization job """
-        logger = logging.getLogger("optimizer")
+        logger = logging.getLogger('matmodlab.mmd.optimizer')
         self.tabular.close()
         self.ran = True
         opt_pars = "\n".join("  {0}={1:12.6E}".format(name, self.xopt[i])
@@ -255,7 +259,7 @@ def run_job(xcall, *args):
 
     """
     global IOPT
-    logger = logging.getLogger("optimizer")
+    logger = logging.getLogger('matmodlab.mmd.optimizer')
     func, funcargs, rootd, job, xnames, desc, tabular, xfac = args
 
     IOPT += 1
@@ -284,7 +288,7 @@ def run_job(xcall, *args):
         err = func(x, xnames, evald, job, *funcargs)
         logger.info("done (error={0:.4e})".format(err))
         stat = 0
-    except:
+    except MatModLabError:
         string = traceback.format_exc()
         logger.error("\nRun {0} failed with the following "
                      "exception:\n{1}".format(IOPT, string))

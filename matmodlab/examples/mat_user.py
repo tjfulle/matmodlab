@@ -14,7 +14,7 @@ class UserElastic(MaterialModel):
         """Set up the Elastic material
 
         """
-        logger = logging.getLogger('mps')
+        logger = logging.getLogger('matmodlab.mmd.simulator')
 
         # Check inputs
         E, Nu = self.params

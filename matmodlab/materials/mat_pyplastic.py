@@ -33,15 +33,16 @@ class PyPlastic(MaterialModel):
         iparray[2] = other_mat.completions['DPA'] or 1.E+99
         iparray[3] = other_mat.completions['DPB'] or 0.
         if other_mat.completions['HARD_MOD']:
-            logging.getLogger('mps').warn('model {0} cannot mimic {1} with '
-                             'hardening'.format(cls.name, other_mat.name))
+            logging.getLogger('matmodlab.mmd.simulator').warn(
+                'model {0} cannot mimic {1} with '
+                'hardening'.format(cls.name, other_mat.name))
         return cls(iparray)
 
     def setup(self, **kwargs):
         '''Set up the plastic material
 
         '''
-        logger = logging.getLogger('mps')
+        logger = logging.getLogger('matmodlab.mmd.simulator')
         K, G, A1, A4 = self.params
         if abs(A1) <= 1.E-12:
             A1 = 1.0e99

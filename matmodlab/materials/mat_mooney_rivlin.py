@@ -43,7 +43,7 @@ class MooneyRivlin(MaterialModel):
         Vij = mmlabpack.sqrtm(np.dot(Fij, Fij.T))
         Rij = np.reshape(np.dot(np.linalg.inv(Vij), Fij), (9,))
         Vij = mmlabpack.asarray(Vij, 6)
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
         sig, ddsdde = self.lib.mnrv_mat(self.params, Rij, Vij,
                                         log.info, log.warn, StopFortran)
 

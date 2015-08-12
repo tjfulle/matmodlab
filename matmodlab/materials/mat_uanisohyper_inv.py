@@ -30,7 +30,7 @@ class UAnisoHyperInv(MaterialModel):
 
     def setup(self, **kwargs):
         '''initialize the material state'''
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
 
         fiber_dirs = kwargs.get("fiber_dirs", [1, 0, 0])
         self.fiber_dirs = np.array(fiber_dirs, dtype=np.float64)
@@ -64,7 +64,7 @@ class UAnisoHyperInv(MaterialModel):
     def update_state(self, time, dtime, temp, dtemp, energy, rho, F0, F,
         stran, d, elec_field, stress, statev, **kwargs):
         """update the material state"""
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
         # abaqus defaults
         w = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
         cmname = '{0:8s}'.format('umat')

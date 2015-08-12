@@ -68,7 +68,7 @@ class Viscoelastic(object):
             self.params[1] = trs_model.wlf_coeffs[1] # C2
             self.params[2] = trs_model.temp_ref # REF TEMP
 
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
         visco.propcheck(self.params, log.info, log.warn, StopFortran)
 
         return keys, idata
@@ -86,7 +86,7 @@ class Viscoelastic(object):
         return self.Goo
 
     def initialize(self, X):
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
         visco.viscoini(self.params, X, log.info, log.warn, StopFortran)
         return X
 
@@ -94,7 +94,7 @@ class Viscoelastic(object):
         N = len(statev)
         n = len(self.params)
         cfac = np.zeros(2)
-        log = logging.getLogger('mps')
+        log = logging.getLogger('matmodlab.mmd.simulator')
         sig, cfac = visco.viscorelax(dtime, time, temp, dtemp, self.params,
                                      F.reshape(3,3), statev, sig,
                                      log.info, log.warn, StopFortran)
