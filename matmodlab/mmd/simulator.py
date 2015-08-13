@@ -80,7 +80,7 @@ class MaterialPointSimulator(object):
             step = AnalysisStep(s.kind, s.name, s.previous, s.increment,
                                 len(s.frames), s.components, s.descriptors,
                                 s.kappa, s.temperature, s.elec_field,
-                                s.num_dumps, s.start)
+                                s.num_dumps, s.target, s.start)
             model.steps[s.name] = step
         return model
 
@@ -260,6 +260,10 @@ Material: {5}
         self.field_outputs.add('EF', VECTOR, ELEMENT, self.mesh)
         self.field_outputs.add('T', SCALAR, ELEMENT, self.mesh)
 
+        if any([step.target is not None for step in self.steps.values()]):
+            self.field_outputs.add('EET', TENSOR_3D, ELEMENT, self.mesh)
+            self.field_outputs.add('EPT', TENSOR_3D, ELEMENT, self.mesh)
+
         # material variables
         if self.material.sdv_keys:
             self.field_outputs.add('SDV', ARRAY, ELEMENT, self.mesh,
@@ -312,10 +316,15 @@ Material: {5}
         statev = np.array([sdv, sdv])
         efield = np.array([step.elec_field] * 3)
 
+        # target strains
+        ept = np.array(Z6)
+        eet = np.array(Z6)
+
         steps = self.steps.values()
         for step in steps:
             self.run_step(step, t, strain, F, stress, statev,
-                          temp, efield, time_0, termination_time=termination_time)
+                          temp, efield, time_0, ept, eet,
+                          termination_time=termination_time)
 
             F[0] = F[1]
             t[0] = t[2]
@@ -414,7 +423,12 @@ Material: {5}
             name = key.upper()
             if name == 'SDV' and not self.material.sdv_keys:
                 continue
-            fo = self.field_outputs[name]
+            try:
+                fo = self.field_outputs[name]
+            except KeyError as e:
+                if name in ('EPT', 'EET'):
+                    continue
+                raise e
             frame.FieldOutput(name, fo.type, fo.position, fo.mesh_instance,
                               component_labels=fo.component_labels,
                               valid_invariants=fo.valid_invariants)
@@ -426,7 +440,7 @@ Material: {5}
         return
 
     def run_step(self, step, time, strain, F, stress, statev, temp,
-                efield, time_0, termination_time=None):
+                efield, time_0, ept, eet, termination_time=None):
         '''Process this step '''
 
         # @tjfulle
@@ -535,6 +549,17 @@ Material: {5}
                     log.info('sqa: error computing strain '
                              '(step={0})'.format(step.name))
 
+            if step.target is not None:
+                # target stress was requested
+                vvv = range(6)
+                target = np.array([step.target[i](time[2]) for i in vvv])
+                ddd = d.copy()
+                dee = sig2d(self.material, time[2], dtime, temp[2], dtemp,
+                            kappa, F[0], F[1], strain[2], ddd, stress[2],
+                            statev[0], efield[2], vvv, target, False)
+                eet += dee
+                ept += ddd - dee
+
             # update material state
             s = np.array(stress[2])
             stress[2], statev[1] = self.material.compute_updated_state(
@@ -557,7 +582,8 @@ Material: {5}
             # --- update the state
             self.update(frame, E=strain[2]/VOIGHT, F=F[1],
                         D=d/VOIGHT, DS=dstress, S=stress[2],
-                        SDV=statev[1], T=temp[2], EF=efield[2], U=u)
+                        SDV=statev[1], T=temp[2], EF=efield[2],
+                        EPT=ept, EET=eet, U=u)
 
             if iframe > 1 and nv and not warned:
                 sigmag = np.sqrt(np.sum(stress[2,v] ** 2))
@@ -862,7 +888,7 @@ class AnalysisStep(Step):
 
     def __init__(self, kind, name, previous, increment,
                  frames, components, descriptors, kappa,
-                 temperature, elec_field, num_dumps, start=None):
+                 temperature, elec_field, num_dumps, target, start=None):
 
         super(AnalysisStep, self).__init__(name)
 
@@ -906,6 +932,22 @@ class AnalysisStep(Step):
             self.Frame(start, frame_increment)
             start += frame_increment
 
+        if target is None:
+            self.target = None
+        else:
+            target = np.asarray(target)
+            if len(target.shape) == 1:
+                # Pressure
+                target = np.column_stack((target, target, target))
+            if target.shape[1] != NUM_TENSOR_3D:
+                z = np.zeros_like(target[:,0])
+                for i in range(NUM_TENSOR_3D - target.shape[1]):
+                    target = np.column_stack((target, z))
+
+            xp = np.linspace(self.start, self.start+self.increment, target.shape[0])
+            self.target = [lambda t, xp=xp, fp=target[:,i]: np.interp(t, xp, fp)
+                           for i in range(NUM_TENSOR_3D)]
+
     @property
     def kappa(self):
         try:
@@ -943,11 +985,11 @@ def InitialStep(name, kappa=0., temperature=None):
 
     return AnalysisStep('InitialStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature,
-                        elec_field, num_dumps, start=0.)
+                        elec_field, num_dumps, None, start=0.)
 
 def StrainStep(name, previous, components=None, frames=None, scale=1.,
                  increment=1., kappa=None, temperature=None, elec_field=None,
-                 num_dumps=None):
+                 num_dumps=None, target=None):
 
     if components is None:
         components = np.zeros(NUM_TENSOR_3D)
@@ -985,11 +1027,11 @@ def StrainStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StrainStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, target)
 
 def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
                    increment=1., kappa=None, temperature=None, elec_field=None,
-                   num_dumps=None):
+                   num_dumps=None, target=None):
 
     if components is None:
         components = np.zeros(NUM_TENSOR_3D)
@@ -1021,11 +1063,11 @@ def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StrainRateStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, target)
 
 def StressStep(name, previous, components=None, frames=None, scale=1.,
                increment=1., temperature=None, elec_field=None,
-               num_dumps=None):
+               num_dumps=None, target=None):
 
     kappa = 0.
 
@@ -1047,11 +1089,11 @@ def StressStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StressStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, target)
 
 def StressRateStep(name, previous, components=None, frames=None, scale=1.,
                    increment=1., temperature=None, elec_field=None,
-                   num_dumps=None):
+                   num_dumps=None, target=None):
 
     kappa = 0.
     if components is None:
@@ -1073,11 +1115,11 @@ def StressRateStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StressRateStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, target)
 
 def DisplacementStep(name, previous, components=None, frames=None, scale=1.,
                      increment=1., kappa=None, temperature=None, elec_field=None,
-                     num_dumps=None):
+                     num_dumps=None, target=None):
 
     if components is None:
         components = np.zeros(3)
@@ -1098,11 +1140,11 @@ def DisplacementStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('DisplacementStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, target)
 
 def DefGradStep(name, previous, components=None, frames=None, scale=1.,
                 increment=1., kappa=None, temperature=None, elec_field=None,
-                num_dumps=None):
+                num_dumps=None, target=None):
 
     if kappa is None:
         kappa = previous.kappa
@@ -1131,11 +1173,11 @@ def DefGradStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('DefGradStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, target)
 
 def MixedStep(name, previous, components=None, descriptors=None,
               frames=None, scale=1., increment=1., temperature=None,
-              elec_field=None, num_dumps=None):
+              elec_field=None, num_dumps=None, target=None):
 
     if components is None:
         components = np.zeros(NUM_TENSOR_3D)
@@ -1189,11 +1231,11 @@ def MixedStep(name, previous, components=None, descriptors=None,
 
     return AnalysisStep('MixedStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, target)
 
 def DataSteps(filename, previous, tc=0, columns=None, descriptors=None,
               skiprows=0, comments='#', time_format='total', scale=1.,
-              frames=None, steps=None, sheet=None):
+              frames=None, steps=None, sheet=None, target=None):
 
     d = {'D': 1, 'E': 2, 'R': 3, 'S': 4, 'P': 6, 'T': 7, 'X': 9}
     bad = []
@@ -1288,7 +1330,7 @@ def DataSteps(filename, previous, tc=0, columns=None, descriptors=None,
     return data_steps
 
 def GenSteps(step_class, name, previous, components, amplitude, increment,
-             nsteps, temperature, **kwargs):
+             nsteps, temperature, target=None, **kwargs):
 
     if components is None:
         components = [1.] * NUM_TENSOR_3D

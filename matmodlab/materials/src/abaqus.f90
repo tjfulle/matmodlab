@@ -6,7 +6,7 @@ subroutine rotsig(S, R, Sprime, lstr, ndi, nshr)
   real(8) :: work(2,3,3), c
 
   ! NOTE: this subroutine is set up to work only with 3D rotations
-  if (ndi /= 3 .and. nshr /= 3) then
+  if (ndi /= 3 .or. nshr /= 3) then
      print*, 'rotsig incompatible with tensors'
      call xit
   end if
@@ -66,3 +66,33 @@ subroutine xit
   msg = 'STOPPING DUE TO FORTRAN PROCEDURE ERROR'
   call log_error(msg)
 end subroutine xit
+
+subroutine sprind(S, PS, AN, LSTR, NDI, NSHR)
+  implicit none
+  real(8), intent(in) :: S(6)
+  real(8), intent(in) :: PS(3), AN(3,3)
+  integer, intent(in) :: LSTR, NDI, NSHR
+  integer, parameter :: N=3, LWORK=3*N-1
+  real(8) :: WORK(LWORK), C
+  integer :: INFO
+  ! NOTE: this subroutine is set up to work only with 3D tensors
+  if (NDI /= 3 .or. NSHR /= 3) then
+     print *, 'wrong number of direct and/or shear components to sprind'
+     call xit
+  end if
+  ! convert to matrix
+  C = 1.
+  if (LSTR == 2) C = 2.
+  call to_matrix_3d(S, AN, 1./C)
+  ! eigenvalues/vectors of S
+  call DSYEV("V", "L", 3, AN, 3, PS, WORK, LWORK, INFO)
+end subroutine sprind
+
+subroutine sprinc(S, PS, LSTR, NDI, NSHR)
+  implicit none
+  real(8), intent(in) :: S(6)
+  real(8), intent(in) :: PS(3)
+  integer, intent(in) :: LSTR, NDI, NSHR
+  real(8) :: AN(3,3)
+  call sprind(S, PS, AN, LSTR, NDI, NSHR)
+end subroutine sprinc
