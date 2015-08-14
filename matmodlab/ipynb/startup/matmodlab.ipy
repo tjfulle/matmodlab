@@ -64,6 +64,11 @@ class MatmodlabMagics(Magics):
              'from matmodlab import *\n'
              'from matmodlab.utils.numerix import *\n'
              'from matmodlab.utils.fileio import loadfile\n'
+             'try:\n'
+             '    import matmodlab.utils.mcgen as mcgen\n'
+             '    from matmodlab.utils.mcgen import *\n'
+             'except ImportError:\n'
+             '    mcgen = None\n'
             )
 
         # load the plotting back end
@@ -79,6 +84,8 @@ class MatmodlabMagics(Magics):
                   'plt = pyplot\n'
                   'from matplotlib.pylab import *\n'
                   'init_from_matmodlab_magic("matplotlib")\n')
+        s += ('if mcgen is not None:\n'
+              '    mcgen.init_notebook(plot_lib="{0}", i=0)\n'.format(args.plot))
 
         # Load the matplotlib colors for use in other plots
         c = ['blue', 'red', 'purple', 'green', 'orange', 'hotpink', 'cyan',
@@ -112,6 +119,8 @@ class MatmodlabMagics(Magics):
         # warn about clobbered names
         print ('Populating the interactive namespace '
                'from matmodlab and %s' % args.plot)
+        if 'MasterCurve' not in user_ns:
+            print("mcgen not imported")
         if clobbered and not cache[1]:
             warn('matmodlab import has clobbered these variables: %s'  % clobbered)
 
