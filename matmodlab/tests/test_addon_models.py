@@ -1,4 +1,6 @@
 from testconf import *
+try: import matmodlab.lib.elastic as el
+except ImportError: el = None
 
 @pytest.mark.add_on
 class TestAddonModels(StandardMatmodlabTest):
@@ -35,6 +37,7 @@ class TestAddonModels(StandardMatmodlabTest):
         self.completed_jobs.append('visco_addon')
 
     @pytest.mark.expansion
+    @pytest.mark.skipif(el is None, reason='elastic model not imported')
     def test_expansion(self):
         mps = MaterialPointSimulator('expansion_addon', verbosity=0,
                                      initial_temperature=75.,

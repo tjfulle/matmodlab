@@ -2,6 +2,8 @@ import random
 from testconf import *
 from matmodlab.utils.numerix import rms_error
 from matmodlab.utils.fileio import loadfile
+try: import matmodlab.lib.elastic as el
+except ImportError: el = None
 
 @pytest.mark.material
 @pytest.mark.elastic
@@ -10,6 +12,7 @@ class TestElasticMaterial(StandardMatmodlabTest):
     G = 3.750938E+09
     parameters = {'K': K, 'G': G}
 
+    @pytest.mark.skipif(el is None, reason='elastic model not imported')
     def test_uniaxial_strain(self):
         pathtable = [[1.0, 0.0, 0.0],
                      [2.0, 0.0, 0.0],
@@ -42,6 +45,7 @@ class TestElasticMaterial(StandardMatmodlabTest):
 
         self.completed_jobs.append(mps.job)
 
+    @pytest.mark.skipif(el is None, reason='elastic model not imported')
     def test_uniaxial_stress(self):
         pathtable = [[1.0, 0.0, 0.0],
                      [2.0, 0.0, 0.0],
@@ -63,6 +67,7 @@ class TestElasticMaterial(StandardMatmodlabTest):
 
         self.completed_jobs.append(mps.job)
 
+    @pytest.mark.skipif(el is None, reason='elastic model not imported')
     def test_uniaxial_strain_with_stress_control(self):
         pathtable = [[ -7490645504., -3739707392., -3739707392.],
                      [-14981291008., -7479414784., -7479414784.],

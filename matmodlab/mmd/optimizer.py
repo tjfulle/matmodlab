@@ -288,7 +288,7 @@ def run_job(xcall, *args):
         err = func(x, xnames, evald, job, *funcargs)
         logger.info("done (error={0:.4e})".format(err))
         stat = 0
-    except MatModLabError:
+    except BaseException:
         string = traceback.format_exc()
         logger.error("\nRun {0} failed with the following "
                      "exception:\n{1}".format(IOPT, string))

@@ -1,9 +1,12 @@
 from testconf import *
 from matmodlab.mmd.simulator import StrainStep
 from matmodlab.utils.fileio import loadfile
+try: import matmodlab.lib.elastic as el
+except ImportError: el = None
 
 @pytest.mark.fast
 @pytest.mark.step_factories
+@pytest.mark.skipif(el is None, reason='elastic model not imported')
 class TestStepFactories(StandardMatmodlabTest):
 
     def test_multi_step(self):
@@ -60,6 +63,7 @@ class TestStepFactories(StandardMatmodlabTest):
 
 @pytest.mark.slow
 @pytest.mark.permutate
+@pytest.mark.skipif(el is None, reason='elastic model not imported')
 class TestPermutation(StandardMatmodlabTest):
 
     @staticmethod
@@ -109,6 +113,7 @@ class TestPermutation(StandardMatmodlabTest):
 
 @pytest.mark.slow
 @pytest.mark.optimize
+@pytest.mark.skipif(el is None, reason='elastic model not imported')
 class TestOptimization(StandardMatmodlabTest):
     path_file = join(this_directory, "opt.base_dat")
     xact = np.array([135e9, 53e9])
