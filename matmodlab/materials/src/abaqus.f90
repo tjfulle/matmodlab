@@ -34,7 +34,7 @@ subroutine to_tensor_3d(x, t, c)
   real(8), intent(in) :: c
   t(1) = x(1,1); t(4) = x(1,2)*c; t(5) = x(1,3)*c
                  t(2) = x(2,2);   t(6) = x(2,3)*c
-                                  t(3) = x(3,3)*c
+                                  t(3) = x(3,3)
   return
 end subroutine to_tensor_3d
 
@@ -46,6 +46,9 @@ subroutine to_matrix_3d(x, m, c)
   m(1,1) = x(1); m(1,2) = x(4)*c; m(1,3) = x(5)*c
                  m(2,2) = x(2);   m(2,3) = x(6)*c
                                   m(3,3) = x(3)
+  m(2,1) = m(1,2)
+  m(3,1) = m(1,3)
+  m(3,2) = m(2,3)
   return
 end subroutine to_matrix_3d
 

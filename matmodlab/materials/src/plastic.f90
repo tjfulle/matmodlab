@@ -76,7 +76,7 @@ subroutine umat(stress, statev, ddsdde, sse, spd, scd, rpl, &
   ! strain
   olds = stress
   oldpl = EP
-  EE(i) = EE(i) + dstran(i)
+  EE = EE + dstran
   stress = stress + matmul(ddsdde, dstran)
 
   ! Calculate the trial equivalent von mises stress

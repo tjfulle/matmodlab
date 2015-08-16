@@ -80,7 +80,7 @@ class MaterialPointSimulator(object):
             step = AnalysisStep(s.kind, s.name, s.previous, s.increment,
                                 len(s.frames), s.components, s.descriptors,
                                 s.kappa, s.temperature, s.elec_field,
-                                s.num_dumps, s.target, s.start)
+                                s.num_dumps, s.start)
             model.steps[s.name] = step
         return model
 
@@ -235,11 +235,11 @@ Material: {5}
 
         return db
 
-    def run(self, termination_time=None):
+    def run(self, termination_time=None, target=None):
         '''Run the problem
 
         '''
-        log = logging.getLogger('matmodlab.mmd.simulator')
+        logger = logging.getLogger('matmodlab.mmd.simulator')
 
         if environ.capture_model:
             mdb.add_model(self)
@@ -260,7 +260,7 @@ Material: {5}
         self.field_outputs.add('EF', VECTOR, ELEMENT, self.mesh)
         self.field_outputs.add('T', SCALAR, ELEMENT, self.mesh)
 
-        if any([step.target is not None for step in self.steps.values()]):
+        if target is not None:
             self.field_outputs.add('EET', TENSOR_3D, ELEMENT, self.mesh)
             self.field_outputs.add('EPT', TENSOR_3D, ELEMENT, self.mesh)
 
@@ -276,20 +276,20 @@ Material: {5}
         self.write_summary()
         self.check_break_points()
 
-        log.info('Starting calculations...')
+        logger.info('Starting calculations...')
 
         try:
             start = tt()
-            self.run_steps(db, termination_time=termination_time)
+            self.run_steps(db, termination_time=termination_time, target=target)
             dt = tt() - start
-            log.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
+            logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
             self.ran = True
         except StopSteps:
             dt = tt() - start
-            log.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
+            logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
             self.ran = True
         except BreakPointStop:
-            log.info('\nCalculations terminated at break point\n')
+            logger.info('\nCalculations terminated at break point\n')
         finally:
             db.close()
             self.finish()
@@ -300,7 +300,7 @@ Material: {5}
     def finish(self):
         pass
 
-    def run_steps(self, db, termination_time):
+    def run_steps(self, db, termination_time=None, target=None):
 
         time_0 = tt()
         step = self.steps.values()[0]
@@ -317,13 +317,14 @@ Material: {5}
         efield = np.array([step.elec_field] * 3)
 
         # target strains
-        ept = np.array(Z6)
-        eet = np.array(Z6)
+        eet = ept = None
+        if target is not None:
+            eet, ept = np.array(Z6), np.array(Z6)
 
         steps = self.steps.values()
         for step in steps:
             self.run_step(step, t, strain, F, stress, statev,
-                          temp, efield, time_0, ept, eet,
+                          temp, efield, time_0, eet, ept, target=target,
                           termination_time=termination_time)
 
             F[0] = F[1]
@@ -440,11 +441,11 @@ Material: {5}
         return
 
     def run_step(self, step, time, strain, F, stress, statev, temp,
-                efield, time_0, ept, eet, termination_time=None):
+                efield, time_0, eet, ept, target=None, termination_time=None):
         '''Process this step '''
 
         # @tjfulle
-        log = logging.getLogger('matmodlab.mmd.simulator')
+        logger = logging.getLogger('matmodlab.mmd.simulator')
         ti = tt()
         warned = False
         num_frame = len(step.frames)
@@ -508,7 +509,7 @@ Material: {5}
             elif environ.sqa:
                 d = mml.deps2d(dtime, kappa, strain[2], dedt)
                 if not np.allclose(d, dedt):
-                    log.info('sqa: d != dedt (k=0,step={0})'.format(step.name))
+                    logger.info('sqa: d != dedt (k=0,step={0})'.format(step.name))
             else:
                 d = np.array(dedt)
 
@@ -524,7 +525,7 @@ Material: {5}
         # process this leg
         for (iframe, frame) in enumerate(step.frames):
 
-            log.info('\r' + message.format(iframe+1), extra={'continued':1})
+            logger.info('\r' + message.format(iframe+1), extra={'continued':1})
 
             # interpolate values to the target values for this step
             a1 = float(num_frame - (iframe + 1)) / num_frame
@@ -546,26 +547,24 @@ Material: {5}
             strain[2,v] = e[v]
             if environ.sqa:
                 if not np.allclose(strain[2,vx], e[vx]):
-                    log.info('sqa: error computing strain '
-                             '(step={0})'.format(step.name))
+                    logger.info('sqa: error computing strain '
+                                '(step={0})'.format(step.name))
 
-            if step.target is not None:
+            if target is not None:
                 # target stress was requested
-                vvv = range(6)
-                target = np.array([step.target[i](time[2]) for i in vvv])
-                ddd = d.copy()
-                dee = sig2d(self.material, time[2], dtime, temp[2], dtemp,
-                            kappa, F[0], F[1], strain[2], ddd, stress[2],
-                            statev[0], efield[2], vvv, target, False)
-                eet += dee
-                ept += ddd - dee
+                st = target(time=time[2], dtime=dtime, kappa=kappa,
+                            strain=strain[2], F=F[1], stress=stress[2], d=d)
+                dee = simplex(self.material, time[2], dtime, temp[2], dtemp,
+                              kappa, F[0], F[1], strain[2], d, stress[2],
+                              statev[0], efield[2], range(6), st, False)
+                eet += dee * dtime
+                ept += (d - dee) * dtime
 
             # update material state
             s = np.array(stress[2])
             stress[2], statev[1] = self.material.compute_updated_state(
                 time[2], dtime, temp[2], dtemp, kappa, F[0], F[1], strain[2], d,
-                efield[2], stress[2], statev[0],
-                last=True, disp=1)
+                efield[2], stress[2], statev[0], last=True, disp=1)
             dstress = (stress[2] - s) / dtime
 
             F[0] = F[1]
@@ -580,10 +579,10 @@ Material: {5}
                 u[i, :] = np.dot(ff, x)
 
             # --- update the state
-            self.update(frame, E=strain[2]/VOIGHT, F=F[1],
+            self.update(frame, E=strain[2]/VOIGHT, F=F[1], U=u,
                         D=d/VOIGHT, DS=dstress, S=stress[2],
                         SDV=statev[1], T=temp[2], EF=efield[2],
-                        EPT=ept, EET=eet, U=u)
+                        EPT=ept, EET=eet)
 
             if iframe > 1 and nv and not warned:
                 sigmag = np.sqrt(np.sum(stress[2,v] ** 2))
@@ -593,25 +592,25 @@ Material: {5}
                 _tol /= self.material.completions['K']
                 _tol = max(_tol, 1e-4)
                 if sigerr > _tol:
-                    log.warn('{0}, frame {1}, '
-                             'prescribed stress error: {2: .5f}. '
-                             '(% err: {3: .5f}) '
-                             'consider increasing number of '
-                             'steps'.format(step.name, iframe, sigerr,
-                                            sigerr/sigmag*100.0))
+                    logger.warn('{0}, frame {1}, '
+                                'prescribed stress error: {2: .5f}. '
+                                '(% err: {3: .5f}) '
+                                'consider increasing number of '
+                                'steps'.format(step.name, iframe, sigerr,
+                                               sigerr/sigmag*100.0))
 
             if self.bp:
                 self.bp.eval(frame)
 
             if termination_time is not None and time[2] >= termination_time:
-                log.info('\r' + message.format(iframe+1) +
-                         ' ({0:.4f}s)'.format(tt()-time_0))
+                logger.info('\r' + message.format(iframe+1) +
+                            ' ({0:.4f}s)'.format(tt()-time_0))
                 raise StopSteps
 
             continue  # continue to next frame
 
-        log.info('\r' + message.format(iframe+1) +
-                 ' ({0:.4f}s)'.format(tt()-time_0))
+        logger.info('\r' + message.format(iframe+1) +
+                    ' ({0:.4f}s)'.format(tt()-time_0))
 
         return 0
 
@@ -723,6 +722,7 @@ def newton(material, t, dt, temp, dtemp, kappa, f0, farg, stran, darg,
     converged:
 
     '''
+    logger = logging.getLogger('matmodlab.mmd.simulator')
     depsmag = lambda a: sqrt(sum(a[:3] ** 2) + 2. * sum(a[3:] ** 2)) * dt
 
     # Initialize
@@ -762,16 +762,17 @@ def newton(material, t, dt, temp, dtemp, kappa, f0, farg, stran, darg,
             else:
                 if np.any(evals < 0.):
                     negevals = evals[np.where(evals < 0.)]
-                    log.warn('negative eigen value[s] encountered in material '
-                             'Jacobian: {0} ({1:.2f})'.format(negevals, t))
+                    logger.warn('negative eigen value[s] encountered in material '
+                                'Jacobian: {0} ({1:.2f})'.format(negevals, t))
         try:
             d[v] -= np.linalg.solve(Jsub, sigerr) / dt
 
 
         except LinAlgError:
             d[v] -= np.linalg.lstsq(Jsub, sigerr)[0] / dt
-            log.warn('using least squares approximation to '
-                     'matrix inverse', limit=True)
+            if environ.Wall:
+                logger.warn('using least squares approximation to '
+                            'matrix inverse')
 
         if (depsmag(d) > depsmax or  np.any(np.isnan(d)) or np.any(np.isinf(d))):
             # increment too large
@@ -888,7 +889,7 @@ class AnalysisStep(Step):
 
     def __init__(self, kind, name, previous, increment,
                  frames, components, descriptors, kappa,
-                 temperature, elec_field, num_dumps, target, start=None):
+                 temperature, elec_field, num_dumps, start=None):
 
         super(AnalysisStep, self).__init__(name)
 
@@ -932,22 +933,6 @@ class AnalysisStep(Step):
             self.Frame(start, frame_increment)
             start += frame_increment
 
-        if target is None:
-            self.target = None
-        else:
-            target = np.asarray(target)
-            if len(target.shape) == 1:
-                # Pressure
-                target = np.column_stack((target, target, target))
-            if target.shape[1] != NUM_TENSOR_3D:
-                z = np.zeros_like(target[:,0])
-                for i in range(NUM_TENSOR_3D - target.shape[1]):
-                    target = np.column_stack((target, z))
-
-            xp = np.linspace(self.start, self.start+self.increment, target.shape[0])
-            self.target = [lambda t, xp=xp, fp=target[:,i]: np.interp(t, xp, fp)
-                           for i in range(NUM_TENSOR_3D)]
-
     @property
     def kappa(self):
         try:
@@ -985,11 +970,11 @@ def InitialStep(name, kappa=0., temperature=None):
 
     return AnalysisStep('InitialStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature,
-                        elec_field, num_dumps, None, start=0.)
+                        elec_field, num_dumps, start=0.)
 
 def StrainStep(name, previous, components=None, frames=None, scale=1.,
                  increment=1., kappa=None, temperature=None, elec_field=None,
-                 num_dumps=None, target=None):
+                 num_dumps=None):
 
     if components is None:
         components = np.zeros(NUM_TENSOR_3D)
@@ -1027,11 +1012,11 @@ def StrainStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StrainStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps, target)
+                        num_dumps)
 
 def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
                    increment=1., kappa=None, temperature=None, elec_field=None,
-                   num_dumps=None, target=None):
+                   num_dumps=None):
 
     if components is None:
         components = np.zeros(NUM_TENSOR_3D)
@@ -1063,11 +1048,11 @@ def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StrainRateStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps, target)
+                        num_dumps)
 
 def StressStep(name, previous, components=None, frames=None, scale=1.,
                increment=1., temperature=None, elec_field=None,
-               num_dumps=None, target=None):
+               num_dumps=None):
 
     kappa = 0.
 
@@ -1089,11 +1074,11 @@ def StressStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StressStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps, target)
+                        num_dumps)
 
 def StressRateStep(name, previous, components=None, frames=None, scale=1.,
                    increment=1., temperature=None, elec_field=None,
-                   num_dumps=None, target=None):
+                   num_dumps=None):
 
     kappa = 0.
     if components is None:
@@ -1115,11 +1100,11 @@ def StressRateStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StressRateStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps, target)
+                        num_dumps)
 
 def DisplacementStep(name, previous, components=None, frames=None, scale=1.,
                      increment=1., kappa=None, temperature=None, elec_field=None,
-                     num_dumps=None, target=None):
+                     num_dumps=None):
 
     if components is None:
         components = np.zeros(3)
@@ -1140,11 +1125,11 @@ def DisplacementStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('DisplacementStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps, target)
+                        num_dumps)
 
 def DefGradStep(name, previous, components=None, frames=None, scale=1.,
                 increment=1., kappa=None, temperature=None, elec_field=None,
-                num_dumps=None, target=None):
+                num_dumps=None):
 
     if kappa is None:
         kappa = previous.kappa
@@ -1173,11 +1158,11 @@ def DefGradStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('DefGradStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps, target)
+                        num_dumps)
 
 def MixedStep(name, previous, components=None, descriptors=None,
               frames=None, scale=1., increment=1., temperature=None,
-              elec_field=None, num_dumps=None, target=None):
+              elec_field=None, num_dumps=None):
 
     if components is None:
         components = np.zeros(NUM_TENSOR_3D)
@@ -1231,11 +1216,11 @@ def MixedStep(name, previous, components=None, descriptors=None,
 
     return AnalysisStep('MixedStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps, target)
+                        num_dumps)
 
 def DataSteps(filename, previous, tc=0, columns=None, descriptors=None,
               skiprows=0, comments='#', time_format='total', scale=1.,
-              frames=None, steps=None, sheet=None, target=None):
+              frames=None, steps=None, sheet=None):
 
     d = {'D': 1, 'E': 2, 'R': 3, 'S': 4, 'P': 6, 'T': 7, 'X': 9}
     bad = []
@@ -1330,7 +1315,7 @@ def DataSteps(filename, previous, tc=0, columns=None, descriptors=None,
     return data_steps
 
 def GenSteps(step_class, name, previous, components, amplitude, increment,
-             nsteps, temperature, target=None, **kwargs):
+             nsteps, temperature, **kwargs):
 
     if components is None:
         components = [1.] * NUM_TENSOR_3D
