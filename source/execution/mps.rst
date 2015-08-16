@@ -199,8 +199,8 @@ Extracting Results from the Output Database
    ``variables`` is a list of variables to extract.  If ``disp`` is ``1``, the variables are returned, in addition to a header describing the variables.
 
 
-View Simulation Results
-=======================
+Viewing Simulation Results
+==========================
 .. method:: MaterialPointSimulator.view(model=None)
 
    Display simulation results in visualizer.

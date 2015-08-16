@@ -3,6 +3,15 @@
 Materials: Introduction
 #######################
 
+.. topic:: See Also
+
+   * :ref:`Role of Material Model`
+   * :ref:`defining_a_material`
+   * :ref:`intro_conventions`
+
+Overview
+========
+
 Material constitutive models provide the material's complete mechanical response. In other words, given the current mechanical state and an increment in deformation, the material model returns
 
 * the updated stress,
