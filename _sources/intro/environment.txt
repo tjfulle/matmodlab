@@ -30,7 +30,7 @@ Matmodlab searches for the optional user environment file, ``mml_userenv.py``, i
 
 The value of a parameter is the the last definition encountered, meaning that the order of precedence for user settings is the current working directory, ``MML_USERENV``, and the home directory.
 
-Environment files use Python syntax, meaning that entries will have the following syntax::
+Environment files use Python syntax, meaning that entries will have the following form::
 
   parameter = value
 
@@ -45,8 +45,8 @@ Below are the recognized environment settings and their defaults.  Any of these 
 
    When specifying environment settings in a user environment file, the
    setting must have the same type as the default. If the default is a list,
-   the user setting is inserted in the list. If the default is a dictionary,
-   it is updated with the user setting.
+   the user setting is inserted in to the default list. If the default is a
+   dictionary, it is updated with the user setting.
 
 IO Settings
 -----------
@@ -59,18 +59,20 @@ warn
 
   Define how Matmodlab is to interpret warnings.  Possible values are ``WARN``, ``IGNORE``, ``ERROR``.  Set the value to ``IGNORE`` to suppress warnings and to ``ERROR`` to treat warnings as errors.  The default ``WARN`` prints warning messages.
 
-Wlimit
+Wall:
 
-  Define the number of warnings can be printed.  The default is ``10``.
+  Print *all* warning messages, including internal warnings.  Possible values are ``True`` and ``False``.  The default ``False`` does not print some internal warnings.
 
 Debugging and SQA
 -----------------
 
 raise_e
 
-  By default, Matmodlab prints errors encountered and quits. If set to
-  ``True``, errors and not merely printed, but raised. The default is
-  ``False``.
+  Define how Matmodlab treats errors that are raised during job execution.
+  Possible values are ``True`` and ``False``. If ``False``, Matmodlab prints
+  errors to the console and log file and exits. If set to ``True``, errors are
+  raised instead. The default is ``False``, except for the Matmodlab.Notebook
+  environment where it is ``True``.
 
 sqa
 
@@ -89,7 +91,7 @@ Performance
 
 nprocs
 
-  The number of simultaneous jobs to run.  The option is only used by the Matmodlab.Permutator.  The default is ``1``.
+  The number of simultaneous jobs to run.  The option is used only by the Matmodlab.Permutator.  The default is ``1``.
 
 
 Material Switching

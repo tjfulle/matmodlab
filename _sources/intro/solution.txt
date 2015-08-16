@@ -411,7 +411,7 @@ Considering the symmetry of the stress tensor
               &          & C_{3333} & C_{3312} & C_{3323} & C_{3313} \\
               &          &          & C_{1212} & C_{1223} & C_{1213} \\
               &          &          &          & C_{2323} & C_{2313} \\
-    symm      &          &          &          &          & C_{1313} \\
+    \text{symm}&         &          &          &          & C_{1313} \\
    \end{bmatrix}
    \begin{Bmatrix}
      \dot{\epsilon}_{11} \\
@@ -497,5 +497,5 @@ are used, the components of the stiffness must be modified as
             &        & C_{33} & \sqrt{2}C_{34}   & \sqrt{2}C_{35} & \sqrt{2}C_{36} \\
             &        &        & 2C_{44}          & 2C_{45}        & 2C_{46} \\
             &        &        &                  & 2C_{55}        & 2C_{56} \\
-    symm    &        &        &                  &                & 2C_{66} \\
+    \text{symm} &        &        &                  &                & 2C_{66} \\
    \end{bmatrix}

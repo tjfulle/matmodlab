@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="1. Introduction and Overview" href="index.html" />
     <link rel="next" title="1.5. Conventions" href="conventions.html" />
@@ -33,20 +33,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <div class="section" id="input-syntax-guidelines">
 <h1>1.4. Input Syntax Guidelines<a class="headerlink" href="#input-syntax-guidelines" title="Permalink to this headline">¶</a></h1>
 <div class="topic">
 <p class="topic-title first">See Also</p>
 <ul class="simple">
-<li><a class="reference internal" href="../execution/index.html#model-create-and-execute"><span>Job Execution</span></a></li>
-<li><a class="reference internal" href="output.html#mml-out-dbs"><span>Matmodlab File Formats</span></a></li>
+<li><a class="reference internal" href="../execution/index.html#model-create-and-execute"><em>Job Execution</em></a></li>
+<li><a class="reference internal" href="output.html#mml-out-dbs"><em>Matmodlab File Formats</em></a></li>
 </ul>
 </div>
 <div class="section" id="overview">
@@ -63,68 +63,68 @@
 classes, and symbolic constants.</p>
 <div class="section" id="parameters">
 <h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h3>
-<p>The parameters exposed by importing <code class="docutils literal"><span class="pre">matmodlab</span></code> are</p>
+<p>The parameters exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt> are</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">ROOT_D</span></code>, the root <code class="docutils literal"><span class="pre">matmodlab</span></code> directory</li>
-<li><code class="docutils literal"><span class="pre">PKG_D</span></code>, the <code class="docutils literal"><span class="pre">matmodlab/lib</span></code> directory, the location shared objects are copied</li>
-<li><code class="docutils literal"><span class="pre">MAT_D</span></code>, the directory where builtin materials are contained</li>
+<li><tt class="docutils literal"><span class="pre">ROOT_D</span></tt>, the root <tt class="docutils literal"><span class="pre">matmodlab</span></tt> directory</li>
+<li><tt class="docutils literal"><span class="pre">PKG_D</span></tt>, the <tt class="docutils literal"><span class="pre">matmodlab/lib</span></tt> directory, the location shared objects are copied</li>
+<li><tt class="docutils literal"><span class="pre">MAT_D</span></tt>, the directory where builtin materials are contained</li>
 </ul>
 </div>
 <div class="section" id="classes">
 <h3>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h3>
-<p>The classes exposed by importing <code class="docutils literal"><span class="pre">matmodlab</span></code> are</p>
+<p>The classes exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt> are</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">MaterialPointSimulator</span></code>, the Matmodlab material point simulator</li>
-<li><code class="docutils literal"><span class="pre">Permutator</span></code>, the Matmodlab permutator</li>
-<li><code class="docutils literal"><span class="pre">Optimizer</span></code>, the Matmodlab optimizer</li>
+<li><tt class="docutils literal"><span class="pre">MaterialPointSimulator</span></tt>, the Matmodlab material point simulator</li>
+<li><tt class="docutils literal"><span class="pre">Permutator</span></tt>, the Matmodlab permutator</li>
+<li><tt class="docutils literal"><span class="pre">Optimizer</span></tt>, the Matmodlab optimizer</li>
 </ul>
 <p>Each of these classes is described in more detail in the following sections.</p>
 </div>
 <div class="section" id="symbolic-constants">
 <h3>Symbolic Constants<a class="headerlink" href="#symbolic-constants" title="Permalink to this headline">¶</a></h3>
-<p>The following symbolic constants are exposed by importing <code class="docutils literal"><span class="pre">matmodlab</span></code>.</p>
+<p>The following symbolic constants are exposed by importing <tt class="docutils literal"><span class="pre">matmodlab</span></tt>.</p>
 <div class="section" id="symbolic-constants-relating-to-matmodlab-simulator">
 <h4>Symbolic Constants Relating to Matmodlab.Simulator<a class="headerlink" href="#symbolic-constants-relating-to-matmodlab-simulator" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">DBX,</span> <span class="pre">EXO,</span> <span class="pre">TXT,</span> <span class="pre">PKL,</span> <span class="pre">XLS,</span> <span class="pre">XLSX</span></code>, constants representing the output file formats.  See <a class="reference internal" href="output.html#mml-out-dbs"><span>Matmodlab File Formats</span></a>.</li>
+<li><tt class="docutils literal"><span class="pre">DBX,</span> <span class="pre">EXO,</span> <span class="pre">TXT,</span> <span class="pre">PKL,</span> <span class="pre">XLS,</span> <span class="pre">XLSX</span></tt>, constants representing the output file formats.  See <a class="reference internal" href="output.html#mml-out-dbs"><em>Matmodlab File Formats</em></a>.</li>
 </ul>
 </div>
 <div class="section" id="symbolic-constants-relating-to-user-defined-materials">
 <h4>Symbolic Constants Relating to User Defined Materials<a class="headerlink" href="#symbolic-constants-relating-to-user-defined-materials" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">XX,</span> <span class="pre">YY,</span> <span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">YZ,</span> <span class="pre">XZ</span></code>, constants representing the <em>xx</em>, <em>yy</em>, <em>zz</em>, <em>xy</em>, <em>yz</em>, and <em>xz</em> components of second-order symmetric tensors.</li>
-<li><code class="docutils literal"><span class="pre">MECHANICAL</span></code>, <code class="docutils literal"><span class="pre">HYPERELASTIC</span></code>, <code class="docutils literal"><span class="pre">ANISOHYPER</span></code> are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material responses, respectively (see <a class="reference internal" href="../material/user.html#user-mats"><span>User Defined Materials</span></a>).</li>
-<li><code class="docutils literal"><span class="pre">WLF</span></code> specifies a WLF time-temperature shift (see <a class="reference internal" href="../material/trs.html#trs"><span>Time Temperature Shift</span></a>)</li>
-<li><code class="docutils literal"><span class="pre">PRONY</span></code> specifies a prony series input to the viscoelastic model (see <a class="reference internal" href="../material/viscoelastic.html#viscoelastic"><span>Viscoelasticity</span></a>)</li>
-<li><code class="docutils literal"><span class="pre">ISOTROPIC</span></code> specifies isotropic thermal expansion (see <a class="reference internal" href="../material/expansion.html#expansion"><span>Thermal Expansion</span></a>)</li>
-<li><code class="docutils literal"><span class="pre">USER</span></code> specifies that a user developed model is of type &#8220;user&#8221;</li>
-<li><code class="docutils literal"><span class="pre">UMAT</span></code> specifies that a user developed model is of type &#8220;umat&#8221;</li>
-<li><code class="docutils literal"><span class="pre">UHYPER</span></code> specifies that a user developed model is of type &#8220;uhyper&#8221;</li>
-<li><code class="docutils literal"><span class="pre">UANISOHYPER_INV</span></code> specifies that a user developed model is of type &#8220;uanisohyper_inv&#8221;</li>
+<li><tt class="docutils literal"><span class="pre">XX,</span> <span class="pre">YY,</span> <span class="pre">ZZ,</span> <span class="pre">XY,</span> <span class="pre">YZ,</span> <span class="pre">XZ</span></tt>, constants representing the <em>xx</em>, <em>yy</em>, <em>zz</em>, <em>xy</em>, <em>yz</em>, and <em>xz</em> components of second-order symmetric tensors.</li>
+<li><tt class="docutils literal"><span class="pre">MECHANICAL</span></tt>, <tt class="docutils literal"><span class="pre">HYPERELASTIC</span></tt>, <tt class="docutils literal"><span class="pre">ANISOHYPER</span></tt> are constants representing user defined materials for mechanical, hyperelastic, and anisotropic-hyperelastic material responses, respectively (see <a class="reference internal" href="../material/user.html#user-mats"><em>User Defined Materials</em></a>).</li>
+<li><tt class="docutils literal"><span class="pre">WLF</span></tt> specifies a WLF time-temperature shift (see <a class="reference internal" href="../material/trs.html#trs"><em>Time Temperature Shift</em></a>)</li>
+<li><tt class="docutils literal"><span class="pre">PRONY</span></tt> specifies a prony series input to the viscoelastic model (see <a class="reference internal" href="../material/viscoelastic.html#viscoelastic"><em>Viscoelasticity</em></a>)</li>
+<li><tt class="docutils literal"><span class="pre">ISOTROPIC</span></tt> specifies isotropic thermal expansion (see <a class="reference internal" href="../material/expansion.html#expansion"><em>Thermal Expansion</em></a>)</li>
+<li><tt class="docutils literal"><span class="pre">USER</span></tt> specifies that a user developed model is of type &#8220;user&#8221;</li>
+<li><tt class="docutils literal"><span class="pre">UMAT</span></tt> specifies that a user developed model is of type &#8220;umat&#8221;</li>
+<li><tt class="docutils literal"><span class="pre">UHYPER</span></tt> specifies that a user developed model is of type &#8220;uhyper&#8221;</li>
+<li><tt class="docutils literal"><span class="pre">UANISOHYPER_INV</span></tt> specifies that a user developed model is of type &#8220;uanisohyper_inv&#8221;</li>
 </ul>
 </div>
 <div class="section" id="symbolic-constants-relating-to-matmodlab-permutator">
 <h4>Symbolic Constants Relating to Matmodlab.Permutator<a class="headerlink" href="#symbolic-constants-relating-to-matmodlab-permutator" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">ZIP</span></code>, apply the zip method to a permutation job.</li>
-<li><code class="docutils literal"><span class="pre">COMBINATION</span></code>, apply the combination method to a permutation job.</li>
-<li><code class="docutils literal"><span class="pre">RANGE</span></code>, permutated variables defined as a range</li>
-<li><code class="docutils literal"><span class="pre">LIST</span></code>, permutated variables defined as a list</li>
-<li><code class="docutils literal"><span class="pre">WEIBULL</span></code>, permutated variables permutated using a Weibull distribution</li>
-<li><code class="docutils literal"><span class="pre">UNIFORM</span></code>, permutated variables permutated using a Uniform distribution</li>
-<li><code class="docutils literal"><span class="pre">NORMAL</span></code>, permutated variables permutated using a Normal distribution</li>
-<li><code class="docutils literal"><span class="pre">PERCENTAGE</span></code>, permutated variables permutated +/- b% from the nominal value</li>
-<li><code class="docutils literal"><span class="pre">UPERCENTAGE</span></code>, permutated variables permutated using a uniform distribution with bounds +/- b% from the nominal value</li>
-<li><code class="docutils literal"><span class="pre">NPERCENTAGE</span></code>, permutated variables permutate using a normal distribution with bounds +/- b% from the nominal value</li>
+<li><tt class="docutils literal"><span class="pre">ZIP</span></tt>, apply the zip method to a permutation job.</li>
+<li><tt class="docutils literal"><span class="pre">COMBINATION</span></tt>, apply the combination method to a permutation job.</li>
+<li><tt class="docutils literal"><span class="pre">RANGE</span></tt>, permutated variables defined as a range</li>
+<li><tt class="docutils literal"><span class="pre">LIST</span></tt>, permutated variables defined as a list</li>
+<li><tt class="docutils literal"><span class="pre">WEIBULL</span></tt>, permutated variables permutated using a Weibull distribution</li>
+<li><tt class="docutils literal"><span class="pre">UNIFORM</span></tt>, permutated variables permutated using a Uniform distribution</li>
+<li><tt class="docutils literal"><span class="pre">NORMAL</span></tt>, permutated variables permutated using a Normal distribution</li>
+<li><tt class="docutils literal"><span class="pre">PERCENTAGE</span></tt>, permutated variables permutated +/- b% from the nominal value</li>
+<li><tt class="docutils literal"><span class="pre">UPERCENTAGE</span></tt>, permutated variables permutated using a uniform distribution with bounds +/- b% from the nominal value</li>
+<li><tt class="docutils literal"><span class="pre">NPERCENTAGE</span></tt>, permutated variables permutate using a normal distribution with bounds +/- b% from the nominal value</li>
 </ul>
 </div>
 <div class="section" id="symbolic-constants-relating-to-matmodlab-optimizer">
 <h4>Symbolic Constants Relating to Matmodlab.Optimizer<a class="headerlink" href="#symbolic-constants-relating-to-matmodlab-optimizer" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">SIMPLEX</span></code>, Simplex optimization method</li>
-<li><code class="docutils literal"><span class="pre">POWELL</span></code>, Powell optimization method</li>
-<li><code class="docutils literal"><span class="pre">COBYLA</span></code>, COBYLA optimization method</li>
-<li><code class="docutils literal"><span class="pre">BRUTE</span></code>, brute force optimization method</li>
+<li><tt class="docutils literal"><span class="pre">SIMPLEX</span></tt>, Simplex optimization method</li>
+<li><tt class="docutils literal"><span class="pre">POWELL</span></tt>, Powell optimization method</li>
+<li><tt class="docutils literal"><span class="pre">COBYLA</span></tt>, COBYLA optimization method</li>
+<li><tt class="docutils literal"><span class="pre">BRUTE</span></tt>, brute force optimization method</li>
 </ul>
 </div>
 </div>
@@ -146,7 +146,7 @@ classes, and symbolic constants.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
 
@@ -189,7 +189,7 @@ classes, and symbolic constants.</p>
 </ul>
 
 
-<div id="searchbox" style="display: none" role="search">
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -210,8 +210,8 @@ classes, and symbolic constants.</p>
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |
       <a href="../_sources/intro/input.txt"

@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="3.3. User Defined Materials" href="user.html" />
     <link rel="next" title="Fortran User Material Interface" href="fortran.html" />
@@ -33,36 +33,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <div class="section" id="python-user-material-interface">
 <span id="python-models"></span><h1>Python User Material Interface<a class="headerlink" href="#python-user-material-interface" title="Permalink to this headline">¶</a></h1>
 <div class="topic">
 <p class="topic-title first">See Also</p>
 <ul class="simple">
-<li><a class="reference internal" href="../intro/solution.html#role-of-material-model"><span>The Role of the Material Model in Continuum Mechanics</span></a></li>
-<li><a class="reference internal" href="../execution/mps.html#defining-a-material"><span>Defining a Material Model</span></a></li>
-<li><a class="reference internal" href="../intro/conventions.html#intro-conventions"><span>Conventions</span></a></li>
-<li><a class="reference internal" href="comm.html#comm-w-matmodlab"><span>Writing Messages to the Console and/or Log File</span></a></li>
+<li><a class="reference internal" href="../intro/solution.html#role-of-material-model"><em>The Role of the Material Model in Continuum Mechanics</em></a></li>
+<li><a class="reference internal" href="../execution/mps.html#defining-a-material"><em>Defining a Material Model</em></a></li>
+<li><a class="reference internal" href="../intro/conventions.html#intro-conventions"><em>Conventions</em></a></li>
+<li><a class="reference internal" href="comm.html#comm-w-matmodlab"><em>Writing Messages to the Console and/or Log File</em></a></li>
 </ul>
 </div>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>Material models written in Python are implemented as subclasses
-<code class="docutils literal"><span class="pre">matmodlab.mmd.material.MaterialModel</span></code> and are treated as builtin materials.</p>
+<tt class="docutils literal"><span class="pre">matmodlab.mmd.material.MaterialModel</span></tt> and are treated as builtin materials.</p>
 </div>
 <div class="section" id="invoking-user-materials">
 <h2>Invoking User Materials<a class="headerlink" href="#invoking-user-materials" title="Permalink to this headline">¶</a></h2>
-<p>User materials that subclass <code class="docutils literal"><span class="pre">MaterialModel</span></code> are invoked by assigning the <em>model</em> argument of the <code class="docutils literal"><span class="pre">MaterialPointSimulator.Material</span></code> factory method to the name of the material model.</p>
+<p>User materials that subclass <tt class="docutils literal"><span class="pre">MaterialModel</span></tt> are invoked by assigning the <em>model</em> argument of the <tt class="docutils literal"><span class="pre">MaterialPointSimulator.Material</span></tt> factory method to the name of the material model.</p>
 </div>
 <div class="section" id="required-attributes">
 <h2>Required Attributes<a class="headerlink" href="#required-attributes" title="Permalink to this headline">¶</a></h2>
-<p>Material models that subclass <code class="docutils literal"><span class="pre">MaterialModel</span></code> must provide the following class attributes:</p>
+<p>Material models that subclass <tt class="docutils literal"><span class="pre">MaterialModel</span></tt> must provide the following class attributes:</p>
 <ul class="simple">
 <li><em>name</em>, as string defining the material&#8217;s name.  Must be unique.</li>
 </ul>
@@ -71,13 +71,13 @@
 <h2>Required Methods<a class="headerlink" href="#required-methods" title="Permalink to this headline">¶</a></h2>
 <dl class="classmethod">
 <dt id="MaterialModel.param_names">
-<em class="property">classmethod </em><code class="descclassname">MaterialModel.</code><code class="descname">param_names</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#MaterialModel.param_names" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">MaterialModel.</tt><tt class="descname">param_names</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#MaterialModel.param_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class method that returns a list of parameter names. <em>n</em> is the number of parameters and is used to set the names of parameters for user defined materials at run time.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="MaterialModel.setup">
-<code class="descclassname">MaterialModel.</code><code class="descname">setup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#MaterialModel.setup" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">MaterialModel.</tt><tt class="descname">setup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#MaterialModel.setup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets up the material model and return a list of state dependent variable
 names and initial values. By the time that <em>setup</em> is called, the model
 parameters have been</p>
@@ -92,7 +92,7 @@ model.</dd>
 
 <dl class="method">
 <dt id="MaterialModel.update_state">
-<code class="descclassname">MaterialModel.</code><code class="descname">update_state</code><span class="sig-paren">(</span><em>time</em>, <em>dtime</em>, <em>temp</em>, <em>dtemp</em>, <em>energy</em>, <em>density</em>, <em>F0</em>, <em>F1</em>, <em>strain</em>, <em>dstrain</em>, <em>elec_field</em>, <em>stress</em>, <em>statev</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#MaterialModel.update_state" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">MaterialModel.</tt><tt class="descname">update_state</tt><big>(</big><em>time</em>, <em>dtime</em>, <em>temp</em>, <em>dtemp</em>, <em>energy</em>, <em>density</em>, <em>F0</em>, <em>F1</em>, <em>strain</em>, <em>dstrain</em>, <em>elec_field</em>, <em>stress</em>, <em>statev</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#MaterialModel.update_state" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the the material state</p>
 <p>The following parameters are sent in for information and should not be
 updated:</p>
@@ -176,7 +176,7 @@ updated to the end of the step:</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
 
@@ -215,7 +215,7 @@ updated to the end of the step:</p>
 </ul>
 
 
-<div id="searchbox" style="display: none" role="search">
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -236,8 +236,8 @@ updated to the end of the step:</p>
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
       
       |
       <a href="../_sources/material/python.txt"
