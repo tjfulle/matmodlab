@@ -1,8 +1,8 @@
 import sys
 from testconf import *
-from matmodlab.utils.mcgen import *
 try:
     import pandas
+    from matmodlab.utils.mcgen import *
 except ImportError:
     pandas = None
 

@@ -13,7 +13,8 @@ except ImportError: plt = None
 try: import bokeh.plotting as bp
 except ImportError: bp = None
 
-__all__ = ['MasterCurve', 'MODIFIED_POWER', 'POWER', 'PRONY', 'POLYNOMIAL',
+__all__ = ['MasterCurve', 'CurveFitter',
+           'MODIFIED_POWER', 'POWER', 'PRONY', 'POLYNOMIAL',
            'COBYLA', 'POWELL', 'FMIN']
 
 MODIFIED_POWER = 'Modified Power'
@@ -245,8 +246,9 @@ class MasterCurve(object):
         self.wlf_coeffs = wlf_coeffs
         self.optwlf = optwlf
         self.optimizer = optimizer
-        cf = get_fitter(fitter)
-        self.cf = cf(**kwargs)
+        self.kwds = dict(**kwargs)
+        cf = CurveFitter(fitter)
+        self._cf = {0: cf(**kwargs)}
 
         self.xvar = xvar
         self.yvar = yvar
@@ -255,10 +257,22 @@ class MasterCurve(object):
 
         self._fit = 0
 
-    def fit(self, wlf_coeffs=None, skip_temps=None, ref_temp=None, optimize=None):
+    @property
+    def cf(self):
+        return self._cf.get(1, self._cf[0])
+
+    @cf.setter
+    def cf(self, item):
+        if item is not None:
+            self._cf[1] = item
+
+    def fit(self, wlf_coeffs=None, skip_temps=None, ref_temp=None, optimize=None,
+            curve_fitter=None):
 
         skip_temps = aslist(skip_temps)
-        skip_temps.extend(skip_temps)
+        skip_temps.extend(self.skip_temps)
+
+        self.cf = curve_fitter
 
         # make skip temps a list, if not already
         df = self.df.copy()
@@ -448,8 +462,10 @@ class MasterCurve(object):
 
     def plot(self, **kwargs):
         if environ.notebook == 2:
-            return self._bp_plot(**kwargs)
-        self._mp_plot(**kwargs)
+            p = self._bp_plot(**kwargs)
+            bp.show(p)
+            return p
+        return self._mp_plot(**kwargs)
 
     def _bp_plot(self, raw=False, show_fit=False):
         if bp is None:
@@ -532,14 +548,6 @@ class MasterCurve(object):
             plt.savefig(filename, transparent=True)
 
         return
-
-    def Export(self, filename):
-        root, ext = os.path.splitext(filename)
-        if ext.lower() == '.csv':
-            return self.to_csv(filename)
-        elif ext.lower() == '.xlsx':
-            return self.to_excel(filename)
-        raise TypeError('Unexpected file extension {0!r}'.format(ext))
 
     def to_csv(self, filename):
         """Dump data to a file
@@ -626,12 +634,15 @@ class MasterCurve(object):
             return read_csv(filename, **kwargs)
         raise TypeError('Unexpected file extension {0!r}'.format(ext))
 
-    def show(self, plot):
-        if environ.notebook == 2:
-            bp.show(plot)
+    def Export(self, filename):
+        root, ext = os.path.splitext(filename)
+        if ext.lower() == '.csv':
+            return self.to_csv(filename)
+        elif ext.lower() == '.xlsx':
+            return self.to_excel(filename)
+        raise TypeError('Unexpected file extension {0!r}'.format(ext))
 
-
-class CurveFitter(object):
+class _CurveFitter(object):
     """CurveFitter base class"""
     name = None
     key = None
@@ -644,7 +655,7 @@ class CurveFitter(object):
     def dump_info(self, *args, **kwargs):
         raise NotImplementedError
 
-class PronyFit(CurveFitter):
+class PronyFit(_CurveFitter):
     name = 'Prony'
     key = PRONY
     plot_label = r'$\sum_{i=1}^{n} y_i e^{\frac{t/a_T}{\tau_i}}$'
@@ -751,7 +762,7 @@ class PronyFit(CurveFitter):
         line = joinn(line, sep=delimiter)
         return line
 
-class ModifiedPowerFit(CurveFitter):
+class ModifiedPowerFit(_CurveFitter):
     name = 'Modified Power'
     key = MODIFIED_POWER
     requires_opt = True
@@ -802,7 +813,7 @@ class ModifiedPowerFit(CurveFitter):
         line = joinn(line, sep=delimiter)
         return line
 
-class PowerFit(CurveFitter):
+class PowerFit(_CurveFitter):
     name = 'Power'
     key = POWER
     requires_opt = True
@@ -852,7 +863,7 @@ class PowerFit(CurveFitter):
         line = joinn(line, sep=delimiter)
         return line
 
-class PolyFit(CurveFitter):
+class PolyFit(_CurveFitter):
     name = 'Polynomial'
     key = POLYNOMIAL
     def __init__(self, *args, **kwargs):
@@ -894,12 +905,12 @@ class PolyFit(CurveFitter):
         line = joinn(line, sep=delimiter)
         return line
 
-# curve fit types
-def get_fitter(key):
-    fitters = CurveFitter.__subclasses__()
+def CurveFitter(key):
+    """Curve Fitter factory method"""
+    fitters = _CurveFitter.__subclasses__()
     for f in fitters:
         if f.key == key:
-            return f
+            break
     else:
         raise ValueError('{0}: unrecognized fitter'.format(key))
     if f.requires_opt and not sciopt:
@@ -967,3 +978,26 @@ def init_notebook(plot_lib='bokeh', i=1):
         environ.notebook = 1
     else:
         raise ValueError('expected bokeh or matplotlib, got {0!r}'.format(plot_lib))
+
+if __name__ == '__main__':
+    # Baseline solution
+    this_directory = os.path.dirname(os.path.realpath(__file__))
+    c = np.array([3.292, 181.82])
+    p = np.array([[.0001, 2489],
+                  [.001, 1482],
+                  [.01, 803],
+                  [.1, 402],
+                  [1, 207],
+                  [10, 124],
+                  [100, 101],
+                  [0, 222]], dtype=np.float64)
+    f = os.path.join(this_directory, 'mcgen.csv')
+    mc = MasterCurve.Import(f, ref_temp=75., apply_log=True,
+                            fitter=PRONY, optimizer=FMIN, optwlf=False)
+    s1 = 'WLF coefficients not within tolerance'
+    mc.fit()
+    assert np.allclose(mc.wlf_opt, c, rtol=1.e-3, atol=1.e-3), s1
+    s2 = 'Prony series not within tolerance'
+    assert np.allclose(mc.mc_fit[:, 1], p[:, 1], rtol=1.e-2, atol=1.e-2), s2
+    mc.fit(optimize=True)
+    print 'Success'
