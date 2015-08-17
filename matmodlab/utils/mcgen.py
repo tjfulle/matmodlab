@@ -35,7 +35,7 @@ class Environment:
 environ = Environment()
 environ.notebook = 0
 
-def loadcsv(filename):
+def _loadcsv(filename):
     """Load the csv file written out by MasterCurve.dump"""
     class CSVData:
         data = {}
@@ -631,7 +631,7 @@ class MasterCurve(object):
     def Import(cls, filename, **kwargs):
         root, ext = os.path.splitext(filename)
         if ext.lower() == '.csv':
-            return read_csv(filename, **kwargs)
+            return ReadCSV(filename, **kwargs)
         raise TypeError('Unexpected file extension {0!r}'.format(ext))
 
     def Export(self, filename):
@@ -917,10 +917,14 @@ def CurveFitter(key):
         raise ValueError('{0}: requires scipy.optimize'.format(key))
     return f
 
-def read_csv(filename, apply_log=True, ref_temp=75., cols=[0,1,2],
-             xvar='Time', xunits='min', yvar='Er', yunits='psi',
-             skip_temps=None, xfac=1., yfac=1., **kwargs):
-    """Read data from filename
+RE = re.compile('[ \,]')
+def _split(string, comments, i=0):
+    return [x for x in RE.split(string.strip().split(comments,1)[i]) if x.split()]
+
+def ReadCSV(filename, apply_log=True, ref_temp=75., cols=[0,1,2],
+            xvar='Time', xunits='min', yvar='Er', yunits='psi',
+            skip_temps=None, xfac=1., yfac=1., comments='#', **kwargs):
+    """MasterCurve factory method
 
     Parameters
     ----------
@@ -929,9 +933,7 @@ def read_csv(filename, apply_log=True, ref_temp=75., cols=[0,1,2],
 
     Returns
     -------
-    all_data : tuple of (real, ndarray) pairs
-        (temp, data) pairs where temp is the temperature corresponding
-        to the (log(x), y) curves in data
+    mc : MasterCurve
 
     Notes
     -----
@@ -940,16 +942,33 @@ def read_csv(filename, apply_log=True, ref_temp=75., cols=[0,1,2],
       Temperature, x, y
 
     """
-    if not os.path.isfile(filename):
-        raise OSError('***error: {0}: no such file'.format(filename))
-    lines = open(filename, 'r').readlines()
+    fown = False
+    try:
+        if isinstance(filename, basestring):
+            fown = True
+            fh = iter(open(filename))
+        else:
+            fh = iter(filename)
+    except (TypeError):
+        message = 'filename must be a string, file handle, or generator'
+        raise ValueError(message)
+
     data = []
-    for line in lines:
-        line = [float(x) for x in re.split(r'[ \,]', line.split('#', 1)[0])
-                if x.split()]
-        if not line:
-            continue
-        data.append(line)
+    try:
+        for (i, line) in enumerate(fh.readlines()):
+            line = _split(line, comments)
+            if not line:
+                continue
+            try:
+                line = [float(x) for x in line]
+            except ValueError:
+                raise ValueError('expected floates in line{0} '
+                                 'got {1}'.format(i+1, line))
+            data.append(line)
+    finally:
+        if fown:
+            fh.close()
+
     data = np.array(data)[:,cols]
     data = np.asarray(sorted(data, key=lambda x: (x[0], x[1])))
     return MasterCurve(data, ref_temp=ref_temp, apply_log=apply_log,
@@ -979,9 +998,62 @@ def init_notebook(plot_lib='bokeh', i=1):
     else:
         raise ValueError('expected bokeh or matplotlib, got {0!r}'.format(plot_lib))
 
+def mcgen_test_data():
+    from StringIO import StringIO
+    return StringIO("""\
+# Each line shall be as
+# Temperature, Time, Value
+0.0000, 0.0100, 4857.0000
+0.0000, 0.0316, 3444.0000
+0.0000, 0.1000, 2489.0000
+0.0000, 0.3162, 1815.0000
+0.0000, 1.0000, 1375.0000
+0.0000, 3.1623, 1067.0000
+0.0000, 10.0000, 852.0000
+0.0000, 16.5959, 774.0000
+20.0000, 0.0100, 3292.0000
+20.0000, 0.0316, 2353.0000
+20.0000, 0.1000, 1730.0000
+20.0000, 0.3162, 1284.0000
+20.0000, 1.0000, 970.0000
+20.0000, 3.1623, 746.0000
+20.0000, 10.0000, 577.0000
+20.0000, 16.5959, 505.0000
+40.0000, 0.0100, 2159.0000
+40.0000, 0.0316, 1592.0000
+40.0000, 0.1000, 1179.0000
+40.0000, 0.3162, 920.0000
+40.0000, 1.0000, 733.0000
+40.0000, 3.1623, 585.0000
+40.0000, 10.0000, 484.0000
+40.0000, 16.5959, 449.0000
+75.0000, 0.0100, 1287.0000
+75.0000, 0.0316, 985.0000
+75.0000, 0.1000, 767.0000
+75.0000, 0.3162, 616.0000
+75.0000, 1.0000, 498.0000
+75.0000, 3.1623, 410.0000
+75.0000, 10.0000, 333.0000
+75.0000, 16.5959, 311.0000
+100.0000, 0.0100, 1123.0000
+100.0000, 0.0316, 881.0000
+100.0000, 0.1000, 708.0000
+100.0000, 0.3162, 573.0000
+100.0000, 1.0000, 471.0000
+100.0000, 3.1623, 399.0000
+100.0000, 10.0000, 341.0000
+100.0000, 16.5959, 316.0000
+130.0000, 0.0100, 810.0000
+130.0000, 0.0316, 646.0000
+130.0000, 0.1000, 523.0000
+130.0000, 0.3162, 432.0000
+130.0000, 1.0000, 364.0000
+130.0000, 3.1623, 313.0000
+130.0000, 10.0000, 271.0000
+130.0000, 16.5959, 254.0000""")
+
 if __name__ == '__main__':
     # Baseline solution
-    this_directory = os.path.dirname(os.path.realpath(__file__))
     c = np.array([3.292, 181.82])
     p = np.array([[.0001, 2489],
                   [.001, 1482],
@@ -991,9 +1063,8 @@ if __name__ == '__main__':
                   [10, 124],
                   [100, 101],
                   [0, 222]], dtype=np.float64)
-    f = os.path.join(this_directory, 'mcgen.csv')
-    mc = MasterCurve.Import(f, ref_temp=75., apply_log=True,
-                            fitter=PRONY, optimizer=FMIN, optwlf=False)
+    mc = ReadCSV(mcgen_test_data(), ref_temp=75., apply_log=True,
+                 fitter=PRONY, optimizer=FMIN, optwlf=False)
     s1 = 'WLF coefficients not within tolerance'
     mc.fit()
     assert np.allclose(mc.wlf_opt, c, rtol=1.e-3, atol=1.e-3), s1

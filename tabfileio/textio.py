@@ -45,12 +45,14 @@ def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
         head = None
         fh.seek(a)
 
-
     data = []
     try:
         for (i, line) in enumerate(fh.readlines()):
-            if i < skiprows:
-                continue
+            # @mswan: should this be here?  Aren't we skipping skiprows
+            # @mswan: up under "Take care of thos pesky unwanted rows"?
+            # if i < skiprows:
+            #     continue
+            # @mswan: remove the above lines if you agree
             line = _split(line, comments)
             if not line:
                 continue
