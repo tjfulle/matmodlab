@@ -44,7 +44,7 @@ class MaterialModel(object):
     __metaclass__ = MetaClass
     name = None
     user = False
-    lapack = None
+    lapack = 'lite'
     completions = None
     elastic_props = None
     lib = None

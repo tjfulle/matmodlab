@@ -20,6 +20,7 @@ from matmodlab.mml_siteenv import environ
 from matmodlab.utils.misc import remove, stdout_redirected, merged_stderr_stdout
 from matmodlab.product import PKG_D, PYEXE
 from matmodlab.utils.fortran.product import LAPACK, LAPACK_OBJ, MMLABPACK
+from matmodlab.materials.product import ABA_UTL
 
 FORT_COMPILER = environ.fc
 
@@ -70,6 +71,9 @@ class FortranExtBuilder(object):
         if mmlabpack:
             lapack = "lite"
             sources = MMLABPACK + sources
+
+        if ABA_UTL in sources:
+            lapack = 'lite'
 
         if lapack:
             if lapack == "lite":
