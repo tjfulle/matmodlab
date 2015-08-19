@@ -15,7 +15,7 @@ from matmodlab.product import ROOT_D, PKG_D
 from matmodlab.utils.errors import MatModLabError
 from matmodlab.utils.fortran.extbuilder import FortranExtBuilder
 from matmodlab.utils.fortran.product import IO_F90
-from utils.logio import setup_logger
+from matmodlab.utils.logio import setup_logger
 
 logger = setup_logger('matmodlab.mmd.builder')
 
