@@ -22,4 +22,3 @@ mps.run()
 
 a = mps.get('SDV.Mises')
 S = np.amax(a)
-assert (mps.models['Material-1'].material.parameters['Y'] - S) < 1.e-6

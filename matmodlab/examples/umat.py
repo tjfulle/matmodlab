@@ -21,11 +21,11 @@ models['mps-1'] = MaterialPointSimulator('umat', output=DBX)
 models['mps-1'].StrainStep(components=(.2, .0, .0), frames=50)
 models['mps-1'].StrainStep(components=(.0, .0, .0), frames=50)
 models['mps-1'].Material(UMAT, parameters, depvar=0,
-                         source_files=[join(MAT_D, 'umat.f')])
+                         source_files=['umat.f'])
 models['mps-1'].run()
 
 models['mps-2'] = models['mps-1'].copy('user')
 models['mps-2'].Material(USER, parameters, libname='user', depvar=0,
-                         response=MECHANICAL, source_files=[join(MAT_D, 'umat.f')],
+                         response=MECHANICAL, source_files=['umat.f'],
                          ordering=(XX,YY,ZZ,XY,XZ,YZ))
 models['mps-2'].run()

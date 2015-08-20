@@ -515,11 +515,11 @@ class EXOFileReader(_EXOFile):
                         fields[field].setdefault(DATA, []).append(data)
                         fields[field][LABELS] = aslist(labels)
                         if fields[field][TYPE] != SCALAR:
-                            c = name.rsplit('_', 1)[1]
+                            c = name.rsplit('.', 1)[1]
                             fields[field].setdefault(COMPONENT_LABELS, []).append(c)
                     else:
                         if fields[field][TYPE] != SCALAR:
-                            c = name.rsplit('_', 1)[1]
+                            c = name.rsplit('.', 1)[1]
                             k = fields[field][COMPONENT_LABELS].index(c)
                         else:
                             k = 0
@@ -534,7 +534,7 @@ class EXOFileReader(_EXOFile):
                 fields[field][POSITION] = NODE
 
                 if fields[field][TYPE] != SCALAR:
-                    c = name.rsplit('_', 1)[1]
+                    c = name.rsplit('.', 1)[1]
                     fields[field].setdefault(COMPONENT_LABELS, []).append(c)
 
                 data = self.fh.variables[VALS_NOD_VAR(i+1)][count, :]
