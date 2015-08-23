@@ -1,0 +1,7 @@
+profile_default/security/*
+history.sqlite
+profile_default/history.sqlite
+profile_default/db/*
+profile_default/profile_default/dp/*
+profile_default/profile_default/history.sqlite
+profile_default/profile_default/security/*
