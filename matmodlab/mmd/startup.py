@@ -91,7 +91,7 @@ def main(argv=None):
         elif x == 'build':
             import matmodlab.mmd.builder as module
         elif x in ('ipynb', 'notebook'):
-            import matmodlab.ipynb.nblaunch as module
+            import matmodlab.mmd.nblaunch as module
         elif x == 'clean':
             sys.exit(clean(argv=argv))
         elif x == 'test':

@@ -3,6 +3,8 @@ import sys
 from subprocess import Popen
 from argparse import ArgumentParser
 from os.path import dirname, isdir, isfile, join
+import signal
+from subprocess import Popen, PIPE
 try:
     from IPython.html import notebookapp
     from IPython.html.utils import url_path_join
@@ -28,8 +30,17 @@ def main(argv=None):
     else:
         d = args.d
 
-    a = ['--profile-dir={0}'.format(IPY_D)] + other
-    notebookapp.launch_new_instance(notebook_dir=d, open_browser=True, argv=a)
+    a = other
+    env = dict(os.environ)
+    env['JUPYTER_CONFIG_DIR'] = IPY_D
+    env['IPYTHONDIR'] = IPY_D
+    command = 'ipython notebook'
+    try:
+        proc = Popen(command, env=env, shell=True, preexec_fn=os.setsid)
+    except KeyboardInterrupt:
+        os.killpg(proc.pid, signal.SIGTERM)
+    return 0
+    #notebookapp.launch_new_instance(notebook_dir=d, open_browser=True, argv=a)
 
 if __name__ == '__main__':
     main()
