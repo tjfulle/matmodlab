@@ -16,6 +16,7 @@ build/
 *module.c
 *.bak
 *mod
+*~
 
 *-f2pywrappers2.f90
 
