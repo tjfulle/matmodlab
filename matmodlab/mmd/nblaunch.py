@@ -5,11 +5,6 @@ from argparse import ArgumentParser
 from os.path import dirname, isdir, isfile, join
 import signal
 from subprocess import Popen, PIPE
-try:
-    from IPython.html import notebookapp
-    from IPython.html.utils import url_path_join
-except ImportError:
-    raise SystemExit('IPython.html not found')
 
 from matmodlab.product import EXMPL_D, PYEXE, IPY_D
 
@@ -35,12 +30,13 @@ def main(argv=None):
     env['JUPYTER_CONFIG_DIR'] = IPY_D
     env['IPYTHONDIR'] = IPY_D
     command = 'ipython notebook'
+    if args.examples:
+        command += ' --notebook-dir={0}'.format(EXMPL_D)
     try:
         proc = Popen(command, env=env, shell=True, preexec_fn=os.setsid)
     except KeyboardInterrupt:
         os.killpg(proc.pid, signal.SIGTERM)
     return 0
-    #notebookapp.launch_new_instance(notebook_dir=d, open_browser=True, argv=a)
 
 if __name__ == '__main__':
     main()
