@@ -113,7 +113,7 @@ def read_excel(filename, sheet=None, columns=None, disp=1):
         for row in sh.iter_rows():
             tmprow = []
             for cell in row:
-                tmprow.append(cell.internal_value)
+                tmprow.append(cell.value)
             wholesheet.append(tmprow)
         head = wholesheet[0]
         data = wholesheet[1:]
