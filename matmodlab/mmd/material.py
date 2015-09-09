@@ -119,6 +119,7 @@ class MaterialModel(object):
         self.iparray = np.array(params)
 
         # --- set defaults
+        self.iwarn_stiff = 0
         self.visco_model = None
         self.xpan = None
         self.trs_model = None
@@ -374,9 +375,16 @@ class MaterialModel(object):
                         Fm, Em, dm, elec_field, stress, sdv, V)
             err = np.amax(np.abs(ddsdde - c)) / np.amax(ddsdde)
             if err > 5.E-03: # .5 percent error
-                logging.getLogger('matmodlab.mmd.simulator').warn(
-                    'error in material stiffness: '
-                    '{0:.4E} ({1:.2f})'.format(err, time))
+                msg = 'error in material stiffness: {0:.4E} ({1:.2f})'.format(
+                    err, time)
+                self.iwarn_stiff += 1
+                if self.iwarn_stiff < 10:
+                    logging.getLogger('matmodlab.mmd.simulator').warn(msg)
+                elif self.iwarn_stiff == 10:
+                    msg = msg + ' (future warnings suppressed)'
+                    logging.getLogger('matmodlab.mmd.simulator').warn(msg)
+                if sqa_stiff == 2:
+                    ddsdde = c.copy()
 
         if disp == 2:
             return ddsdde
