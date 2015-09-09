@@ -290,14 +290,14 @@ def run_job(xcall, *args):
         err = func(x, xnames, evald, job, *funcargs)
         logger.info("done (error={0:.4e})".format(err))
         stat = 0
-    except BaseException as ex:
+    except BaseException:
         string = traceback.format_exc()
         logger.error("\nRun {0} failed with the following "
                      "exception:\n{1}".format(IOPT, string))
 
         if halt_on_err:
-            logger.error("\nHalting optimization on error at user request.")
-            sys.exit()
+            logger.error("\n\nHalting optimization on error at user request.\n")
+            raise  # re-raise previous error
         
         stat = 1
         err = np.nan
