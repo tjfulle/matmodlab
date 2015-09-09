@@ -24,7 +24,8 @@ TOL = 1.E-06
 class Optimizer(object):
     def __init__(self, job, func, xinit, method=SIMPLEX, verbosity=None, d=None,
                  maxiter=MAXITER, tolerance=TOL, descriptors=None,
-                 funcargs=[], Ns=10, dryrun=0, keep_intermediate=True):
+                 funcargs=[], Ns=10, dryrun=0, keep_intermediate=True,
+                 halt_on_err=False):
         environ.raise_e = True
         global IOPT
         IOPT = 0
@@ -32,6 +33,7 @@ class Optimizer(object):
         self.func = func
         self.ran = False
         self.dryrun = dryrun
+        self.halt_on_err = halt_on_err
 
         d = os.path.realpath(d or os.getcwd())
         self.directory = d
@@ -158,8 +160,8 @@ Response descriptors:
                 continue
             cons = lcons + ucons
 
-        args = (self.func, self.funcargs, self.rootd, self.job, self.names,
-                self.descriptors, self.tabular, xfac)
+        args = (self.func, self.funcargs, self.rootd, self.halt_on_err,
+                self.job, self.names, self.descriptors, self.tabular, xfac)
 
         if self.dryrun:
             # do a dry run of the function
@@ -260,7 +262,7 @@ def run_job(xcall, *args):
     """
     global IOPT
     logger = logging.getLogger('matmodlab.mmd.optimizer')
-    func, funcargs, rootd, job, xnames, desc, tabular, xfac = args
+    func, funcargs, rootd, halt_on_err, job, xnames, desc, tabular, xfac = args
 
     IOPT += 1
     evald = catd(rootd, IOPT)
@@ -288,10 +290,15 @@ def run_job(xcall, *args):
         err = func(x, xnames, evald, job, *funcargs)
         logger.info("done (error={0:.4e})".format(err))
         stat = 0
-    except BaseException:
+    except BaseException as ex:
         string = traceback.format_exc()
         logger.error("\nRun {0} failed with the following "
                      "exception:\n{1}".format(IOPT, string))
+
+        if halt_on_err:
+            logger.error("\nHalting optimization on error at user request.")
+            sys.exit()
+        
         stat = 1
         err = np.nan
 
