@@ -353,7 +353,10 @@ Material: {5}
         disp = kwargs.pop('disp', 0)
         if not variables:
             variables = None
-        return loadfile(self.filename, variables=variables, disp=disp, **kwargs)
+        data = loadfile(self.filename, variables=variables, disp=disp, **kwargs)
+        if len(variables) == 1:
+            data = data.flatten()
+        return data
 
     def plot(self, xvar, yvar, legend=None, label=None, scale=None, **kwargs):
 

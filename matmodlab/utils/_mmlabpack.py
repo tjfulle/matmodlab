@@ -13,6 +13,9 @@ def det9(a):
     return numpy.linalg.det(numpy.reshape(a, (3, 3)))
 
 
+def inv6(a):
+    return asarray(numpy.linalg.inv(asmat(a)), 6)
+
 def det6(a):
     """ Determinant of 3x3 array stored as 6x1"""
     return numpy.linalg.det(asmat(a))
