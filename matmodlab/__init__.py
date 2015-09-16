@@ -94,3 +94,11 @@ def init_from_matmodlab_magic(p):
         init_printing()
     except ImportError:
         pass
+
+def load_interactive_material(material):
+    try:
+        environ.interactive_materials[material.name] = material
+    except AttributeError:
+        raise AttributeError("interactive material is missing attribute 'name'")
+
+load_material = load_interactive_material

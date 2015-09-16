@@ -46,6 +46,7 @@ class Environment(object):
         'source_files': [join(MAT_D, 'src/uhyper_poly.f90')]}
 
     std_materials = [MAT_D]
+    interactive_materials = {}
 
     rebuild_mat_lib = []
 

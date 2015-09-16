@@ -187,7 +187,10 @@ class MaterialPointSimulator(object):
     def write_summary(self):
         num_frames = sum([len(s.frames) for s in self.steps.values()])
         s = '\n   '.join('{0}'.format(x) for x in environ.std_materials)
-        filename = inspect.getfile(self.material.__class__)
+        try:
+            filename = inspect.getfile(self.material.__class__)
+        except TypeError:
+            filename = 'Interactive Cell'
         summary = '''
 Simulation Summary
 ---------- -------

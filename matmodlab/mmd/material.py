@@ -461,7 +461,13 @@ def Material(model, parameters, switch=None, response=None,
     user_model = is_user_model(model)
     all_mats = MaterialLoader.load_materials()
 
-    if model in all_mats.user_libs:
+    if model.lower() in environ.interactive_materials:
+        # check if the model is in the interactive materials
+        mat_info = None
+        TheMaterial = environ.interactive_materials[model]
+
+    elif model in all_mats.user_libs:
+        # requested model has been specified in the user's environment file
         # adjust keywords per the user environment
         mat_info = all_mats.user_libs[model]
         TheMaterial = mat_info.mat_class
@@ -473,6 +479,7 @@ def Material(model, parameters, switch=None, response=None,
         depvar = mat_info.depvar
 
     elif user_model:
+        # requested model is a user model
         if not source_files:
             raise MatModLabError('{0}: requires source_files'.format(model))
         for (i, f) in enumerate(source_files):
@@ -491,6 +498,7 @@ def Material(model, parameters, switch=None, response=None,
         source_files.extend(TheMaterial.aux_files())
 
     else:
+        # check if material has been loaded
         mat_info = all_mats.get(model, response)
         if mat_info is None:
             raise MatModLabError('model {0} not found'.format(model))
@@ -549,7 +557,11 @@ def Material(model, parameters, switch=None, response=None,
         kwargs['param_names'] = param_names
 
     # instantiate the material
-    kwargs.update(file=mat_info.file, libname=libname,
+    try:
+        filename = mat_info.file
+    except (AttributeError, TypeError):
+        filename = None
+    kwargs.update(file=filename, libname=libname,
                   param_names=param_names, depvar=depvar)
     material = TheMaterial(parameters, **kwargs)
 
