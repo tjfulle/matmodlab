@@ -32,8 +32,14 @@ def main(argv=None):
     command = 'ipython notebook'
     if args.examples:
         command += ' --notebook-dir={0}'.format(EXMPL_D)
+    kwds = {'env': env}
     try:
-        proc = Popen(command, env=env, shell=True, preexec_fn=os.setsid)
+        kwds['preexec_fn'] = os.setsid
+    except AttributeError:
+        pass
+    try:
+        proc = Popen(command.split(), **kwds)
+        proc.wait()
     except KeyboardInterrupt:
         os.killpg(proc.pid, signal.SIGTERM)
     return 0
