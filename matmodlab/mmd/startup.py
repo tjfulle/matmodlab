@@ -307,7 +307,8 @@ positional arguments:
             dot_git = os.path.join(ROOT_D, '../.git')
             if not os.path.isdir(dot_git):
                 raise SystemExit('fetching documentation requires a '
-                                 'clone of Matmodlab')
+                                 'clone of Matmodlab.  See documentation online '
+                                 'at tjfulle.github.io/matmodlab')
             tempd = tempfile.mkdtemp()
             shutil.copytree(dot_git, os.path.join(tempd, '.git'))
             call = lambda x, fh: Popen(x, stdout=fh, stderr=STDOUT).wait()
