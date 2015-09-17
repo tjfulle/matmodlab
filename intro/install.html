@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="1. Introduction and Overview" href="index.html" />
     <link rel="next" title="1.4. Input Syntax Guidelines" href="input.html" />
@@ -33,12 +33,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="installing-matmodlab">
 <span id="intro-install"></span><h1>1.3. Installing Matmodlab<a class="headerlink" href="#installing-matmodlab" title="Permalink to this headline">¶</a></h1>
@@ -71,8 +71,8 @@ packages are installed.</p>
 <li><a class="reference external" href="http://pypi.python.org/pypi/openpyxl">openpyxl</a> for simulation output and visualization of .xlsx data (A, E)</li>
 <li><a class="reference external" href="http://pypi.python.org/pypi/xlwt">xlwt</a> for simulation output as .xls (A)</li>
 <li><a class="reference external" href="http://pypi.python.org/pypi/xlrd">xlrd</a> for visualization of .xls data (A)</li>
-<li><a class="reference external" href="http://matplotlib.org">matplotlib</a> for data visualization in <a class="reference internal" href="../execution/notebook.html#notebook"><em>Matmodlab.Notebook</em></a>  (A, E)</li>
-<li><a class="reference external" href="http://bokeh.pydata.org/en/latest">bokeh</a> for interactive data visualization in <a class="reference internal" href="../execution/notebook.html#notebook"><em>Matmodlab.Notebook</em></a>  (A)</li>
+<li><a class="reference external" href="http://matplotlib.org">matplotlib</a> for data visualization in <a class="reference internal" href="../execution/notebook.html#notebook"><span>Matmodlab.Notebook</span></a>  (A, E)</li>
+<li><a class="reference external" href="http://bokeh.pydata.org/en/latest">bokeh</a> for interactive data visualization in <a class="reference internal" href="../execution/notebook.html#notebook"><span>Matmodlab.Notebook</span></a>  (A)</li>
 </ol>
 <p>The required software may be obtained in several ways, though most development
 has been made using the <a class="reference external" href="http://www.continuum.io">Anaconda</a> and <a class="reference external" href="http://www.enthought.com">Enthought Canopy</a> Python Distributions (E=available in
@@ -103,17 +103,17 @@ linear algebra package.</p>
 </div>
 <p>There are several options for installing Matmodlab, the two recommonded are</p>
 <ul class="simple">
-<li>Installing the <a class="reference internal" href="#stable-v"><em>Latest Stable Version</em></a> from <a class="reference external" href="https://pypi.python.org/pypi">PyPI</a>.</li>
-<li>Installing the <a class="reference internal" href="#dev-v"><em>Latest Development Branch</em></a> from source.</li>
+<li>Installing the <a class="reference internal" href="#stable-v"><span>Latest Stable Version</span></a> from <a class="reference external" href="https://pypi.python.org/pypi">PyPI</a>.</li>
+<li>Installing the <a class="reference internal" href="#dev-v"><span>Latest Development Branch</span></a> from source.</li>
 </ul>
-<p>Whichever method is chosen, it is recommended to install Matmodlab in a <a class="reference internal" href="#venv"><em>Python Virtual Environment</em></a>.</p>
+<p>Whichever method is chosen, it is recommended to install Matmodlab in a <a class="reference internal" href="#venv"><span>Python Virtual Environment</span></a>.</p>
 <div class="section" id="latest-stable-version">
 <span id="stable-v"></span><h3>Latest Stable Version<a class="headerlink" href="#latest-stable-version" title="Permalink to this headline">¶</a></h3>
 <p>The latest stable version of Matmodlab can be installed via pip:</p>
 <div class="highlight-python"><div class="highlight"><pre>pip install matmodlab
 </pre></div>
 </div>
-<p>or <tt class="docutils literal"><span class="pre">easy_install</span></tt>:</p>
+<p>or <code class="docutils literal"><span class="pre">easy_install</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre>easy_install matmodlab
 </pre></div>
 </div>
@@ -121,8 +121,8 @@ linear algebra package.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">You may have to have administrative privileges to install Matmodlab through a package manager.</p>
 </div>
-<p>If you are unsure of the the difference between <tt class="docutils literal"><span class="pre">pip</span></tt> and <tt class="docutils literal"><span class="pre">easy_install</span></tt>, try to
-use <tt class="docutils literal"><span class="pre">pip</span></tt> first.</p>
+<p>If you are unsure of the the difference between <code class="docutils literal"><span class="pre">pip</span></code> and <code class="docutils literal"><span class="pre">easy_install</span></code>, try to
+use <code class="docutils literal"><span class="pre">pip</span></code> first.</p>
 </div>
 <div class="section" id="latest-development-branch">
 <span id="dev-v"></span><h3>Latest Development Branch<a class="headerlink" href="#latest-development-branch" title="Permalink to this headline">¶</a></h3>
@@ -130,7 +130,7 @@ use <tt class="docutils literal"><span class="pre">pip</span></tt> first.</p>
 <div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/tjfulle/matmodlab.git
 </pre></div>
 </div>
-<p>Change directories to <tt class="docutils literal"><span class="pre">matmodlab</span></tt> and run</p>
+<p>Change directories to <code class="docutils literal"><span class="pre">matmodlab</span></code> and run</p>
 <div class="highlight-python"><div class="highlight"><pre>python setup.py install
 </pre></div>
 </div>
@@ -139,8 +139,8 @@ use <tt class="docutils literal"><span class="pre">pip</span></tt> first.</p>
 </pre></div>
 </div>
 <p>Both commands make Matmodlab visible to the Python interpreter,
-in the same way as using <tt class="docutils literal"><span class="pre">pip</span></tt> or <tt class="docutils literal"><span class="pre">easy_install</span></tt>. However, when you setup
-using the <tt class="docutils literal"><span class="pre">develop</span></tt> argument, source files files are linked to the Python
+in the same way as using <code class="docutils literal"><span class="pre">pip</span></code> or <code class="docutils literal"><span class="pre">easy_install</span></code>. However, when you setup
+using the <code class="docutils literal"><span class="pre">develop</span></code> argument, source files files are linked to the Python
 interpreter&#8217;s site-packages, rather than copied. This way, changes made to
 source files are applied immediately and do not require you to re-install
 Matmodlab.</p>
@@ -150,14 +150,14 @@ Matmodlab.</p>
 <p>Fortran models are built as-needed when Matmodlab attempts to run a
 simulation and it cannot find the compiled model. However, if you want
 to build a model without running a simulation or if you want to build an
-extension pack you will need to use the <tt class="docutils literal"><span class="pre">mml</span> <span class="pre">build</span></tt> command.  See <a class="reference internal" href="../execution/cli.html#cli-build"><em>build</em></a> for details on the build command.</p>
+extension pack you will need to use the <code class="docutils literal"><span class="pre">mml</span> <span class="pre">build</span></code> command.  See <a class="reference internal" href="../execution/cli.html#cli-build"><span>build</span></a> for details on the build command.</p>
 <div class="section" id="example">
 <h4>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre>$ mml build
 </pre></div>
 </div>
 <p>This will build the Matmodlab Fortran utilities and material libraries. The
-resultant shared object libraries are copied to <tt class="docutils literal"><span class="pre">matmodlab/lib</span></tt>.</p>
+resultant shared object libraries are copied to <code class="docutils literal"><span class="pre">matmodlab/lib</span></code>.</p>
 </div>
 </div>
 <div class="section" id="python-virtual-environment">
@@ -170,7 +170,7 @@ $ python setup.py develop
 $ mml build
 </pre></div>
 </div>
-<p>In the preceding commands, a virtual environment named <em>matmodlab</em> was created with the required packages and then activated.  We then navigated in to the <tt class="docutils literal"><span class="pre">matmodlab</span></tt> directory (in <tt class="docutils literal"><span class="pre">~/Developer/matmodlab</span></tt> in this example), executed the setup script and built the optional libraries.</p>
+<p>In the preceding commands, a virtual environment named <em>matmodlab</em> was created with the required packages and then activated.  We then navigated in to the <code class="docutils literal"><span class="pre">matmodlab</span></code> directory (in <code class="docutils literal"><span class="pre">~/Developer/matmodlab</span></code> in this example), executed the setup script and built the optional libraries.</p>
 <p>Consult your Python distribution&#8217;s documentations for instructions to create and use virtual environments.</p>
 </div>
 </div>
@@ -180,7 +180,7 @@ $ mml build
 <div class="highlight-python"><div class="highlight"><pre>$ mml test
 </pre></div>
 </div>
-<p>See <a class="reference internal" href="../execution/cli.html#cli-test"><em>test</em></a> for details on the test command.</p>
+<p>See <a class="reference internal" href="../execution/cli.html#cli-test"><span>test</span></a> for details on the test command.</p>
 </div>
 <div class="section" id="troubleshooting">
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
@@ -194,7 +194,7 @@ ask help from <a class="reference external" href="mailto:timothy&#46;fuller&#37;
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
 
@@ -241,7 +241,7 @@ ask help from <a class="reference external" href="mailto:timothy&#46;fuller&#37;
 </ul>
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -262,8 +262,8 @@ ask help from <a class="reference external" href="mailto:timothy&#46;fuller&#37;
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="../_sources/intro/install.txt"

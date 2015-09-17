@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="2. Job Execution" href="index.html" />
     <link rel="next" title="2.7. Optimizer" href="optimize.html" />
@@ -33,37 +33,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="permutator">
 <span id="inpperm"></span><h1>2.6. Permutator<a class="headerlink" href="#permutator" title="Permalink to this headline">¶</a></h1>
 <div class="topic">
 <p class="topic-title first">See Also</p>
 <ul class="simple">
-<li><a class="reference internal" href="mps.html#mps"><em>MaterialPointSimulator</em></a></li>
+<li><a class="reference internal" href="mps.html#mps"><span>MaterialPointSimulator</span></a></li>
 </ul>
 </div>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
-<p>It is useful to investiage sensitivities of models to model inputs. The <tt class="docutils literal"><span class="pre">Permutator</span></tt> runs jobs with different realization of parameters.  The <tt class="docutils literal"><span class="pre">Permutator</span></tt> is designed as a tool for discovering and investigating model sensitivities.</p>
+<p>It is useful to investiage sensitivities of models to model inputs. The <code class="docutils literal"><span class="pre">Permutator</span></code> runs jobs with different realization of parameters.  The <code class="docutils literal"><span class="pre">Permutator</span></code> is designed as a tool for discovering and investigating model sensitivities.</p>
 </div>
 <div class="section" id="the-permutator-constructor">
 <h2>The Permutator Constructor<a class="headerlink" href="#the-permutator-constructor" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="Permutator">
-<em class="property">class </em><tt class="descname">Permutator</tt><big>(</big><em>job</em>, <em>func</em>, <em>xinit</em>, <em>method=ZIP</em>, <em>correlations=False</em>, <em>verbosity=None</em>, <em>descriptors=None</em>, <em>nprocs=1</em>, <em>funcargs=[]</em>, <em>d=None</em>, <em>shotgun=False</em>, <em>bu=False</em><big>)</big><a class="headerlink" href="#Permutator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">Permutator</code><span class="sig-paren">(</span><em>job</em>, <em>func</em>, <em>xinit</em>, <em>method=ZIP</em>, <em>correlations=False</em>, <em>verbosity=None</em>, <em>descriptors=None</em>, <em>nprocs=1</em>, <em>funcargs=[]</em>, <em>d=None</em>, <em>shotgun=False</em>, <em>bu=False</em><span class="sig-paren">)</span><a class="headerlink" href="#Permutator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a Permutator object and set up the simulation.</p>
 <p>The <em>job</em> string is the simulation ID.  The Permutator creates a job.eval/ directory in the simulation directory. The ith individual job is then run in job.eval/eval_i/.</p>
 <p>The Permutator writes relevant simulation information to job.eval/job.xml.  The Matmodlab.Visualizer can read the job.xml file and display the permutated job.</p>
 <p><em>func</em> is a function that evaluates a Matmodlab simulation.  It is called as <em>func(x, xnames, d, job, *funcargs)</em>, where <em>x</em> are the current values of the permutated variables, <em>xnames</em> are their names, <em>d</em> is the simulation directory of the current job, <em>job</em> is the job ID, and <em>funcargs</em> are additional arguments to be sent to <em>func</em>.</p>
 <p><em>xinit</em> is a list of initial values of the simulation parameters to be permutated.  Each member of the list must be a PermutateVariable instance.</p>
 <p>The following arguments are optional</p>
-<p><em>method</em> is the method for determining how to combine parameter values. One of <tt class="docutils literal"><span class="pre">ZIP</span></tt> or <tt class="docutils literal"><span class="pre">COMBINATION</span></tt>. The <tt class="docutils literal"><span class="pre">ZIP</span></tt> method runs one job for each set of parameters (and, thus, the number of realizations for each parameter must be identical), the <tt class="docutils literal"><span class="pre">COMBINATION</span></tt> method runs every combination of parameters.</p>
+<p><em>method</em> is the method for determining how to combine parameter values. One of <code class="docutils literal"><span class="pre">ZIP</span></code> or <code class="docutils literal"><span class="pre">COMBINATION</span></code>. The <code class="docutils literal"><span class="pre">ZIP</span></code> method runs one job for each set of parameters (and, thus, the number of realizations for each parameter must be identical), the <code class="docutils literal"><span class="pre">COMBINATION</span></code> method runs every combination of parameters.</p>
 <p><em>correlations</em> is a boolean that, if True, instructs the Permutator to create a correlation table and plots relating permutated parameters and return value of <em>func</em>.</p>
 <p><em>descriptors</em> is a list of descriptors for the values returned from <em>func</em>.</p>
 <p><em>nprocs</em> is the integer number of simultaneous jobs to run.</p>
@@ -76,7 +76,7 @@
 <h2>Running the Permutator<a class="headerlink" href="#running-the-permutator" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="Permutator.run">
-<tt class="descclassname">Permutator.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#Permutator.run" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">Permutator.</code><code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Permutator.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the simulation</p>
 </dd></dl>
 
@@ -85,18 +85,18 @@
 <h2>PermutateVariable Factory Method<a class="headerlink" href="#permutatevariable-factory-method" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="PermutateVariable">
-<tt class="descname">PermutateVariable</tt><big>(</big><em>name</em>, <em>init</em>, <em>method=LIST</em>, <em>b=None</em>, <em>N=10</em><big>)</big><a class="headerlink" href="#PermutateVariable" title="Permalink to this definition">¶</a></dt>
+<code class="descname">PermutateVariable</code><span class="sig-paren">(</span><em>name</em>, <em>init</em>, <em>method=LIST</em>, <em>b=None</em>, <em>N=10</em><span class="sig-paren">)</span><a class="headerlink" href="#PermutateVariable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a PermutateVariable object</p>
-<p><em>name</em> is the name of variable and <em>init</em> is its initial value (or values).  <em>method</em> is the method use to generate all values. If <em>method</em> is <tt class="docutils literal"><span class="pre">LIST</span></tt>, then all values shall be given in <em>init</em>.  Otherwise, values will be generated. Valid methods are <tt class="docutils literal"><span class="pre">LIST,</span> <span class="pre">WEIBULL,</span> <span class="pre">UNIFORM,</span> <span class="pre">NORMAL,</span> <span class="pre">PERCENTAGE</span></tt>.</p>
+<p><em>name</em> is the name of variable and <em>init</em> is its initial value (or values).  <em>method</em> is the method use to generate all values. If <em>method</em> is <code class="docutils literal"><span class="pre">LIST</span></code>, then all values shall be given in <em>init</em>.  Otherwise, values will be generated. Valid methods are <code class="docutils literal"><span class="pre">LIST,</span> <span class="pre">WEIBULL,</span> <span class="pre">UNIFORM,</span> <span class="pre">NORMAL,</span> <span class="pre">PERCENTAGE</span></code>.</p>
 <p>The interpretation of the following arguments depends on <em>method</em></p>
-<p>For methods other than <tt class="docutils literal"><span class="pre">LIST</span></tt>, values are generated from a function called as <em>fun(init, b, N)</em>.  The interpretation of <em>b</em> is dependent on which method fun represents.  <em>N</em> is the number of values to generate.</p>
+<p>For methods other than <code class="docutils literal"><span class="pre">LIST</span></code>, values are generated from a function called as <em>fun(init, b, N)</em>.  The interpretation of <em>b</em> is dependent on which method fun represents.  <em>N</em> is the number of values to generate.</p>
 </dd></dl>
 
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>The following input demonstrates how to permutate the <tt class="docutils literal"><span class="pre">K</span></tt> and <tt class="docutils literal"><span class="pre">G</span></tt>
-parameters to the <tt class="docutils literal"><span class="pre">elastic</span></tt> model.  The input can be found in <tt class="docutils literal"><span class="pre">matmodlab/examples/permutate.py</span></tt>.</p>
+<p>The following input demonstrates how to permutate the <code class="docutils literal"><span class="pre">K</span></code> and <code class="docutils literal"><span class="pre">G</span></code>
+parameters to the <code class="docutils literal"><span class="pre">elastic</span></code> model.  The input can be found in <code class="docutils literal"><span class="pre">matmodlab/examples/permutate.py</span></code>.</p>
 <div class="section" id="the-example-script">
 <h3>The Example Script<a class="headerlink" href="#the-example-script" title="Permalink to this headline">¶</a></h3>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
@@ -138,12 +138,12 @@ parameters to the <tt class="docutils literal"><span class="pre">elastic</span><
 <span class="n">G</span> <span class="o">=</span> <span class="n">PermutateVariable</span><span class="p">(</span><span class="s">&#39;G&#39;</span><span class="p">,</span> <span class="mf">45e9</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">PERCENTAGE</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>These statements define parameters <tt class="docutils literal"><span class="pre">K</span></tt> and <tt class="docutils literal"><span class="pre">G</span></tt> to be permutated by the <tt class="docutils literal"><span class="pre">WEIBULL</span></tt> method with a Weibull modulus of 14 (<tt class="docutils literal"><span class="pre">b</span></tt>) and <tt class="docutils literal"><span class="pre">PERCENTAGE</span></tt> method with parameters chosen between +/- 10% of the initial (<tt class="docutils literal"><span class="pre">b</span></tt>), respectively.</p>
+<p>These statements define parameters <code class="docutils literal"><span class="pre">K</span></code> and <code class="docutils literal"><span class="pre">G</span></code> to be permutated by the <code class="docutils literal"><span class="pre">WEIBULL</span></code> method with a Weibull modulus of 14 (<code class="docutils literal"><span class="pre">b</span></code>) and <code class="docutils literal"><span class="pre">PERCENTAGE</span></code> method with parameters chosen between +/- 10% of the initial (<code class="docutils literal"><span class="pre">b</span></code>), respectively.</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="n">permutator</span> <span class="o">=</span> <span class="n">Permutator</span><span class="p">(</span><span class="s">&#39;permutation&#39;</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="p">[</span><span class="n">K</span><span class="p">,</span> <span class="n">G</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="n">ZIP</span><span class="p">,</span>
                         <span class="n">descriptors</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;MAX_PRES&#39;</span><span class="p">],</span> <span class="n">correlations</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>This statement instantiates the <tt class="docutils literal"><span class="pre">Permutator</span></tt> object, using the <tt class="docutils literal"><span class="pre">ZIP</span></tt> method.  Correlations between <tt class="docutils literal"><span class="pre">K</span></tt>, <tt class="docutils literal"><span class="pre">G</span></tt> and the output variable <tt class="docutils literal"><span class="pre">MAX_PRES</span></tt> are requested.  Note that <tt class="docutils literal"><span class="pre">MAX_PRES</span></tt> is returned by <tt class="docutils literal"><span class="pre">func</span></tt> and not Matmodlab.</p>
+<p>This statement instantiates the <code class="docutils literal"><span class="pre">Permutator</span></code> object, using the <code class="docutils literal"><span class="pre">ZIP</span></code> method.  Correlations between <code class="docutils literal"><span class="pre">K</span></code>, <code class="docutils literal"><span class="pre">G</span></code> and the output variable <code class="docutils literal"><span class="pre">MAX_PRES</span></code> are requested.  Note that <code class="docutils literal"><span class="pre">MAX_PRES</span></code> is returned by <code class="docutils literal"><span class="pre">func</span></code> and not Matmodlab.</p>
 <div class="code python highlight-python"><div class="highlight"><pre><span class="n">permutator</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -181,7 +181,7 @@ parameters to the <tt class="docutils literal"><span class="pre">elastic</span><
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
 
@@ -225,7 +225,7 @@ parameters to the <tt class="docutils literal"><span class="pre">elastic</span><
 </ul>
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -246,8 +246,8 @@ parameters to the <tt class="docutils literal"><span class="pre">elastic</span><
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="../_sources/execution/permutate.txt"

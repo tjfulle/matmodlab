@@ -40,11 +40,20 @@ help:
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
 clean:
-	-rm -rf $(BUILDDIR)/*.html $(BUILDDIR)/doctrees
-	-rm -rf $(BUILDDIR)/basic/*.html
-	-rm -rf $(BUILDDIR)/examples/*.html
-	-rm -rf $(BUILDDIR)/intro/*.html
-	-rm -rf $(BUILDDIR)/material/*.html
+	-rm -rf $(BUILDDIR)/*.html
+	-rm -rf $(BUILDDIR)/doctrees
+	-rm -rf $(BUILDDIR)/examples
+	-rm -rf $(BUILDDIR)/execution
+	-rm -rf $(BUILDDIR)/genindex.html
+	-rm -rf $(BUILDDIR)/index.html
+	-rm -rf $(BUILDDIR)/intro
+	-rm -rf $(BUILDDIR)/material
+	-rm -rf $(BUILDDIR)/objects.inv
+	-rm -rf $(BUILDDIR)/search*
+	-rm -rf $(BUILDDIR)/test
+	-rm -rf $(BUILDDIR)/_images
+	-rm -rf $(BUILDDIR)/_sources
+	-rm -rf $(BUILDDIR)/_static
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)

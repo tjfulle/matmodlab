@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Material Model Laboratory 3.0 documentation" href="../index.html" />
     <link rel="up" title="2.8. Annotated Examples" href="../execution/examples.html" />
     <link rel="next" title="3. Materials" href="../material/index.html" />
@@ -33,17 +33,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="example-3-uniaxial-stress-mixed-mode">
 <h1>Example 3: Uniaxial Stress, Mixed Mode<a class="headerlink" href="#example-3-uniaxial-stress-mixed-mode" title="Permalink to this headline">¶</a></h1>
 <p>This example demonstrates exercising the elastic material model through a path
-of uniaxial stress, using a mixed mode step. The example input below is found in <tt class="docutils literal"><span class="pre">matmodlab/examples/uniaxial_stress.py</span></tt></p>
+of uniaxial stress, using a mixed mode step. The example input below is found in <code class="docutils literal"><span class="pre">matmodlab/examples/uniaxial_stress.py</span></code></p>
 <div class="section" id="the-example-script">
 <h2>The Example Script<a class="headerlink" href="#the-example-script" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">matmodlab</span> <span class="kn">import</span> <span class="o">*</span>
@@ -68,32 +68,32 @@ of uniaxial stress, using a mixed mode step. The example input below is found in
 <div class="section" id="how-does-the-script-work">
 <h2>How Does the Script Work?<a class="headerlink" href="#how-does-the-script-work" title="Permalink to this headline">¶</a></h2>
 <p>This section describes each part of the example script.</p>
-<p><tt class="docutils literal"><span class="pre">from</span> <span class="pre">matmodlab</span> <span class="pre">import</span> <span class="pre">*</span></tt></p>
+<p><code class="docutils literal"><span class="pre">from</span> <span class="pre">matmodlab</span> <span class="pre">import</span> <span class="pre">*</span></code></p>
 <p>This statement makes the Matmodlab objects accessible to the script.</p>
-<p><tt class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_stress-1',</span> <span class="pre">output=EXO)</span></tt></p>
-<p>This statement creates a new material point simlator object named <tt class="docutils literal"><span class="pre">uniaxial_stress-1</span></tt>.  The variable <tt class="docutils literal"><span class="pre">mps</span></tt> is assigned to the simulator.  The <tt class="docutils literal"><span class="pre">output</span></tt> format is <tt class="docutils literal"><span class="pre">EXO</span></tt> (ExodusII) instead of the default <tt class="docutils literal"><span class="pre">DBX</span></tt>.</p>
-<p><tt class="docutils literal"><span class="pre">mps.Material('elastic',</span> <span class="pre">{'K':</span> <span class="pre">1.35e11,</span> <span class="pre">'G':</span> <span class="pre">5.3e10})</span></tt></p>
-<p>This statement defines the material model to be the <tt class="docutils literal"><span class="pre">elastic</span></tt> material and
-defines the bulk modulus <tt class="docutils literal"><span class="pre">K</span></tt> and shear modulus <tt class="docutils literal"><span class="pre">G</span></tt> to <tt class="docutils literal"><span class="pre">1.35e11</span></tt> and
-<tt class="docutils literal"><span class="pre">5.3e10</span></tt>, respectively.</p>
-<p><tt class="docutils literal"><span class="pre">mps.MixedStep(components=(1,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">descriptors='ESS',</span> <span class="pre">frames=25,</span> <span class="pre">scale=.02)</span></tt></p>
+<p><code class="docutils literal"><span class="pre">mps</span> <span class="pre">=</span> <span class="pre">MaterialPointSimulator('uniaxial_stress-1',</span> <span class="pre">output=EXO)</span></code></p>
+<p>This statement creates a new material point simlator object named <code class="docutils literal"><span class="pre">uniaxial_stress-1</span></code>.  The variable <code class="docutils literal"><span class="pre">mps</span></code> is assigned to the simulator.  The <code class="docutils literal"><span class="pre">output</span></code> format is <code class="docutils literal"><span class="pre">EXO</span></code> (ExodusII) instead of the default <code class="docutils literal"><span class="pre">DBX</span></code>.</p>
+<p><code class="docutils literal"><span class="pre">mps.Material('elastic',</span> <span class="pre">{'K':</span> <span class="pre">1.35e11,</span> <span class="pre">'G':</span> <span class="pre">5.3e10})</span></code></p>
+<p>This statement defines the material model to be the <code class="docutils literal"><span class="pre">elastic</span></code> material and
+defines the bulk modulus <code class="docutils literal"><span class="pre">K</span></code> and shear modulus <code class="docutils literal"><span class="pre">G</span></code> to <code class="docutils literal"><span class="pre">1.35e11</span></code> and
+<code class="docutils literal"><span class="pre">5.3e10</span></code>, respectively.</p>
+<p><code class="docutils literal"><span class="pre">mps.MixedStep(components=(1,</span> <span class="pre">0,</span> <span class="pre">0),</span> <span class="pre">descriptors='ESS',</span> <span class="pre">frames=25,</span> <span class="pre">scale=.02)</span></code></p>
 <p>This statement defines an analysis step through which the material will be
-exercised. The step is defined by the tensor <tt class="docutils literal"><span class="pre">components</span></tt> <span class="math">\((1, 0, 0)\)</span>,
-representing the <tt class="docutils literal"><span class="pre">xx</span></tt> component of the strain tensor and the <tt class="docutils literal"><span class="pre">yy</span></tt>, and
-<tt class="docutils literal"><span class="pre">zz</span></tt> components of the stress tensor (as designated by the <tt class="docutils literal"><span class="pre">descriptors</span></tt>
-<tt class="docutils literal"><span class="pre">&quot;ESS&quot;</span></tt>). The step is run in <tt class="docutils literal"><span class="pre">25</span></tt> <tt class="docutils literal"><span class="pre">frames</span></tt> (increments) and a <tt class="docutils literal"><span class="pre">scale</span></tt> of
-<tt class="docutils literal"><span class="pre">.02</span></tt> is applied to each component. Note the following:</p>
+exercised. The step is defined by the tensor <code class="docutils literal"><span class="pre">components</span></code> <span class="math">\((1, 0, 0)\)</span>,
+representing the <code class="docutils literal"><span class="pre">xx</span></code> component of the strain tensor and the <code class="docutils literal"><span class="pre">yy</span></code>, and
+<code class="docutils literal"><span class="pre">zz</span></code> components of the stress tensor (as designated by the <code class="docutils literal"><span class="pre">descriptors</span></code>
+<code class="docutils literal"><span class="pre">&quot;ESS&quot;</span></code>). The step is run in <code class="docutils literal"><span class="pre">25</span></code> <code class="docutils literal"><span class="pre">frames</span></code> (increments) and a <code class="docutils literal"><span class="pre">scale</span></code> of
+<code class="docutils literal"><span class="pre">.02</span></code> is applied to each component. Note the following:</p>
 <ul class="simple">
-<li>The first 3 values of <tt class="docutils literal"><span class="pre">components</span></tt> represent the <tt class="docutils literal"><span class="pre">xx</span></tt>, <tt class="docutils literal"><span class="pre">yy</span></tt>, and
-<tt class="docutils literal"><span class="pre">zz</span></tt> components of the tensor describing the deformation path. The <tt class="docutils literal"><span class="pre">xy</span></tt>,
-<tt class="docutils literal"><span class="pre">yz</span></tt>, and <tt class="docutils literal"><span class="pre">xz</span></tt> components are implicitly <tt class="docutils literal"><span class="pre">0</span></tt>.</li>
-<li>The i<sup>th</sup> <tt class="docutils literal"><span class="pre">descriptor</span></tt> designates the physical
-interpretation of the i<sup>th</sup> <tt class="docutils literal"><span class="pre">component</span></tt> with <tt class="docutils literal"><span class="pre">E</span></tt>
-representing strain and <tt class="docutils literal"><span class="pre">S</span></tt> representing stress.</li>
+<li>The first 3 values of <code class="docutils literal"><span class="pre">components</span></code> represent the <code class="docutils literal"><span class="pre">xx</span></code>, <code class="docutils literal"><span class="pre">yy</span></code>, and
+<code class="docutils literal"><span class="pre">zz</span></code> components of the tensor describing the deformation path. The <code class="docutils literal"><span class="pre">xy</span></code>,
+<code class="docutils literal"><span class="pre">yz</span></code>, and <code class="docutils literal"><span class="pre">xz</span></code> components are implicitly <code class="docutils literal"><span class="pre">0</span></code>.</li>
+<li>The i<sup>th</sup> <code class="docutils literal"><span class="pre">descriptor</span></code> designates the physical
+interpretation of the i<sup>th</sup> <code class="docutils literal"><span class="pre">component</span></code> with <code class="docutils literal"><span class="pre">E</span></code>
+representing strain and <code class="docutils literal"><span class="pre">S</span></code> representing stress.</li>
 </ul>
-<p><tt class="docutils literal"><span class="pre">mps.run()</span></tt></p>
+<p><code class="docutils literal"><span class="pre">mps.run()</span></code></p>
 <p>This statement runs the material through the defined deformation path.</p>
-<p><tt class="docutils literal"><span class="pre">mps.view()</span></tt></p>
+<p><code class="docutils literal"><span class="pre">mps.view()</span></code></p>
 <p>This statement launches the Matmodlab viewer (the chaco and traitsui Python modules must be installed).</p>
 </div>
 </div>
@@ -102,7 +102,7 @@ representing strain and <tt class="docutils literal"><span class="pre">S</span><
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../index.html">Material Model Laboratory</a></h1>
 
@@ -145,7 +145,7 @@ representing strain and <tt class="docutils literal"><span class="pre">S</span><
 </ul>
 
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -166,8 +166,8 @@ representing strain and <tt class="docutils literal"><span class="pre">S</span><
       &copy;2014, Tim Fuller, Scot Swan.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.2.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster </a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="../_sources/examples/ex3.txt"
