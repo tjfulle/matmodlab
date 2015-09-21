@@ -73,7 +73,7 @@ end subroutine xit
 subroutine sprind(S, PS, AN, LSTR, NDI, NSHR)
   implicit none
   real(8), intent(in) :: S(6)
-  real(8), intent(in) :: PS(3), AN(3,3)
+  real(8), intent(out) :: PS(3), AN(3,3)
   integer, intent(in) :: LSTR, NDI, NSHR
   integer, parameter :: N=3, LWORK=3*N-1
   real(8) :: WORK(LWORK), C
@@ -94,7 +94,7 @@ end subroutine sprind
 subroutine sprinc(S, PS, LSTR, NDI, NSHR)
   implicit none
   real(8), intent(in) :: S(6)
-  real(8), intent(in) :: PS(3)
+  real(8), intent(out) :: PS(3)
   integer, intent(in) :: LSTR, NDI, NSHR
   real(8) :: AN(3,3)
   call sprind(S, PS, AN, LSTR, NDI, NSHR)

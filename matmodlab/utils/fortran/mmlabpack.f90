@@ -658,4 +658,22 @@ contains
     return
   end subroutine get_invariants
 
+  subroutine polar_decomp(F, R, U)
+    implicit none
+    real(kind=8), intent(in) :: F(3,3)
+    real(kind=8), intent(out) :: R(3,3), U(3,3)
+    real(kind=8) :: I(3,3)
+    integer :: j
+    I = eye(3)
+    R = F
+    do j = 1, 20
+       R = .5 * matmul(R, 3. * I - matmul(transpose(R), R))
+       if (maxval(abs(matmul(transpose(R), R) - I)) < 1.e-6_8) then
+          U = matmul(transpose(R), F)
+          return
+       end if
+    end do
+    stop 'Fast polar decompositon failed to converge'
+  end subroutine polar_decomp
+
 end module mmlabpack

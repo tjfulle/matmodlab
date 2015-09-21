@@ -52,6 +52,7 @@ from constants import *
 from materials.product import *
 from utils.elas import elas
 from utils.plotting import *
+from fitting import *
 RAND = np.random.RandomState()
 
 def genrand():
@@ -95,10 +96,29 @@ def init_from_matmodlab_magic(p):
     except ImportError:
         pass
 
-def load_interactive_material(material):
-    try:
-        environ.interactive_materials[material.name] = material
-    except AttributeError:
-        raise AttributeError("interactive material is missing attribute 'name'")
+def load_interactive_material(material, **kwds):
+
+    def isstr(s):
+        try:
+            s + ''
+            return True
+        except TypeError:
+            return False
+
+    if isstr(material):
+        name = kwds.get('name')
+        if name is None:
+            raise ValueError("interactive material is missing the 'name' keyword")
+        d = {}
+        d['source'] = material
+        d['ext'] = '.f' if kwds.get('fixed_form', False) else '.f90'
+        d['model'] = kwds.get('model', UMAT)
+        d['response'] = kwds.get('response', MECHANICAL)
+        environ.interactive_fortran_materials[name] = d
+    else:
+        try:
+            environ.interactive_materials[material.name] = material
+        except AttributeError:
+            raise AttributeError("interactive material is missing attribute 'name'")
 
 load_material = load_interactive_material

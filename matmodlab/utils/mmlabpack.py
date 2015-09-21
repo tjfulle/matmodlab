@@ -50,16 +50,3 @@ def isotropic_part(A):
     Aiso[:, 3:] /= np.sqrt(2.)
     Aiso[3:, :] /= np.sqrt(2.)
     return Aiso
-
-def polar_decomp(F, niter=20, tol=1e-8):
-    I = np.eye(3)
-    R = F.reshape(3,3)
-    absmax = lambda x: np.amax(abs(x))
-    for i in range(niter):
-        R = .5 * np.dot(R, 3 * I - np.dot(R.T, R))
-        if absmax(np.dot(R.T, R) - I) < tol:
-            break
-    else:
-        raise RuntimeError('Fast polar decompositon failed to converge')
-    U = np.dot(R.T, F)
-    return R, U

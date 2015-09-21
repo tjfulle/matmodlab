@@ -20,19 +20,12 @@ build/
 
 *-f2pywrappers2.f90
 
-docs/auto
-docs/*.aux
-docs/*.log
-docs/*.lof
-docs/*.lot
-docs/*.toc
-docs/*.bbl
-docs/*.blg
-docs/*.synctex.gz
-params.in
-lib/material_models.db
-lib/*.so
 matmodlab/lib/*.pyf
+
+matmodlab/examples/umat_*.f90
+matmodlab/lib/umat_*.f90
+
+matmodlab/examples/*.slides.html
 
 matmodlab.egg-info
 

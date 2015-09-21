@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import numpy as np
+import hashlib
 import logging
 
 from matmodlab.product import PKG_D, BIN_D, ROOT_D
@@ -13,6 +14,7 @@ from matmodlab.utils.parameters import Parameters
 from matmodlab.utils.misc import remove
 from matmodlab.mmd.loader import MaterialLoader
 
+from matmodlab.constants import *
 from matmodlab.materials.completion import *
 from matmodlab.materials.addon_trs import TRS
 from matmodlab.materials.addon_expansion import Expansion
@@ -460,6 +462,17 @@ def Material(model, parameters, switch=None, response=None,
     errors = 0
     user_model = is_user_model(model)
     all_mats = MaterialLoader.load_materials()
+
+    if model in environ.interactive_fortran_materials:
+        user_model = 1
+        m = environ.interactive_fortran_materials[model]
+        ext = m['ext']
+        sf = 'umat_{0}{1}'.format(hashlib.md5(m['source']).hexdigest()[:7], ext)
+        with open(sf, 'w') as fh:
+            fh.write(m['source'])
+        source_files = [sf]
+        model = m['model']
+        response = m['response']
 
     if model.lower() in environ.interactive_materials:
         # check if the model is in the interactive materials
