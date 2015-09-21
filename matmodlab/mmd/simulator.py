@@ -357,7 +357,8 @@ Material: {5}
         if not variables:
             variables = None
         data = loadfile(self.filename, variables=variables, disp=disp, **kwargs)
-        if len(variables) == 1:
+        # TJF: what is this if-statement for? I added the bit about variables!=None
+        if variables is not None and len(variables) == 1:
             data = data.flatten()
         return data
 

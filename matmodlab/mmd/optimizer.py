@@ -17,6 +17,7 @@ from matmodlab.utils.mmltab import MMLTabularWriter
 from mdb import mdb, ModelCaptured as ModelCaptured
 
 IOPT = 0
+LASTEVALD = None
 BIGNUM = 1.E+20
 MAXITER = 50
 TOL = 1.E-06
@@ -230,6 +231,10 @@ Optimized parameters
                 fobj.write("{0} = {1: .18f}\n".format(name, self.xopt[i]))
         environ.parent_process = 0
 
+        # Link directory 'final' to the last evaluation directory
+        os.symlink(os.path.relpath(LASTEVALD, start=self.rootd),
+                   os.path.join(self.rootd, "final"))
+
         if environ.notebook:
             print '\nDone'
 
@@ -260,13 +265,14 @@ def run_job(xcall, *args):
         Error in job
 
     """
-    global IOPT
+    global IOPT, LASTEVALD
     logger = logging.getLogger('matmodlab.mmd.optimizer')
     func, funcargs, rootd, halt_on_err, job, xnames, desc, tabular, xfac = args
 
     IOPT += 1
     evald = catd(rootd, IOPT)
     os.mkdir(evald)
+    LASTEVALD = evald
 
     cwd = os.getcwd()
     os.chdir(evald)
