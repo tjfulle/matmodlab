@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# get directory of this script and set the path to the Python-2.7 directory
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+IPY_D=${DIR}/../ipynb
+
+# check that the Python-2.7 directory exists
+if [ ! -d "$IPY_D" ]; then
+    echo ${IPY_D} does not exist
+    exit
+fi
+
+# set the JUPYTER_CONFIG_DIR and IPYTHONDIR environment variables
+export JUPYTER_CONFIG_DIR=${IPY_D}
+export IPYTHONDIR=${IPY_D}
+
+# get the filename from the first argument to this script, extract its root
+# and extension
+filename=$(basename "$1")
+ext="${filename##*.}"
+root="${filename%.*}"
+
+# nvcnv.py adds _slides to the filename
+slides=${root}.${ext}
+
+# launch the slides
+ipython nbconvert --to slides --post serve --reveal-prefix "http://cdn.jsdelivr.net/reveal.js/2.6.2" ${slides}

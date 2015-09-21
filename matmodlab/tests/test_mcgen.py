@@ -2,7 +2,7 @@ import sys
 from testconf import *
 try:
     import pandas
-    from matmodlab.utils.mcgen import *
+    from matmodlab.fitting.mcgen import *
 except ImportError:
     pandas = None
 

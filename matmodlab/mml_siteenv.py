@@ -47,6 +47,7 @@ class Environment(object):
 
     std_materials = [MAT_D]
     interactive_materials = {}
+    interactive_fortran_materials = {}
 
     rebuild_mat_lib = []
 

@@ -66,6 +66,9 @@ class MaterialPointSimulator(object):
         logger.info('Setting up simulator for job {0!r}'.format(job))
 
     def __getattr__(self, key):
+        if key.lower() == 'time':
+            return np.asarray([f.value for step in self.steps.values()
+                               for f in step.frames])
         try:
             return self.get_var_time(key)
         except:
@@ -251,6 +254,7 @@ Material: {5}
         start = tt()
 
 	# register variables
+        self._time = 0.
         self.field_outputs = FieldOutputs()
         self.field_outputs.add('U', VECTOR, NODE, self.mesh)
         self.field_outputs.add('S', TENSOR_3D, ELEMENT, self.mesh,
@@ -1140,11 +1144,12 @@ def DefGradStep(name, previous, components=None, frames=None, scale=1.,
     if kappa is None:
         kappa = previous.kappa
 
-    if len(components) != 9:
+    try:
+        defgrad = np.reshape(components, (3, 3)) * scale
+    except ValueError:
         raise MatModLabError('expected 9 deformation gradient '
                              'components for step {0}'.format(name))
 
-    defgrad = np.reshape(components, (3, 3)) * scale
     jac = np.linalg.det(defgrad)
     if jac <= 0:
         raise MatModLabError('negative Jacobian on step '

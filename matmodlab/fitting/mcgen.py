@@ -4,8 +4,9 @@ import sys
 import logging
 import numpy as np
 from itertools import cycle
-from pandas import DataFrame, ExcelWriter
 
+try: import pandas
+except ImportError: pandas = None
 try: import scipy.optimize as sciopt
 except ImportError: sciopt = None
 try: import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ except ImportError: plt = None
 try: import bokeh.plotting as bp
 except ImportError: bp = None
 
-__all__ = ['MasterCurve', 'CurveFitter',
+__all__ = ['MasterCurve', 'CurveFitter', 'mc_init_notebook',
            'MODIFIED_POWER', 'POWER', 'PRONY', 'POLYNOMIAL',
            'COBYLA', 'POWELL', 'FMIN']
 
@@ -226,6 +227,9 @@ class MasterCurve(object):
             keywords [optional] to pass to fitter
 
         """
+        if pandas is None:
+            raise RuntimeError('master curve fitting requires pandas')
+
         columns = ('Temp', 'X', 'Log[X]', 'Y')
         txy = np.asarray(txy)
         txy[:, -1] *= yfac
@@ -241,7 +245,7 @@ class MasterCurve(object):
 
         self.ref_temp = ref_temp
         self.skip_temps = aslist(skip_temps)
-        self.df = DataFrame(txy, columns=columns)
+        self.df = pandas.DataFrame(txy, columns=columns)
 
         self.wlf_coeffs = wlf_coeffs
         self.optwlf = optwlf
@@ -590,7 +594,7 @@ class MasterCurve(object):
         def cell(i, j):
             return '{0}{1}'.format(chr(j+ord('A')), i+1)
 
-        writer = ExcelWriter(filename)
+        writer = pandas.ExcelWriter(filename)
         worksheet = writer.book.create_sheet()
         worksheet.title = 'mcgen Meta'
         worksheet[cell(0, 0)] = 'mcgen Version'
@@ -976,7 +980,7 @@ def ReadCSV(filename, apply_log=True, ref_temp=75., cols=[0,1,2],
                        xvar=xvar, xunits=xunits, yvar=yvar, yunits=yunits,
                        **kwargs)
 
-def init_notebook(plot_lib='bokeh', i=1):
+def mc_init_notebook(plot_lib='bokeh', i=1):
     lib = plot_lib.lower()
     if lib == 'bokeh':
         if bp is None:

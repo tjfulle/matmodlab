@@ -64,11 +64,6 @@ class MatmodlabMagics(Magics):
              'from numpy.linalg import inv, det\n'
              'from matmodlab.utils.numerix import *\n'
              'from matmodlab.utils.fileio import loadfile\n'
-             'try:\n'
-             '    import matmodlab.utils.mcgen as mcgen\n'
-             '    from matmodlab.utils.mcgen import *\n'
-             'except ImportError:\n'
-             '    mcgen = None\n'
             )
 
         # load the plotting back end
@@ -84,8 +79,10 @@ class MatmodlabMagics(Magics):
                   'plt = pyplot\n'
                   'from matplotlib.pylab import *\n'
                   'init_from_matmodlab_magic("matplotlib")\n')
-        s += ('if mcgen is not None:\n'
-              '    mcgen.init_notebook(plot_lib="{0}", i=0)\n'.format(args.plot))
+        s += ('try:\n'
+              '    mc_init_notebook(plot_lib="{0}", i=0)\n'.format(args.plot))
+        s += ('except:\n'
+              '    print("mcgen not loaded")\n')
 
         # Load the matplotlib colors for use in other plots
         c = ['blue', 'red', 'purple', 'green', 'orange', 'hotpink', 'cyan',
