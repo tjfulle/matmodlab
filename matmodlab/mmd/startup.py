@@ -268,11 +268,12 @@ def fetch(items):
 usage: mml fetch <item [item [item ...]]>
 
 positional arguments:
-  item    An item to fetch.  If item is 'examples' or 'tests', the Matmodlab
-          examples or tests directories are copied to the current working
-          directory.  If item is 'documentation', the Matmodlab documentation is
-          copied to the current directory.  Otherwise, a file named item will be
-          fetched from the examples directory (if it exists).
+  item    An item to fetch.  If item is 'examples', 'tutorial, or 'tests',
+          the corresponding Matmodlab directories are copied to the current
+          working directory. If item is 'documentation', the Matmodlab
+          documentation is copied to the current directory (requires a git
+          clone of Matmodlab). Otherwise, a file named item will be fetched
+          from the examples directory (if it exists).
 '''
     if '-h' in items:
         sys.exit(usage)
@@ -297,6 +298,10 @@ positional arguments:
         if item == 'examples':
             src = EXMPL_D
             dst = os.path.join(cwd, 'matmodlab-examples')
+
+        elif item == 'tutorial':
+            src = TUT_D
+            dst = os.path.join(cwd, 'matmodlab-tutorial')
 
         elif item == 'tests':
             src = TEST_D

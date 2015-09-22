@@ -96,7 +96,7 @@ def init_from_matmodlab_magic(p):
     except ImportError:
         pass
 
-def load_interactive_material(material, **kwds):
+def load_interactive_material(std_material=None, user_material=None, **kwds):
 
     def isstr(s):
         try:
@@ -105,20 +105,35 @@ def load_interactive_material(material, **kwds):
         except TypeError:
             return False
 
-    if isstr(material):
+    if user_material is not None:
         name = kwds.get('name')
         if name is None:
             raise ValueError("interactive material is missing the 'name' keyword")
+        if not os.path.isfile(user_material):
+            raise IOError('{0:!r}: no such file'.format(user_material))
+        exts = ('.f', 'F', '.f90', '.for', '.F90', '.FOR')
+        if not user_material.endswith(exts):
+            exts = ', '.join(exts)
+            raise ValueError('expected extension to be one of {0}'.format(exts))
+
         d = {}
-        d['source'] = material
-        d['ext'] = '.f' if kwds.get('fixed_form', False) else '.f90'
+        d['filename'] = user_material
         d['model'] = kwds.get('model', UMAT)
         d['response'] = kwds.get('response', MECHANICAL)
-        environ.interactive_fortran_materials[name] = d
-    else:
+        environ.interactive_usr_materials[name] = d
+
+        root = os.path.splitext(os.path.basename(user_material))[0]
+        so_file = os.path.join(LIB_D, root + '.so')
+        if os.path.isfile(so_file):
+            os.remove(so_file)
+
+    elif std_material is not None:
         try:
-            environ.interactive_materials[material.name] = material
+            environ.interactive_std_materials[std_material.name] = std_material
         except AttributeError:
             raise AttributeError("interactive material is missing attribute 'name'")
+
+    else:
+        raise ValueError('expected one of std_material or user_material')
 
 load_material = load_interactive_material

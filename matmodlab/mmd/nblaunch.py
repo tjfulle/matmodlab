@@ -18,6 +18,9 @@ def main(argv=None):
     p.add_argument('--examples', action='store_true', default=False,
         help=('Launch notebook server in matmodlab/examples '
               'directory [default: %(default)s]'))
+    p.add_argument('--tutorial', action='store_true', default=False,
+        help=('Launch notebook server in matmodlab/tutorial '
+              'directory [default: %(default)s]'))
     args, other = p.parse_known_args(argv)
 
     if args.examples:
@@ -32,6 +35,8 @@ def main(argv=None):
     command = 'ipython notebook'
     if args.examples:
         command += ' --notebook-dir={0}'.format(EXMPL_D)
+    elif args.tutorial:
+        command += ' --notebook-dir={0}'.format(TUT_D)
     kwds = {'env': env}
     try:
         kwds['preexec_fn'] = os.setsid

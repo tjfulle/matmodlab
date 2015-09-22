@@ -20,6 +20,7 @@ LIB_D = join(ROOT_D, "lib")
 MAT_D = join(ROOT_D, "materials")
 BLD_D = join(LIB_D, "build")
 EXMPL_D = join(ROOT_D, "examples")
+TUT_D = join(ROOT_D, "tutorial")
 IPY_D = join(ROOT_D, "ipynb")
 
 SPLASH = """\
