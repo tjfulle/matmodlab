@@ -6,7 +6,7 @@ from os.path import dirname, isdir, isfile, join
 import signal
 from subprocess import Popen, PIPE
 
-from matmodlab.product import EXMPL_D, PYEXE, IPY_D
+from matmodlab.product import EXMPL_D, PYEXE, IPY_D, TUT_D
 
 def main(argv=None):
     if argv is None:
