@@ -54,7 +54,7 @@ class PolynomialHyperFit:
     ij = ((1,0), (0,1), (2,0), (1,1), (0,2),
           (3,0), (2,1), (1,2), (0,3))
 
-    def __init__(self, n=3):
+    def __init__(self, n=3, i2_dep=True):
         """Expand the hyperelastic energy function to give the axial stress
 
         The list of the hyperelastic coefficients and the associated stress
@@ -79,9 +79,15 @@ class PolynomialHyperFit:
 
         # energy function and coefficients
         W, C = [], []
-        for (i, j) in self.ij[:self.n]:
+        k = m = 0
+        while k < self.n:
+            i, j = self.ij[m]
+            m += 1
+            if not i2_dep and j:
+                continue
             C.append(Symbol('C_{{{0}{1}}}'.format(i,j)))
             W.append((I1b - 3) ** i * (I2b - 3) ** j)
+            k += 1
 
         self.coeffs = C
         self.energy = W
@@ -90,22 +96,23 @@ class PolynomialHyperFit:
         self.stress_diff = [(l1 * W[i].diff(l1) - l3 * W[i].diff(l3))
                             for i in range(len(self.ij[:self.n]))]
 
-    def fit(self, data, type=UNIAXIAL):
+    def fit(self, xy, type=UNIAXIAL):
         """Fit the stress vs strain curve with a nth order hyperelastic
         model
 
         """
-        self.type = type
+        xy = asarray(xy)
+
         lam, l1, l2, l3 = symbols('lambda lambda_1 lambda_2 lambda_3')
-        if self.type == UNIAXIAL:
+        if type == UNIAXIAL:
             # uniaxial tension, incompressible.
             c = {l1: lam, l2: 1/Sqrt(lam), l3: 1/Sqrt(lam)}
 
-        elif self.type == BIAXIAL:
+        elif type == BIAXIAL:
             # biaxial tension, incompressible.
             c = {l1: lam, l2: lam, l3: 1/lam/lam}
 
-        elif self.type == SHEAR:
+        elif type == SHEAR:
             # biaxial tension, incompressible.
             c = {l1: lam, l2: 1/lam, l3: 1}
 
@@ -117,10 +124,15 @@ class PolynomialHyperFit:
         self.fun = [lambdify(lam, s) for s in S1]
 
         A = []
-        stretch = data[:,0] + 1
-        for l in stretch:
+        u = xy[:,0] + 1
+        for l in u:
             A.append([f(l) for f in self.fun])
-        self.x = lstsq(A, data[:,1])
+
+        self.x = lstsq(A, xy[:,1])
+
+        fi = self.eval(xy[:,0])
+        self.fiterr = sqrt(mean((xy[:,1] - fi) ** 2))
+
         return self.x
 
     def eval(self, strain, x=None, fac=None):
@@ -140,7 +152,7 @@ class PolynomialHyperFit:
         A = []
         for e in strain:
             A.append([f(e+1) for f in self.fun])
-        return dot(A, x)
+        return dot(A, x).flatten()
 
     def pprint(self, x=None):
         if x is None:
@@ -157,14 +169,14 @@ class PolynomialHyperFit:
 
     def gendata(self, x, filename='data.csv'):
         strain = linspace(-.25, 3., 100)
-        s = self.eval(strain, x).flatten()
+        s = self.eval(strain, x)
         noise = random.normal(0, .03*amax(s), 100)
         with open(filename, 'w') as fh:
             for row in zip(strain, s+noise):
                 x, y = [float(_) for _ in row]
                 fh.write('{0:.18f},{1:.18f}\n'.format(x, y))
 
-    def bp_plot(self, data, x=None, plot=None):
+    def bp_plot(self, xy, x=None, plot=None):
 
         if x is None:
             if self.x is None:
@@ -176,11 +188,11 @@ class PolynomialHyperFit:
         if plot is None:
             plot = bp.figure()
 
-        if data is not None:
-            plot.circle(data[:,0], data[:,1])
+        if xy is not None:
+            plot.circle(xy[:,0], xy[:,1])
 
-        xp = linspace(amin(data[:,0]), amax(data[:,0]))
-        yp = self.eval(xp, x).flatten()
+        xp = linspace(amin(xy[:,0]), amax(xy[:,0]))
+        yp = self.eval(xp, x)
         plot.line(xp, yp, color='black', line_width=1.5)
 
         return plot
