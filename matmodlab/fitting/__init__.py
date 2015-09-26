@@ -1,2 +1,2 @@
 from mcgen import *
-from hyperfit import *
+from hyperopt import *
