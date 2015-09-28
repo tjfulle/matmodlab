@@ -65,7 +65,7 @@ class MatmodlabMagics(Magics):
              'from matmodlab.utils.numerix import *\n'
              'from matmodlab.utils.fileio import loadfile\n'
              'from matmodlab.fitting import *\n'
-             'from utils.plotting import *\n'
+             'from matmodlab.utils.plotting import *\n'
             )
 
         # load the plotting back end
