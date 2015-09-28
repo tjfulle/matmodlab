@@ -51,8 +51,6 @@ from mmd.optimizer import Optimizer, OptimizeVariable
 from constants import *
 from materials.product import *
 from utils.elas import elas
-from utils.plotting import *
-from fitting import *
 RAND = np.random.RandomState()
 
 def genrand():
