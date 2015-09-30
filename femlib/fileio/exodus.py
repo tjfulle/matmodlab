@@ -4,11 +4,11 @@ import datetime
 import numpy as np
 from os.path import basename, join, splitext, isfile
 
-from _netcdf import NetCDFFile
-from femlib.constants import *
-from femlib.data import Step, StepRepository
-from femlib.mesh import Mesh
-from femlib.numerix import aslist, asarray, asstring
+from ._netcdf import NetCDFFile
+from ..constants import *
+from ..data import Step, StepRepository
+from ..mesh import Mesh
+from ..numerix import aslist, asarray, asstring
 
 __all__ = ['File']
 
@@ -553,9 +553,9 @@ class EXOFileReader(_EXOFile):
         return steps
 
 if __name__ == '__main__':
-    from femlib.mesh import Mesh
-    from femlib.funspace import FunctionSpace, Function
-    from femlib.element import Element
+    from ..mesh import Mesh
+    from ..funspace import FunctionSpace, Function
+    from ..element import Element
     mesh = Mesh(type='uniform', ox=0., lx=1., nx=10)
     mesh.ElementBlock(name='Block-1', elements='all')
     mesh.extend(1., 10, block='Block-2')

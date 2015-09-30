@@ -7,10 +7,10 @@ from math import fabs, sqrt
 from sympy import symbols, Matrix, diff, lambdify, integrate
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 
-from mesh import Mesh
-from element import LinearElement, Element
-from funspace import FunctionSpace
-from numerix import areclose, allclose, norm, relerr
+from .mesh import Mesh
+from .element import LinearElement, Element
+from .funspace import FunctionSpace
+from .numerix import areclose, allclose, norm, relerr
 
 # constants used in many tests
 x = symbols('x')

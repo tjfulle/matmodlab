@@ -16,11 +16,11 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
-from matmodlab.mml_siteenv import environ
-from matmodlab.utils.misc import remove, stdout_redirected, merged_stderr_stdout
-from matmodlab.product import PKG_D, PYEXE
-from matmodlab.utils.fortran.product import LAPACK, LAPACK_OBJ, MMLABPACK
-from matmodlab.materials.product import ABA_UTL
+from .product import LAPACK, LAPACK_OBJ, MMLABPACK
+from ..misc import remove, stdout_redirected, merged_stderr_stdout
+from ...mml_siteenv import environ
+from ...product import PKG_D, PYEXE
+from ...materials.product import ABA_UTL
 
 FORT_COMPILER = environ.fc
 

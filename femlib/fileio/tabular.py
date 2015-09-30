@@ -2,9 +2,9 @@ from os import remove
 from os.path import splitext, isfile
 
 import numpy as np
-from femlib.data import *
-from femlib.mesh import Mesh
-from femlib.constants import *
+from ..data import *
+from ..mesh import Mesh
+from ..constants import *
 
 import tabfileio
 

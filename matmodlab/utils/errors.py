@@ -1,6 +1,6 @@
 import logging
-from matmodlab.mml_siteenv import environ
-from misc import who_is_calling
+from .misc import who_is_calling
+from ..mml_siteenv import environ
 
 class MatModLabError(Exception):
     def __init__(self, message):

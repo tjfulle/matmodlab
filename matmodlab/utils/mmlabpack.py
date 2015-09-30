@@ -6,7 +6,7 @@ import os
 import logging
 import numpy as np
 from sys import modules, argv
-from matmodlab.product import PKG_D
+from ..product import PKG_D
 
 mmlabpack_so = os.path.join(PKG_D, "mmlabpack.so")
 warned = False
@@ -18,9 +18,9 @@ def should_warn():
     return True
 
 try:
-    from matmodlab.lib.mmlabpack import mmlabpack as m
+    from ..lib.mmlabpack import mmlabpack as m
 except ImportError:
-    import _mmlabpack as m
+    from . import _mmlabpack as m
     if not warned and should_warn():
         d = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../lib")
         if not os.path.isfile(mmlabpack_so):

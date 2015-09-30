@@ -87,7 +87,7 @@ def read_excel(filename, sheet=None, columns=None, disp=1):
     # read in all the data
     if filetype == "XLS":
         sh = wb.sheet_by_index(sheet_index)
-        head = map(str, sh.row_values(0))
+        head = list(map(str, sh.row_values(0)))
         head = sh.row_values(0)
 
         data = []
@@ -113,7 +113,7 @@ def read_excel(filename, sheet=None, columns=None, disp=1):
         for row in sh.iter_rows():
             tmprow = []
             for cell in row:
-                tmprow.append(cell.value)
+                tmprow.append(cell.internal_value)
             wholesheet.append(tmprow)
         head = wholesheet[0]
         data = wholesheet[1:]
@@ -196,10 +196,10 @@ if __name__ == '__main__':
     xlsxhead, xlsxdata = read_excel("io_test.xlsx", columns=cols)
 
     print("===== HEADERS")
-    print("xls headers: ", xlshead)
-    print("xlsx headers:", xlsxhead)
-    print("are headers the same?", xlshead == xlsxhead)
+    print("xls headers: " + repr(xlshead))
+    print("xlsx headers:" + repr(xlsxhead))
+    print("are headers the same?" + repr(xlshead == xlsxhead))
     print("===== DATA")
-    print("xls data:  ", xlsdata)
-    print("xlsx data: ", xlsxdata)
-    print("data diff: ", xlsdata - xlsxdata)
+    print("xls data:  " + repr(xlsdata))
+    print("xlsx data: " + repr(xlsxdata))
+    print("data diff: " + repr(xlsdata - xlsxdata))

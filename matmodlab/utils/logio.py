@@ -1,6 +1,6 @@
 import logging
-from matmodlab.product import SPLASH
-from matmodlab.mml_siteenv import environ
+from ..product import SPLASH
+from ..mml_siteenv import environ
 
 # Monkey path the logging stream handler emit function
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')

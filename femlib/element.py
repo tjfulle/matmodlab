@@ -1,7 +1,7 @@
 from math import sqrt
 import numpy as np
 
-from shapefun import LinearGaussLegendre1D
+from .shapefun import LinearGaussLegendre1D
 
 ROOT3 = sqrt(3.)
 

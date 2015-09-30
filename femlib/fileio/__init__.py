@@ -2,11 +2,11 @@ import numpy as np
 from os.path import splitext, isfile
 from collections import OrderedDict
 
-import dbx
-import exodus
-import tabular
-from femlib.constants import *
-from _netcdf import NetCDFFile
+from . import dbx
+from . import exodus
+from . import tabular
+from ..constants import *
+from ._netcdf import NetCDFFile
 
 __all__ = ['File', 'loaddb_single_element', 'read_exodus_legacy']
 

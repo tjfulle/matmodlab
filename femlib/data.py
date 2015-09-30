@@ -1,7 +1,7 @@
 import numpy as np
 from collections import OrderedDict
-from constants import *
-from numerix import *
+from .constants import *
+from .numerix import *
 
 __all__ = ['StepRepository', 'Step', 'Frame', 'FieldOutputs', 'FieldOutput']
 

@@ -1,5 +1,5 @@
 import numpy as np
-from nonmonotonic import calculate_bounded_area
+from .nonmonotonic import calculate_bounded_area
 
 __all__ = ['SAME', 'DIFF', 'NOT_SAME', 'ERRORS', 'DIFFTOL', 'FAILTOL', 'FLOOR',
            'afloor', 'amag', 'rms_error', 'interp_rms_error', 'diff_data_sets',

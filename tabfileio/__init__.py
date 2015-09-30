@@ -9,13 +9,16 @@ writing column data in the following file types:
 
 All of the functions are available through the read_file() and
 write_file() functions.
+
+Changelog:
+150930 - M. Scot Swan - now works in python3 as well as python2
 """
 
 import os.path as op
 import numpy as np
-from tabfileio.textio import read_text, write_text
-from tabfileio.excelio import read_excel, write_excel
-from tabfileio.pickleio import read_pickle, write_pickle
+from .textio import read_text, write_text
+from .excelio import read_excel, write_excel
+from .pickleio import read_pickle, write_pickle
 
 
 def read_file(filename, columns=None, disp=1, sheet=None):
@@ -55,7 +58,7 @@ def read_file(filename, columns=None, disp=1, sheet=None):
         # Try text reader and cross fingers
         head, data = read_text(filename, columns=columns)
 
-    data = np.array([[float(_) for _ in row] for row in data])
+    data = np.array([[float(_) if _ is not None else 0.0 for _ in row] for row in data])
     if not disp:
         return data
     return head, data

@@ -8,13 +8,13 @@ import traceback
 import subprocess
 import numpy as np
 
-from matmodlab.constants import *
-from matmodlab.product import SPLASH
-from matmodlab.mml_siteenv import environ
-from matmodlab.utils.logio import setup_logger
-from matmodlab.utils.errors import MatModLabError
-from matmodlab.utils.mmltab import MMLTabularWriter
-from mdb import mdb, ModelCaptured as ModelCaptured
+from ..constants import *
+from ..product import SPLASH
+from ..mml_siteenv import environ
+from ..utils.logio import setup_logger
+from ..utils.errors import MatModLabError
+from ..utils.mmltab import MMLTabularWriter
+from .mdb import mdb, ModelCaptured as ModelCaptured
 
 IOPT = 0
 LASTEVALD = None

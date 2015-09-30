@@ -11,7 +11,7 @@ from select import select
 from contextlib import contextmanager
 from os.path import splitext, split, dirname, isfile, sep, basename, \
     exists, isdir, join
-from matmodlab.product import ROOT_D
+from ..product import ROOT_D
 
 def rand_id(N):
     chars = string.ascii_uppercase + string.digits

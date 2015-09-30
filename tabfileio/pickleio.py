@@ -12,10 +12,10 @@ def read_pickle(filename, columns=None, disp=1):
 
     # If specific columns are requested, filter the data
     if columns is not None:
-        if any(isinstance(x, basestring) for x in columns):
+        if any(isinstance(x, str) for x in columns):
             h = [s.lower() for s in head]
             for (i, item) in enumerate(columns):
-                if isinstance(item, basestring):
+                if isinstance(item, str):
                     columns[i] = h.index(item.lower())
 
         if head is not None:
@@ -31,10 +31,10 @@ def write_pickle(filename, head, data, columns=None):
     #
     # If specific columns are requested, filter the data
     if columns is not None:
-        if any(isinstance(x, basestring) for x in columns):
+        if any(isinstance(x, str) for x in columns):
             h = [s.lower() for s in head]
             for (i, item) in enumerate(columns):
-                if isinstance(item, basestring):
+                if isinstance(item, str):
                     columns[i] = h.index(item.lower())
 
         head = [head[i] for i in columns]

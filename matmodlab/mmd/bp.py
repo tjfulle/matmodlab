@@ -1,5 +1,5 @@
 import sys
-from matmodlab.constants import *
+from ..constants import *
 
 def cprint(string):
     sys.stderr.write(string + "\n")

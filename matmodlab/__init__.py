@@ -42,15 +42,15 @@ sys.path.insert(0, os.getcwd())
 
 # ------------------------ FACTORY METHODS TO SET UP AND RUN A SIMULATION --- #
 from numpy import array, float64
-from mmd.mdb import mdb
-from mmd.simulator import *
-from mml_siteenv import environ
-from mmd.material import build_material
-from mmd.permutator import Permutator, PermutateVariable
-from mmd.optimizer import Optimizer, OptimizeVariable
-from constants import *
-from materials.product import *
-from utils.elas import elas
+from .mmd.mdb import mdb
+from .mmd.simulator import *
+from .mml_siteenv import environ
+from .mmd.material import build_material
+from .mmd.permutator import Permutator, PermutateVariable
+from .mmd.optimizer import Optimizer, OptimizeVariable
+from .constants import *
+from .materials.product import *
+from .utils.elas import elas
 RAND = np.random.RandomState()
 
 def genrand():

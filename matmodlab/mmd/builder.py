@@ -8,14 +8,14 @@ import logging
 import argparse
 import importlib
 
-from matmodlab.constants import *
-from matmodlab.materials.product import *
-from matmodlab.utils.misc import load_file, remove
-from matmodlab.product import ROOT_D, PKG_D
-from matmodlab.utils.errors import MatModLabError
-from matmodlab.utils.fortran.extbuilder import FortranExtBuilder
-from matmodlab.utils.fortran.product import IO_F90
-from matmodlab.utils.logio import setup_logger
+from ..constants import *
+from ..materials.product import *
+from ..utils.misc import load_file, remove
+from ..product import ROOT_D, PKG_D
+from ..utils.errors import MatModLabError
+from ..utils.fortran.extbuilder import FortranExtBuilder
+from ..utils.fortran.product import IO_F90
+from ..utils.logio import setup_logger
 
 logger = setup_logger('matmodlab.mmd.builder')
 
@@ -81,7 +81,7 @@ class Builder(object):
                         continue
                     fort_libs.update({name: libs[name]})
 
-        from loader import MaterialLoader
+        from .loader import MaterialLoader
         all_mats = MaterialLoader.load_materials()
         if user_env <= 1 and mats_to_fetch is not None:
             mats_fetched = []

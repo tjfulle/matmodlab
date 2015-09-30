@@ -9,11 +9,11 @@ from argparse import ArgumentParser
 from subprocess import Popen, STDOUT
 from os.path import dirname, isfile, join, realpath, split
 
-from matmodlab.constants import *
-from matmodlab.materials.product import *
-from matmodlab.product import ROOT_D, BLD_D, PLATFORM, TEST_D, PKG_D, EXMPL_D
-from matmodlab.mml_siteenv import environ
-from matmodlab.utils.misc import load_file
+from ..constants import *
+from ..materials.product import *
+from ..product import ROOT_D, BLD_D, PLATFORM, TEST_D, PKG_D, EXMPL_D
+from ..mml_siteenv import environ
+from ..utils.misc import load_file
 
 # --- check prereqs
 (major, minor, micro, relev, ser) = sys.version_info
@@ -88,13 +88,13 @@ def main(argv=None):
     if x != 'run':
         sys.argv = ['mml {0}'.format(x)] + argv
         if x == 'view':
-            import matmodlab.viewer.main as module
+            from ..viewer import main as module
         elif x == 'help':
             sys.exit(run(['-h']))
         elif x == 'build':
-            import matmodlab.mmd.builder as module
+            from ..mmd import builder as module
         elif x in ('ipynb', 'notebook'):
-            import matmodlab.mmd.nblaunch as module
+            from ..mmd import nblaunch as module
         elif x == 'fetch':
             sys.exit(fetch(argv))
         elif x == 'clean':
@@ -202,7 +202,7 @@ def run(argv):
     exec(code, gdict)
 
     if args.v and not environ.gui_mode:
-        from matmodlab.utils.quotes import write_random_quote
+        from ..utils.quotes import write_random_quote
         write_random_quote()
 
     return

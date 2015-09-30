@@ -26,12 +26,12 @@ from chaco.example_support import COLOR_PALETTE
 from traitsui.tabular_adapter import TabularAdapter
 from traitsui.menu import MenuBar, Menu, Action, NoButtons
 
-from builder import *
-from viewer import *
-from infopane import *
-from log import winstream
-from matmodlab.mml_siteenv import environ
-from matmodlab.utils.mmltab import is_evaldb
+from .builder import *
+from .viewer import *
+from .infopane import *
+from .log import winstream
+from ..mml_siteenv import environ
+from ..utils.mmltab import is_evaldb
 
 icns = join(dirname(realpath(__file__)), 'icon')
 

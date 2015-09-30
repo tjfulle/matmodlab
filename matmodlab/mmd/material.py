@@ -6,21 +6,21 @@ import logging
 
 from matmodlab.product import PKG_D, BIN_D, ROOT_D
 
-from matmodlab.mml_siteenv import environ
-from matmodlab.utils.errors import MatModLabError
-import matmodlab.utils.mmlabpack as mmlabpack
-from matmodlab.utils.parameters import Parameters
-from matmodlab.utils.misc import remove
-from matmodlab.mmd.loader import MaterialLoader
+from ..mml_siteenv import environ
+from ..utils.errors import MatModLabError
+from ..utils import mmlabpack
+from ..utils.parameters import Parameters
+from ..utils.misc import remove
+from ..mmd.loader import MaterialLoader
 
-from matmodlab.constants import *
-from matmodlab.materials.completion import *
-from matmodlab.materials.addon_trs import TRS
-from matmodlab.materials.addon_expansion import Expansion
-from matmodlab.materials.addon_viscoelastic import Viscoelastic
-from matmodlab.materials.product import is_user_model, SDVINI, USER
+from ..constants import *
+from ..materials.completion import *
+from ..materials.addon_trs import TRS
+from ..materials.addon_expansion import Expansion
+from ..materials.addon_viscoelastic import Viscoelastic
+from ..materials.product import is_user_model, SDVINI, USER
 
-from matmodlab.constants import XX, YY, ZZ, XY, YZ, XZ, DEFAULT_TEMP
+from ..constants import XX, YY, ZZ, XY, YZ, XZ, DEFAULT_TEMP
 
 class MetaClass(type):
     '''metaclass which overrides the '__call__' function'''
@@ -546,7 +546,7 @@ def Material(model, parameters, switch=None, response=None,
         if not os.path.isfile(so_lib):
             logging.getLogger('matmodlab.mmd.simulator').info(
                 '{0}: rebuilding material library'.format(libname))
-            import matmodlab.mmd.builder as bb
+            from ..mmd import builder as bb
             #@tjfulle: verbosity
             bb.Builder.build_material(libname, source_files,
                                       lapack=TheMaterial.lapack,

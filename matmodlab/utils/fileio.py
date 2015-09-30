@@ -7,7 +7,7 @@ from os.path import isfile, splitext, basename, join
 
 import tabfileio
 
-from numerix import *
+from .numerix import *
 from femlib.fileio import loaddb_single_element
 
 def loadfile(filename, disp=1, skiprows=0, sheet="MML", columns=None,

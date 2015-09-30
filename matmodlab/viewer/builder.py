@@ -11,12 +11,12 @@ from traitsui.menu import Action
 from pyface.api import FileDialog, OK as pyOK
 from pyface.gui import GUI
 
-from matmodlab.mml_siteenv import environ
-from matmodlab.mmd.mdb import mdb, ModelCaptured as ModelCaptured
+from ..mml_siteenv import environ
+from ..mmd.mdb import mdb, ModelCaptured as ModelCaptured
 
 __all__ = ['Model', 'Step', 'Material', 'PermModel', 'OptModel', 'import_models']
 
-from _builder import *
+from ._builder import *
 
 class Step(HasTraits):
     name = Str

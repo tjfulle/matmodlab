@@ -11,7 +11,7 @@ def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
 
     fown = False
     try:
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             fown = True
             fh = iter(open(filename))
         else:
@@ -45,18 +45,20 @@ def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
         head = None
         fh.seek(a)
 
+
     data = []
     try:
         for (i, line) in enumerate(fh.readlines()):
             line = _split(line, comments)
+            print(type(line), line)
             if not line:
                 continue
 
             try:
                 line = [float(x) for x in line]
             except ValueError:
-                raise ValueError('expected floats in line {0} '
-                                 'got {1}'.format(i+1, line))
+                raise Exception('expected floats in line {0} '
+                            'got {1}'.format(i+1, line))
             data.append(line)
 
     finally:
@@ -67,10 +69,10 @@ def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
 
     # If specific columns are requested, filter the data
     if columns is not None:
-        if any(isinstance(x, basestring) for x in columns):
+        if any(isinstance(x, str) for x in columns):
             h = [s.lower() for s in head]
             for (i, item) in enumerate(columns):
-                if isinstance(item, basestring):
+                if isinstance(item, str):
                     columns[i] = h.index(item.lower())
 
         if head is not None:
@@ -93,10 +95,10 @@ def write_text(filename, head, data, columns=None):
     #
     # If specific columns are requested, filter the data
     if columns is not None:
-        if any(isinstance(x, basestring) for x in columns):
+        if any(isinstance(x, str) for x in columns):
             h = [s.lower() for s in head]
             for (i, item) in enumerate(columns):
-                if isinstance(item, basestring):
+                if isinstance(item, str):
                     columns[i] = h.index(item.lower())
     else:
         columns = list(range(0, len(head)))

@@ -8,9 +8,9 @@ from traitsui.message import error, message
 from pyface.api import FileDialog, OK as pyOK
 from traitsui.menu import Menu, Action, Separator
 
-from builder import *
-from matmodlab.utils.fileio import loadfile
-from matmodlab.utils.mmltab import read_mml_evaldb, is_evaldb
+from .builder import *
+from ..utils.fileio import loadfile
+from ..utils.mmltab import read_mml_evaldb, is_evaldb
 
 class OutputDB(HasTraits):
     id = Int

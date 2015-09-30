@@ -1,11 +1,11 @@
 import re
 import os
 import logging
-from matmodlab.materials.product import *
-import matmodlab.utils.xpyclbr as xpyclbr
-from matmodlab.mml_siteenv import environ
-from matmodlab.utils.errors import MatModLabError
-from matmodlab.utils.misc import load_file, rand_id
+from ..materials.product import *
+from ..utils import xpyclbr
+from ..mml_siteenv import environ
+from ..utils.errors import MatModLabError
+from ..utils.misc import load_file, rand_id
 
 class MaterialLoader:
     def __init__(self, std_libs, user_libs):

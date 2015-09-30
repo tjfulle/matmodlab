@@ -1,6 +1,6 @@
 import numpy
 import scipy.linalg
-from matmodlab.constants import VOIGHT
+from ..constants import VOIGHT
 
 def epsilon(a):
     """Find the machine precision for a float of type 'a'"""

@@ -1,7 +1,7 @@
 import numpy as np
-from numerix import midpoint
-from data import *
-from constants import *
+from .numerix import midpoint
+from .data import *
+from .constants import *
 
 __all__ = ['FunctionSpace', 'Function']
 
@@ -207,8 +207,8 @@ class Function:
 
 
 if __name__ == '__main__':
-    from mesh import Mesh
-    from element import Element
+    from .mesh import Mesh
+    from .element import Element
     mesh = Mesh(type='uniform', ox=0., lx=1., nx=10)
     mesh.ElementBlock(name='Block-1', elements='all')
     mesh.extend(1., 10, block='Block-2')

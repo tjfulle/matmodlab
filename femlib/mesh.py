@@ -3,8 +3,8 @@ import numpy as np
 from collections import OrderedDict
 import StringIO
 
-from numerix import aslist, midpoint
-from constants import *
+from .numerix import aslist, midpoint
+from .constants import *
 
 __all__ = ['Mesh']
 

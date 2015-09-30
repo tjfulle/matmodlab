@@ -2,7 +2,7 @@ import sys
 import logging
 import numpy as np
 
-from numerix import aslist
+from .numerix import aslist
 
 __all__ = ['solve_system', 'simplemesh', 'display_truss']
 DOFS = {'x': 0, 'y': 1, 'z': 2}
@@ -135,7 +135,7 @@ def solve_system(nodes, vertices, elements, connect, k, bcs, cfs,
 
 def simplemesh(ox, dx, nx):
     '''Simple wrapper to mesh.genmesh_1d'''
-    import mesh
+    import .mesh as mesh
     return mesh.genmesh_1d(ox, dx, nx)
 
 def display_truss(points, connect, filename=None, color='g', co=False,
@@ -245,10 +245,10 @@ def write_results(filename, nodes, vertices, elements, connect,
         dict[key] is an array of values for key
 
     '''
-    from mesh import Mesh
-    from fileio.dbx import File
-    from data import StepRepository
-    from constants import NODE, ELEMENT, SCALAR, VECTOR
+    from .mesh import Mesh
+    from .fileio.dbx import File
+    from .data import StepRepository
+    from .constants import NODE, ELEMENT, SCALAR, VECTOR
 
     file = File(filename, 'w')
     mesh = Mesh(type='free', nodes=nodes, vertices=vertices,
@@ -307,7 +307,7 @@ def write_results(filename, nodes, vertices, elements, connect,
     file.put_steps(steps.values())
 
 def view_results(filename):
-    from femlib.viewer import launch_viewer
+    from .viewer import launch_viewer
     launch_viewer([filename])
 
 # --------------------------------------------------------------------------- #
@@ -315,7 +315,7 @@ def view_results(filename):
 # --------------------------------------------------------------------------- #
 
 def test_solve_system():
-    from numerix import areclose, allclose
+    from .numerix import areclose, allclose
     sys.stdout.write('testing solve_system... ')
     sys.stdout.flush()
 

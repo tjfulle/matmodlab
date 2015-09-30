@@ -1,8 +1,8 @@
 import os
 import logging
-from constants import *
-from matmodlab.product import *
-from matmodlab.materials.product import *
+from .constants import *
+from .product import *
+from .materials.product import *
 from distutils.spawn import find_executable as which
 __all__ = ['environ']
 

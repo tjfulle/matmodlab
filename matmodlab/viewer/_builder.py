@@ -6,9 +6,9 @@ from traitsui.api import *
 from traitsui.menu import Menu, Action, Separator
 from pyface.api import FileDialog, OK as pyOK
 
-from matmodlab.utils.misc import load_file
-from matmodlab.mmd.loader import MaterialLoader #, SET_AT_RUNTIME
-from matmodlab.constants import DEFAULT_TEMP, NUM_TENSOR_3D
+from ..utils.misc import load_file
+from ..mmd.loader import MaterialLoader #, SET_AT_RUNTIME
+from ..constants import DEFAULT_TEMP, NUM_TENSOR_3D
 
 defined_steps = ('StrainStep', 'StrainRateStep',
                  'StressStep', 'StressRateStep',

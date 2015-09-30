@@ -1,8 +1,8 @@
 import logging
 import numpy as np
 from math import sin, cos
-from matmodlab.constants import TOOR3, ROOT3
-from matmodlab.utils.elas import ElasticConstants
+from ..constants import TOOR3, ROOT3
+from ..utils.elas import ElasticConstants
 
 EC = ElasticConstants()
 

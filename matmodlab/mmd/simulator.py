@@ -10,16 +10,16 @@ from collections import namedtuple, OrderedDict
 from numpy.linalg import solve, lstsq
 from numpy.linalg import LinAlgError as LinAlgError
 
-from matmodlab.constants import *
-from matmodlab.mml_siteenv import environ
-import matmodlab.utils.mmlabpack as mml
-from matmodlab.utils.errors import MatModLabError
-from matmodlab.utils.fileio import loadfile
-from matmodlab.utils.logio import setup_logger
-from matmodlab.utils.plotting import create_figure
-from material import MaterialModel, Material
-from bp import BreakPoint, BreakPointStop as BreakPointStop
-from mdb import mdb, ModelCaptured as ModelCaptured
+from ..constants import *
+from ..mml_siteenv import environ
+from ..utils import mmlabpack as mml
+from ..utils.errors import MatModLabError
+from ..utils.fileio import loadfile
+from ..utils.logio import setup_logger
+from ..utils.plotting import create_figure
+from .material import MaterialModel, Material
+from .bp import BreakPoint, BreakPointStop as BreakPointStop
+from .mdb import mdb, ModelCaptured as ModelCaptured
 
 from femlib.mesh import SingleElementMesh3D
 from femlib.data import Step, StepRepository, FieldOutputs
@@ -347,7 +347,7 @@ Material: {5}
         return
 
     def dump(self, variables, format='ascii', ffmt='%.18f'):
-        from matmodlab.utils.fileio import filedump
+        from ..utils.fileio import filedump
         root, ext = os.path.splitext(self.filename)
         e = {'ascii': '.out', 'mathematica': '.math', 'ndarray': '.npy'}
         filedump(self.filename, root + e.get(format, '.out'), ffmt=ffmt,
@@ -402,7 +402,7 @@ Material: {5}
             plt.show()
 
     def visualize_results(self, overlay=None):
-        from matmodlab.viewer.main import launch
+        from ..viewer.main import launch
         if not self.ran:
             raise MatModLabError('model must first be run')
         launch([self.filename])

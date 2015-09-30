@@ -1,5 +1,5 @@
-from matmodlab.constants import BOKEH, MATPLOTLIB
-from matmodlab.mml_siteenv import environ
+from ..constants import BOKEH, MATPLOTLIB
+from ..mml_siteenv import environ
 
 def create_figure(**kwargs):
     if environ.plotter == BOKEH:

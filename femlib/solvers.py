@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from bc import bcsum
+from .bc import bcsum
 
 __all__ = ['solve']
 

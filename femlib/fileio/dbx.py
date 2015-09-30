@@ -5,10 +5,10 @@ from collections import OrderedDict
 import xml.dom.minidom as dom
 
 import numpy as np
-from femlib.data import *
-from femlib.mesh import Mesh
-from femlib.constants import *
-from femlib.numerix import asstring, asarray
+from ..data import *
+from ..mesh import Mesh
+from ..constants import *
+from ..numerix import asstring, asarray
 
 __all__ = ['File']
 
@@ -261,9 +261,9 @@ class DBXFileReader(_DBXFile):
         return step
 
 if __name__ == '__main__':
-    from mesh import Mesh
-    from funspace import FunctionSpace, Function
-    from element import Element
+    from ..mesh import Mesh
+    from ..funspace import FunctionSpace, Function
+    from ..element import Element
     mesh = Mesh(type='uniform', ox=0., lx=1., nx=10)
     mesh.ElementBlock(name='Block-1', elements='all')
     mesh.extend(1., 10, block='Block-2')

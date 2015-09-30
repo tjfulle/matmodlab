@@ -5,8 +5,8 @@ import argparse
 import numpy as np
 import xml.dom.minidom as xdom
 from os.path import realpath, join, isdir, isfile, dirname, splitext
-from matmodlab.constants import DB_FMTS
-from matmodlab.mml_siteenv import environ
+from ..constants import DB_FMTS
+from ..mml_siteenv import environ
 
 U_ROOT = u"MMLTabular"
 U_JOB = u"job"

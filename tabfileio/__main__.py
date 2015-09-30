@@ -1,9 +1,9 @@
 import os
 import numpy as np
 
-from excelio import read_excel, write_excel
-from textio import read_text, write_text
-from pickleio import read_pickle, write_pickle
+from .excelio import read_excel, write_excel
+from .textio import read_text, write_text
+from .pickleio import read_pickle, write_pickle
 
 test_head = ["TIME", "INTEGER", "FLOAT"]
 test_data = np.array([[_ / 10.0, _, _ / 9.0] for _ in range(0, 10)])

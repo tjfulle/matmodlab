@@ -13,14 +13,14 @@ from random import shuffle
 from itertools import izip, product
 from collections import OrderedDict
 
-from matmodlab.constants import *
-from matmodlab.product import SPLASH
-from matmodlab.utils.misc import backup
-from matmodlab.mml_siteenv import environ
-from matmodlab.utils.logio import setup_logger
-from matmodlab.utils.errors import MatModLabError
-from matmodlab.mmd.mdb import mdb, ModelCaptured as ModelCaptured
-from matmodlab.utils.mmltab import MMLTabularWriter, correlations, plot_correlations
+from ..constants import *
+from ..product import SPLASH
+from ..utils.misc import backup
+from ..mml_siteenv import environ
+from ..utils.logio import setup_logger
+from ..utils.errors import MatModLabError
+from ..mmd.mdb import mdb, ModelCaptured as ModelCaptured
+from ..utils.mmltab import MMLTabularWriter, correlations, plot_correlations
 
 RAND = np.random.RandomState()
 

@@ -18,7 +18,7 @@ from pyface.api import FileDialog, OK as pyOK
 from chaco.example_support import COLOR_PALETTE
 from traitsui.tabular_adapter import TabularAdapter
 
-from infopane import InfoPane
+from .infopane import InfoPane
 icns = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'icon')
 
 def Ones(n):
