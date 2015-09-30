@@ -1,4 +1,5 @@
 import os
+import logging
 from os.path import join
 from matmodlab.constants import *
 from matmodlab.utils.fortran.product import DGPADM_F, IO_F90
