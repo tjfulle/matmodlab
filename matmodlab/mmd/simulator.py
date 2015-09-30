@@ -301,9 +301,6 @@ Material: {5}
             db.close()
             self.finish()
 
-        if environ.viz_on_completion:
-            self.visualize_results()
-
     def finish(self):
         pass
 
@@ -400,15 +397,6 @@ Material: {5}
             if legend:
                 plt.legend(loc='best')
             plt.show()
-
-    def visualize_results(self, overlay=None):
-        from ..viewer.main import launch
-        if not self.ran:
-            raise MatModLabError('model must first be run')
-        launch([self.filename])
-
-    def view(self):
-        self.visualize_results()
 
     def break_point(self, condition, xit=0):
         '''Define a break point for the simulation

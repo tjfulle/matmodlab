@@ -26,12 +26,9 @@ from chaco.example_support import COLOR_PALETTE
 from traitsui.tabular_adapter import TabularAdapter
 from traitsui.menu import MenuBar, Menu, Action, NoButtons
 
-from .builder import *
 from .viewer import *
 from .infopane import *
 from .log import winstream
-from ..mml_siteenv import environ
-from ..utils.mmltab import is_evaldb
 
 icns = join(dirname(realpath(__file__)), 'icon')
 
@@ -44,11 +41,6 @@ def main(argv=None):
     sources = []
     errors = 0
     for source in args.sources:
-        if isdir(source):
-            for f in os.listdir(source):
-                if is_evaldb(join(source, f)):
-                    source = join(source, f)
-                    break
         filename = realpath(source)
         if not isfile(filename):
             # check for known extensions
@@ -115,16 +107,8 @@ class Application(HasStrictTraits):
             if not isfile(source):
                 raise OSError("{0}: no such file".format(source))
 
-            d, f = split(source)
-            if d.endswith('.eval') and f.endswith('.xml'):
-                if len(sources) > 1:
-                    raise ValueError('only one evaluation db allowed')
-                filepaths, variables = readtabular(source)
-                names = dict([(f, f.replace(d, '')) for f in filepaths])
-                break
-            else:
-                filepaths.append(source)
-                variables, names = {}, {}
+            filepaths.append(source)
+            variables, names = {}, {}
 
         files = [OutputDB(f, info=variables.get(f,''), name=names.get(f))
                  for f in filepaths]
@@ -342,7 +326,6 @@ def launch(sources=None):
     ----------
 
     """
-    environ.gui_mode = True
     if sources is None:
         sources = []
 
@@ -370,7 +353,7 @@ def launch(sources=None):
             Item('plot', show_label=False, springy=True, resizable=True,
                  width=900, height=600))
 
-    title = "Material Model Laboratory"
+    title = "Time Series Viewer"
     ms = Item('yaxis', show_label=False, height=.75)
     view = View(HSplit(VSplit(info_pane, ms), plot_window),
                 style='custom', resizable=True, title=title)

@@ -37,7 +37,7 @@ if errors:
              'following errors:\n  {0}'.format('\n  '.join(errors)))
 
 commands = ('build', 'clean', 'fetch', 'helper', 'run',
-            'test', 'view', 'ipynb', 'notebook')
+            'test', 'ipynb', 'notebook')
 
 usage = '''\
 usage: mml [-h|help] <command> [<args>]
@@ -51,7 +51,6 @@ The mml commands are:
   notebook Alias for ipynb
   run      Run a simulation
   test     Run the Matmodlab tests.  This procedure is a wrapper to py.test
-  view     Launch the Matmodlab viewer
 
 See 'mml help <command>' to read about a specific subcommand.
 '''
@@ -65,9 +64,9 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
 
-    # if no arguments given, exit
+    # if no arguments given, assume they want help
     if not argv:
-        x = 'view'
+        x = 'help'
 
     else:
         # get first argument, check if help requested
@@ -87,9 +86,7 @@ def main(argv=None):
 
     if x != 'run':
         sys.argv = ['mml {0}'.format(x)] + argv
-        if x == 'view':
-            from ..viewer import main as module
-        elif x == 'help':
+        if x == 'help':
             sys.exit(run(['-h']))
         elif x == 'build':
             from ..mmd import builder as module
@@ -141,8 +138,6 @@ def run(argv):
              "(not supported by all models) [default: %(default)s]"))
     p.add_argument("-B", metavar="MATERIAL",
         help="Wipe and rebuild MATERIAL before running [default: %(default)s]")
-    p.add_argument("-V", default=False, action="store_true",
-        help="Launch results viewer on completion [default: %(default)s]")
     p.add_argument("-j", "--nprocs", type=int, default=environ.nprocs,
         help="Number of simultaneous jobs [default: %(default)s]")
     p.add_argument("-W", choices=[WARN,IGNORE,ERROR], default=environ.warn,
@@ -180,9 +175,6 @@ def run(argv):
         switch.append(args.switch)
     switch.extend(environ.switch)
     environ.switch = switch
-
-    if args.V:
-        environ.viz_on_completion = True
 
     if args.B:
         name = args.B.strip()

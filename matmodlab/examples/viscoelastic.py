@@ -24,4 +24,3 @@ mps.StrainRateStep(components=(0., 0., 0.), increment=50.,
                    temperature=95., frames=50)
 
 mps.run()
-mps.view()

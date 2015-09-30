@@ -27,6 +27,3 @@ mps.DefGradStep(increment=1., components=(1.,0.,0.,0.,1.,0.,0.,0.,1.), frames=N)
 
 # Run the simulation
 mps.run()
-
-# View results
-mps.view()

@@ -23,8 +23,6 @@ class Environment(object):
     # --- Performance
     nprocs = 1
 
-    viz_on_completion = False
-
     # --- IPython notebook
     notebook = 0
 

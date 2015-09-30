@@ -11,7 +11,7 @@ from ..product import PKG_D
 mmlabpack_so = os.path.join(PKG_D, "mmlabpack.so")
 warned = False
 def should_warn():
-    for x in ("build", "clean", "config", "convert", "view",
+    for x in ("build", "clean", "config", "convert",
               "-h", "--help", "help"):
         if x in argv:
             return False
