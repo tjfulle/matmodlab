@@ -30,6 +30,54 @@ EPS = np.finfo(np.float).eps
 __all__ = ['MaterialPointSimulator', 'StrainStep', 'StressStep', 'MixedStep',
            'DefGradStep', 'DisplacementStep', 'piecewise_linear']
 
+class Record:
+    def __init__(self, name, rtype, dtype='f4', invariants=None, keys=None):
+        self.name = name
+        self.rtype = rtype
+        self.dtype = dtype
+        self.invariants = invariants
+        keys = keys or []
+        self.shape = {SCALAR: 1,
+                      ARRAY: (len(keys),),
+                      VECTOR: (3,),
+                      TENSOR_3D_FULL: (9,),
+                      TENSOR_3D: (6,)}[self.rtype]
+
+        if rtype == SCALAR:
+            self.keys = [self.name]
+        elif rtype == ARRAY:
+            self.keys = [x for x in keys]
+        else:
+            if rtype == VECTOR:
+                components = ('X', 'Y', 'Z')
+            elif rtype == TENSOR_3D:
+                components = ('XX', 'YY', 'ZZ', 'XY', 'YZ', 'XZ')
+            elif rtype == TENSOR_3D_FULL:
+                components = ('XX', 'XY', 'XZ',
+                              'YX', 'YY', 'YZ',
+                              'ZX', 'ZY', 'ZZ')
+            self.keys = ['%s.%s' % (self.name, x) for x in components]
+
+class Records(OrderedDict):
+    @property
+    def num_rec(self):
+        return len(super(Records, self).keys())
+    def add(self, name, rtype, **kw):
+        fo = Record(name, rtype, **kw)
+        self[name] = fo
+    def keys(self, expand=False):
+        if not expand:
+            return super(Records, self).keys()
+        return [key for f in self.values() for key in f.keys]
+    def init(self, n):
+        dtype = [(r.name, r.dtype, r.shape) for r in self.values()]
+        self.data = np.empty((n,), dtype=dtype)
+    def update(self, idx, **kw):
+        def totuple(a):
+            try: return tuple(a)
+            except TypeError: return a
+        self.data[idx] = tuple([totuple(kw[key]) for key in self.keys()])
+
 class MaterialPointSimulator(object):
     def __init__(self, job, verbosity=None, d=None,
                  initial_temperature=DEFAULT_TEMP, output=DBX):
@@ -276,6 +324,33 @@ Material: {5}
             self.field_outputs.add('SDV', ARRAY, ELEMENT, self.mesh,
                                    component_labels=self.material.sdv_keys)
 
+        if target is not None:
+            self.field_outputs.add('EET', TENSOR_3D, ELEMENT, self.mesh)
+            self.field_outputs.add('EPT', TENSOR_3D, ELEMENT, self.mesh)
+
+        self.records = Records()
+        self.records.add('Step', SCALAR, dtype='i4')
+        self.records.add('Frame', SCALAR, dtype='i4')
+        self.records.add('Time', SCALAR)
+        self.records.add('DTime', SCALAR)
+        self.records.add('S', TENSOR_3D, invariants=(MISES, PRES))
+        self.records.add('E', TENSOR_3D, invariants=(EQ, V))
+        self.records.add('F', TENSOR_3D_FULL)
+        self.records.add('D', TENSOR_3D)
+        self.records.add('DS', TENSOR_3D)
+        self.records.add('EF', VECTOR)
+        self.records.add('T', SCALAR)
+
+        if self.material.sdv_keys:
+            self.records.add('SDV', ARRAY, keys=self.material.sdv_keys)
+
+        if target is not None:
+            self.records.add('EET', TENSOR_3D)
+            self.records.add('EPT', TENSOR_3D)
+
+        num_frames = sum([len(s.frames) for s in self.steps.values()])
+        self.records.init(num_frames)
+
         filename = '{0}.{1}'.format(self.job, self.output_type)
         filename = os.path.join(self.directory, filename)
         db = self.setup_io(filename)
@@ -305,7 +380,8 @@ Material: {5}
             self.visualize_results()
 
     def finish(self):
-        pass
+        filename = self.job + '.p'
+        self.records.data.dump(filename)
 
     def run_steps(self, db, termination_time=None, target=None):
 
@@ -322,6 +398,7 @@ Material: {5}
         sdv = self.material.initial_sdv
         statev = np.array([sdv, sdv])
         efield = np.array([step.elec_field] * 3)
+        self.idx = 0
 
         # target strains
         eet = ept = None
@@ -429,7 +506,7 @@ Material: {5}
         if errors:
             raise MatModLabError('stopping due to previous errors')
 
-    def update(self, frame, **kwargs):
+    def update(self, idx, frame, **kwargs):
 
         for (key, data) in kwargs.items():
             name = key.upper()
@@ -448,6 +525,12 @@ Material: {5}
                 frame.field_outputs[name].add_data(self.mesh.elements, [data])
             else:
                 frame.field_outputs[name].add_data(self.mesh.nodes, data)
+
+        kwargs['Step'] = 0
+        kwargs['Frame'] = 0
+        kwargs['Time'] = frame.value
+        kwargs['DTime'] = frame.increment
+        self.records.update(idx, **kwargs)
 
         return
 
@@ -590,10 +673,11 @@ Material: {5}
                 u[i, :] = np.dot(ff, x)
 
             # --- update the state
-            self.update(frame, E=strain[2]/VOIGHT, F=F[1], U=u,
+            self.update(self.idx, frame, E=strain[2]/VOIGHT, F=F[1], U=u,
                         D=d/VOIGHT, DS=dstress, S=stress[2],
                         SDV=statev[1], T=temp[2], EF=efield[2],
                         EPT=ept, EET=eet)
+            self.idx += 1
 
             if iframe > 1 and nv and not warned:
                 sigmag = np.sqrt(np.sum(stress[2,v] ** 2))
