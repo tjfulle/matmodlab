@@ -19,7 +19,6 @@ from ..utils.logio import setup_logger
 from ..utils.plotting import create_figure
 from .material import MaterialModel, Material
 from .bp import BreakPoint, BreakPointStop as BreakPointStop
-from .mdb import mdb, ModelCaptured as ModelCaptured
 
 from femlib.mesh import SingleElementMesh3D
 from femlib.data import Step, StepRepository, FieldOutputs
@@ -59,6 +58,7 @@ class Record:
             self.keys = ['%s.%s' % (self.name, x) for x in components]
 
 class Records(OrderedDict):
+    _i = 0
     @property
     def num_rec(self):
         return len(super(Records, self).keys())
@@ -72,20 +72,24 @@ class Records(OrderedDict):
     def init(self, n):
         dtype = [(r.name, r.dtype, r.shape) for r in self.values()]
         self.data = np.empty((n,), dtype=dtype)
-    def update(self, idx, **kw):
+    def update(self, **kw):
         def totuple(a):
             try: return tuple(a)
             except TypeError: return a
-        self.data[idx] = tuple([totuple(kw[key]) for key in self.keys()])
+        self.data[self._i] = tuple([totuple(kw[key]) for key in self.keys()])
+        self._i += 1
 
 class MaterialPointSimulator(object):
     def __init__(self, job, verbosity=None, d=None,
-                 initial_temperature=DEFAULT_TEMP, output=DBX):
+                 initial_temperature=DEFAULT_TEMP, output=None):
         '''Initialize the MaterialPointSimulator object
 
         '''
         self.job = job
         self.bp = None
+
+        if output is not None:
+            pass
 
         self.verbosity = verbosity
         self.initial_temperature = initial_temperature
@@ -100,10 +104,6 @@ class MaterialPointSimulator(object):
         logfile = os.path.join(environ.simulation_dir, self.job + '.log')
         logger = setup_logger('matmodlab.mmd.simulator', logfile,
                               verbosity=verbosity)
-
-        if output not in DB_FMTS:
-            raise MatModLabError('invalid output format request')
-        self.output_type = output
 
         self.mesh = SingleElementMesh3D()
         self.steps = StepRepository()
@@ -236,37 +236,6 @@ class MaterialPointSimulator(object):
         self.steps[name] = step_class(name, previous, **kwargs)
 
     def write_summary(self):
-        num_frames = sum([len(s.frames) for s in self.steps.values()])
-        s = '\n   '.join('{0}'.format(x) for x in environ.std_materials)
-        try:
-            filename = inspect.getfile(self.material.__class__)
-        except TypeError:
-            filename = 'Interactive Cell'
-        summary = '''
-Simulation Summary
----------- -------
-Job: {0}
-Material search directories:
-   {1}
-Material interface file:
-   {2}
-Number of steps: {3}
-   Total frames: {4}
-Material: {5}
-  Number of props: {6}
-    Number of sdv: {7}
-'''.format(self.job, s, filename, len(self.steps)-1, num_frames,
-           self.material.name, self.material.num_prop,
-           self.material.num_sdv)
-        logging.getLogger('matmodlab.mmd.simulator').info(summary)
-
-    def setup_io(self, filename):
-        db = File(filename, mode='w')
-        db.initialize(self.mesh.dimension, self.mesh.num_node,
-                      self.mesh.nodes, self.mesh.vertices,
-                      self.mesh.num_elem, self.mesh.elements,
-                      self.mesh.connect, self.mesh.element_blocks,
-                      self.field_outputs)
 
         # Write info to log file
         L = max(max(len(n) for n in self.field_outputs), 10)
@@ -287,17 +256,36 @@ Material: {5}
         for key in self.field_outputs:
             logging.getLogger('matmodlab.mmd.simulator').debug('  ' + key)
 
-        return db
+        num_frames = sum([len(s.frames) for s in self.steps.values()])
+        s = '\n   '.join('{0}'.format(x) for x in environ.std_materials)
+        try:
+            filename = inspect.getfile(self.material.__class__)
+        except TypeError:
+            filename = 'Interactive Cell'
+
+        summary = '''
+Simulation Summary
+---------- -------
+Job: {0}
+Material search directories:
+   {1}
+Material interface file:
+   {2}
+Number of steps: {3}
+   Total frames: {4}
+Material: {5}
+  Number of props: {6}
+    Number of sdv: {7}
+'''.format(self.job, s, filename, len(self.steps)-1, num_frames,
+           self.material.name, self.material.num_prop,
+           self.material.num_sdv)
+        logging.getLogger('matmodlab.mmd.simulator').info(summary)
 
     def run(self, termination_time=None, target=None):
         '''Run the problem
 
         '''
         logger = logging.getLogger('matmodlab.mmd.simulator')
-
-        if environ.capture_model:
-            mdb.add_model(self)
-            raise ModelCaptured
 
         start = tt()
 
@@ -351,10 +339,6 @@ Material: {5}
         num_frames = sum([len(s.frames) for s in self.steps.values()])
         self.records.init(num_frames)
 
-        filename = '{0}.{1}'.format(self.job, self.output_type)
-        filename = os.path.join(self.directory, filename)
-        db = self.setup_io(filename)
-        self.filename = db.filename
         self.write_summary()
         self.check_break_points()
 
@@ -362,7 +346,7 @@ Material: {5}
 
         try:
             start = tt()
-            self.run_steps(db, termination_time=termination_time, target=target)
+            self.run_steps(termination_time=termination_time, target=target)
             dt = tt() - start
             logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
             self.ran = True
@@ -373,17 +357,15 @@ Material: {5}
         except BreakPointStop:
             logger.info('\nCalculations terminated at break point\n')
         finally:
-            db.close()
             self.finish()
 
         if environ.viz_on_completion:
             self.visualize_results()
 
     def finish(self):
-        filename = self.job + '.p'
-        self.records.data.dump(filename)
+        self.dump()
 
-    def run_steps(self, db, termination_time=None, target=None):
+    def run_steps(self, termination_time=None, target=None):
 
         time_0 = tt()
         step = self.steps.values()[0]
@@ -398,7 +380,6 @@ Material: {5}
         sdv = self.material.initial_sdv
         statev = np.array([sdv, sdv])
         efield = np.array([step.elec_field] * 3)
-        self.idx = 0
 
         # target strains
         eet = ept = None
@@ -419,16 +400,18 @@ Material: {5}
             efield[0] = efield[2]
             statev[0] = statev[1]
 
-            db.put_step(step)
-
         return
 
-    def dump(self, variables, format='ascii', ffmt='%.18f'):
-        from ..utils.fileio import filedump
-        root, ext = os.path.splitext(self.filename)
-        e = {'ascii': '.out', 'mathematica': '.math', 'ndarray': '.npy'}
-        filedump(self.filename, root + e.get(format, '.out'), ffmt=ffmt,
-                 variables=variables)
+    def dump(self, format=None, ffmt='%.18f'):
+        filename = os.path.join(self.directory, self.job)
+        if format is None:
+            self.records.data.dump(filename + '.p')
+        else:
+            names = self.records.keys(expand=1)
+            data = []
+            for row in self.records.data:
+                data.append(row.flatten())
+            data = np.array(data)
 
     def get_var_time(self, var):
         return self.steps.get_field_output_history(var, 1)
@@ -506,7 +489,7 @@ Material: {5}
         if errors:
             raise MatModLabError('stopping due to previous errors')
 
-    def update(self, idx, frame, **kwargs):
+    def update(self, frame, **kwargs):
 
         for (key, data) in kwargs.items():
             name = key.upper()
@@ -530,7 +513,7 @@ Material: {5}
         kwargs['Frame'] = 0
         kwargs['Time'] = frame.value
         kwargs['DTime'] = frame.increment
-        self.records.update(idx, **kwargs)
+        self.records.update(**kwargs)
 
         return
 
@@ -673,11 +656,10 @@ Material: {5}
                 u[i, :] = np.dot(ff, x)
 
             # --- update the state
-            self.update(self.idx, frame, E=strain[2]/VOIGHT, F=F[1], U=u,
+            self.update(frame, E=strain[2]/VOIGHT, F=F[1], U=u,
                         D=d/VOIGHT, DS=dstress, S=stress[2],
                         SDV=statev[1], T=temp[2], EF=efield[2],
                         EPT=ept, EET=eet)
-            self.idx += 1
 
             if iframe > 1 and nv and not warned:
                 sigmag = np.sqrt(np.sum(stress[2,v] ** 2))
