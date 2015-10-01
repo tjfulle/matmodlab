@@ -1,4 +1,6 @@
+import os
 import re
+import gzip
 import numpy as np
 
 
@@ -9,28 +11,25 @@ def _split(string, comments, i=0):
 
 def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
 
-    fown = False
-    try:
-        if isinstance(filename, str):
-            fown = True
-            fh = iter(open(filename))
-        else:
-            fh = iter(filename)
-    except (TypeError):
-        message = 'filename must be a string, file handle, or generator'
-        raise ValueError(message)
+    # Check to see if we are looking at a gzipped text file
+    if filename.lower().endswith(".txt.gz"):
+        opener = gzip.open
+    else:
+        opener = open
 
-    a = fh.tell()
-    # Take care of those pesky unwanted rows
-    for _ in range(skiprows):
-        fh.readline()
+    # Open the file in byte-mode and decode
+    with opener(filename, 'rb') as F:
+        content = F.read().decode("utf-8")
+        lines = content.split("\n")
+
+    # set the index past the lines that we don't want
+    line_idx = skiprows
 
     # Check for headers
-    headline = fh.readline().strip()
+    headline = lines[line_idx].strip()
     if headline.startswith(comments):
         probably_header = True
         headline = headline.split(comments, 1)[1]
-        #headline = _split(headline, comments,1)
     else:
         probably_header = False
         try:
@@ -40,17 +39,17 @@ def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
 
     if probably_header:
         head = _split(headline, comments)
+        line_idx = skiprows + 1
     else:
         # first line not a header, rewind
         head = None
-        fh.seek(a)
-
+        line_idx = skiprows
 
     data = []
     try:
-        for (i, line) in enumerate(fh.readlines()):
-            line = _split(line, comments)
-            print(type(line), line)
+        for i in range(line_idx, len(lines)):
+            line = _split(lines[i], comments)
+
             if not line:
                 continue
 
@@ -60,10 +59,8 @@ def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
                 raise Exception('expected floats in line {0} '
                             'got {1}'.format(i+1, line))
             data.append(line)
-
-    finally:
-        if fown:
-            fh.close()
+    except:
+        pass
 
     data = np.array(data)
 
@@ -103,10 +100,19 @@ def write_text(filename, head, data, columns=None):
     else:
         columns = list(range(0, len(head)))
 
-    with open(filename, 'w') as F:
-        F.write("".join([strfmt(head[i]) for i in columns]) + "\n")
+    # Check to see if we are looking at a gzipped text file
+    if filename.lower().endswith(".txt.gz"):
+        opener = gzip.open
+    else:
+        opener = open
+
+    # Open the file in byte-mode and encode each line before writing
+    with opener(filename, 'wb') as F:
+        text = "".join([strfmt(head[i]) for i in columns]) + "\n"
+        F.write(text.encode("utf-8"))
         for row in data:
-            F.write("".join([fltfmt(row[i]) for i in columns]) + "\n")
+            text = "".join([fltfmt(row[i]) for i in columns]) + "\n"
+            F.write(text.encode("utf-8"))
 
 
 if __name__ == '__main__':

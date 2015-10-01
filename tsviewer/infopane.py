@@ -8,9 +8,7 @@ from traitsui.message import error, message
 from pyface.api import FileDialog, OK as pyOK
 from traitsui.menu import Menu, Action, Separator
 
-from .builder import *
-from ..utils.fileio import loadfile
-from ..utils.mmltab import read_mml_evaldb, is_evaldb
+from tabfileio import read_file as loadfile
 
 class OutputDB(HasTraits):
     id = Int
@@ -25,7 +23,7 @@ class OutputDB(HasTraits):
         if name is None:
             name = basename(filename)
         filepath = realpath(filename)
-        names, data = loadfile(filepath, upcase=0)
+        names, data = loadfile(filepath)
         vmap = dict([(s, i) for (i, s) in enumerate(names)])
         kwds = {'name': name, "filepath": filepath,
                 'info': info or '', 'names': names, 'data': data,
@@ -56,21 +54,12 @@ class OutputDB(HasTraits):
         return sorted(self.vmap.keys(), key=lambda k: self.vmap[k])
 
     def reload_data(self):
-        _, data = loadfile(self.filepath, upcase=0)
+        _, data = loadfile(self.filepath)
         self.data[:] = data
         return
 
 def hashf(filename):
     return hash(realpath(filename))
-
-def readtabular(source):
-    """Read in the mml-tabular.dat file
-
-    """
-    sources, paraminfo, _ = read_mml_evaldb(source)
-    for (key, info) in paraminfo.items():
-        paraminfo[key] = ", ".join("{0}={1:.2g}".format(n, v) for (n, v) in info)
-    return sources, paraminfo
 
 class MyTreeNode(TreeNode):
     def get_icon(self, node, state):
@@ -88,9 +77,7 @@ class DNDTreeNode(TreeNode):
 # DATA CLASSES
 class Root(HasTraits):
     name        = Str('Root')
-    models      = List
     outputdbs   = List(OutputDB)
-    steps       = List(Step)
     choices     = List(Str)
     def __init__(self, files=None, models=None, owner=None):
 
@@ -125,17 +112,10 @@ class Root(HasTraits):
         if hashf(filename) in [f.id for f in self.outputdbs]:
             self.reload_outputdb(filename)
             return
-        if is_evaldb(filename):
-            filepaths, variables = readtabular(filename)
-            d = dirname(filename) + sep
-            names = dict([(f, f.replace(d, '')) for f in filepaths])
-            files = [OutputDB(f, info=variables[f], name=names[f])
-                     for f in filepaths]
-            self.outputdbs.extend(files)
-            f = files[0]
-        else:
-            f = OutputDB(filename)
-            self.outputdbs.append(f)
+
+        f = OutputDB(filename)
+        self.outputdbs.append(f)
+
         self.choices.extend([c for c in f.choices if c not in self.choices])
         if self.owner:
             self.owner.onadd()
@@ -219,83 +199,6 @@ class TreeHandler(Handler):
     def refresh(self, editor, object):
         editor.update_editor()
 
-    # Model actions
-    def new_step(self, editor, object):
-        names = [x.name for x in object.steps]
-        j = len(names) or 1
-        while 1:
-            name = "Step-{0}".format(j)
-            if name not in names:
-                break
-            j += 1
-        object.add_step(name)
-        editor.update_editor()
-
-    def edit_step(self, editor, object):
-        parent = editor.get_parent(object)
-        parent.edit_step(object.name)
-
-    def new_model(self, editor, object):
-        names = [x.name for x in object.models]
-        j = len(names)
-        while 1:
-            name = "Model-{0}".format(j+1)
-            if name not in names:
-                break
-            j += 1
-        model = Model(name=name)
-        model.edit()
-        object.models.append(model)
-
-    def import_models(self, editor, object):
-        wildcard = ('Python files (*.py)|*.py|'
-                    'All files (*)|*')
-        dialog = FileDialog(action="open files", wildcard=wildcard)
-        if dialog.open() != pyOK:
-            return
-        for file in dialog.paths:
-            try:
-                models = import_models(file)
-            except BaseException as e:
-                string = 'Failed to import model with the following error: {0}'
-                string = string.format(e.args[0])
-                error(string)
-                continue
-            object.models.extend(models)
-
-    def remove_model(self, editor, object):
-        parent = editor.get_parent(object)
-        for (i, model) in enumerate(parent.models):
-            if model.name == object.name:
-                break
-        else:
-            return
-        parent.models.pop(i)
-
-    def edit_model_attributes(self, editor, object):
-        object.edit()
-
-    def run_model(self, editor, object):
-        output = object.run()
-        parent = editor.get_parent(object)
-        if output is None:
-            return
-        try:
-            parent.add_outputdb(object.baseline)
-        except AttributeError:
-            pass
-        parent.add_outputdb(output)
-        editor.update_editor()
-
-    def display_input(self, editor, object):
-        object.display_input()
-
-    def write_input(self, editor, object):
-        object.write_input()
-
-    def edit_material(self, editor, object):
-        object.material.edit()
-
     # Output database actions
     def open_outputdb(self, editor, object):
         """Open file"""
@@ -374,37 +277,6 @@ show_outputdb_action = Action(
     name='Show',
     action='handler.show_outputdb(editor,object)',
     enabled_when='handler.is_hidden(editor,object)')
-new_step_action = Action(
-    name='New Step',
-    enabled_when='not object.steps.locked',
-    action='handler.new_step(editor,object)')
-new_model_action = Action(
-    name='New Model Wizard',
-    action='handler.new_model(editor,object)')
-import_models_action = Action(
-    name='Import Models',
-    action='handler.import_models(editor,object)')
-remove_model_action = Action(
-    name='Remove',
-    action='handler.remove_model(editor,object)')
-edit_model_action = Action(
-    name='Edit Attributes',
-    action='handler.edit_model_attributes(editor,object)')
-run_model_action = Action(
-    name='Run',
-    action='handler.run_model(editor,object)')
-display_input_action = Action(
-    name='Display Input',
-    action='handler.display_input(editor,object)')
-write_input_action = Action(
-    name='Write Input',
-    action='handler.write_input(editor,object)')
-edit_material_action = Action(
-    name='Edit Properties',
-    action='handler.edit_material(editor,object)')
-edit_step_action = Action(
-    name='Edit',
-    action='handler.edit_step(editor,object)')
 refresh_action = Action(
     name='Refresh Tree',
     action='handler.refresh(editor,object)')
@@ -423,20 +295,6 @@ tree_editor = TreeEditor(
                                    orientation='vertical',
                                    show_left=True))),
         TreeNode(node_for  = [Root],
-                  children  = 'models',
-                  auto_open = True,
-                  label     = '=Models',
-                  icon_group='icon/folder.png',
-                  icon_open ='icon/folder.png',
-                  view      = no_view,
-                  menu      = Menu(
-                                   refresh_action,
-                                   Separator(),
-                                   import_models_action,
-                                   Separator(),
-                                   new_model_action,
-                                   )),
-        TreeNode(node_for  = [Root],
                   children  = 'outputdbs',
                   label     = '=Output Databases',
                   view      = no_view,
@@ -445,47 +303,6 @@ tree_editor = TreeEditor(
                   menu      = Menu(open_outputdb_action,
                                    reload_all_outputdb_action,
                                    show_all_outputdb_action)),
-        TreeNode(node_for   = [Model],
-                  children  = '',
-                  label     = 'name',
-                  icon_item ='icon/box.png',
-                  menu      = Menu(run_model_action,
-                                   remove_model_action,
-                                   Separator(),
-                                   edit_model_action,
-                                   write_input_action,
-                                   display_input_action)),
-        TreeNode(node_for  = [Model],
-                  auto_open = True,
-                  children  = '',
-                  menu      = Menu(edit_material_action),
-                  label     = 'matlabel',
-                  icon_item ='icon/atom.png'),
-        TreeNode(node_for  = [Model],
-                  auto_open = True,
-                  children  = 'steps',
-                  label     = '=Steps',
-                  icon_group='icon/step.png',
-                  icon_open ='icon/step.png',
-                  menu      = Menu(new_step_action)),
-        TreeNode(node_for   = [Step],
-                 auto_open = True,
-                 label     = 'name',
-                 icon_item ='',
-                 view      = no_view,
-                 menu      = Menu(edit_step_action)),
-        TreeNode(node_for  = [PermModel],
-                 label     = 'name',
-                 icon_item='icon/permutate.png',
-                 view      = no_view,
-                 menu      = Menu(run_model_action,
-                                  display_input_action)),
-        TreeNode(node_for  = [OptModel],
-                 label     = 'name',
-                 icon_item='icon/opt.png',
-                 view      = no_view,
-                 menu      = Menu(run_model_action,
-                                  display_input_action)),
         MyTreeNode(node_for   = [OutputDB],
                   label     = 'name',
                   menu      = Menu(hide_outputdb_action,
@@ -543,22 +360,3 @@ def open_outputdbs():
     if dialog.open() != pyOK:
         return []
     return dialog.paths
-
-if __name__ == '__main__':
-
-    import glob
-    from os.path import join, realpath, dirname
-    d = join(dirname(realpath(__file__)), '../../inputs')
-    files = glob.glob(join(d, "*.dbx"))
-
-    # INSTANCES
-    step_1 = Step(name='Step-1')
-    step_2 = Step(name='Step-2')
-    step_3 = Step(name='Step-3')
-    step_4 = Step(name='Step-4')
-
-    model_1 = Model('Model-1', steps=[step_1, step_2])
-    model_2 = Model('Model-2', steps=[step_1, step_2, step_3])
-    ipane = InfoPane(models=[model_1, model_2], files=files)
-    ipane = InfoPane() #files=files)
-    ipane.configure_traits()

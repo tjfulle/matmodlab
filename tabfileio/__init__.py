@@ -19,6 +19,7 @@ import numpy as np
 from .textio import read_text, write_text
 from .excelio import read_excel, write_excel
 from .pickleio import read_pickle, write_pickle
+from .jsonio import read_json, write_json
 
 
 def read_file(filename, columns=None, disp=1, sheet=None):
@@ -54,6 +55,9 @@ def read_file(filename, columns=None, disp=1, sheet=None):
     elif ext == ".pkl":
         # Pickle data
         head, data = read_pickle(filename, columns=columns)
+    elif ext == ".json":
+        # JSON data
+        head, data = read_json(filename, columns=columns)
     else:
         # Try text reader and cross fingers
         head, data = read_text(filename, columns=columns)
@@ -82,6 +86,9 @@ def write_file(filename, head, data, columns=None, sheet="mml"):
     elif ext == ".pkl":
         # Pickle data
         write_pickle(filename, head, data, columns=columns)
+    elif ext == ".json":
+        # JSON data
+        write_json(filename, head, data, columns=columns)
     else:
         # Try text reader and cross fingers
         write_text(filename, head, data, columns=columns)
