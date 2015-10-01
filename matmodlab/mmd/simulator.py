@@ -45,7 +45,10 @@ class MaterialPointSimulator(object):
         self.ran = None
 
         # basic logger
-        logfile = os.path.join(environ.simulation_dir, self.job + '.log')
+        if verbosity > 2:
+            logfile = os.path.join(environ.simulation_dir, self.job + '.log')
+        else:
+            logfile = None
         logger = setup_logger('matmodlab.mmd.simulator', logfile,
                               verbosity=verbosity)
 
