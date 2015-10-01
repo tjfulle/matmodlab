@@ -10,8 +10,6 @@ from os.path import isfile, splitext, basename, join
 from .numerix import *
 from ..constants import *
 
-from femlib.fileio import loaddb_single_element
-
 def savefile(filename, names, data):
     """Save the file using tabfileio"""
     try:
