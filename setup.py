@@ -6,7 +6,7 @@ def include_files(some_dir):
     return (some_dir, [os.path.join(some_dir, _) for _ in files])
 
 setup(name='matmodlab',
-      version='3.0.2',
+      version='3.0.3',  # last updated on 151001 by Scot Swan
       description='Material model development laboratory',
       long_description=('The material model laboratory (*matmodlab*) is an '
                         'object oriented model driver. The majority of the '
@@ -15,7 +15,6 @@ setup(name='matmodlab',
       classifiers=[  # Classifier list:  https://pypi.python.org/pypi?:action=list_classifiers
                    "Development Status :: 4 - Beta",
                    "Environment :: Console",
-                   "Environment :: X11 Applications :: Qt",
                    "Intended Audience :: Science/Research",
                    "License :: OSI Approved :: MIT License",
                    "Natural Language :: English",
@@ -43,13 +42,11 @@ setup(name='matmodlab',
                 'matmodlab.utils',
                 'matmodlab.utils.fortran',
                 'matmodlab.utils.numerix',
-                'tsviewer',
                ],
       package_dir={
                    'femlib':'femlib',
                    'tabfileio':'tabfileio',
                    'matmodlab':'matmodlab',
-                   'tsviewer':'tsviewer',
                   },
       package_data={
                     'matmodlab':[
@@ -64,9 +61,6 @@ setup(name='matmodlab',
                                  'tutorial/*',
                                  'tests/*',
                                 ],
-                     'tsviewer':[
-                                 'viewer/icon/*.png',
-                                ],
                    },
       data_files=[
                   include_files('matmodlab/materials/src'),
@@ -75,7 +69,6 @@ setup(name='matmodlab',
                   include_files('matmodlab/tutorial'),
                   include_files('matmodlab/ipynb'),
                   include_files('matmodlab/utils/fortran'),
-                  include_files('tsviewer/icon'),
                  ],
       scripts=[
                'matmodlab/bin/fdiff',
