@@ -41,7 +41,7 @@ def setup_logger(name, filename=None, verbosity=None, splashed=[0]):
     ch.setLevel(level)
     logger.addHandler(ch)
 
-    if filename is not None:
+    if filename is not None and level == logging.DEBUG:
         fh = logging.FileHandler(filename, mode='w')
         fh.setLevel(logging.DEBUG)
         logger.addHandler(fh)
