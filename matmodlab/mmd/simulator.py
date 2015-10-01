@@ -20,64 +20,10 @@ from ..utils.plotting import create_figure
 from .material import MaterialModel, Material
 from .bp import BreakPoint, BreakPointStop as BreakPointStop
 
-from femlib.mesh import SingleElementMesh3D
-from femlib.data import Step, StepRepository, FieldOutputs
-from femlib.fileio import File
-
 EPS = np.finfo(np.float).eps
 
 __all__ = ['MaterialPointSimulator', 'StrainStep', 'StressStep', 'MixedStep',
            'DefGradStep', 'DisplacementStep', 'piecewise_linear']
-
-class Record:
-    def __init__(self, name, rtype, dtype='f4', invariants=None, keys=None):
-        self.name = name
-        self.rtype = rtype
-        self.dtype = dtype
-        self.invariants = invariants
-        keys = keys or []
-        self.shape = {SCALAR: 1,
-                      ARRAY: (len(keys),),
-                      VECTOR: (3,),
-                      TENSOR_3D_FULL: (9,),
-                      TENSOR_3D: (6,)}[self.rtype]
-
-        if rtype == SCALAR:
-            self.keys = [self.name]
-        elif rtype == ARRAY:
-            self.keys = [x for x in keys]
-        else:
-            if rtype == VECTOR:
-                components = ('X', 'Y', 'Z')
-            elif rtype == TENSOR_3D:
-                components = ('XX', 'YY', 'ZZ', 'XY', 'YZ', 'XZ')
-            elif rtype == TENSOR_3D_FULL:
-                components = ('XX', 'XY', 'XZ',
-                              'YX', 'YY', 'YZ',
-                              'ZX', 'ZY', 'ZZ')
-            self.keys = ['%s.%s' % (self.name, x) for x in components]
-
-class Records(OrderedDict):
-    _i = 0
-    @property
-    def num_rec(self):
-        return len(super(Records, self).keys())
-    def add(self, name, rtype, **kw):
-        fo = Record(name, rtype, **kw)
-        self[name] = fo
-    def keys(self, expand=False):
-        if not expand:
-            return super(Records, self).keys()
-        return [key for f in self.values() for key in f.keys]
-    def init(self, n):
-        dtype = [(r.name, r.dtype, r.shape) for r in self.values()]
-        self.data = np.empty((n,), dtype=dtype)
-    def update(self, **kw):
-        def totuple(a):
-            try: return tuple(a)
-            except TypeError: return a
-        self.data[self._i] = tuple([totuple(kw[key]) for key in self.keys()])
-        self._i += 1
 
 class MaterialPointSimulator(object):
     def __init__(self, job, verbosity=None, d=None,
@@ -88,8 +34,7 @@ class MaterialPointSimulator(object):
         self.job = job
         self.bp = None
 
-        if output is not None:
-            pass
+        self.output_format = output or REC
 
         self.verbosity = verbosity
         self.initial_temperature = initial_temperature
@@ -98,14 +43,13 @@ class MaterialPointSimulator(object):
         d = d or os.getcwd()
         environ.simulation_dir = d
         self.directory = environ.simulation_dir
-	self.title = 'matmodlab single element simulation'
+        self.filename = None
 
         # basic logger
         logfile = os.path.join(environ.simulation_dir, self.job + '.log')
         logger = setup_logger('matmodlab.mmd.simulator', logfile,
                               verbosity=verbosity)
 
-        self.mesh = SingleElementMesh3D()
         self.steps = StepRepository()
         p = {'temperature': initial_temperature}
         self.steps['Step-0'] = InitialStep('Step-0', **p)
@@ -114,11 +58,9 @@ class MaterialPointSimulator(object):
         logger.info('Setting up simulator for job {0!r}'.format(job))
 
     def __getattr__(self, key):
-        if key.lower() == 'time':
-            return np.asarray([f.value for step in self.steps.values()
-                               for f in step.frames])
+        return self._get_var_time(key)
         try:
-            return self.get_var_time(key)
+            return self._get_var_time(key)
         except:
             raise AttributeError('{0!r} object has no attribute '
                                  '{1!r}'.format(self.__class__, key))
@@ -151,13 +93,13 @@ class MaterialPointSimulator(object):
     def initial_stress(self, value):
         self.istress = value
         self.steps['Step-0'].components = value
-        self.steps['Step-0'].descriptors = [4] * NUM_TENSOR_3D
+        self.steps['Step-0'].descriptors = [4] * TENSOR_3D
 
     def InitialStress(self, components, scale=1.):
         try:
-            if len(components) > NUM_TENSOR_3D:
+            if len(components) > TENSOR_3D:
                 raise MatModLabError('expected stress to have at most {0}'
-                                     ' components '.format(NUM_TENSOR_3D))
+                                     ' components '.format(TENSOR_3D))
         except TypeError:
             # scalar -> pressure
             components = [components]
@@ -168,7 +110,7 @@ class MaterialPointSimulator(object):
             Sij = -components[0]
             components = np.array([Sij, Sij, Sij, 0., 0., 0.], dtype=np.float64)
 
-        N = NUM_TENSOR_3D - len(components)
+        N = TENSOR_3D - len(components)
         components = np.append(components, [0.] * N)
         self.initial_stress = components
 
@@ -238,7 +180,7 @@ class MaterialPointSimulator(object):
     def write_summary(self):
 
         # Write info to log file
-        L = max(max(len(n) for n in self.field_outputs), 10)
+        L = max(max(len(n) for n in self.records), 10)
         param_names = self.material.parameter_names
         self.param_vals = np.array(self.material.parameters)
         iparam_vals = self.material.initial_parameters
@@ -253,7 +195,7 @@ class MaterialPointSimulator(object):
 
         # write out plotable data
         logging.getLogger('matmodlab.mmd.simulator').debug('Field Variables:')
-        for key in self.field_outputs:
+        for key in self.records.keys():
             logging.getLogger('matmodlab.mmd.simulator').debug('  ' + key)
 
         num_frames = sum([len(s.frames) for s in self.steps.values()])
@@ -291,50 +233,26 @@ Material: {5}
 
 	# register variables
         self._time = 0.
-        self.field_outputs = FieldOutputs()
-        self.field_outputs.add('U', VECTOR, NODE, self.mesh)
-        self.field_outputs.add('S', TENSOR_3D, ELEMENT, self.mesh,
-                               valid_invariants=(MISES, PRES))
-        self.field_outputs.add('E', TENSOR_3D, ELEMENT, self.mesh,
-                               valid_invariants=(EQ, V))
-        self.field_outputs.add('F', TENSOR_3D_FULL, ELEMENT, self.mesh)
-        self.field_outputs.add('D', TENSOR_3D, ELEMENT, self.mesh)
-        self.field_outputs.add('DS', TENSOR_3D, ELEMENT, self.mesh)
-        self.field_outputs.add('EF', VECTOR, ELEMENT, self.mesh)
-        self.field_outputs.add('T', SCALAR, ELEMENT, self.mesh)
-
-        if target is not None:
-            self.field_outputs.add('EET', TENSOR_3D, ELEMENT, self.mesh)
-            self.field_outputs.add('EPT', TENSOR_3D, ELEMENT, self.mesh)
-
-        # material variables
-        if self.material.sdv_keys:
-            self.field_outputs.add('SDV', ARRAY, ELEMENT, self.mesh,
-                                   component_labels=self.material.sdv_keys)
-
-        if target is not None:
-            self.field_outputs.add('EET', TENSOR_3D, ELEMENT, self.mesh)
-            self.field_outputs.add('EPT', TENSOR_3D, ELEMENT, self.mesh)
-
         self.records = Records()
         self.records.add('Step', SCALAR, dtype='i4')
         self.records.add('Frame', SCALAR, dtype='i4')
         self.records.add('Time', SCALAR)
         self.records.add('DTime', SCALAR)
-        self.records.add('S', TENSOR_3D, invariants=(MISES, PRES))
-        self.records.add('E', TENSOR_3D, invariants=(EQ, V))
+        self.records.add('S', TENSOR_3D)
+        self.records.add('E', TENSOR_3D)
         self.records.add('F', TENSOR_3D_FULL)
         self.records.add('D', TENSOR_3D)
         self.records.add('DS', TENSOR_3D)
         self.records.add('EF', VECTOR)
         self.records.add('T', SCALAR)
 
-        if self.material.sdv_keys:
-            self.records.add('SDV', ARRAY, keys=self.material.sdv_keys)
-
         if target is not None:
             self.records.add('EET', TENSOR_3D)
             self.records.add('EPT', TENSOR_3D)
+
+        # Adding SDVs **MUST** be last
+        if self.material.sdv_keys:
+            self.records.add('SDV', SDV, keys=self.material.sdv_keys)
 
         num_frames = sum([len(s.frames) for s in self.steps.values()])
         self.records.init(num_frames)
@@ -360,7 +278,9 @@ Material: {5}
             self.finish()
 
     def finish(self):
-        self.dump()
+        self.records.finalize()
+        if not environ.notebook:
+            self.dump()
 
     def run_steps(self, termination_time=None, target=None):
 
@@ -384,7 +304,8 @@ Material: {5}
             eet, ept = np.array(Z6), np.array(Z6)
 
         steps = self.steps.values()
-        for step in steps:
+        for (i, step) in enumerate(steps):
+            step.num = i
             self.run_step(step, t, strain, F, stress, statev,
                           temp, efield, time_0, eet, ept, target=target,
                           termination_time=termination_time)
@@ -400,40 +321,89 @@ Material: {5}
         return
 
     def dump(self, format=None, ffmt='%.18f'):
-        filename = os.path.join(self.directory, self.job)
-        if format is None:
-            self.records.data.dump(filename + '.p')
+        output_format = format
+        if output_format is None:
+            output_format = self.output_format
+        ext = '.' + output_format
+        self.filename = os.path.join(self.directory, self.job + ext)
+        if output_format == REC:
+            self.records.data.dump(self.filename)
+        elif output_format in (TXT, CSV):
+            if output_format == CSV:
+                sep, comments = ',', ''
+            else:
+                sep, comments = ' ', '#'
+            names = sep.join(self.records.keys(expand=1))
+            data = rec2arr(self.records.data)
+            np.savetxt(self.filename, data, header=names, delimiter=sep,
+                       comments=comments)
         else:
-            names = self.records.keys(expand=1)
-            data = []
-            for row in self.records.data:
-                data.append(row.flatten())
-            data = np.array(data)
+            raise NotImplentedError
 
-    def get_var_time(self, var):
-        return self.steps.get_field_output_history(var, 1)
+    def _get_var_time(self, var):
+        if var == 'SDV':
+            # Retrieve all SDVs from the record
+            keys = [x for x in self.records.data.dtype.names
+                    if x.startswith('SDV_')]
+            a = rec2arr(self.records.data[keys])
+            names = [x.replace('SDV_', '').strip() for x in keys]
+        else:
+            a = self.records.data[var]
+            if a.ndim == 1:
+                return a
+            names = COMPONENT_LABELS(a.shape[1])
+        return attrarr(a, names)
 
     def get(self, *variables, **kwargs):
         disp = kwargs.pop('disp', 0)
+        at_step = kwargs.get('at_step', 0)
+        nn = None
+        if at_step:
+            steps, nn = np.unique(self.records.data['Step'], return_index=True)
+
         if not variables:
-            variables = None
-        data = loadfile(self.filename, variables=variables, disp=disp, **kwargs)
-        # TJF: what is this if-statement for? I added the bit about variables!=None
-        if variables is not None and len(variables) == 1:
-            data = data.flatten()
+            names = self.records.keys(expand=1)
+            data = rec2arr(self.records.data, rows=nn)
+            if disp:
+                return names, data
+            return data
+
+        # get the specific variables
+        names = [x.split('.', 1) if not x.startswith('SDV_') else [x]
+                 for x in variables if not x.startswith('SDV_')]
+        data = []
+        for item in names:
+            a = np.array(self.records.data[item[0]])
+            if len(item) == 2:
+                a = a[:, COMPONENT(item[1], a.shape[1])]
+            elif len(item) > 2:
+                raise ValueError('expected at most one attribute lookup')
+            if nn is not None:
+                a = a[nn]
+            data.append(a)
+
+        if len(data) == 1 and data[0].ndim == 1:
+            data = data[0].flatten()
+
+        if disp < 0:
+            return np.column_stack(data)
+
+        elif disp:
+            return variables, np.column_stack(data)
+
         return data
 
     def plot(self, xvar, yvar, legend=None, label=None, scale=None, **kwargs):
 
-        points = self.get(xvar, yvar)
+        xp, yp = self.get(xvar, yvar)
 
         if scale is not None:
             try:
                 xs, ys = scale
             except ValueError:
                 xs = ys = scale
-            points[:,0] *= xs
-            points[:,1] *= ys
+            xp *= xs
+            yp *= ys
 
         if environ.plotter == BOKEH:
             kwds = dict(kwargs)
@@ -442,14 +412,14 @@ Material: {5}
                 kwds['legend'] = legend
             if plot is None:
                 plot = create_figure(x_axis_label=xvar, y_axis_label=yvar)
-            plot.line(points[:,0], points[:,1], **kwds)
+            plot.line(xp, yp, **kwds)
             return plot
 
         else:
             import matplotlib.pyplot as plt
             if legend:
                 kwargs['label'] = label or legend
-            plt.plot(points[:,0], points[:,1], **kwargs)
+            plt.plot(xp, yp, **kwargs)
             plt.xlabel(xvar)
             plt.ylabel(yvar)
             if environ.notebook:
@@ -469,41 +439,13 @@ Material: {5}
             return
         errors = 0
         for name in self.bp.names:
-            if name.upper() not in ['TIME'] + self.field_outputs.keys(expand=1):
+            if name.upper() not in ['TIME'] + self.records.keys(expand=1):
                 errors += 1
                 logging.getLogger('matmodlab.mmd.simulator').error(
                     'break point variable {0} not a '
                     'simulation variable'.format(name))
         if errors:
             raise MatModLabError('stopping due to previous errors')
-
-    def update(self, frame, **kwargs):
-
-        for (key, data) in kwargs.items():
-            name = key.upper()
-            if name == 'SDV' and not self.material.sdv_keys:
-                continue
-            try:
-                fo = self.field_outputs[name]
-            except KeyError as e:
-                if name in ('EPT', 'EET'):
-                    continue
-                raise e
-            frame.FieldOutput(name, fo.type, fo.position, fo.mesh_instance,
-                              component_labels=fo.component_labels,
-                              valid_invariants=fo.valid_invariants)
-            if fo.position == ELEMENT:
-                frame.field_outputs[name].add_data(self.mesh.elements, [data])
-            else:
-                frame.field_outputs[name].add_data(self.mesh.nodes, data)
-
-        kwargs['Step'] = 0
-        kwargs['Frame'] = 0
-        kwargs['Time'] = frame.value
-        kwargs['DTime'] = frame.increment
-        self.records.update(**kwargs)
-
-        return
 
     def run_step(self, step, time, strain, F, stress, statev, temp,
                 efield, time_0, eet, ept, target=None, termination_time=None):
@@ -637,17 +579,11 @@ Material: {5}
             temp[2] = a1 * temp[0] + a2 * temp[1]
             statev[0] = statev[1]
 
-            # update node displacement
-            u = np.empty((self.mesh.num_node, self.mesh.dimension))
-            ff = np.reshape(F[0], (self.mesh.dimension, self.mesh.dimension))
-            for (i, x) in enumerate(self.mesh.vertices):
-                u[i, :] = np.dot(ff, x)
-
             # --- update the state
-            self.update(frame, E=strain[2]/VOIGHT, F=F[1], U=u,
-                        D=d/VOIGHT, DS=dstress, S=stress[2],
-                        SDV=statev[1], T=temp[2], EF=efield[2],
-                        EPT=ept, EET=eet)
+            self.records.update(Step=step.num, Frame=frame.num,
+                 Time=frame.value, DTime=frame.increment,
+                 E=strain[2]/VOIGHT, F=F[1], D=d/VOIGHT, DS=dstress, S=stress[2],
+                 SDV=statev[1], T=temp[2], EF=efield[2], EPT=ept, EET=eet)
 
             if iframe > 1 and nv and not warned:
                 sigmag = np.sqrt(np.sum(stress[2,v] ** 2))
@@ -950,6 +886,27 @@ def _func(x, material, t, dt, temp, dtemp, kappa, f0, farg, stran, darg,
 class StopSteps(Exception):
     pass
 
+class StepRepository(OrderedDict):
+    def Step(self, name):
+        self[name] = Step(name)
+        return self[name]
+
+class Step(object):
+    def __init__(self, name):
+        self.name = name
+        self.frames = []
+
+    def Frame(self, time, increment):
+        self.frames.append(Frame(len(self.frames)+1, time, increment))
+        return self.frames[-1]
+
+class Frame:
+    def __init__(self, num, time, increment):
+        self.num = num
+        self.time = time
+        self.increment = increment
+        self.value = time + increment
+
 class AnalysisStep(Step):
 
     def __init__(self, kind, name, previous, increment,
@@ -965,7 +922,7 @@ class AnalysisStep(Step):
         self.kind = kind
         self.previous = previous
         self.components = components
-        assert len(descriptors) == NUM_TENSOR_3D
+        assert len(descriptors) == TENSOR_3D
         assert not([x for x in descriptors if x not in (1, 2, 3, 4)])
         self.descriptors = descriptors
 
@@ -1030,8 +987,8 @@ def InitialStep(name, kappa=0., temperature=None):
     previous = namedtuple('previous', 'value')(value=0.)
     num_dumps = None
 
-    components = np.zeros(NUM_TENSOR_3D, dtype=np.float64)
-    descriptors = np.array([2] * NUM_TENSOR_3D, dtype=np.int)
+    components = np.zeros(TENSOR_3D, dtype=np.float64)
+    descriptors = np.array([2] * TENSOR_3D, dtype=np.int)
 
     return AnalysisStep('InitialStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature,
@@ -1042,11 +999,11 @@ def StrainStep(name, previous, components=None, frames=None, scale=1.,
                  num_dumps=None):
 
     if components is None:
-        components = np.zeros(NUM_TENSOR_3D)
+        components = np.zeros(TENSOR_3D)
 
-    if len(components) > NUM_TENSOR_3D:
+    if len(components) > TENSOR_3D:
         raise MatModLabError('expected strain to have at most {0} '
-                             'components on Step {1}'.format(NUM_TENSOR_3D, name))
+                             'components on Step {1}'.format(TENSOR_3D, name))
     components = np.array(components) * scale
     if kappa is None:
         kappa = previous.kappa
@@ -1066,14 +1023,14 @@ def StrainStep(name, previous, components=None, frames=None, scale=1.,
 
         components = np.array([eij, eij, eij, 0., 0., 0.], dtype=np.float64)
 
-    N = NUM_TENSOR_3D - len(components)
+    N = TENSOR_3D - len(components)
     components = np.append(components, [0.] * N)
     bad = np.where(kappa * components + 1. < 0.)
     if np.any(bad):
         idx = str(bad[0])
         raise MatModLabError('1 + kappa*E[{0}] must be positive'.format(idx))
 
-    descriptors = np.array([2] * NUM_TENSOR_3D, dtype=np.int)
+    descriptors = np.array([2] * TENSOR_3D, dtype=np.int)
 
     return AnalysisStep('StrainStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
@@ -1084,11 +1041,11 @@ def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
                    num_dumps=None):
 
     if components is None:
-        components = np.zeros(NUM_TENSOR_3D)
+        components = np.zeros(TENSOR_3D)
 
-    if len(components) > NUM_TENSOR_3D:
+    if len(components) > TENSOR_3D:
         raise MatModLabError('expected strain rate to have at most {0} '
-                             'components on Step {1}'.format(NUM_TENSOR_3D, name))
+                             'components on Step {1}'.format(TENSOR_3D, name))
     components = np.array(components) * scale
 
     if kappa is None:
@@ -1107,9 +1064,9 @@ def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
 
         components = np.array([deij, deij, deij, 0., 0., 0.], dtype=np.float64)
 
-    N = NUM_TENSOR_3D - len(components)
+    N = TENSOR_3D - len(components)
     components = np.append(components, [0.] * N)
-    descriptors = np.array([1] * NUM_TENSOR_3D, dtype=np.int)
+    descriptors = np.array([1] * TENSOR_3D, dtype=np.int)
 
     return AnalysisStep('StrainRateStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
@@ -1122,10 +1079,10 @@ def StressStep(name, previous, components=None, frames=None, scale=1.,
     kappa = 0.
 
     if components is None:
-        components = np.zeros(NUM_TENSOR_3D)
-    if len(components) > NUM_TENSOR_3D:
+        components = np.zeros(TENSOR_3D)
+    if len(components) > TENSOR_3D:
         raise MatModLabError('expected stress to have at most {0} '
-                             'components on Step {1}'.format(NUM_TENSOR_3D, name))
+                             'components on Step {1}'.format(TENSOR_3D, name))
 
     components = np.array(components) * scale
     if len(components) == 1:
@@ -1133,9 +1090,9 @@ def StressStep(name, previous, components=None, frames=None, scale=1.,
         Sij = -components[0]
         components = np.array([Sij, Sij, Sij, 0., 0., 0.], dtype=np.float64)
 
-    N = NUM_TENSOR_3D - len(components)
+    N = TENSOR_3D - len(components)
     components = np.append(components, [0.] * N)
-    descriptors = np.array([4] * NUM_TENSOR_3D, dtype=np.int)
+    descriptors = np.array([4] * TENSOR_3D, dtype=np.int)
 
     return AnalysisStep('StressStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
@@ -1147,10 +1104,10 @@ def StressRateStep(name, previous, components=None, frames=None, scale=1.,
 
     kappa = 0.
     if components is None:
-        components = np.zeros(NUM_TENSOR_3D)
-    if len(components) > NUM_TENSOR_3D:
+        components = np.zeros(TENSOR_3D)
+    if len(components) > TENSOR_3D:
         raise MatModLabError('expected stress to have at most {0} '
-                             'components on Step {1}'.format(NUM_TENSOR_3D, name))
+                             'components on Step {1}'.format(TENSOR_3D, name))
 
     components = np.array(components) * scale
     if len(components) == 1:
@@ -1159,9 +1116,9 @@ def StressRateStep(name, previous, components=None, frames=None, scale=1.,
         descriptors = np.array([3, 3, 3, 2, 2, 2], dtype=np.int)
         components = np.array([Sij, Sij, Sij, 0., 0., 0.], dtype=np.float64)
 
-    N = NUM_TENSOR_3D - len(components)
+    N = TENSOR_3D - len(components)
     components = np.append(components, [0.] * N)
-    descriptors = np.array([3] * NUM_TENSOR_3D, dtype=np.int)
+    descriptors = np.array([3] * TENSOR_3D, dtype=np.int)
 
     return AnalysisStep('StressRateStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
@@ -1186,7 +1143,7 @@ def DisplacementStep(name, previous, components=None, frames=None, scale=1.,
     Uij = np.zeros((3, 3))
     Uij[DI3] = components[:3] + 1.
     components = mml.u2e(Uij, kappa, 1)
-    descriptors = np.array([2] * NUM_TENSOR_3D, dtype=np.int)
+    descriptors = np.array([2] * TENSOR_3D, dtype=np.int)
 
     return AnalysisStep('DisplacementStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
@@ -1220,7 +1177,7 @@ def DefGradStep(name, previous, components=None, frames=None, scale=1.,
                              'not yet supported)')
     Uij = np.dot(Rij.T, np.dot(Vij, Rij))
     components = mml.u2e(Uij, kappa)
-    descriptors = np.array([2] * NUM_TENSOR_3D, dtype=np.int)
+    descriptors = np.array([2] * TENSOR_3D, dtype=np.int)
 
     return AnalysisStep('DefGradStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
@@ -1231,14 +1188,14 @@ def MixedStep(name, previous, components=None, descriptors=None,
               elec_field=None, num_dumps=None):
 
     if components is None:
-        components = np.zeros(NUM_TENSOR_3D)
+        components = np.zeros(TENSOR_3D)
 
-    if len(components) > NUM_TENSOR_3D:
+    if len(components) > TENSOR_3D:
         raise MatModLabError('expected stress to have at most {0} '
-                             'components on Step {1}'.format(NUM_TENSOR_3D, name))
+                             'components on Step {1}'.format(TENSOR_3D, name))
 
     if descriptors is None:
-        descriptors = [2] * NUM_TENSOR_3D
+        descriptors = [2] * TENSOR_3D
 
     bad = []
     d = {'D': 1, 'E': 2, 'R': 3, 'S': 4}
@@ -1268,9 +1225,9 @@ def MixedStep(name, previous, components=None, descriptors=None,
         scale = [scale] * len(components)
     scale = np.array(scale)
     components = np.array(components) * scale
-    N = NUM_TENSOR_3D - len(components)
+    N = TENSOR_3D - len(components)
     components = np.append(components, [0.] * N)
-    descriptors = np.append(descriptors, [2] * (NUM_TENSOR_3D - len(descriptors)))
+    descriptors = np.append(descriptors, [2] * (TENSOR_3D - len(descriptors)))
 
     bad = np.where(kappa*components[np.where(descriptors==2)]+1.<0.)
     if np.any(bad):
@@ -1384,7 +1341,7 @@ def GenSteps(step_class, name, previous, components, amplitude, increment,
              nsteps, temperature, **kwargs):
 
     if components is None:
-        components = [1.] * NUM_TENSOR_3D
+        components = [1.] * TENSOR_3D
     components = np.array(components)
     nc = len(components)
 
@@ -1450,3 +1407,89 @@ def piecewise_linear(xp, fp):
     def interp(x):
         return np.interp(x, xp, fp)
     return interp
+
+def flatten(a):
+    flat = []
+    for x in a:
+        try: flat.extend(x)
+        except TypeError: flat.append(x)
+    return flat
+
+def rec2arr(recarr, rows=None):
+    arr = []
+    for row in recarr:
+        arr.append(flatten(row.tolist()))
+    arr = np.array(arr)
+    if rows is not None:
+        arr = arr[rows]
+    return arr
+
+class attrarr(np.ndarray):
+    """Subclass an ndarray to return attributes stored as the array columns"""
+    def __new__(cls, arr, names):
+        obj = np.asarray(arr).view(cls)
+        obj.names = dict((s, i) for (i, s) in enumerate(names))
+        return obj
+    def __getattr__(self, key):
+        if key not in self.names:
+            raise AttributeError(key)
+        idx = self.names[key]
+        return self[:,idx]
+    def __array_finalize__(self, obj):
+        self.names = getattr(obj, "names", None)
+
+class Record:
+    def __init__(self, name, rtype, dtype='f4', keys=None):
+        self.name = name
+        self.rtype = rtype
+        self.dtype = dtype
+        keys = keys or []
+        self.shape = {SCALAR: 1,
+                      SDV: (len(keys),),
+                      VECTOR: (3,),
+                      TENSOR_3D_FULL: (9,),
+                      TENSOR_3D: (6,)}[self.rtype]
+
+        if rtype == SCALAR:
+            self.keys = [self.name]
+        elif rtype == SDV:
+            self.keys = ['SDV_%s' % x for x in keys]
+        else:
+            components = COMPONENT_LABELS(rtype)
+            self.keys = ['%s.%s' % (self.name, x) for x in components]
+
+class Records(OrderedDict):
+    _i = 0
+    @property
+    def num_rec(self):
+        return len(super(Records, self).keys())
+    def add(self, name, rtype, **kw):
+        if rtype == SDV:
+            keys = kw['keys']
+            for key in keys:
+                self.add('SDV_%s'%key, SCALAR)
+        else:
+            fo = Record(name, rtype, **kw)
+            self[name] = fo
+    def keys(self, expand=0):
+        if expand < 0:
+            return [x for x in super(Records, self).keys()
+                    if not x.startswith('SDV_')]
+        elif not expand:
+            return super(Records, self).keys()
+        return [key for f in self.values() for key in f.keys]
+    def init(self, n):
+        dtype = [(r.name, r.dtype, r.shape) for r in self.values()]
+        self.data = np.empty((n,), dtype=dtype)
+    def update(self, **kw):
+        def totuple(a):
+            try: return tuple(a)
+            except TypeError: return a
+        sdv = kw.pop('SDV', None)
+        row = [totuple(kw[key]) for key in self.keys(expand=-1)]
+        if sdv is not None:
+            row.extend(sdv)
+        self.data[self._i] = tuple(row)
+        self._i += 1
+    def finalize(self):
+        self.data = np.array(self.data[:self._i])

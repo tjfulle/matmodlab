@@ -169,7 +169,7 @@ class TestOptimization(StandardMatmodlabTest):
 
 def opt_pres_v_evol(outf):
 
-    vars_to_get = ('TIME', 'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ')
+    vars_to_get = ('Time', 'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ')
 
     # read in baseline data
     aux = join(this_directory, 'opt.base_dat')
@@ -200,7 +200,7 @@ def opt_pres_v_evol(outf):
     return error
 
 def opt_sig_v_time(outf):
-    vars_to_get = ('TIME', 'S.XX', 'S.YY', 'S.ZZ')
+    vars_to_get = ('Time', 'S.XX', 'S.YY', 'S.ZZ')
 
     # read in baseline data
     auxf = join(this_directory, 'opt.base_dat')

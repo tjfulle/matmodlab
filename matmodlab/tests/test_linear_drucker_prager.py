@@ -29,7 +29,7 @@ class TestLinearDruckerPrager(StandardMatmodlabTest):
         head, data = gen_spherical_everything(K, MU, RINT, ZINT)
         i = head.index('E.XX')
         j = head.index('E.XX') + 6
-        t = head.index('TIME')
+        t = head.index('Time')
         for (k, row) in enumerate(data[1:], start=1):
             dt = data[k][t] - data[k-1][t]
             mps.StrainStep(components=row[i:j], increment=dt, frames=1)
@@ -45,7 +45,7 @@ class TestLinearDruckerPrager(StandardMatmodlabTest):
     @pytest.mark.analytic
     @pytest.mark.parametrize('realization', range(1,4))
     def test_random_linear_drucker_prager(self, realization):
-        myvars = ('TIME', 'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ')
+        myvars = ('Time', 'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ')
         job = 'linear_drucker_prager_rand_{0}'.format(realization)
         mps = MaterialPointSimulator(job, verbosity=0, d=this_directory)
         nu, E, K, G, LAM = gen_rand_elastic_params()
@@ -61,7 +61,8 @@ class TestLinearDruckerPrager(StandardMatmodlabTest):
             for row in analytic:
                 fh.write(''.join(['{0:20.10e}'.format(_) for _ in row]) + '\n')
         mps.run()
-        simulation = mps.get(*myvars)
+        kw = {'disp': -1}
+        simulation = mps.get(*myvars, **kw)
         fh = open(join(this_directory, mps.job + '.difflog'), 'w')
         fh.write('Comaring outputs\n')
         fh.write('  DIFFTOL = {0:.5e}\n'.format(difftol))
@@ -186,7 +187,7 @@ def gen_spherical_everything(K, MU, RINT, ZINT):
     pathtable = [[0.0, 0.0, 0.0,  ES, 0.0, 0.0],
                  [ EV,  EV,  EV,  ES, 0.0, 0.0]]
 
-    head = (["TIME"] + ["E." + _ for _ in ["XX","YY","ZZ","XY","XZ","YZ"]]
+    head = (["Time"] + ["E." + _ for _ in ["XX","YY","ZZ","XY","XZ","YZ"]]
                      + ["S." + _ for _ in ["XX","YY","ZZ","XY","XZ","YZ"]]
                      + ["N." + _ for _ in ["XX","YY","ZZ","XY","XZ","YZ"]]
                      + ["P." + _ for _ in ["XX","YY","ZZ","XY","XZ","YZ"]])

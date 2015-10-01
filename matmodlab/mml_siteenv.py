@@ -51,6 +51,8 @@ class Environment(object):
 
     simulation_dir = None
 
+    plotter = MATPLOTLIB
+
     # For the gui
     capture_model = 0
     gui_mode = False

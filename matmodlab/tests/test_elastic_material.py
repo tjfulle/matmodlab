@@ -5,6 +5,8 @@ from matmodlab.utils.fileio import loadfile
 try: import matmodlab.lib.elastic as el
 except ImportError: el = None
 
+KW = {'disp': -1}
+
 @pytest.mark.material
 @pytest.mark.elastic
 class TestElasticMaterial(StandardMatmodlabTest):
@@ -26,23 +28,10 @@ class TestElasticMaterial(StandardMatmodlabTest):
         mps.run()
         H = self.K + 4. / 3. * self.G
         Q = self.K - 2. / 3. * self.G
-        out = mps.get('E.XX', 'S.XX', 'S.YY', 'S.ZZ')
-        for row in out:
-
-            eps_ax, sig_ax, sig_lat1, sig_lat2 = row
-
-            # lateral stresses equal
-            diff = abs(sig_lat2 - sig_lat1)
-            assert diff <= 1.e-10
-
-            # axial stress
-            diff = sig_ax - H * eps_ax
-            assert abs(diff) / H <= 1.e-10
-
-            # lateral stress
-            diff = sig_lat1 - Q * eps_ax
-            assert abs(diff) / Q <= 1.e-10
-
+        exx, sxx, syy, szz = mps.get('E.XX', 'S.XX', 'S.YY', 'S.ZZ')
+        assert np.allclose(syy, szz)
+        assert np.allclose(sxx, H * exx)
+        assert np.allclose(syy, Q * exx)
         self.completed_jobs.append(mps.job)
 
     @pytest.mark.skipif(el is None, reason='elastic model not imported')
@@ -57,14 +46,12 @@ class TestElasticMaterial(StandardMatmodlabTest):
         for c in pathtable:
             mps.MixedStep(components=c, frames=50, scale=-1.e6, descriptors='SSS')
         mps.run()
-        out = mps.get('E.XX', 'S.XX', 'S.YY', 'S.ZZ')
+        exx, sxx, syy, szz = mps.get('E.XX', 'S.XX', 'S.YY', 'S.ZZ')
         E = 9. * self.K * self.G / (3. * self.K + self.G)
-        for row in out:
-            diff = E * row[0] - row[1]
-            assert abs(diff) / E <= 1.e-12
-            assert abs(row[2]) / E <= 1.e-12
-            assert abs(row[3]) / E <= 1.e-12
-
+        assert np.allclose(sxx, E * exx)
+        print sxx - E*exx
+        assert np.allclose(syy, 1e-8)
+        assert np.allclose(szz, 1e-8)
         self.completed_jobs.append(mps.job)
 
     @pytest.mark.skipif(el is None, reason='elastic model not imported')
@@ -79,20 +66,18 @@ class TestElasticMaterial(StandardMatmodlabTest):
         for c in pathtable:
             mps.MixedStep(components=c, frames=250, descriptors='SSS')
         mps.run()
-        out = mps.get('E.XX', 'E.YY', 'E.ZZ', 'S.XX')
+        exx, eyy, ezz, sxx = mps.get('E.XX', 'E.YY', 'E.ZZ', 'S.XX')
         H = self.K + 4. / 3. * self.G
-        for row in out:
-            assert abs(row[1]) <= 1.e-7
-            assert abs(row[2]) <= 1.e-7
-            diff = H * row[0] - row[3]
-            assert diff / H <= 1.e-12
+        assert np.allclose(sxx, H * exx, atol=1e-6, rtol=1e-6)
+        assert np.allclose(eyy, 1e-7)
+        assert np.allclose(ezz, 1e-7)
         self.completed_jobs.append(mps.job)
 
     @pytest.mark.parametrize('realization', range(1,4))
     def test_random_linear_elastic(self, realization):
         difftol = 5.e-08
         failtol = 1.e-07
-        myvars = ('TIME',
+        myvars = ('Time',
                   'E.XX', 'E.YY', 'E.ZZ', 'E.XY', 'E.YZ', 'E.XZ',
                   'S.XX', 'S.YY', 'S.ZZ', 'S.XY', 'S.YZ', 'S.XZ')
 
@@ -110,7 +95,7 @@ class TestElasticMaterial(StandardMatmodlabTest):
         parameters = {'K': K, 'G': G}
         mps.Material('pyelastic', parameters)
         mps.run()
-        simulation = mps.get(*myvars)
+        simulation = mps.get(*myvars, **KW)
         fh = open(join(this_directory, mps.job + '.difflog'), 'w')
         fh.write('Comaring outputs\n')
         fh.write('  DIFFTOL = {0:.5e}\n'.format(difftol))
@@ -214,8 +199,8 @@ class TestElasticMaterial(StandardMatmodlabTest):
         ahead, analytic = loadfile(solfile)
         shead, simulation = mps.get(disp=1)
 
-        tdxa = ahead.index('TIME') # time index for analytic solution
-        tdxs = shead.index('TIME') # time index for simulate solution
+        tdxa = ahead.index('Time') # time index for analytic solution
+        tdxs = shead.index('Time') # time index for simulate solution
         T = analytic[:, tdxa]
         t = simulation[:, tdxs]
 
@@ -226,7 +211,7 @@ class TestElasticMaterial(StandardMatmodlabTest):
 
         stats = []
         for varname in shead:
-            if varname == 'TIME' or varname not in ahead:
+            if varname == 'Time' or varname not in ahead:
                 continue
             idxa = ahead.index(varname) # variable index for analytic solution
             idxs = shead.index(varname) # variable index for simulate solution
@@ -334,7 +319,7 @@ def generate_solution(solfile, N):
     #
     # Write the output
     #
-    headers = ['TIME',
+    headers = ['Time',
                'E.XX', 'E.YY', 'E.ZZ', 'E.XY', 'E.YZ', 'E.XZ',
                'S.XX', 'S.YY', 'S.ZZ', 'S.XY', 'S.YZ', 'S.XZ',
                'F.XX', 'F.XY', 'F.XZ',

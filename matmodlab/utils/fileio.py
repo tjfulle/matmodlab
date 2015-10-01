@@ -8,15 +8,22 @@ from os.path import isfile, splitext, basename, join
 import tabfileio
 
 from .numerix import *
+from ..constants import *
+
 from femlib.fileio import loaddb_single_element
 
 def loadfile(filename, disp=1, skiprows=0, sheet="MML", columns=None,
              comments='#', variables=None, at_step=0, upcase=1):
     db = ('.exo', '.base_exo', '.dbx', '.base_dbx')
     if isinstance(filename, basestring) and filename.endswith(db):
+        #raise ValueError('Matmodlab 3.1 not compatible with file type')
         return loaddb_single_element(filename, variables=variables, disp=disp,
                                      blk_num=1, elem_num=1, at_step=at_step,
                                      upcase=upcase)
+
+    elif isinstance(filename, basestring) and filename.endswith(REC):
+        return loadrec(filename, upcase=upcase, disp=disp, at_step=at_step)
+
     else:
         if columns is not None and variables is not None:
             raise ValueError('columns and variables arguments are exclusive')
@@ -27,6 +34,40 @@ def loadfile(filename, disp=1, skiprows=0, sheet="MML", columns=None,
             columns = [x for x in columns]
         return tabfileio.read_file(filename, columns=columns,
                                    disp=disp, sheet=sheet)
+
+def loadrec(filename, upcase=0, disp=1, at_step=0):
+    data = np.load(filename)
+    names = []
+    for item in data.dtype.descr:
+        # Get the names of each field, expanded to include component
+        try:
+            key, dtype, shape = item
+            keys = ['%s.%s' % (key, ext) for ext in COMPONENT_LABELS(shape[0])]
+        except ValueError:
+            key, dtype = item
+            if key.startswith('SDV_'):
+                key = key.replace('SDV_', 'SDV.')
+            keys = [key]
+        names.extend(keys)
+
+    # convert the data to a normal ndarray
+    data = rec2arr(data)
+
+    if at_step:
+        # Get only the data at the beginning of the step
+        d = [x for x in data[0,:]]
+        step = 0
+        i = names.index('Step')
+        for row in data:
+            if row[i] != step:
+                d.append([x for x in row])
+        data = np.array(d)
+
+    if disp:
+        if upcase:
+            names = [x.upper() for x in names]
+        return names, data
+    return data
 
 def filediff_entry(argv=None):
     if argv is None:
@@ -280,3 +321,16 @@ def filedump(infile, outfile, variables=None, listvars=False, ffmt='%.18f'):
 
     if fown:
         stream.close()
+
+def flatten(a):
+    flat = []
+    for x in a:
+        try: flat.extend(x)
+        except TypeError: flat.append(x)
+    return flat
+
+def rec2arr(recarr):
+    arr = []
+    for row in recarr:
+        arr.append(flatten(row.tolist()))
+    return np.array(arr)

@@ -2,6 +2,8 @@ from testconf import *
 from matmodlab import *
 from matmodlab.mmd.simulator import StrainStep
 
+KW = {'disp': -1}
+
 @pytest.mark.abaqus
 class TestAbaqusModels(StandardMatmodlabTest):
     '''Test the abaqus model wrappers'''
@@ -30,7 +32,7 @@ class TestAbaqusModels(StandardMatmodlabTest):
         mps.MixedStep(components=(1,0,0), descriptors='ESS', frames=10, scale=X)
         mps.MixedStep(components=(0,0,0), descriptors='ESS', frames=10)
         mps.run()
-        a = mps.get(*V0)
+        a = mps.get(*V0, **KW)
 
         # make sure the strain table was interpoloated correctly
         i = argmax(a[:,0])
@@ -67,7 +69,7 @@ class TestAbaqusModels(StandardMatmodlabTest):
         mps.MixedStep(components=(1,0,0), descriptors='ESS', frames=10, scale=X)
         mps.MixedStep(components=(0,0,0), descriptors='ESS', frames=10)
         mps.run()
-        a = mps.get(*V0)
+        a = mps.get(*V0, **KW)
 
         # make sure the strain table was interpoloated correctly
         i = argmax(a[:,0])
@@ -129,7 +131,7 @@ class TestAbaqusModels(StandardMatmodlabTest):
         mps.MixedStep(components=(.2, 0, 0), descriptors='ESS',
                       temperature=500, frames=100)
         mps.run()
-        out = mps.get('T', 'E.XX', 'S.XX')
+        out = mps.get('T', 'E.XX', 'S.XX', **KW)
         for (i, row) in enumerate(out[1:], start=1):
             temp, eps, sig = row
             dtemp = temp - out[0,0]

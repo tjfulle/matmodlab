@@ -20,5 +20,5 @@ mps.MixedStep(components=(0, 0, 0), descriptors='ESS', frames=N)
 # run the simulation
 mps.run()
 
-a = mps.get('SDV.Mises')
+a = mps.get('SDV_Mises')
 S = np.amax(a)

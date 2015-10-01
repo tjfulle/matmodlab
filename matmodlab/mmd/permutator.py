@@ -319,7 +319,7 @@ def run_job(args):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         logger.error("\nRun {0} failed with the following "
                      "exception:\n".format(ps.job_num))
-        traceback.print_exception(exc_type, exc_value, exc_traceback, file=logger)
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
         stat = 1
         resp = [np.nan for _ in range(nresp)] or None
 

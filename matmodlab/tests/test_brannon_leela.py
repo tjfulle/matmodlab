@@ -79,9 +79,10 @@ class TestBrannonLeelavanichkul(StandardMatmodlabTest):
         mps.run()
 
         # check output with analytic
-        variables = ['TIME',
+        variables = ['Time',
                      'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ']
-        simulate_response = mps.get(*variables)
+        kw = {'disp': -1}
+        simulate_response = mps.get(*variables, **kw)
 
         T = analytic_response[:, 0]
         t = simulate_response[:, 0]
