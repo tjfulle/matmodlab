@@ -57,6 +57,9 @@ def diff_data_sets(head1, data1, head2, data2, vars_to_compare,
     """Diff the files
 
     """
+    head1 = [s.upper() for s in head1]
+    head2 = [s.upper() for s in head2]
+
     warn = lambda s: stream.write('***warning: {0}\n'.format(s))
     error = lambda s: stream.write('***error: {0}\n'.format(s))
     info = lambda s, end='\n': stream.write('{0}{1}'.format(s, end))

@@ -38,7 +38,7 @@ class Optimizer(object):
         d = os.path.realpath(d or os.getcwd())
         self.directory = d
         self.rootd = os.path.join(d, job + ".eval")
-        self.output = os.path.join(self.rootd, job + '.xml')
+        self.output = os.path.join(self.rootd, job + '.edb')
 
         if not isinstance(descriptors, (list, tuple)):
             descriptors = [descriptors]

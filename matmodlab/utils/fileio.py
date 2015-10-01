@@ -45,7 +45,8 @@ def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
 
     elif filename.endswith('.%s'%REC):
         # Matmodlab record array pickle
-        return loadrec(filename, upcase=upcase, disp=disp, at_step=at_step)
+        return loadrec(filename, upcase=upcase, disp=disp, at_step=at_step,
+                       columns=columns, variables=variables)
 
     else:
         # ??? -> let tabfileio deal with this extension
@@ -59,6 +60,9 @@ def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
 
 def loadrec(filename, upcase=0, disp=1, at_step=0, variables=None, columns=None):
     """Load a numpy record array stored as a pickle"""
+
+    if columns is not None and variables is not None:
+        raise ValueError('columns and variables keywords are exclusive')
 
     # load the data
     data = np.load(filename)
@@ -77,6 +81,8 @@ def loadrec(filename, upcase=0, disp=1, at_step=0, variables=None, columns=None)
             keys = [key]
         names.extend(keys)
 
+    data = rec2arr(data)
+
     if at_step:
         # Get only the data at the end of the step
         d = {}
@@ -85,8 +91,24 @@ def loadrec(filename, upcase=0, disp=1, at_step=0, variables=None, columns=None)
         rows = [x[-1] for x in sorted(d.values())]
         data = data[rows]
 
-    # convert the data to a normal ndarray
-    data = rec2arr(data)
+    if columns is not None:
+        columns = tolist(columns)
+
+    elif variables is not None:
+        variables = tolist(variables)
+        if names is None:
+            raise ValueError('cannot determine variable column numbers')
+        up = [x.upper() for x in names]
+        columns = []
+        for name in variables:
+            try:
+                columns.append(up.index(name.upper()))
+            except ValueError:
+                raise ValueError('%r not in file' % name)
+
+    if columns:
+        data = data[:, columns]
+        names = [names[i] for i in columns]
 
     if disp:
         if upcase:
@@ -220,7 +242,8 @@ def filediff_entry(argv=None):
     return filediff(args.source1, args.source2, control_file=args.f,
                     interp=args.interp)
 
-def filediff(source1, source2, control_file=None, interp=False, stream=sys.stdout):
+def filediff(source1, source2, control_file=None, interp=False, stream=sys.stdout,
+             adjust_n=0):
 
     errors = 0
     if not isfile(source1):
@@ -237,6 +260,11 @@ def filediff(source1, source2, control_file=None, interp=False, stream=sys.stdou
     stream.write('done\nreading {0}... \n'.format(source2))
     H2, D2 = loadfile(source2)
     stream.write('done\n'.format(source1))
+
+    if adjust_n:
+        m = min(D1.shape[0], D2.shape[0])
+        D1 = D1[:m]
+        D2 = D2[:m]
 
     if control_file is not None:
         if not isfile(control_file):

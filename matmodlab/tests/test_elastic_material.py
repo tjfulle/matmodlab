@@ -48,10 +48,10 @@ class TestElasticMaterial(StandardMatmodlabTest):
         mps.run()
         exx, sxx, syy, szz = mps.get('E.XX', 'S.XX', 'S.YY', 'S.ZZ')
         E = 9. * self.K * self.G / (3. * self.K + self.G)
-        assert np.allclose(syy, 1e-8)
-        assert np.allclose(szz, 1e-8)
-        sys.stderr.write(str(sxx-E*exx))
-        assert np.allclose(sxx, E * exx)
+        assert np.allclose(syy, 0)
+        assert np.allclose(szz, 0)
+        diff = (sxx - E * exx) / E
+        assert max(abs(diff)) < 1e-10
         self.completed_jobs.append(mps.job)
 
     @pytest.mark.skipif(el is None, reason='elastic model not imported')
@@ -67,10 +67,11 @@ class TestElasticMaterial(StandardMatmodlabTest):
             mps.MixedStep(components=c, frames=250, descriptors='SSS')
         mps.run()
         exx, eyy, ezz, sxx = mps.get('E.XX', 'E.YY', 'E.ZZ', 'S.XX')
+        assert np.allclose(eyy, 0)
+        assert np.allclose(ezz, 0)
         H = self.K + 4. / 3. * self.G
-        assert np.allclose(sxx, H * exx, atol=1e-6, rtol=1e-6)
-        assert np.allclose(eyy, 1e-7)
-        assert np.allclose(ezz, 1e-7)
+        diff = (sxx - H * exx) / H
+        assert max(abs(diff)) < 1e-7
         self.completed_jobs.append(mps.job)
 
     @pytest.mark.parametrize('realization', range(1,4))

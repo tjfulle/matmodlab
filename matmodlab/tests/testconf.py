@@ -44,7 +44,7 @@ class StandardMatmodlabTest(object):
                 remove(join(this_directory, job + ext))
 
     @staticmethod
-    def compare_with_baseline(job, base=None, cf=control_file, interp=0):
+    def compare_with_baseline(job, base=None, cf=control_file, interp=0, adjust_n=0):
         if base is None:
             for ext in ('.base_dbx', '.base_exo', '.base_dat'):
                 base = join(this_directory, job.job + ext)
@@ -55,4 +55,4 @@ class StandardMatmodlabTest(object):
         f = splitext(job.filename)[0] + '.difflog'
         with open(f, 'w') as fh:
             return filediff(job.filename, base, control_file=cf, stream=fh,
-                            interp=interp)
+                            interp=interp, adjust_n=adjust_n)

@@ -57,7 +57,7 @@ class TestStepFactories(StandardMatmodlabTest):
         mps.GenSteps(StrainStep, components=(1,0,0), increment=2*pi,
                      steps=200, frames=1, scale=.1, amplitude=(np.sin,))
         mps.run(termination_time=1.8*pi)
-        status = self.compare_with_baseline(mps)
+        status = self.compare_with_baseline(mps, adjust_n=1)
         assert status == 0
         self.completed_jobs.append(mps.job)
 
@@ -78,7 +78,7 @@ class TestPermutation(StandardMatmodlabTest):
         mps.Material('elastic', parameters)
         mps.DataSteps(StringIO(path), scale=-.5, frames=5, descriptors='E'*6)
         mps.run()
-        pres = mps.get('S.Pres')
+        pres = -np.sum(mps.get('S.XX', 'S.YY', 'S.ZZ', disp=-1), axis=1) / 3
         return np.amax(pres)
 
     def test_permutate_zip(self):
@@ -162,7 +162,6 @@ class TestOptimization(StandardMatmodlabTest):
     def test_simplex(self):
         xopt = self.run_method(SIMPLEX)
         # check error
-        print xopt
         err = (xopt - self.xact) / self.xact * 100
         err = np.sqrt(np.sum(err ** 2))
         assert err < .02
