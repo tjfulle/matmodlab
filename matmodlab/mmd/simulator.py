@@ -359,7 +359,7 @@ Material: {5}
         at_step = kwargs.get('at_step', 0)
         nn = None
         if at_step:
-            steps, nn = np.unique(self.records.data['Step'], return_index=True)
+            nn = unique_step_index(self.records.data['Step'])
 
         if not variables:
             names = self.records.keys(expand=1)
@@ -1414,6 +1414,12 @@ def flatten(a):
         try: flat.extend(x)
         except TypeError: flat.append(x)
     return flat
+
+def unique_step_index(a):
+    d = {}
+    for (i, x) in enumerate(a):
+        d.setdefault(int(x), []).append(i)
+    return [x[-1] for x in sorted(d.values())]
 
 def rec2arr(recarr, rows=None):
     arr = []

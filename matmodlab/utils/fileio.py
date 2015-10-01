@@ -50,18 +50,16 @@ def loadrec(filename, upcase=0, disp=1, at_step=0):
             keys = [key]
         names.extend(keys)
 
+    if at_step:
+        # Get only the data at the end of the step
+        d = {}
+        for (i, x) in enumerate(data['Step']):
+            d.setdefault(int(x), []).append(i)
+        rows = [x[-1] for x in sorted(d.values())]
+        data = data[rows]
+
     # convert the data to a normal ndarray
     data = rec2arr(data)
-
-    if at_step:
-        # Get only the data at the beginning of the step
-        d = [x for x in data[0,:]]
-        step = 0
-        i = names.index('Step')
-        for row in data:
-            if row[i] != step:
-                d.append([x for x in row])
-        data = np.array(d)
 
     if disp:
         if upcase:
