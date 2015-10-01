@@ -43,7 +43,7 @@ def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
                                      blk_num=1, elem_num=1, at_step=at_step,
                                      upcase=upcase)
 
-    elif filename.endswith('.%s'%REC):
+    elif filename.endswith(('.rpk', '.base_rpk')):
         # Matmodlab record array pickle
         return loadrec(filename, upcase=upcase, disp=disp, at_step=at_step,
                        columns=columns, variables=variables)
