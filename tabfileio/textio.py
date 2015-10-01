@@ -1,12 +1,14 @@
-import os
 import re
 import gzip
 import numpy as np
 
 
 RE = re.compile('[ \,]')
+
+
 def _split(string, comments, i=0):
-    return [x for x in RE.split(string.strip().split(comments,1)[i]) if x.split()]
+    return [x for x in RE.split(string.strip().split(comments, 1)[i])
+                                                         if x.split()]
 
 
 def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
@@ -57,7 +59,7 @@ def read_text(filename, skiprows=0, comments='#', columns=None, disp=1):
                 line = [float(x) for x in line]
             except ValueError:
                 raise Exception('expected floats in line {0} '
-                            'got {1}'.format(i+1, line))
+                                'got {1}'.format(i+1, line))
             data.append(line)
     except:
         pass
@@ -86,8 +88,11 @@ def write_text(filename, head, data, columns=None):
     # This formatting is chosen because it can exactly represent a
     # double precision float. The width of 26 is chosen so as to give
     # at least one space between columns even when -1.0e+100 is used.
-    fltfmt = lambda x: "{0:26.17e}".format(x)
-    strfmt = lambda x: "{0:>26s}".format(x)
+    def fltfmt(x):
+        return "{0:26.17e}".format(x)
+
+    def strfmt(x):
+        return "{0:>26s}".format(x)
 
     #
     # If specific columns are requested, filter the data

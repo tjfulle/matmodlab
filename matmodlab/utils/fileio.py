@@ -53,8 +53,12 @@ def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
         except ImportError:
             raise ValueError('external tabfileio package required to load file type')
 
+        if columns is not None and variables is not None:
+            raise ValueError('columns and variables keywords are exclusive')
+        columns = columns if columns is not None else variables
+
         return tabfileio.read_file(filename, columns=columns, disp=disp,
-                                   variables=variables, sheetname=sheetname)
+                                   sheetname=sheetname)
 
 def loadrec(filename, upcase=0, disp=1, at_step=0, variables=None, columns=None):
     """Load a numpy record array stored as a pickle"""

@@ -12,7 +12,6 @@ from tabfileio import read_file
 
 def loadfile(filename):
     """Load the data file"""
-    # @MSWAN: new loadfile definition
     if filename.endswith(('.csv', '.rpk', '.out')):
         # Matmodlab files
         try:

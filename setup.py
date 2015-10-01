@@ -11,8 +11,7 @@ setup(name='matmodlab',
       long_description=('The material model laboratory (*matmodlab*) is an '
                         'object oriented model driver. The majority of the '
                         'source code is written in Python and requires no '
-                        'additional building.'),
-      classifiers=[  # Classifier list:  https://pypi.python.org/pypi?:action=list_classifiers
+                        'additional building.'), classifiers=[  # Classifier list:  https://pypi.python.org/pypi?:action=list_classifiers
                    "Development Status :: 4 - Beta",
                    "Environment :: Console",
                    "Environment :: X11 Applications :: Qt",
