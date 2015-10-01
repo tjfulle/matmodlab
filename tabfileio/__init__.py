@@ -21,8 +21,17 @@ from .excelio import read_excel, write_excel
 from .pickleio import read_pickle, write_pickle
 from .jsonio import read_json, write_json
 
+def tolist(obj):
+    """Convert object to a list -> but don't split strings"""
+    try:
+        obj + ''
+        # single string
+        return [obj]
+    except (TypeError, ValueError):
+        # explicitly convert to list
+        return [x for x in obj]
 
-def read_file(filename, columns=None, disp=1, sheet=None):
+def read_file(filename, columns=None, disp=1, sheetname=None, variables=None):
     """
     Reads in a file given a file name and parses the headers and
     converts the remaining cells to floats.
@@ -39,19 +48,27 @@ def read_file(filename, columns=None, disp=1, sheet=None):
     >>> read_file("datfile.txt", disp=0)
     np.array([[0.0, 0.0, 0.0], [1.0, 0.1, 5.0]])
 
-    The 'sheet' keyword is passed directly to the excel parser. This
+    The 'sheetname' keyword is passed directly to the excel parser. This
     directs the parser to which sheet you want to read in. If none is
     given it looks for a sheet called 'mml' and if it can't find that
     it defaults to the first sheet.
     """
+    if columns is not None and variables is not None:
+        raise ValueError('columns and variables keywords are exclusive')
+    elif variables is not None:
+        columns = tolist(variables)
+    elif columns is not None:
+        columns = tolist(columns)
+
     try:
         ext = op.splitext(filename)[1].lower()
     except AttributeError:
         # filename could be an open stream
-        ext = ''
+        raise ValueError('tabfileio does not support reading streams')
+
     if ext in [".xls", ".xlsx"]:
         # Excel data
-        head, data = read_excel(filename, columns=columns, sheet=sheet)
+        head, data = read_excel(filename, columns=columns, sheetname=sheetname)
     elif ext == ".pkl":
         # Pickle data
         head, data = read_pickle(filename, columns=columns)
@@ -62,13 +79,15 @@ def read_file(filename, columns=None, disp=1, sheet=None):
         # Try text reader and cross fingers
         head, data = read_text(filename, columns=columns)
 
-    data = np.array([[float(_) if _ is not None else 0.0 for _ in row] for row in data])
+    data = np.array([[float(_) if _ is not None else 0.0 for _ in row]
+                     for row in data])
+
     if not disp:
         return data
+
     return head, data
 
-
-def write_file(filename, head, data, columns=None, sheet="mml"):
+def write_file(filename, head, data, columns=None, sheetname=None):
     """
     Writes a file to a given file type.
 
@@ -76,12 +95,12 @@ def write_file(filename, head, data, columns=None, sheet="mml"):
     and in which order. a list of strings and integers is accepted.
 
     The 'sheet' keyword instructs the excel writers to use that string
-    as the sheet name instead of the default "mml"
+    as the sheet name.
     """
     ext = op.splitext(filename)[1].lower()
     if ext in [".xls", ".xlsx"]:
         # Excel data
-        write_excel(filename, head, data, columns=columns, sheet=sheet)
+        write_excel(filename, head, data, columns=columns, sheetname=sheetname)
         pass
     elif ext == ".pkl":
         # Pickle data

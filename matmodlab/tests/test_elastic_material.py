@@ -48,10 +48,10 @@ class TestElasticMaterial(StandardMatmodlabTest):
         mps.run()
         exx, sxx, syy, szz = mps.get('E.XX', 'S.XX', 'S.YY', 'S.ZZ')
         E = 9. * self.K * self.G / (3. * self.K + self.G)
-        assert np.allclose(sxx, E * exx)
-        print sxx - E*exx
         assert np.allclose(syy, 1e-8)
         assert np.allclose(szz, 1e-8)
+        sys.stderr.write(str(sxx-E*exx))
+        assert np.allclose(sxx, E * exx)
         self.completed_jobs.append(mps.job)
 
     @pytest.mark.skipif(el is None, reason='elastic model not imported')

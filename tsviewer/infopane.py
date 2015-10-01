@@ -8,7 +8,21 @@ from traitsui.message import error, message
 from pyface.api import FileDialog, OK as pyOK
 from traitsui.menu import Menu, Action, Separator
 
-from tabfileio import read_file as loadfile
+from tabfileio import read_file
+
+def loadfile(filename):
+    """Load the data file"""
+    # @MSWAN: new loadfile definition
+    if filename.endswith(('.csv', '.rpk', '.out')):
+        # Matmodlab files
+        try:
+            from matmodlab.utils.fileio import loadfile as lf
+        except ImportError:
+            raise ValueError('file type requires matmodlab package')
+        return lf(filename, disp=1)
+    else:
+        return read_file(filename, disp=1)
+
 
 class OutputDB(HasTraits):
     id = Int
@@ -24,7 +38,7 @@ class OutputDB(HasTraits):
             name = basename(filename)
         filepath = realpath(filename)
         names, data = loadfile(filepath)
-        vmap = dict([(s, i) for (i, s) in enumerate(names)])
+        vmap = dict([(s.upper(), i) for (i, s) in enumerate(names)])
         kwds = {'name': name, "filepath": filepath,
                 'info': info or '', 'names': names, 'data': data,
                 'vmap': vmap, 'id': hashf(filename), 'hidden': False}
@@ -32,7 +46,7 @@ class OutputDB(HasTraits):
         super(OutputDB, self).__init__(**kwds)
 
     def get(self, name, time=None):
-        j = self.vmap.get(name)
+        j = self.vmap.get(name.upper())
         if j is None:
             return
         data = self.data[:, j]
@@ -60,6 +74,19 @@ class OutputDB(HasTraits):
 
 def hashf(filename):
     return hash(realpath(filename))
+
+def readtabular(source):
+    """Read in the mml-tabular.dat file
+
+    """
+    try:
+        from matmodlab.utils.mmltab import read_mml_evaldb
+    except ImportError:
+        raise ValueError('file type requires matmodlab package')
+    sources, paraminfo, _ = read_mml_evaldb(source)
+    for (key, info) in paraminfo.items():
+        paraminfo[key] = ", ".join("{0}={1:.2g}".format(n, v) for (n, v) in info)
+    return sources, paraminfo
 
 class MyTreeNode(TreeNode):
     def get_icon(self, node, state):
@@ -112,9 +139,17 @@ class Root(HasTraits):
         if hashf(filename) in [f.id for f in self.outputdbs]:
             self.reload_outputdb(filename)
             return
-
-        f = OutputDB(filename)
-        self.outputdbs.append(f)
+        if filename.endswith('.edb'):
+            filepaths, variables = readtabular(filename)
+            d = dirname(filename) + sep
+            names = dict([(f, f.replace(d, '')) for f in filepaths])
+            files = [OutputDB(f, info=variables[f], name=names[f])
+                     for f in filepaths]
+            self.outputdbs.extend(files)
+            f = files[0]
+        else:
+            f = OutputDB(filename)
+            self.outputdbs.append(f)
 
         self.choices.extend([c for c in f.choices if c not in self.choices])
         if self.owner:

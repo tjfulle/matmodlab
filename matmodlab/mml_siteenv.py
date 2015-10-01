@@ -54,7 +54,6 @@ class Environment(object):
     plotter = MATPLOTLIB
 
     # For the gui
-    capture_model = 0
     gui_mode = False
     do_not_fork = False
 

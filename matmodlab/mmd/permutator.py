@@ -19,7 +19,6 @@ from ..utils.misc import backup
 from ..mml_siteenv import environ
 from ..utils.logio import setup_logger
 from ..utils.errors import MatModLabError
-from ..mmd.mdb import mdb, ModelCaptured as ModelCaptured
 from ..utils.mmltab import MMLTabularWriter, correlations, plot_correlations
 
 RAND = np.random.RandomState()
@@ -47,10 +46,6 @@ class Permutator(object):
         self.directory = d
         self.rootd = os.path.join(d, job + ".eval")
         self.output = os.path.join(self.rootd, job + '.xml')
-
-        if environ.capture_model:
-            mdb.add_permutator(self)
-            raise ModelCaptured
 
         if descriptors is None:
             self.descriptors = None

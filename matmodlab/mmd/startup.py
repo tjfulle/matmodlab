@@ -37,7 +37,7 @@ if errors:
              'following errors:\n  {0}'.format('\n  '.join(errors)))
 
 commands = ('build', 'clean', 'fetch', 'helper', 'run',
-            'test', 'ipynb', 'notebook')
+            'test', 'ipynb', 'notebook', 'view')
 
 usage = '''\
 usage: mml [-h|help] <command> [<args>]
@@ -51,6 +51,7 @@ The mml commands are:
   notebook Alias for ipynb
   run      Run a simulation
   test     Run the Matmodlab tests.  This procedure is a wrapper to py.test
+  view     Launch the tsviewer viewer
 
 See 'mml help <command>' to read about a specific subcommand.
 '''
@@ -96,6 +97,11 @@ def main(argv=None):
             sys.exit(fetch(argv))
         elif x == 'clean':
             sys.exit(clean(argv=argv))
+        elif x == 'view':
+            try:
+                import tsviewer.__main__ as module
+            except ImportError:
+                raise SystemExit('viewing requires the tsviewer package')
         elif x == 'test':
             try:
                 import pytest

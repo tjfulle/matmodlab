@@ -105,10 +105,18 @@ class Application(HasStrictTraits):
         filepaths = []
         for source in sources:
             if not isfile(source):
-                raise OSError("{0}: no such file".format(source))
+                raise IOError("{0}: no such file".format(source))
 
-            filepaths.append(source)
-            variables, names = {}, {}
+            if source.endswith('.edb'):
+                d = dirname(source)
+                if len(sources) > 1:
+                    raise ValueError('only one evaluation db allowed')
+                filepaths, variables = readtabular(source)
+                names = dict([(f, f.replace(d, '')) for f in filepaths])
+                break
+            else:
+                filepaths.append(source)
+                variables, names = {}, {}
 
         files = [OutputDB(f, info=variables.get(f,''), name=names.get(f))
                  for f in filepaths]

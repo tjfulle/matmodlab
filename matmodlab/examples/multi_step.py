@@ -4,7 +4,7 @@ from matmodlab import *
 """Exercise the material through multiple steps using different step definitions"""
 
 # Instantiate the simulator
-mps = MaterialPointSimulator("multi-step", initial_temperature=75., output=EXO)
+mps = MaterialPointSimulator("multi-step", initial_temperature=75.)
 
 # Define the material model for the simulator
 parameters = {"K": 1.35e11, "G": 5.3e10}

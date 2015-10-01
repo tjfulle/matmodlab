@@ -17,7 +17,7 @@ parameters = np.array([0.110e12, .340])
 #  * PKL for python pickle
 
 models = {}
-models['mps-1'] = MaterialPointSimulator('umat', output=DBX)
+models['mps-1'] = MaterialPointSimulator('umat')
 models['mps-1'].StrainStep(components=(.2, .0, .0), frames=50)
 models['mps-1'].StrainStep(components=(.0, .0, .0), frames=50)
 models['mps-1'].Material(UMAT, parameters, depvar=0,

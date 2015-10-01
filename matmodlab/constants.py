@@ -48,14 +48,11 @@ ROOT23 = ROOT2 / ROOT3
 # Tensor ordering
 XX, YY, ZZ, XY, YZ, XZ = range(6)
 
-# --- These are the standard outputs, any other requests are output as text
-REC = 'rpx'
-TXT = 'txt'
+# --- These are the standard outputs, any other requests are handled by tabfileio
+REC = 'rpk'
+TXT = 'out'
 CSV = 'csv'
-PKL = 'pkl'
-XLS = 'xls'
-XLSX = 'xlsx'
-DB_FMTS = (REC, TXT, PKL, XLS, XLSX)
+DB_FMTS = (REC, TXT, CSV)
 
 # --- Permutate symbolic constants
 ZIP = 'Zip'

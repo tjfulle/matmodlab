@@ -14,11 +14,10 @@ from ..constants import *
 from ..mml_siteenv import environ
 from ..utils import mmlabpack as mml
 from ..utils.errors import MatModLabError
-from ..utils.fileio import loadfile
+from ..utils.fileio import loadfile, savefile
 from ..utils.logio import setup_logger
 from ..utils.plotting import create_figure
 from .material import MaterialModel, Material
-from .bp import BreakPoint, BreakPointStop as BreakPointStop
 
 EPS = np.finfo(np.float).eps
 
@@ -32,7 +31,6 @@ class MaterialPointSimulator(object):
 
         '''
         self.job = job
-        self.bp = None
 
         self.output_format = output or REC
 
@@ -44,6 +42,7 @@ class MaterialPointSimulator(object):
         environ.simulation_dir = d
         self.directory = environ.simulation_dir
         self.filename = None
+        self.ran = None
 
         # basic logger
         logfile = os.path.join(environ.simulation_dir, self.job + '.log')
@@ -68,7 +67,7 @@ class MaterialPointSimulator(object):
     def copy(self, job):
         model = MaterialPointSimulator(job, verbosity=self.verbosity,
                    d=self.directory, initial_temperature=self.initial_temperature,
-                   output=self.output_type)
+                   output=self.output_format)
         for s in self.steps.values()[1:]:
             step = AnalysisStep(s.kind, s.name, s.previous, s.increment,
                                 len(s.frames), s.components, s.descriptors,
@@ -258,7 +257,6 @@ Material: {5}
         self.records.init(num_frames)
 
         self.write_summary()
-        self.check_break_points()
 
         logger.info('Starting calculations...')
 
@@ -272,8 +270,6 @@ Material: {5}
             dt = tt() - start
             logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
             self.ran = True
-        except BreakPointStop:
-            logger.info('\nCalculations terminated at break point\n')
         finally:
             self.finish()
 
@@ -320,14 +316,17 @@ Material: {5}
 
         return
 
-    def dump(self, format=None, ffmt='%.18f'):
+    def dump(self, format=None, ffmt='%.18e'):
+        """Dump the results of the simulation to a file"""
         output_format = format
         if output_format is None:
             output_format = self.output_format
+
         ext = '.' + output_format
         self.filename = os.path.join(self.directory, self.job + ext)
         if output_format == REC:
             self.records.data.dump(self.filename)
+
         elif output_format in (TXT, CSV):
             if output_format == CSV:
                 sep, comments = ',', ''
@@ -336,9 +335,13 @@ Material: {5}
             names = sep.join(self.records.keys(expand=1))
             data = rec2arr(self.records.data)
             np.savetxt(self.filename, data, header=names, delimiter=sep,
-                       comments=comments)
+                       comments=comments, fmt=ffmt)
+
         else:
-            raise NotImplentedError
+            # let someone else deal with it
+            names = self.records.keys(expand=1)
+            data = rec2arr(self.records.data)
+            savefile(self.filename, names, data)
 
     def _get_var_time(self, var):
         if var == 'SDV':
@@ -356,21 +359,20 @@ Material: {5}
 
     def get(self, *variables, **kwargs):
         disp = kwargs.pop('disp', 0)
-        at_step = kwargs.get('at_step', 0)
-        nn = None
+        at_step = kwargs.get('at_step', None)
         if at_step:
-            nn = unique_step_index(self.records.data['Step'])
+            at_step = unique_step_index(self.records.data['Step'])
 
         if not variables:
             names = self.records.keys(expand=1)
-            data = rec2arr(self.records.data, rows=nn)
+            data = rec2arr(self.records.data, rows=at_step)
             if disp:
                 return names, data
             return data
 
         # get the specific variables
         names = [x.split('.', 1) if not x.startswith('SDV_') else [x]
-                 for x in variables if not x.startswith('SDV_')]
+                 for x in variables]
         data = []
         for item in names:
             a = np.array(self.records.data[item[0]])
@@ -378,8 +380,8 @@ Material: {5}
                 a = a[:, COMPONENT(item[1], a.shape[1])]
             elif len(item) > 2:
                 raise ValueError('expected at most one attribute lookup')
-            if nn is not None:
-                a = a[nn]
+            if at_step is not None:
+                a = a[at_step]
             data.append(a)
 
         if len(data) == 1 and data[0].ndim == 1:
@@ -427,25 +429,6 @@ Material: {5}
             if legend:
                 plt.legend(loc='best')
             plt.show()
-
-    def break_point(self, condition, xit=0):
-        '''Define a break point for the simulation
-
-        '''
-        self.bp = BreakPoint(condition, self, xit=xit)
-
-    def check_break_points(self):
-        if not self.bp:
-            return
-        errors = 0
-        for name in self.bp.names:
-            if name.upper() not in ['TIME'] + self.records.keys(expand=1):
-                errors += 1
-                logging.getLogger('matmodlab.mmd.simulator').error(
-                    'break point variable {0} not a '
-                    'simulation variable'.format(name))
-        if errors:
-            raise MatModLabError('stopping due to previous errors')
 
     def run_step(self, step, time, strain, F, stress, statev, temp,
                 efield, time_0, eet, ept, target=None, termination_time=None):
@@ -600,9 +583,6 @@ Material: {5}
                                 'steps'.format(step.name, iframe, sigerr,
                                                sigerr/sigmag*100.0))
 
-            if self.bp:
-                self.bp.eval(frame)
-
             if termination_time is not None and time[2] >= termination_time:
                 logger.info('\r' + message.format(iframe+1) +
                             ' ({0:.4f}s)'.format(tt()-time_0))
@@ -614,6 +594,23 @@ Material: {5}
                     ' ({0:.4f}s)'.format(tt()-time_0))
 
         return 0
+
+    def visualize_results(self, overlay=None):
+        # @MSWAN: can the launch function be modified to take the names and
+        # data directly?
+        try:
+            from tsviewer.__main__ import launch
+        except ImportError:
+            raise MatModLabError('viewing requires tsviewer package')
+
+        if not self.ran:
+            raise MatModLabError('model must first be run')
+
+        launch([self.filename])
+
+    def view(self):
+        self.visualize_results()
+
 
 def sig2d(material, t, dt, temp, dtemp, kappa, f0, f, stran, d, sig, statev,
           efield, v, sigspec, proportional):
@@ -1241,9 +1238,8 @@ def MixedStep(name, previous, components=None, descriptors=None,
                         components, descriptors, kappa, temperature, elec_field,
                         num_dumps)
 
-def DataSteps(filename, previous, tc=0, columns=None, descriptors=None,
-              skiprows=0, comments='#', time_format='total', scale=1.,
-              frames=None, steps=None, sheet=None):
+def DataSteps(filename, previous, tc=0, descriptors=None, time_format='total',
+              scale=1., frames=None, steps=None, **kw):
 
     d = {'D': 1, 'E': 2, 'R': 3, 'S': 4, 'P': 6, 'T': 7, 'X': 9}
     bad = []
@@ -1272,6 +1268,7 @@ def DataSteps(filename, previous, tc=0, columns=None, descriptors=None,
         raise MatModLabError('expected at most three electric field columns')
 
     fill = None
+    columns = kw.get('columns')
     if columns is not None:
         if len(columns) > len(descriptors):
             raise MatModLabError('expected len(components)<=len(descriptors)')
@@ -1287,9 +1284,10 @@ def DataSteps(filename, previous, tc=0, columns=None, descriptors=None,
             columns.append(i)
             if len(columns) >= len(descriptors) + 1:
                 break
+    kw['columns'] = columns
 
     # Read in the file
-    X = loadfile(filename, skiprows=skiprows, columns=columns, disp=0, sheet=sheet)
+    X = loadfile(filename, disp=0, **kw)
 
     # Create interpolator
     interp = lambda x, yp: np.interp(x, X[:,0], yp)

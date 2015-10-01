@@ -42,7 +42,6 @@ sys.path.insert(0, os.getcwd())
 
 # ------------------------ FACTORY METHODS TO SET UP AND RUN A SIMULATION --- #
 from numpy import array, float64
-from .mmd.mdb import mdb
 from .mmd.simulator import *
 from .mml_siteenv import environ
 from .mmd.material import build_material

@@ -131,11 +131,8 @@ class TestAbaqusModels(StandardMatmodlabTest):
         mps.MixedStep(components=(.2, 0, 0), descriptors='ESS',
                       temperature=500, frames=100)
         mps.run()
-        out = mps.get('T', 'E.XX', 'S.XX', **KW)
-        for (i, row) in enumerate(out[1:], start=1):
-            temp, eps, sig = row
-            dtemp = temp - out[0,0]
-            ee = eps - ALPHA * dtemp
-            diff = E0 * ee - sig
-            assert abs(diff) <= 1.e-8
+        T, E, S = mps.get('T', 'E.XX', 'S.XX')
+	DT = T - T[0]
+	EE = E - ALPHA * DT
+	assert np.allclose(S, E0 * EE)
         self.completed_jobs.append(mps.job)

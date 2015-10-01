@@ -103,10 +103,15 @@ class FortranExtBuilder(object):
         self.exts_to_build.append((name, sources, options))
         return
 
-    def build_extension_modules(self, verbosity=1):
+    def build_extension_modules(self, verbosity=None):
         """Build all extension modules in config"""
         if not self.exts_to_build:
             return
+
+        if verbosity is not None:
+            chatty = verbosity > 4
+        else:
+            chatty = self.chatty
 
         to_build = [x[0] for x in self.exts_to_build]
         if self._build_blas_lapack and not isfile(LAPACK_OBJ):
@@ -147,7 +152,8 @@ class FortranExtBuilder(object):
         # build the extension modules with distutils setup
         logging.getLogger('matmodlab.mmd.builder').info(
             'building extension module[s]... ', extra={'continued':1})
-        f = join(PKG_D, "build.log") if not self.chatty else sys.stdout
+        f = join(PKG_D, "build.log") if not chatty else sys.stdout
+        failed = 0
         try:
             sys.argv = [x for x in argv]
             with stdout_redirected(to=f), merged_stderr_stdout():
@@ -155,24 +161,29 @@ class FortranExtBuilder(object):
             logging.getLogger('matmodlab.mmd.builder').info('done')
         except:
             logging.getLogger('matmodlab.mmd.builder').error('failed')
+            failed = 1
         finally:
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
             sys.argv = [x for x in hold]
 
         # move files
-        logging.getLogger('matmodlab.mmd.builder').info(
-            'staging extension module[s]... ', extra={'continued':1})
         d = config.package_dir[config.name]
         for mod in glob.glob(d + "/*.so"):
             self.exts_built.append(module_name(mod))
+
+        logging.getLogger('matmodlab.mmd.builder').info(
+            'staging extension module[s]... ', extra={'continued':1})
+
         self.exts_failed = [n[0] for n in self.exts_to_build
                             if n[0] not in self.exts_built]
         self.ext_modules_built = True
         self.exts_to_build = []
-        logging.getLogger('matmodlab.mmd.builder').info('done')
         if self.exts_failed:
+            logging.getLogger('matmodlab.mmd.builder').info('failed')
             raise ExtModuleNotBuilt("{0}: failed to build".format(
                     ", ".join(self.exts_failed)))
+        else:
+            logging.getLogger('matmodlab.mmd.builder').info('done')
         os.chdir(cwd)
         return
 

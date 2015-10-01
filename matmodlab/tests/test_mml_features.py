@@ -162,6 +162,7 @@ class TestOptimization(StandardMatmodlabTest):
     def test_simplex(self):
         xopt = self.run_method(SIMPLEX)
         # check error
+        print xopt
         err = (xopt - self.xact) / self.xact * 100
         err = np.sqrt(np.sum(err ** 2))
         assert err < .02
@@ -173,12 +174,12 @@ def opt_pres_v_evol(outf):
 
     # read in baseline data
     aux = join(this_directory, 'opt.base_dat')
-    auxhead, auxdat = loadfile(aux, variables=vars_to_get)
+    auxhead, auxdat = loadfile(aux, variables=vars_to_get, disp=1)
     baseevol = auxdat[:,1] + auxdat[:,2] + auxdat[:,3]
     basepress = -(auxdat[:,4] + auxdat[:,5] + auxdat[:,6]) / 3.
 
     # read in output data
-    head, simdat = loadfile(outf, variables=vars_to_get)
+    head, simdat = loadfile(outf, variables=vars_to_get, disp=1)
     simevol = simdat[:,1] + simdat[:,2] + simdat[:,3]
     simpress = -(simdat[:,4] + simdat[:,5] + simdat[:,6]) / 3.
 
@@ -204,10 +205,10 @@ def opt_sig_v_time(outf):
 
     # read in baseline data
     auxf = join(this_directory, 'opt.base_dat')
-    auxhead, auxdat = loadfile(auxf, variables=vars_to_get)
+    auxhead, auxdat = loadfile(auxf, variables=vars_to_get, disp=1)
 
     # read in output data
-    simhead, simdat = loadfile(outf, variables=vars_to_get)
+    simhead, simdat = loadfile(outf, variables=vars_to_get, disp=1)
 
     # do the comparison
     error = -1
