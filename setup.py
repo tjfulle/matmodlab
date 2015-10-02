@@ -30,7 +30,6 @@ setup(name='matmodlab',
       author_email='timothy.fuller@utah.edu,scot.swan@gmail.com',
       license='MIT',
       packages=[
-                'tabfileio',
                 'matmodlab',
                 'matmodlab.fitting',
                 'matmodlab.lib',
@@ -41,7 +40,6 @@ setup(name='matmodlab',
                 'matmodlab.utils.numerix',
                ],
       package_dir={
-                   'tabfileio':'tabfileio',
                    'matmodlab':'matmodlab',
                   },
       package_data={
