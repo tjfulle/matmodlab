@@ -9,6 +9,8 @@ from StringIO import StringIO
 
 from os.path import realpath, isfile, isdir, join, splitext, dirname, basename
 
+__version__ = "3.0.4"
+
 errors = []
 (major, minor, micro, relev, ser) = sys.version_info
 if (major != 3 and major != 2) or (major == 2 and minor < 7):
