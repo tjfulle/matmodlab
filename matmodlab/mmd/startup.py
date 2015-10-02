@@ -370,7 +370,8 @@ def get_viewer():
     if not x:
         raise RuntimeError('unable to find compatible pip')
 
-    command = '{0} install tsviewer'.format(x[0])
+    # The extra stuff for PIL is because PIL is hosted externally from pypi.
+    command = '{0} install tsviewer --allow-external PIL --allow-unverified PIL'.format(x[0])
     proc = Popen(command.split())
     proc.wait()
     if proc.returncode != 0:
