@@ -270,8 +270,7 @@ def dyad(a, b):
 
 def ddot(a, b):
     # double of symmetric tensors stored as 6x1 arrays
-    w = numpy.array([1, 1, 1, 2, 2, 2], dtype=numpy.float64)
-    return numpy.sum(a * b * w)
+    return numpy.sum(a * b * VOIGHT)
 
 
 def trace(a):

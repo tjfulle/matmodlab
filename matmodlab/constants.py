@@ -44,6 +44,7 @@ ROOT3 = np.sqrt(3.0)
 TOOR2 = 1.0 / ROOT2
 TOOR3 = 1.0 / ROOT3
 ROOT23 = ROOT2 / ROOT3
+TOLER = 1.E-06
 
 # Tensor ordering
 XX, YY, ZZ, XY, YZ, XZ = range(6)
