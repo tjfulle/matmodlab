@@ -6,7 +6,7 @@ def include_files(some_dir):
     return (some_dir, [os.path.join(some_dir, _) for _ in files])
 
 setup(name='matmodlab',
-      version='3.0.4',  # last updated on 151001 by Scot Swan
+      version='3.0.5',  # last updated on 151002 by Scot Swan
       description='Material model development laboratory',
       long_description=('The material model laboratory (*matmodlab*) is an '
                         'object oriented model driver. The majority of the '

@@ -9,7 +9,7 @@ from StringIO import StringIO
 
 from os.path import realpath, isfile, isdir, join, splitext, dirname, basename
 
-__version__ = "3.0.4"
+__version__ = "3.0.5"
 
 errors = []
 (major, minor, micro, relev, ser) = sys.version_info
