@@ -599,22 +599,8 @@ Material: {5}
         return 0
 
     def visualize_results(self, overlay=None):
-        # @MSWAN: can the launch function be modified to take the names and
-        # data directly?
-        # @TFULLER: it probably can - but the value of doing so is questionable
-        # as chaco does not support python3. If we end up using python3 for
-        # matmodlab then it won't be able to launch the tsviewer without
-        # just making a plain system call and we can't pass values directly
-        # through the system call. I'm leaving this in for now.
-        try:
-            from tsviewer.__main__ import launch
-        except ImportError:
-            raise MatModLabError('viewing requires tsviewer package')
-
-        if not self.ran:
-            raise MatModLabError('model must first be run')
-
-        launch([self.filename])
+        from .startup import launch_viewer
+        launch_viewer([self.filename])
 
     def view(self):
         self.visualize_results()

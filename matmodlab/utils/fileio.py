@@ -21,15 +21,19 @@ def savefile(filename, names, data):
 def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
              comments='#', variables=None, at_step=0, upcase=1):
     """Load the file"""
+    if columns is not None and variables is not None:
+        raise ValueError('columns and variables keywords are exclusive')
+    columns = columns if columns is not None else variables
+
     if not is_string_like(filename):
         # assume filename is a stream
-        return loadstream(filename, columns=columns, upcase=upcase, disp=disp,
-                          comments=comments, skiprows=skiprows, variables=variables)
+        names, data = loadstream(filename, upcase=upcase, disp=1,
+                                 comments=comments, skiprows=skiprows)
 
     elif filename.endswith(tuple('.%s'%ext for ext in (CSV, TXT))):
         # standard Matmodlab formats
-        return loadtxt(filename, columns=columns, upcase=upcase, disp=disp,
-                       comments=comments, skiprows=skiprows, variables=variables)
+        names, data = loadtxt(filename, upcase=upcase, disp=1,
+                              comments=comments, skiprows=skiprows)
 
     elif filename.endswith(('.exo', '.base_exo', '.dbx', '.base_dbx')):
         # legacy finite element database formats
@@ -37,34 +41,46 @@ def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
             from femlib.fileio import loaddb_single_element
         except ImportError:
             raise ValueError('external femlib package required to load file type')
-        return loaddb_single_element(filename, variables=variables, disp=disp,
-                                     blk_num=1, elem_num=1, at_step=at_step,
-                                     upcase=upcase)
+        names, data = loaddb_single_element(filename, disp=1, blk_num=1,
+                                            elem_num=1, at_step=at_step,
+                                            upcase=upcase)
 
     elif filename.endswith(('.rpk', '.base_rpk')):
         # Matmodlab record array pickle
-        return loadrec(filename, upcase=upcase, disp=disp, at_step=at_step,
-                       columns=columns, variables=variables)
+        names, data = loadrec(filename, upcase=upcase, disp=1, at_step=at_step)
 
     else:
         # ??? -> let tabfileio deal with this extension
         try:
             import tabfileio
         except ImportError:
-            raise ValueError('external tabfileio package required to load file type')
+            raise ValueError('external tabfileio package '
+                             'required to load file type')
 
-        if columns is not None and variables is not None:
-            raise ValueError('columns and variables keywords are exclusive')
-        columns = columns if columns is not None else variables
+        names, data = tabfileio.read_file(filename, disp=1, sheetname=sheetname)
 
-        return tabfileio.read_file(filename, columns=columns, disp=disp,
-                                   sheetname=sheetname)
+    if columns:
+        columns = tolist(columns)
+        for (i, item) in enumerate(columns):
+            if is_string_like(item):
+                # determine the integer column index
+                if names is None:
+                    raise ValueError('cannot determine column numbers '
+                                     'of named variables')
+                j = index(names, item)
+                if j is None:
+                    raise ValueError('%r not in file' % item)
+                columns[i] = j
+        data = data[:, columns]
+        if names:
+            names = [names[i] for i in columns]
 
-def loadrec(filename, upcase=0, disp=1, at_step=0, variables=None, columns=None):
+    if disp:
+        return names, data
+    return data
+
+def loadrec(filename, upcase=0, disp=1, at_step=0):
     """Load a numpy record array stored as a pickle"""
-
-    if columns is not None and variables is not None:
-        raise ValueError('columns and variables keywords are exclusive')
 
     # load the data
     data = np.load(filename)
@@ -93,25 +109,6 @@ def loadrec(filename, upcase=0, disp=1, at_step=0, variables=None, columns=None)
         rows = [x[-1] for x in sorted(d.values())]
         data = data[rows]
 
-    if columns is not None:
-        columns = tolist(columns)
-
-    elif variables is not None:
-        variables = tolist(variables)
-        if names is None:
-            raise ValueError('cannot determine variable column numbers')
-        up = [x.upper() for x in names]
-        columns = []
-        for name in variables:
-            try:
-                columns.append(up.index(name.upper()))
-            except ValueError:
-                raise ValueError('%r not in file' % name)
-
-    if columns:
-        data = data[:, columns]
-        names = [names[i] for i in columns]
-
     if disp:
         if upcase:
             names = [x.upper() for x in names]
@@ -119,12 +116,8 @@ def loadrec(filename, upcase=0, disp=1, at_step=0, variables=None, columns=None)
 
     return data
 
-def loadstream(stream, comments='#', columns=None, skiprows=0,
-               variables=None, upcase=False, disp=1):
+def loadstream(stream, comments='#', skiprows=0, upcase=False, disp=1):
     """Load data contained in the stream"""
-
-    if columns is not None and variables is not None:
-        raise ValueError('columns and variables keywords are exclusive')
 
     for i in range(skiprows):
         next(stream)
@@ -135,31 +128,14 @@ def loadstream(stream, comments='#', columns=None, skiprows=0,
         names = find_header(stream, comments=comments, upcase=upcase)
         if names is None:
             warnings.warn('loadstream: could not find header')
-        elif columns is not None:
-            names = [names[i] for i in columns]
 
-    if columns is not None:
-        columns = tolist(columns)
-
-    elif variables is not None:
-        variables = tolist(variables)
-        if names is None:
-            raise ValueError('cannot determine variable column numbers')
-        up = [x.upper() for x in names]
-        columns = []
-        for name in variables:
-            try:
-                columns.append(up.index(name.upper()))
-            except ValueError:
-                raise ValueError('%r not in file' % name)
-
-    data = np.loadtxt(stream, usecols=columns)
+    data = np.loadtxt(stream)
     if disp:
         return names, data
     return data
 
-def loadtxt(filename, comments='#', columns=None, skiprows=0,
-            upcase=False, delimiter=' ', disp=1, variables=None):
+def loadtxt(filename, comments='#', skiprows=0, upcase=False,
+            delimiter=' ', disp=1):
 
     if filename.endswith('.csv'):
         delimiter = ','
@@ -167,8 +143,7 @@ def loadtxt(filename, comments='#', columns=None, skiprows=0,
     # open the stream and load the data
     stream = open(filename, 'r')
     names, data = loadstream(stream, comments=comments, delimiter=delimiter,
-                             disp=1, skiprows=skiprows, columns=columns,
-                             upcase=upcase, variables=variables)
+                             disp=1, skiprows=skiprows, upcase=upcase)
     stream.close()
 
     if disp:
@@ -490,7 +465,25 @@ def is_string_like(obj):
         return False
     return True
 
+def is_number_like(obj):
+    # from numpy/lib/_iotools.py
+    try:
+        int(obj)
+    except (ValueError, TypeError):
+        return False
+    return True
+
 def tolist(obj):
-    if is_string_like(obj):
+    if is_number_like(obj):
+        return [obj]
+    elif is_string_like(obj):
         return [obj]
     return list(obj)
+
+def index(lst, x):
+    if not lst:
+        return None
+    try:
+        return [s.upper() for s in lst].index(x.upper())
+    except ValueError:
+        return None

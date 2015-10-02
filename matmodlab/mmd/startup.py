@@ -1,17 +1,18 @@
 # set up python environment
 import os
+import re
 import sys
 import glob
 import shutil
 import warnings
 import tempfile
 from argparse import ArgumentParser
-from subprocess import Popen, STDOUT
+from subprocess import Popen, STDOUT, check_output, CalledProcessError
 from os.path import dirname, isfile, join, realpath, split
 
 from ..constants import *
 from ..materials.product import *
-from ..product import ROOT_D, BLD_D, PLATFORM, TEST_D, PKG_D, EXMPL_D
+from ..product import ROOT_D, BLD_D, PLATFORM, TEST_D, PKG_D, EXMPL_D, PYEXE
 from ..mml_siteenv import environ
 from ..utils.misc import load_file
 
@@ -98,10 +99,8 @@ def main(argv=None):
         elif x == 'clean':
             sys.exit(clean(argv=argv))
         elif x == 'view':
-            try:
-                import tsviewer.__main__ as module
-            except ImportError:
-                raise SystemExit('viewing requires the tsviewer package')
+            return launch_viewer(argv)
+
         elif x == 'test':
             try:
                 import pytest
@@ -344,6 +343,32 @@ positional arguments:
         if tempd is not None:
             shutil.rmtree(tempd)
             tempd = None
+
+def get_viewer():
+    response = raw_input('viewing requires the tsviewer package, '
+                         'would you like to install it? (y/n) [n]: ')
+    if response.lower()[0] != 'y':
+        raise SystemExit()
+    command = 'pip install tsviewer'
+    proc = Popen(command.split())
+    proc.wait()
+    if proc.returncode != 0:
+        raise SystemExit('unable to install tsviewer')
+
+def launch_viewer(argv):
+    # find the python2.7 executable
+    d = dirname(PYEXE)
+    py2 = [realpath(join(d,f)) for f in os.listdir(d)
+           if re.search(r'python2.[67]$', f.strip())][0]
+    command = '{0} -m tsviewer --check-install'.format(py2)
+    try:
+        i = check_output(command.split())
+    except CalledProcessError:
+        get_viewer()
+    command = '{0} -m tsviewer {1}'.format(py2, ' '.join(argv))
+    proc = Popen(command.split())
+    proc.wait()
+    return proc.returncode
 
 if __name__ == '__main__':
     main()

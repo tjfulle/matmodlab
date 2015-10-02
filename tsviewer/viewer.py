@@ -262,14 +262,17 @@ class MMLPostViewer(HasTraits):
         self.indices = indices
         self.container = self.create_container()
         if self.ipane.outputdbs:
-             self.times = [float(x) for x in self.ipane.outputdbs[0].get("TIME")]
-             self.low_time = min(self.times)
-             self.high_time = max(self.times)
-             self.frames = range(len(self.times))
+            try:
+                self.times = [float(x) for x in self.ipane.outputdbs[0].get("TIME")]
+            except TypeError:
+                raise IOError('could not determine time column')
+            self.low_time = min(self.times)
+            self.high_time = max(self.times)
+            self.frames = range(len(self.times))
         else:
-             self.times = []
-             self.high_time = self.low_time = 0.
-             self.frames = range(len(self.times))
+            self.times = []
+            self.high_time = self.low_time = 0.
+            self.frames = range(len(self.times))
         self.container.data = ArrayPlotData()
         self.time_data_labels = {}
         if len(indices) == 0:
