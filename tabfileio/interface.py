@@ -86,7 +86,7 @@ def read_file(filename, columns=None, disp=1, sheetname=None):
     return head, data
 
 
-def write_file(filename, head, data, columns=None, sheetname="mml"):
+def write_file(filename, head, data, columns=None, sheetname=None):
     """
     Writes a file to a given file type.
 
@@ -113,6 +113,6 @@ def write_file(filename, head, data, columns=None, sheetname="mml"):
         pass
 
 
-def transform(input_f, output_f, columns=None, sheetname="mml"):
+def transform(input_f, output_f, columns=None, sheetname=None):
     head, data = read_file(input_f, sheetname=sheetname)
     write_file(output_f, head, data, columns=columns, sheetname=sheetname)

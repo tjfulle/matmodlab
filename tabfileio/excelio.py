@@ -87,7 +87,7 @@ def read_excel(filename, sheetname=None, columns=None, disp=1):
         sheet_index = lower_names.index(sheetname.lower())
     else:
         # If sheet 'MML' exists, use it, otherwise grab the first one
-        up = [s.upper() for s in sheet_names]
+        up = [_.upper() for _ in sheet_names]
         if 'MML' in up:
             sheet_index = up.index('MML')
         else:
@@ -147,9 +147,10 @@ def read_excel(filename, sheetname=None, columns=None, disp=1):
     return head, data
 
 
-def write_excel(filename, head, data, columns=None, sheetname='Sheet1'):
+def write_excel(filename, head, data, columns=None, sheetname=None):
 
     filetype = "XLS" if filename.upper().endswith(".XLS") else "XLSX"
+    sheetname = sheetname if sheetname else "Sheet1"
 
     if not isinstance(sheetname, str):
         raise Exception("kwarg 'sheetname' must be string-like.")

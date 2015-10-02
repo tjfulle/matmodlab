@@ -36,11 +36,8 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     parser = ArgumentParser()
-    parser.add_argument('--check-install', action='store_true', default=False)
     parser.add_argument("sources", nargs="*")
     args = parser.parse_args(argv)
-    if args.check_install:
-        return 0
     sources = []
     errors = 0
     for source in args.sources:
@@ -373,4 +370,4 @@ def launch(sources=None):
     return main_window
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
