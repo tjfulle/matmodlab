@@ -1,4 +1,5 @@
 import os
+import re
 import imp
 import sys
 import string
@@ -234,3 +235,36 @@ def merged_stderr_stdout():  # $ exec 2>&1
 
 def redirect_stdout_stderr():
     return stdout_redirected(stdout=sys.stderr)
+
+def which(name=None, regex=None, flags=os.X_OK, d=None):
+    """Search PATH for executable files with the given name.
+    http://twistedmatrix.com/trac/browser/tags/releases/twisted-8.2.0/twisted/python/procutils.py?format=txt
+    """
+    if name and regex:
+        raise ValueError('name and regex are mutually exclusive')
+    result = []
+    exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
+
+    if d is not None:
+        search_path = [d]
+    else:
+        path = os.environ.get('PATH', None)
+        if path is None:
+            return []
+        search_path = os.environ.get('PATH', '').split(os.pathsep)
+
+    for p in search_path:
+        if regex:
+            p = [os.path.join(join(p,f)) for f in os.listdir(p)
+                 if re.search(regex, f.strip())]
+            result.extend([x for x in p if os.access(x, flags)])
+            result.extend([x + e for e in exts for x in p if os.access(x+e, flags)])
+        else:
+            p = os.path.join(p, name)
+            if os.access(p, flags):
+                result.append(p)
+            for e in exts:
+                pext = p + e
+                if os.access(pext, flags):
+                    result.append(pext)
+    return result

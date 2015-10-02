@@ -52,6 +52,7 @@ class Environment(object):
     simulation_dir = None
 
     plotter = MATPLOTLIB
+    output_format = REC
 
     # For the gui
     gui_mode = False

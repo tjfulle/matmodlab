@@ -14,7 +14,7 @@ from ..constants import *
 from ..materials.product import *
 from ..product import ROOT_D, BLD_D, PLATFORM, TEST_D, PKG_D, EXMPL_D, PYEXE
 from ..mml_siteenv import environ
-from ..utils.misc import load_file
+from ..utils.misc import load_file, which
 
 # --- check prereqs
 (major, minor, micro, relev, ser) = sys.version_info
@@ -345,28 +345,46 @@ positional arguments:
             tempd = None
 
 def get_viewer():
+    """Get the tsviewer module.
+
+    This function is a bit fragile since this script could be being run from
+    python3 but tsviewer needs to be installed and run with python2.[67]"""
+
     response = raw_input('viewing requires the tsviewer package, '
                          'would you like to install it? (y/n) [n]: ')
     if response.lower()[0] != 'y':
-        raise SystemExit()
-    command = 'pip install tsviewer'
+        raise ValueError('Matmodlab viewer requires tsviewer package')
+
+    # tsviewer requires Python 2.[67], so we need to find a compatible pip. We
+    # assume that if we find python2\.[67], then the write pip will be in the
+    # same directory
+    py = which(regex=r'python2\.[67]$')
+    if not py:
+        raise RuntimeError('unable to find compatible python distribution')
+
+    # prefer 2.7
+    py = sorted(py, key=lambda x: x[-1], reverse=True)
+
+    # now find pip in the same directory
+    x = which('pip', d=dirname(py[0]))
+    if not x:
+        raise RuntimeError('unable to find compatible pip')
+
+    command = '{0} install tsviewer'.format(x[0])
     proc = Popen(command.split())
     proc.wait()
     if proc.returncode != 0:
-        raise SystemExit('unable to install tsviewer')
+        raise RuntimeError('unable to install tsviewer')
 
 def launch_viewer(argv):
-    # find the python2.7 executable
-    d = dirname(PYEXE)
-    py2 = [realpath(join(d,f)) for f in os.listdir(d)
-           if re.search(r'python2.[67]$', f.strip())][0]
-    command = '{0} -m tsviewer --check-install'.format(py2)
-    try:
-        i = check_output(command.split())
-    except CalledProcessError:
+    # find the tsviewer executable
+    x = which('tsviewer')
+    if not x:
         get_viewer()
-    command = '{0} -m tsviewer {1}'.format(py2, ' '.join(argv))
-    proc = Popen(command.split())
+        x = which('tsviewer')
+        if not x:
+            raise RuntimeError('Failed to find tsviewer executable')
+    proc = Popen(x[:1] + argv)
     proc.wait()
     return proc.returncode
 

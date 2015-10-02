@@ -9,9 +9,8 @@ from matmodlab import *
 # Copper                  E       NU
 parameters = np.array([0.110e12, .340])
 
-# output options are (default is DBX):
-#  * DBX for compressed XML file
-#  * EXO for exodus II file
+# output options are
+#  * REC for binary pickle of simulation data [default]
 #  * TXT for whitespace-delimited text
 #  * XLS or 'xlsx' for excel file
 #  * PKL for python pickle

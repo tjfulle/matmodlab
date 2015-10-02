@@ -26,13 +26,13 @@ __all__ = ['MaterialPointSimulator', 'StrainStep', 'StressStep', 'MixedStep',
 
 class MaterialPointSimulator(object):
     def __init__(self, job, verbosity=None, d=None,
-                 initial_temperature=DEFAULT_TEMP, output=None):
+                 initial_temperature=DEFAULT_TEMP, output_format=None):
         '''Initialize the MaterialPointSimulator object
 
         '''
         self.job = job
 
-        self.output_format = output or REC
+        self.output_format = output or environ.output_format
 
         self.verbosity = verbosity
         self.initial_temperature = initial_temperature
@@ -70,7 +70,7 @@ class MaterialPointSimulator(object):
     def copy(self, job):
         model = MaterialPointSimulator(job, verbosity=self.verbosity,
                    d=self.directory, initial_temperature=self.initial_temperature,
-                   output=self.output_format)
+                   output_format=self.output_format)
         for s in self.steps.values()[1:]:
             step = AnalysisStep(s.kind, s.name, s.previous, s.increment,
                                 len(s.frames), s.components, s.descriptors,

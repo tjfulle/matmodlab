@@ -2,7 +2,7 @@
 from matmodlab import *
 
 # initialize the job, request output in plaintext ("txt")
-mps = MaterialPointSimulator("hello_world", output='txt')
+mps = MaterialPointSimulator("hello_world", output_format='txt')
 
 # set up the linear elastic model "pyelastic"
 mps.Material("pyelastic", {"K": 1.0e10, "G": 1.0e9})
