@@ -53,7 +53,7 @@ class TestAddonModels(StandardMatmodlabTest):
         mps.StrainRateStep(components=(0,0,0), temperature=100., frames=100)
         mps.run()
 
-        out = mps.get('T', 'E.XX', 'S.XX', 'S.YY', 'S.ZZ', 'SDV.EM.XX')
+        out = mps.get('T', 'E.XX', 'S.XX', 'S.YY', 'S.ZZ', 'SDV_EM.XX', disp=-1)
 
         errors = []
         for (i, row) in enumerate(out[1:], start=1):

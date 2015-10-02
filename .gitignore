@@ -15,6 +15,8 @@ foo.*
 build/
 *module.c
 *.bak
+*.rpk
+*.difflog
 *mod
 *~
 
@@ -37,3 +39,5 @@ TestResults.*
 .built
 
 .DS_Store
+
+dist

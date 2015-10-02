@@ -11,8 +11,7 @@ setup(name='matmodlab',
       long_description=('The material model laboratory (*matmodlab*) is an '
                         'object oriented model driver. The majority of the '
                         'source code is written in Python and requires no '
-                        'additional building.'),
-      classifiers=[  # Classifier list:  https://pypi.python.org/pypi?:action=list_classifiers
+                        'additional building.'), classifiers=[  # Classifier list:  https://pypi.python.org/pypi?:action=list_classifiers
                    "Development Status :: 4 - Beta",
                    "Environment :: Console",
                    "Intended Audience :: Science/Research",
@@ -31,8 +30,6 @@ setup(name='matmodlab',
       author_email='timothy.fuller@utah.edu,scot.swan@gmail.com',
       license='MIT',
       packages=[
-                'femlib',
-                'femlib.fileio',
                 'tabfileio',
                 'matmodlab',
                 'matmodlab.fitting',
@@ -44,7 +41,6 @@ setup(name='matmodlab',
                 'matmodlab.utils.numerix',
                ],
       package_dir={
-                   'femlib':'femlib',
                    'tabfileio':'tabfileio',
                    'matmodlab':'matmodlab',
                   },

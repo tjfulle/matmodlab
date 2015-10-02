@@ -29,8 +29,8 @@ class MMLTabularWriter(object):
         self.stack = []
 
         self.filename = realpath(filename)
-        if not self.filename.endswith('.xml'):
-            self.filename += '.xml'
+        if not self.filename.endswith('.edb'):
+            self.filename += '.edb'
         self.evald = dirname(self.filename)
         if not isdir(self.evald):
             raise OSError('no such directory {0!r}'.format(self.evald))
@@ -280,7 +280,7 @@ def plot_bokeh_correlations(filepath, nonan=1):
     return gridplot([plots])
 
 def is_evaldb(filename):
-    if not isfile(filename) or not filename.endswith('.xml'):
+    if not isfile(filename) or not filename.endswith('.edb'):
         return False
     with open(filename, 'r') as fh:
         for i in range(4):

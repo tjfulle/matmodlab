@@ -19,7 +19,6 @@ from ..utils.misc import backup
 from ..mml_siteenv import environ
 from ..utils.logio import setup_logger
 from ..utils.errors import MatModLabError
-from ..mmd.mdb import mdb, ModelCaptured as ModelCaptured
 from ..utils.mmltab import MMLTabularWriter, correlations, plot_correlations
 
 RAND = np.random.RandomState()
@@ -46,11 +45,7 @@ class Permutator(object):
         d = os.path.realpath(d or os.getcwd())
         self.directory = d
         self.rootd = os.path.join(d, job + ".eval")
-        self.output = os.path.join(self.rootd, job + '.xml')
-
-        if environ.capture_model:
-            mdb.add_permutator(self)
-            raise ModelCaptured
+        self.output = os.path.join(self.rootd, job + '.edb')
 
         if descriptors is None:
             self.descriptors = None
@@ -319,7 +314,7 @@ def run_job(args):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         logger.error("\nRun {0} failed with the following "
                      "exception:\n".format(ps.job_num))
-        traceback.print_exception(exc_type, exc_value, exc_traceback, file=logger)
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
         stat = 1
         resp = [np.nan for _ in range(nresp)] or None
 

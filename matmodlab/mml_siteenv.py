@@ -51,8 +51,10 @@ class Environment(object):
 
     simulation_dir = None
 
+    plotter = MATPLOTLIB
+    output_format = REC
+
     # For the gui
-    capture_model = 0
     gui_mode = False
     do_not_fork = False
 

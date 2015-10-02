@@ -12,7 +12,7 @@ class TestJ2Plasticity(StandardMatmodlabTest):
     @pytest.mark.material
     @pytest.mark.parametrize('realization', range(1,4))
     def test_random_j2_1(self, realization):
-        myvars = ('TIME',
+        myvars = ('Time',
                   'E.XX', 'E.YY', 'E.ZZ', 'E.XY', 'E.YZ', 'E.XZ',
                   'S.XX', 'S.YY', 'S.ZZ', 'S.XY', 'S.YZ', 'S.XZ')
         job = 'test_random_j2_1_{0}'.format(realization)
@@ -29,7 +29,8 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         parameters = {'K': K, 'G': G, 'A1': Y_SHEAR}
         mps.Material('pyplastic', parameters)
         mps.run()
-        simulation = mps.get(*myvars)
+        kw = {'disp': -1}
+        simulation = mps.get(*myvars, **kw)
         fh = open(join(this_directory, mps.job + '.difflog'), 'w')
         stats = compare_responses(analytic, simulation, myvars, fh)
         fh.close()
@@ -45,7 +46,7 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         mps = MaterialPointSimulator(job, verbosity=0, d=this_directory)
 
         # set up the model
-        myvars = ('TIME', 'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ')
+        myvars = ('Time', 'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ')
 
         # Set up the path and random material constants
         K = 150.0e9
@@ -76,7 +77,8 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         mps.run()
 
         # check output with analytic
-        simulation = mps.get(*myvars)
+        kw = {'disp': -1}
+        simulation = mps.get(*myvars, **kw)
         fh = open(join(this_directory, mps.job + '.difflog'), 'w')
         stats = compare_responses(analytic, simulation, myvars, fh)
         fh.close()

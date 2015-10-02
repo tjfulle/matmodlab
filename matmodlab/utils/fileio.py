@@ -1,32 +1,202 @@
 import os
 import sys
 import argparse
+import warnings
 import numpy as np
+from numpy.compat import asbytes
 import xml.dom.minidom as xdom
 from os.path import isfile, splitext, basename, join
 
-import tabfileio
-
 from .numerix import *
-from femlib.fileio import loaddb_single_element
+from ..constants import *
 
-def loadfile(filename, disp=1, skiprows=0, sheet="MML", columns=None,
+def savefile(filename, names, data):
+    """Save the file using tabfileio"""
+    try:
+        import tabfileio
+    except ImportError:
+        raise ValueError('external tabfileio package required to load file type')
+    tabfileio.write_file(filename, names, data)
+
+def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
              comments='#', variables=None, at_step=0, upcase=1):
-    db = ('.exo', '.base_exo', '.dbx', '.base_dbx')
-    if isinstance(filename, basestring) and filename.endswith(db):
-        return loaddb_single_element(filename, variables=variables, disp=disp,
-                                     blk_num=1, elem_num=1, at_step=at_step,
-                                     upcase=upcase)
+    """Load the file"""
+    if columns is not None and variables is not None:
+        raise ValueError('columns and variables keywords are exclusive')
+    columns = columns if columns is not None else variables
+
+    if not is_string_like(filename):
+        # assume filename is a stream
+        names, data = loadstream(filename, upcase=upcase, disp=1,
+                                 comments=comments, skiprows=skiprows)
+
+    elif filename.endswith(tuple('.%s'%ext for ext in (CSV, TXT))):
+        # standard Matmodlab formats
+        names, data = loadtxt(filename, upcase=upcase, disp=1,
+                              comments=comments, skiprows=skiprows)
+
+    elif filename.endswith(('.exo', '.base_exo', '.dbx', '.base_dbx')):
+        # legacy finite element database formats
+        try:
+            from femlib.fileio import loaddb_single_element
+        except ImportError:
+            raise ValueError('external femlib package required to load file type')
+        names, data = loaddb_single_element(filename, disp=1, blk_num=1,
+                                            elem_num=1, at_step=at_step,
+                                            upcase=upcase)
+
+    elif filename.endswith(('.rpk', '.base_rpk')):
+        # Matmodlab record array pickle
+        names, data = loadrec(filename, upcase=upcase, disp=1, at_step=at_step)
+
     else:
-        if columns is not None and variables is not None:
-            raise ValueError('columns and variables arguments are exclusive')
-        if variables is not None:
-            columns = variables
-        if columns is not None:
-            # convert  to list
-            columns = [x for x in columns]
-        return tabfileio.read_file(filename, columns=columns,
-                                   disp=disp, sheet=sheet)
+        # ??? -> let tabfileio deal with this extension
+        try:
+            import tabfileio
+        except ImportError:
+            raise ValueError('external tabfileio package '
+                             'required to load file type')
+
+        names, data = tabfileio.read_file(filename, disp=1, sheetname=sheetname)
+
+    if columns:
+        columns = tolist(columns)
+        for (i, item) in enumerate(columns):
+            if is_string_like(item):
+                # determine the integer column index
+                if names is None:
+                    raise ValueError('cannot determine column numbers '
+                                     'of named variables')
+                j = index(names, item)
+                if j is None:
+                    raise ValueError('%r not in file' % item)
+                columns[i] = j
+        data = data[:, columns]
+        if names:
+            names = [names[i] for i in columns]
+
+    if disp:
+        return names, data
+    return data
+
+def loadrec(filename, upcase=0, disp=1, at_step=0):
+    """Load a numpy record array stored as a pickle"""
+
+    # load the data
+    data = np.load(filename)
+
+    # get the names -> specific to how Matmodlab stores the data
+    names = []
+    for item in data.dtype.descr:
+        # Get the names of each field, expanded to include component
+        try:
+            key, dtype, shape = item
+            keys = ['%s.%s' % (key, ext) for ext in COMPONENT_LABELS(shape[0])]
+        except ValueError:
+            key, dtype = item
+            if key.startswith('SDV_'):
+                key = key.replace('SDV_', 'SDV.')
+            keys = [key]
+        names.extend(keys)
+
+    data = rec2arr(data)
+
+    if at_step:
+        # Get only the data at the end of the step
+        d = {}
+        for (i, x) in enumerate(data['Step']):
+            d.setdefault(int(x), []).append(i)
+        rows = [x[-1] for x in sorted(d.values())]
+        data = data[rows]
+
+    if disp:
+        if upcase:
+            names = [x.upper() for x in names]
+        return names, data
+
+    return data
+
+def loadstream(stream, comments='#', skiprows=0, upcase=False, disp=1):
+    """Load data contained in the stream"""
+
+    for i in range(skiprows):
+        next(stream)
+
+    names = None
+    if disp:
+        # find the header
+        names = find_header(stream, comments=comments, upcase=upcase)
+        if names is None:
+            warnings.warn('loadstream: could not find header')
+
+    data = np.loadtxt(stream)
+    if disp:
+        return names, data
+    return data
+
+def loadtxt(filename, comments='#', skiprows=0, upcase=False,
+            delimiter=' ', disp=1):
+
+    if filename.endswith('.csv'):
+        delimiter = ','
+
+    # open the stream and load the data
+    stream = open(filename, 'r')
+    names, data = loadstream(stream, comments=comments, delimiter=delimiter,
+                             disp=1, skiprows=skiprows, upcase=upcase)
+    stream.close()
+
+    if disp:
+        return names, data
+    return data
+
+def find_header(stream, comments='#', delimiter=' ', upcase=False):
+    """Find the header in the first line of the stream"""
+
+    comments = asbytes(comments)
+    terminator = asbytes('\r\n')
+    pos = stream.tell()
+
+    def _split(line):
+        """Look for a header in the line"""
+        try:
+            pre, post = [s.strip(terminator)
+                         for s in asbytes(line).split(comments, 1)]
+        except ValueError:
+            return None
+        if pre.split():
+            # Line of form: a b c # e f g
+            # -> not a header
+            return None
+        post = [x.strip() for x in post.split(delimiter)] or None
+        return post
+
+    names = None
+    try:
+        while not names:
+            first_line = next(stream)
+            names = _split(first_line)
+    except StopIteration:
+        names = None
+
+    if names is None:
+        # no header found, rewind
+        stream.seek(pos)
+
+    return names
+
+def flatten(a):
+    flat = []
+    for x in a:
+        try: flat.extend(x)
+        except TypeError: flat.append(x)
+    return flat
+
+def rec2arr(recarr):
+    arr = []
+    for row in recarr:
+        arr.append(flatten(row.tolist()))
+    return np.array(arr)
 
 def filediff_entry(argv=None):
     if argv is None:
@@ -49,7 +219,8 @@ def filediff_entry(argv=None):
     return filediff(args.source1, args.source2, control_file=args.f,
                     interp=args.interp)
 
-def filediff(source1, source2, control_file=None, interp=False, stream=sys.stdout):
+def filediff(source1, source2, control_file=None, interp=False, stream=sys.stdout,
+             adjust_n=0):
 
     errors = 0
     if not isfile(source1):
@@ -66,6 +237,11 @@ def filediff(source1, source2, control_file=None, interp=False, stream=sys.stdou
     stream.write('done\nreading {0}... \n'.format(source2))
     H2, D2 = loadfile(source2)
     stream.write('done\n'.format(source1))
+
+    if adjust_n:
+        m = min(D1.shape[0], D2.shape[0])
+        D1 = D1[:m]
+        D2 = D2[:m]
 
     if control_file is not None:
         if not isfile(control_file):
@@ -280,3 +456,34 @@ def filedump(infile, outfile, variables=None, listvars=False, ffmt='%.18f'):
 
     if fown:
         stream.close()
+
+def is_string_like(obj):
+    # from numpy/lib/_iotools.py
+    try:
+        obj + ''
+    except (TypeError, ValueError):
+        return False
+    return True
+
+def is_number_like(obj):
+    # from numpy/lib/_iotools.py
+    try:
+        int(obj)
+    except (ValueError, TypeError):
+        return False
+    return True
+
+def tolist(obj):
+    if is_number_like(obj):
+        return [obj]
+    elif is_string_like(obj):
+        return [obj]
+    return list(obj)
+
+def index(lst, x):
+    if not lst:
+        return None
+    try:
+        return [s.upper() for s in lst].index(x.upper())
+    except ValueError:
+        return None

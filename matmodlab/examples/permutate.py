@@ -21,7 +21,7 @@ def func(x, xnames, d, job, *args):
     # set up and run the model
     mps.run()
 
-    s = mps.get('S.XX', 'S.YY', 'S.ZZ')
+    s = mps.get('S.XX', 'S.YY', 'S.ZZ', disp=-1)
     p = -np.sum(s, axis=1) / 3.
     return np.amax(p)
 

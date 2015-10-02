@@ -14,7 +14,6 @@ from ..mml_siteenv import environ
 from ..utils.logio import setup_logger
 from ..utils.errors import MatModLabError
 from ..utils.mmltab import MMLTabularWriter
-from .mdb import mdb, ModelCaptured as ModelCaptured
 
 IOPT = 0
 LASTEVALD = None
@@ -39,11 +38,7 @@ class Optimizer(object):
         d = os.path.realpath(d or os.getcwd())
         self.directory = d
         self.rootd = os.path.join(d, job + ".eval")
-        self.output = os.path.join(self.rootd, job + '.xml')
-
-        if environ.capture_model:
-            mdb.add_optimizer(self)
-            raise ModelCaptured
+        self.output = os.path.join(self.rootd, job + '.edb')
 
         if not isinstance(descriptors, (list, tuple)):
             descriptors = [descriptors]
@@ -304,7 +299,7 @@ def run_job(xcall, *args):
         if halt_on_err:
             logger.error("\n\nHalting optimization on error at user request.\n")
             raise  # re-raise previous error
-        
+
         stat = 1
         err = np.nan
 

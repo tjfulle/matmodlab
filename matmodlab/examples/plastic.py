@@ -9,7 +9,8 @@ from matmodlab import *
 mps = MaterialPointSimulator('plastic')
 
 # set up the material
-parameters = {'E': 10e6, 'Nu': .33, 'Y': 40e3}
+Y = 40e3
+parameters = {'E': 10e6, 'Nu': .33, 'Y': Y}
 mps.Material('plastic', parameters)
 
 # define the steps
@@ -20,5 +21,7 @@ mps.MixedStep(components=(0, 0, 0), descriptors='ESS', frames=N)
 # run the simulation
 mps.run()
 
-a = mps.get('SDV.Mises')
+a = mps.get('SDV_Mises')
 S = np.amax(a)
+
+assert abs(S - Y) <= 1e-8

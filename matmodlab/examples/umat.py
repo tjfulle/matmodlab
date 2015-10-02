@@ -9,15 +9,14 @@ from matmodlab import *
 # Copper                  E       NU
 parameters = np.array([0.110e12, .340])
 
-# output options are (default is DBX):
-#  * DBX for compressed XML file
-#  * EXO for exodus II file
+# output options are
+#  * REC for binary pickle of simulation data [default]
 #  * TXT for whitespace-delimited text
 #  * XLS or 'xlsx' for excel file
 #  * PKL for python pickle
 
 models = {}
-models['mps-1'] = MaterialPointSimulator('umat', output=DBX)
+models['mps-1'] = MaterialPointSimulator('umat')
 models['mps-1'].StrainStep(components=(.2, .0, .0), frames=50)
 models['mps-1'].StrainStep(components=(.0, .0, .0), frames=50)
 models['mps-1'].Material(UMAT, parameters, depvar=0,

@@ -38,15 +38,16 @@ class StandardMatmodlabTest(object):
     def teardown_class(self):
         '''Removes all test generated files'''
         exts = ['.' + x for x in DB_FMTS]
+        exts = []
         exts += ['.difflog', '.con', '.log', '.eval', '.dat']
         for job in self.completed_jobs:
             for ext in exts:
                 remove(join(this_directory, job + ext))
 
     @staticmethod
-    def compare_with_baseline(job, base=None, cf=control_file, interp=0):
+    def compare_with_baseline(job, base=None, cf=control_file, interp=0, adjust_n=0):
         if base is None:
-            for ext in ('.base_dbx', '.base_exo', '.base_dat'):
+            for ext in ('.base_rpk', '.base_dat'):
                 base = join(this_directory, job.job + ext)
                 if isfile(base):
                     break
@@ -55,4 +56,4 @@ class StandardMatmodlabTest(object):
         f = splitext(job.filename)[0] + '.difflog'
         with open(f, 'w') as fh:
             return filediff(job.filename, base, control_file=cf, stream=fh,
-                            interp=interp)
+                            interp=interp, adjust_n=adjust_n)

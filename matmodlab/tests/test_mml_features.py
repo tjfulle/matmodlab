@@ -57,7 +57,7 @@ class TestStepFactories(StandardMatmodlabTest):
         mps.GenSteps(StrainStep, components=(1,0,0), increment=2*pi,
                      steps=200, frames=1, scale=.1, amplitude=(np.sin,))
         mps.run(termination_time=1.8*pi)
-        status = self.compare_with_baseline(mps)
+        status = self.compare_with_baseline(mps, adjust_n=1)
         assert status == 0
         self.completed_jobs.append(mps.job)
 
@@ -78,7 +78,7 @@ class TestPermutation(StandardMatmodlabTest):
         mps.Material('elastic', parameters)
         mps.DataSteps(StringIO(path), scale=-.5, frames=5, descriptors='E'*6)
         mps.run()
-        pres = mps.get('S.Pres')
+        pres = -np.sum(mps.get('S.XX', 'S.YY', 'S.ZZ', disp=-1), axis=1) / 3
         return np.amax(pres)
 
     def test_permutate_zip(self):
@@ -169,16 +169,16 @@ class TestOptimization(StandardMatmodlabTest):
 
 def opt_pres_v_evol(outf):
 
-    vars_to_get = ('TIME', 'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ')
+    vars_to_get = ('Time', 'E.XX', 'E.YY', 'E.ZZ', 'S.XX', 'S.YY', 'S.ZZ')
 
     # read in baseline data
     aux = join(this_directory, 'opt.base_dat')
-    auxhead, auxdat = loadfile(aux, variables=vars_to_get)
+    auxhead, auxdat = loadfile(aux, variables=vars_to_get, disp=1)
     baseevol = auxdat[:,1] + auxdat[:,2] + auxdat[:,3]
     basepress = -(auxdat[:,4] + auxdat[:,5] + auxdat[:,6]) / 3.
 
     # read in output data
-    head, simdat = loadfile(outf, variables=vars_to_get)
+    head, simdat = loadfile(outf, variables=vars_to_get, disp=1)
     simevol = simdat[:,1] + simdat[:,2] + simdat[:,3]
     simpress = -(simdat[:,4] + simdat[:,5] + simdat[:,6]) / 3.
 
@@ -200,14 +200,14 @@ def opt_pres_v_evol(outf):
     return error
 
 def opt_sig_v_time(outf):
-    vars_to_get = ('TIME', 'S.XX', 'S.YY', 'S.ZZ')
+    vars_to_get = ('Time', 'S.XX', 'S.YY', 'S.ZZ')
 
     # read in baseline data
     auxf = join(this_directory, 'opt.base_dat')
-    auxhead, auxdat = loadfile(auxf, variables=vars_to_get)
+    auxhead, auxdat = loadfile(auxf, variables=vars_to_get, disp=1)
 
     # read in output data
-    simhead, simdat = loadfile(outf, variables=vars_to_get)
+    simhead, simdat = loadfile(outf, variables=vars_to_get, disp=1)
 
     # do the comparison
     error = -1

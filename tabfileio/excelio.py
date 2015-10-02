@@ -2,19 +2,25 @@
 import numpy as np
 
 # For 'xls' reading
-try: import xlrd
-except ImportError: xlrd = None
+try:
+    import xlrd
+except ImportError:
+    xlrd = None
 
 # For 'xls' writing
-try: import xlwt
-except ImportError: xlwt = None
+try:
+    import xlwt
+except ImportError:
+    xlwt = None
 
 # For 'xlsx' reading/writing
-try: import openpyxl
-except ImportError: openpyxl = None
+try:
+    import openpyxl
+except ImportError:
+    openpyxl = None
 
 
-def read_excel(filename, sheet=None, columns=None, disp=1):
+def read_excel(filename, sheetname=None, columns=None, disp=1):
     '''
     Takes in a spreadsheet of the form:
 
@@ -52,34 +58,38 @@ def read_excel(filename, sheet=None, columns=None, disp=1):
     # Open the file and grab the sheet names
     if filetype == "XLS":
         if xlrd is None:
-            raise Exception("Cannot read xls files because package xlrd is not found")
+            raise Exception("Cannot read xls files because package"
+                            " xlrd is not found")
         wb = xlrd.open_workbook(filename)
         sheet_names = wb.sheet_names()
     else:
         if openpyxl is None:
-            raise Exception("Cannot read xlsx files because package openpyxl is not found")
-        wb = openpyxl.load_workbook(filename, use_iterators=True, data_only=True)
+            raise Exception("Cannot read xlsx files because package"
+                            " openpyxl is not found")
+        wb = openpyxl.load_workbook(filename, use_iterators=True,
+                                    data_only=True)
         sheet_names = wb.get_sheet_names()
 
     #
     # Figure out what sheet to use
-    if type(sheet) is int:
+    if type(sheetname) is int:
         # Sheet by index
-        if not (0 <= sheet < len(sheet_names)):
+        if not (0 <= sheetname < len(sheet_names)):
             raise Exception('Sheet index "{0}" out of bounds. 0 <= idx <= {1}'
-                            .format(sheet, len(sheet_names)-1))
-        sheet_index = sheet
-    elif type(sheet) is str:
+                            .format(sheetname, len(sheet_names)-1))
+        sheet_index = sheetname
+    elif type(sheetname) is str:
         # Sheet by name
         lower_names = [_.lower() for _ in sheet_names]
-        if sheet.lower() not in lower_names:
+        if sheetname.lower() not in lower_names:
             raise Exception('Sheet "{0}" not found in {1}'
-                            .format(sheet.lower(), repr(sheet_names)))
-        sheet_index = lower_names.index(sheet.lower())
+                            .format(sheetname.lower(), repr(sheet_names)))
+        sheet_index = lower_names.index(sheetname.lower())
     else:
         # If sheet 'MML' exists, use it, otherwise grab the first one
-        if 'mml' in sheet_names:
-            sheet_index = sheet_names.index('mml')
+        up = [_.upper() for _ in sheet_names]
+        if 'MML' in up:
+            sheet_index = up.index('MML')
         else:
             sheet_index = 0
 
@@ -137,26 +147,29 @@ def read_excel(filename, sheet=None, columns=None, disp=1):
     return head, data
 
 
-def write_excel(filename, head, data, columns=None, sheet="Sheet1"):
+def write_excel(filename, head, data, columns=None, sheetname=None):
 
     filetype = "XLS" if filename.upper().endswith(".XLS") else "XLSX"
+    sheetname = sheetname if sheetname else "Sheet1"
 
-    if not isinstance(sheet, str):
-        raise Exception("kwarg 'sheet' must be string-like.")
+    if not isinstance(sheetname, str):
+        raise Exception("kwarg 'sheetname' must be string-like.")
 
     #
     # Open the file and grab the sheet names
     if filetype == "XLS":
         if xlwt is None:
-            raise Exception("Cannot write xls files because package xlrd is not found")
+            raise Exception("Cannot write xls files because package"
+                            " xlrd is not found")
         wb = xlwt.Workbook()
-        sh = wb.add_sheet(sheet)
+        sh = wb.add_sheet(sheetname)
     else:
         if openpyxl is None:
-            raise Exception("Cannot write xlsx files because package openpyxl is not found")
+            raise Exception("Cannot write xlsx files because package"
+                            " openpyxl is not found")
         wb = openpyxl.Workbook()
         sh = wb.get_active_sheet()
-        sh.title = sheet
+        sh.title = sheetname
 
     # If specific columns are requested, prepare the columns index
     if columns is not None:
@@ -175,8 +188,8 @@ def write_excel(filename, head, data, columns=None, sheet="Sheet1"):
             sh.write(0, idx, head[i])
         # write the data
         for rdx, row in enumerate(data):
-           for idx, i in enumerate(columns):
-               sh.write(rdx + 1, idx, row[i])
+            for idx, i in enumerate(columns):
+                sh.write(rdx + 1, idx, row[i])
         wb.save(filename)
     else:
         # write the headers

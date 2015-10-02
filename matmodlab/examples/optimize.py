@@ -20,9 +20,9 @@ curve.
 
 # get the experimental stress and strain
 filename = os.path.join(get_my_directory(), 'optimize.xls')
-strain_exp, stress_exp = zip(*ufio.loadfile(filename, sheet='MML', disp=0,
+strain_exp, stress_exp = zip(*ufio.loadfile(filename, sheetname='MML', disp=0,
                                             columns=['E.XX', 'S.XX']))
-exp_data = ufio.loadfile(filename, sheet='MML', disp=0,
+exp_data = ufio.loadfile(filename, sheetname='MML', disp=0,
                          columns=['E.XX', 'S.XX'])
 
 def func(x=[], xnames=[], evald='', job='', *args):
@@ -38,16 +38,15 @@ def func(x=[], xnames=[], evald='', job='', *args):
     # The missing columns are filled with zeros -> giving uniaxial stress in
     # this case. Declaring the steps this way does require loading the excel
     # file anew for each run
-    mps.DataSteps(filename, steps=30, sheet='MML',
+    mps.DataSteps(filename, steps=30, sheetname='MML',
                   columns=('E.XX',), descriptors='ESS')
 
     mps.run()
     if not mps.ran:
         return 1.0e9
 
-    sim_data = mps.get('E.XX', 'S.XX')
-    error = unnm.calculate_bounded_area(exp_data[:,0], exp_data[:,1],
-                                        sim_data[:,0], sim_data[:,1])
+    exx, sxx = mps.get('E.XX', 'S.XX')
+    error = unnm.calculate_bounded_area(exp_data[:,0], exp_data[:,1], exx, sxx)
     return error
 
 def runjob(method, v=1):

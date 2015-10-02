@@ -31,11 +31,11 @@ models['mps-2'].Material('pyelastic', parameters)
 models['mps-2'].run()
 
 # check the difference
-data_1 = models['mps-1'].get('E.XX', 'S.XX')
-data_2 = models['mps-2'].get('E.XX', 'S.XX')
+exx1, sxx1 = models['mps-1'].get('E.XX', 'S.XX')
+exx2, sxx2 = models['mps-2'].get('E.XX', 'S.XX')
 
-m = np.amax(data_1[:,1])
-assert np.allclose(data_1[:,1]/m, data_2[:,1]/m)
+m = np.amax(sxx1)
+assert np.allclose(sxx1/m, sxx2/m)
 
 J0_1 = models['mps-1'].material.J0
 J0_2 = models['mps-2'].material.J0

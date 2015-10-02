@@ -34,14 +34,14 @@ models['mps-1'].run()
 models['mps-2'] = MaterialPointSimulator("uniaxial_stress-1")
 
 # set up the steps, using strain from the previous simulaiton
-data_1 = models['mps-1'].get('E.XX', 'S.XX', at_step=1)
-for row in data_1[1:]:
-    models['mps-2'].MixedStep(components=(row[0], 0, 0), descriptors='ESS', frames=N)
+exx, sxx = models['mps-1'].get('E.XX', 'S.XX', at_step=1)
+for e in exx[1:]:
+    models['mps-2'].MixedStep(components=(e, 0, 0), descriptors='ESS', frames=N)
 models['mps-2'].Material("elastic", parameters)
 models['mps-2'].run()
 
 # check the difference
-data_2 = models['mps-2'].get('E.XX', 'S.XX', at_step=1)
+exx2, sxx2 = models['mps-2'].get('E.XX', 'S.XX', at_step=1)
 
-m = np.amax(data_1[:,1])
-assert np.allclose(data_1[:,1]/m, data_2[:,1]/m)
+m = np.amax(sxx)
+assert np.allclose(sxx/m, sxx2/m)
