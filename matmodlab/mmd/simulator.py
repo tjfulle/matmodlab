@@ -32,7 +32,7 @@ class MaterialPointSimulator(object):
         '''
         self.job = job
 
-        self.output_format = output or environ.output_format
+        self.output_format = output_format or environ.output_format
 
         self.verbosity = verbosity
         self.initial_temperature = initial_temperature
