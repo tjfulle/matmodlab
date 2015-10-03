@@ -416,7 +416,10 @@ Material: {5}
             if legend:
                 kwds['legend'] = legend
             if plot is None:
-                plot = create_figure(x_axis_label=xvar, y_axis_label=yvar)
+                plot_width = kwds.pop('plot_width', 650)
+                plot_height = kwds.pop('plot_height', 500)
+                plot = create_figure(x_axis_label=xvar, y_axis_label=yvar,
+                                     plot_width=plot_width, plot_height=plot_height)
             plot.line(xp, yp, **kwds)
             return plot
 
