@@ -402,7 +402,7 @@ class MaterialModel(object):
 # ----------------------------------------- Material Model Factory Method --- #
 def Material(model, parameters, switch=None, response=None,
              source_files=None, ordering=None, rebuild=False, user_ics=False,
-             libname=None, param_names=None, depvar=None, **kwargs):
+             libname=None, param_names=None, depvar=None, verbosity=None, **kwargs):
     """Factory method for subclasses of MaterialModel
 
     Parameters

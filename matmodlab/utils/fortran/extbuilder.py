@@ -46,7 +46,7 @@ class FortranExtBuilder(object):
         self.fc = fc
         FORT_COMPILER = fc
         self.name = name
-        self.chatty = verbosity > 4
+        self.chatty = verbosity >= 2
         self.exts_built = []
         self.exts_failed = []
         self.exts_to_build = []
@@ -109,7 +109,7 @@ class FortranExtBuilder(object):
             return
 
         if verbosity is not None:
-            chatty = verbosity > 4
+            chatty = verbosity >= 2
         else:
             chatty = self.chatty
 
@@ -152,19 +152,29 @@ class FortranExtBuilder(object):
         # build the extension modules with distutils setup
         logging.getLogger('matmodlab.mmd.builder').info(
             'building extension module[s]... ', extra={'continued':1})
-        f = join(PKG_D, "build.log") if not chatty else sys.stdout
         failed = 0
-        try:
+
+        if environ.notebook:
+            from IPython.utils import io
+            try:
+                with io.capture_output() as captured:
+                    setup(**config.todict())
+            except:
+                logging.getLogger('matmodlab.mmd.builder').error('failed')
+                failed = 1
+        else:
             sys.argv = [x for x in argv]
-            with stdout_redirected(to=f), merged_stderr_stdout():
-                setup(**config.todict())
-            logging.getLogger('matmodlab.mmd.builder').info('done')
-        except:
-            logging.getLogger('matmodlab.mmd.builder').error('failed')
-            failed = 1
-        finally:
-            sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-            sys.argv = [x for x in hold]
+            f = join(PKG_D, "build.log") if not chatty else sys.stdout
+            try:
+                with stdout_redirected(to=f), merged_stderr_stdout():
+                    setup(**config.todict())
+                logging.getLogger('matmodlab.mmd.builder').info('done')
+            except:
+                logging.getLogger('matmodlab.mmd.builder').error('failed')
+                failed = 1
+            finally:
+                sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+                sys.argv = [x for x in hold]
 
         # move files
         d = config.package_dir[config.name]

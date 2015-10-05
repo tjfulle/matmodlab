@@ -8,7 +8,6 @@ __all__ = ['environ']
 
 class Environment(object):
     # --- IO type variables
-    _log_level = logging.DEBUG
     warn = WARN
     Wall = False
     Werror = False
@@ -49,6 +48,8 @@ class Environment(object):
 
     rebuild_mat_lib = []
 
+    _verbosity = 1
+
     simulation_dir = None
 
     plotter = MATPLOTLIB
@@ -69,28 +70,20 @@ class Environment(object):
 
     @property
     def log_level(self):
-        return self._log_level
-
-    @property
-    def verbosity(self):
-        return {logging.CRITICAL: 0,
-                logging.ERROR: 0,
-                logging.WARNING: 0,
-                logging.INFO: 1,
-                logging.DEBUG: 2}[self._log_level]
-
-    @log_level.setter
-    def log_level(self, value):
         choices = {-2: logging.CRITICAL,
                    -1: logging.ERROR,
                     0: logging.WARNING,
                     1: logging.INFO,
                     2: logging.DEBUG}
-        if value in choices.values():
-            log_level = value
-        else:
-            log_level = choices[value]
-        self._log_level = log_level
+        return choices[self._verbosity]
+
+    @property
+    def verbosity(self):
+        return self._verbosity
+
+    @verbosity.setter
+    def verbosity(self, value):
+        self._verbosity = int(max(-2, min(value, 2)))
 
     def __contains__(self, item):
         try:

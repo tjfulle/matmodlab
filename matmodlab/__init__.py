@@ -88,7 +88,7 @@ def init_from_matmodlab_magic(p):
         i = 1
 
     environ.notebook = i
-    environ.log_level = logging.WARNING
+    environ.verbosity = 0
     try:
         from sympy import init_printing
         init_printing()
