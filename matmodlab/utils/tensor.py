@@ -40,6 +40,10 @@ II4 = (II2 + II3) / 2
 II5 = (array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
        0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0,
        0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5]).reshape(6,6))
+# Second-order identities
+I6 = array([1., 1., 1., 0., 0., 0.])
+I9 = array([1., 0., 0., 0., 1., 0., 0., 0., 1.])
+I3x3 = I9.reshape(3,3)
 def symsq(F):
     """ Computes dot(F.T, F)"""
     X = zeros(6)
@@ -59,6 +63,50 @@ def det(A):
         X = (A[0]*A[4]*A[8] - A[0]*A[5]*A[7] - A[1]*A[3]*A[8] + A[1]*A[5]*A[6]
              + A[2]*A[3]*A[7] - A[2]*A[4]*A[6])
     return X
+def ddot(A, B):
+    """ Computes A:B"""
+    if B.size == 6 and A.size == 9:
+        A, B = B, A
+    if A.size == 6 and B.size == 6:
+        X = (A[0]*B[0] + A[3]*B[3] + A[5]*B[5] + A[3]*B[3] + A[1]*B[1] +
+             A[4]*B[4] + A[5]*B[5] + A[4]*B[4] + A[2]*B[2])
+    elif A.size == 6 and B.size == 9:
+        X = (A[0]*B[0] + A[3]*B[1] + A[5]*B[2] + A[3]*B[3] + A[1]*B[4] +
+             A[4]*B[5] + A[5]*B[6] + A[4]*B[7] + A[2]*B[8])
+    elif A.size == 9 and B.size == 9:
+        X = (A[0]*B[0] + A[1]*B[1] + A[2]*B[2] + A[3]*B[3] + A[4]*B[4] +
+             A[5]*B[5] + A[6]*B[6] + A[7]*B[7] + A[8]*B[8])
+    else:
+        raise NotImplementedError
+    return X
+def trace(A, metric=None):
+    """Computes the trace of a tensor"""
+    if A.size not in (6, 9):
+        raise NotImplementedError
+    if A.size == 6 and metric is None:
+        metric, X = I6, I6
+    elif A.size == 9 and metric is None:
+        metric, X = I9, I9
+    else:
+        X = inv(metric)
+    return ddot(A, metric)
+def iso(A, metric=None):
+    """Computes the isotropic part of a tensor"""
+    if A.size not in (6, 9):
+        raise NotImplementedError
+    if A.size == 6 and metric is None:
+        metric, X = I6, I6
+    elif A.size == 9 and metric is None:
+        metric, X = I9, I9
+    else:
+        X = inv(metric)
+    return trace(A, metric) / 3. * X
+def dev(A, metric=None):
+    """Computes the isotropic part of a tensor"""
+    return A - iso(A, metric=metric)
+def mag(A):
+    """Computes the magnitude of a tensor"""
+    return np.sqrt(ddot(A, A))
 def invariants(A, itype=0):
     """ Computes the invariants of A
 

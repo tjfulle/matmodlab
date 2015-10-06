@@ -120,6 +120,7 @@ class MaterialModel(object):
         self.iparray = np.array(params)
 
         # --- set defaults
+        self.sqa_stiff = kwargs.get('sqa_stiff', environ.sqa_stiff)
         self.iwarn_stiff = 0
         self.visco_model = None
         self.xpan = None
@@ -142,7 +143,7 @@ class MaterialModel(object):
         if len(sdv_vals) != len(sdv_keys):
             raise MatModLabError('len(sdv_values) != len(sdv_keys)')
         self.sdv_keys = [s for s in sdv_keys]
-        self.initial_sdv = np.array(sdv_vals)
+        self.initial_sdv = np.array(sdv_vals, dtype=np.float64)
 
         # call model with zero strain rate to get initial jacobian
         time, dtime = 0, 1
@@ -370,7 +371,7 @@ class MaterialModel(object):
             # sub-Jacobian
             ddsdde = ddsdde[[[i] for i in v], v]
 
-        if last and environ.sqa_stiff:
+        if last and self.sqa_stiff:
             # check how close stiffness returned from material is to the numeric
             c = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0,
                         Fm, Em, dm, elec_field, stress, sdv, V)
@@ -379,12 +380,11 @@ class MaterialModel(object):
                 msg = 'error in material stiffness: {0:.4E} ({1:.2f})'.format(
                     err, time)
                 self.iwarn_stiff += 1
-                if self.iwarn_stiff < 10:
+                if self.iwarn_stiff <= 10:
+                    if self.iwarn_stiff == 10:
+                        msg = msg + ' (future warnings suppressed)'
                     logging.getLogger('matmodlab.mmd.simulator').warn(msg)
-                elif self.iwarn_stiff == 10:
-                    msg = msg + ' (future warnings suppressed)'
-                    logging.getLogger('matmodlab.mmd.simulator').warn(msg)
-                if sqa_stiff == 2:
+                if self.sqa_stiff == 2:
                     ddsdde = c.copy()
 
         if disp == 2:
