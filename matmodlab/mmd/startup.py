@@ -169,7 +169,7 @@ def run(argv):
         print 'warning: multiprocessing not finished, nprocs set to 1.'
         args.nprocs = 1
     environ.nprocs = args.nprocs
-    environ.log_level = args.v
+    environ.verbosity = args.v
     if args.w:
         environ.rebuild_mat_lib.append(args.w)
     environ.warn = args.W

@@ -25,7 +25,7 @@ def setup_logger(name, filename=None, verbosity=None, splashed=[0]):
         level = logging.CRITICAL
 
     elif verbosity is not None:
-        environ.log_level = verbosity
+        environ.verbosity = verbosity
         level = environ.log_level
 
     else:

@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import numpy as np
+from numpy.linalg import cholesky, LinAlgError
 import logging
 
 from matmodlab.product import PKG_D, BIN_D, ROOT_D
@@ -155,6 +156,13 @@ class MaterialModel(object):
         ddsdde = self.compute_updated_state(time, dtime, temp, dtemp, kappa,
                                        F0, F, stran, d, elec_field,
                                        stress, self.initial_sdv, disp=2)
+
+        # check that stiffness is positive definite
+        try:
+            cholesky(ddsdde)
+        except LinAlgError:
+            raise MatModLabError('initial elastic stiffness not positive definite')
+
         # property completions
         b = self.completions_map()
 
@@ -162,29 +170,36 @@ class MaterialModel(object):
         if b is not None and b:
             a = self.params
         else:
-            C = mmlabpack.isotropic_part(ddsdde)
-            lame, mu = C[0,1], C[5,5]
-            a = np.array([lame, mu])
-            b = {'LAME': 0, 'G': 1}
+            # Bulk modulus
+            K = np.sum(ddsdde[:3,:3], axis=None) / 9.
+
+            # Shear modulus
+            # pure shear
+            G = []
+            G.append((2. * ddsdde[0,0] - 3. * ddsdde[0,1] - ddsdde[0,2]
+                      + ddsdde[1,1] + ddsdde[1,2]) / 6.)
+            G.append((2. * ddsdde[1,1] - 3. * ddsdde[1,2] + ddsdde[2,2]
+                      -ddsdde[0,1] + ddsdde[0,2]) / 6.)
+            G.append((2 * ddsdde[0,0] - ddsdde[0,1] - 3. * ddsdde[0,2]
+                      + ddsdde[1,2] + ddsdde[2,2]) / 6.)
+            # simple shear
+            G.extend([ddsdde[3,3], ddsdde[4,4], ddsdde[5,5]])
+            a = np.array([K, np.average(G)])
+            b = {'K': 0, 'G': 1}
+
+        # calculate all elastic constants
         self.completions = complete_properties(a, b)
 
         self.J0 = np.zeros((6, 6))
-        threek = 3. * self.completions['K']
-        twog = 2. * self.completions['G']
-        nu = (threek - twog) / (2. * threek + twog)
-        c1 = (1. - nu) / (1. + nu)
-        c2 = nu / (1. + nu)
+        K3 = 3. * self.completions['K']
+        G = self.completions['G']
+        G2 = 2. * G
+        Lam = (K3 - G2) / 3.
 
         # set diagonal
-        for i in range(3):
-            self.J0[i, i] = threek * c1
-        for i in range(3, 6):
-            self.J0[i, i] = twog / 2.
-
-        # off diagonal
-        (self.J0[0, 1], self.J0[0, 2],
-         self.J0[1, 0], self.J0[1, 2],
-         self.J0[2, 0], self.J0[2, 1]) = [threek * c2] * 6
+        self.J0[np.ix_(range(3), range(3))] = Lam
+        self.J0[range(3),range(3)] += G2
+        self.J0[range(3,6),range(3,6)] = G
 
     def Viscoelastic(self, type, data):
         if self.visco_model is not None:

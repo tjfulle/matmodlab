@@ -82,6 +82,12 @@ class HyperelasticOptimizer:
         yp = f(xdata, *popt, **kw)
         err = sqrt(mean((yp - ydata) ** 2)) / abs(average(ydata))
 
+        # check if Drucker's stability criterion is satisfied
+        dy = yp.diff()
+        dx = xp.diff()
+        if np.any(dy * dx < -1e-12):
+            raise OptimizeError('Drucker stability criterion violated')
+
         return popt, pcov, infodict, errmsg, err
 
     def eval(self, **kw):
@@ -123,9 +129,9 @@ class HyperelasticOptimizer:
             plt.show()
 
     def bp_plot(self, strain=None, overlay=None, points=True, **kwargs):
-        from bokeh.plotting import *
+        import bokeh.plotting as bp
         TOOLS = 'resize,pan,wheel_zoom,box_zoom,reset,save'
-        plot = figure(tools=TOOLS, **kwargs)
+        plot = bp.figure(tools=TOOLS, **kwargs)
 
         if points:
             plot.circle(self.strain, self.stress,
@@ -277,7 +283,7 @@ def hyperopt(dtype, strain, stress, order=None, i2dep=None):
                 break
             opt[order] = p
         if not opt:
-            raise RuntimeError('unable to determine optimal parameters')
+            raise OptimizeError('unable to determine optimal parameters')
         order = sorted(opt, key=lambda x: opt[x].error)[0]
         opt = opt[order]
 
