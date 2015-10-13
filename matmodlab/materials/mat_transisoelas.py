@@ -1,6 +1,6 @@
 import numpy as np
 from matmodlab.mmd.material import MaterialModel
-from matmodlab.constants import VOIGHT
+from matmodlab.constants import VOIGT
 
 class TransIsoElas(MaterialModel):
     name = "transisoelas"
@@ -64,7 +64,7 @@ class TransIsoElas(MaterialModel):
         """
 
         # Handle strain-related tasks
-        d = d / VOIGHT
+        d = d / VOIGT
         eps = np.array(statev) + d * dtime
         D = np.array([[eps[0], eps[3], eps[5]],
                       [eps[3], eps[1], eps[4]],

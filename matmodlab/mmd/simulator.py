@@ -469,10 +469,10 @@ Material: {5}
         v = np.zeros(6, dtype=np.int)
         for (i, cij) in enumerate(step.components):
             if step.descriptors[i] == 1:         # -- strain rate
-                strain[1, i] = strain[0, i] + cij * VOIGHT[i] * step.increment
+                strain[1, i] = strain[0, i] + cij * VOIGT[i] * step.increment
 
             elif step.descriptors[i] == 2:       # -- strain
-                strain[1, i] = cij * VOIGHT[i]
+                strain[1, i] = cij * VOIGT[i]
 
             elif step.descriptors[i] == 3:       # -- stress rate
                 stress[1, i] = stress[0, i] + cij * step.increment
@@ -571,7 +571,7 @@ Material: {5}
             # --- update the state
             self.records.update(Step=step.num, Frame=frame.num,
                  Time=frame.value, DTime=frame.increment,
-                 E=strain[2]/VOIGHT, F=F[1], D=d/VOIGHT, DS=dstress, S=stress[2],
+                 E=strain[2]/VOIGT, F=F[1], D=d/VOIGT, DS=dstress, S=stress[2],
                  SDV=statev[1], T=temp[2], EF=efield[2], EPT=ept, EET=eet)
 
             if iframe > 1 and nv and not warned:

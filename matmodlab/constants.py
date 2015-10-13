@@ -35,7 +35,8 @@ V = 4
 Z6 = np.zeros(6)
 I6 = np.array([1., 1., 1., 0., 0., 0.])
 I9 = np.array([1., 0., 0., 0., 1., 0., 0., 0., 1.])
-VOIGHT = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
+VOIGT = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
+VOIGHT = VOIGT
 
 DEFAULT_TEMP = 298.
 

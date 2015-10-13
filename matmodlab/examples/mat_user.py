@@ -1,7 +1,7 @@
 import logging
 from numpy import dot, ix_, zeros
 from matmodlab.mmd.material import MaterialModel
-from matmodlab.constants import VOIGHT
+from matmodlab.constants import VOIGT
 
 class UserElastic(MaterialModel):
     name = "uelastic"

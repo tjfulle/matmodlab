@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from matmodlab.mmd.material import MaterialModel
 from matmodlab.utils.parameters import Parameters
-from matmodlab.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6, VOIGHT
+from matmodlab.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6, VOIGT
 
 
 class PyPlastic(MaterialModel):
@@ -117,7 +117,7 @@ class PyPlastic(MaterialModel):
         ep = statev[idx('EP_XX'):idx('EP_YZ')+1]
 
         # Compute the trial stress and invariants
-        stress = stress + self.dot_with_elastic_stiffness(d / VOIGHT * dtime)
+        stress = stress + self.dot_with_elastic_stiffness(d / VOIGT * dtime)
         i1 = self.i1(stress)
         rootj2 = self.rootj2(stress)
         if rootj2 - (A1 - A4 * i1) <= 0.0:

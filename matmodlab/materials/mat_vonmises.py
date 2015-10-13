@@ -2,7 +2,7 @@ import logging
 import numpy as np
 
 from matmodlab.mmd.material import MaterialModel
-from matmodlab.constants import ROOT2, ROOT23, VOIGHT
+from matmodlab.constants import ROOT2, ROOT23, VOIGT
 from matmodlab.utils.parameters import Parameters
 
 class VonMises(MaterialModel):
@@ -114,7 +114,7 @@ class VonMises(MaterialModel):
                        statev[idx('BS_XZ')]])
         yn = statev[idx('Y')]
 
-        de = d / VOIGHT * dtime
+        de = d / VOIGT * dtime
 
         iso = de[:3].sum() / 3.0 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         dev = de - iso

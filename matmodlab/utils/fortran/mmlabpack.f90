@@ -3,7 +3,7 @@ module mmlabpack
   integer, parameter :: nsymm=6, ntens=9
   real(kind=8), parameter :: zero=0.e+00_8, half=5.e-01_8
   real(kind=8), parameter :: one=1.e+00_8, two=2.e+00_8, three=3.e+00_8
-  real(kind=8), parameter :: VOIGHT(6)=(/one,one,one,two,two,two/)
+  real(kind=8), parameter :: VOIGT(6)=(/one,one,one,two,two,two/)
 
   interface expm
      module procedure expm_3x3, expm_6x1
@@ -55,7 +55,7 @@ contains
     else
        eps = logm(u)
     end if
-    u2e = symarray(eps) * VOIGHT
+    u2e = symarray(eps) * VOIGT
   end function u2e
 
   ! ------------------------------------------------------------------------- !
@@ -286,8 +286,8 @@ contains
     ! strain
     deps2d = zero
     i = eye(3)
-    eps = as3x3(e / VOIGHT)
-    depsdt = as3x3(de / VOIGHT)
+    eps = as3x3(e / VOIGT)
+    depsdt = as3x3(de / VOIGT)
     epsf = eps + depsdt * dt
 
     ! stretch and its rate
@@ -305,7 +305,7 @@ contains
     L = matmul(du, inv(u))
     d = half * (L + transpose(L))
 
-    deps2d = symarray(d) * VOIGHT
+    deps2d = symarray(d) * VOIGT
     return
 
   end function deps2d
@@ -446,7 +446,7 @@ contains
 
     ! convert arrays to matrices for upcoming operations
     f0 = transpose(reshape(farg, shape(f0)))
-    d = as3x3(darg / VOIGHT)
+    d = as3x3(darg / VOIGT)
     i = eye(3)
 
     ff = matmul(expm(d * dt), f0)
@@ -460,7 +460,7 @@ contains
        stop "negative Jacobian encountered"
     end if
     f = reshape(transpose(ff), shape(f))
-    e = symarray(eps) * VOIGHT
+    e = symarray(eps) * VOIGT
     return
   end subroutine update_deformation
 
@@ -487,7 +487,7 @@ contains
     if (det(f) <= zero) then
        stop "negative Jacobian encountered"
     end if
-    e = symarray(eps) * VOIGHT
+    e = symarray(eps) * VOIGT
     return
   end subroutine E_from_F
 
@@ -504,7 +504,7 @@ contains
     real(kind=8), intent(out) :: F(9)
     real(kind=8) :: eps(3,3), U(3,3), I(3,3), R(3,3)
     I = eye(3); R = eye(3)
-    eps = as3x3(E / VOIGHT)
+    eps = as3x3(E / VOIGT)
     if (k == 0) then
        U = expm(eps)
     else

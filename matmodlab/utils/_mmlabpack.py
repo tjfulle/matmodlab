@@ -1,6 +1,6 @@
 import numpy
 import scipy.linalg
-from ..constants import VOIGHT
+from ..constants import VOIGT
 
 def epsilon(a):
     """Find the machine precision for a float of type 'a'"""
@@ -39,7 +39,7 @@ def u2e(u, kappa):
         eps = 1.0 / kappa * (powm(u, kappa) - numpy.eye(3, 3))
     else:
         eps = logm(u)
-    return symarray(eps) * VOIGHT
+    return symarray(eps) * VOIGT
 
 
 def symarray(a):
@@ -147,8 +147,8 @@ def deps2d(dt, k, e, de):
     """
 
     D = numpy.zeros((3,3))
-    eps = as3x3(e / VOIGHT)
-    depsdt = as3x3(de / VOIGHT)
+    eps = as3x3(e / VOIGT)
+    depsdt = as3x3(de / VOIGT)
     epsf = eps + depsdt * dt
 
     # stretch and its rate
@@ -164,7 +164,7 @@ def deps2d(dt, k, e, de):
     L = numpy.dot(du, numpy.linalg.inv(u))
     D = (L + L.T) / 2.0
 
-    return symarray(D) * VOIGHT
+    return symarray(D) * VOIGT
 
 
 def update_deformation(dt, k, farg, darg):
@@ -200,7 +200,7 @@ def update_deformation(dt, k, farg, darg):
     ! where k is the Seth-Hill strain parameter.
     """
     f0 = farg.reshape((3, 3))
-    d = as3x3(darg / VOIGHT)
+    d = as3x3(darg / VOIGT)
     ff = numpy.dot(expm(d * dt), f0)
     u = sqrtm(numpy.dot(ff.T, ff))
     if k == 0:
@@ -212,7 +212,7 @@ def update_deformation(dt, k, farg, darg):
         raise Exception("negative jacobian encountered")
 
     f = asarray(ff, 9)
-    e = symarray(eps) * VOIGHT
+    e = symarray(eps) * VOIGT
 
     return f, e
 
@@ -234,14 +234,14 @@ def e_from_f(k, farg):
     if numpy.linalg.det(f) <= 0.0:
         raise Exception("negative jacobian encountered")
 
-    e = symarray(eps) * VOIGHT
+    e = symarray(eps) * VOIGT
 
     return e
 
 def f_from_e(kappa, E):
     R = numpy.eye(3)
     I = numpy.eye(3)
-    E = asmat(E / VOIGHT)
+    E = asmat(E / VOIGT)
     if kappa == 0:
         U = expm(E)
     else:
@@ -270,7 +270,7 @@ def dyad(a, b):
 
 def ddot(a, b):
     # double of symmetric tensors stored as 6x1 arrays
-    return numpy.sum(a * b * VOIGHT)
+    return numpy.sum(a * b * VOIGT)
 
 
 def trace(a):
