@@ -122,6 +122,7 @@ class MaterialModel(object):
 
         # --- set defaults
         self.sqa_stiff = kwargs.get('sqa_stiff', environ.sqa_stiff)
+        self.num_stiff = kwargs.get('num_stiff', environ.num_stiff)
         self.iwarn_stiff = 0
         self.visco_model = None
         self.xpan = None
@@ -370,7 +371,11 @@ class MaterialModel(object):
         if disp == 3:
             return sig
 
-        if ddsdde is None or self.visco_model is not None:
+        if self.num_stiff or self.visco_model is not None:
+            # force the use of a numerical stiffness
+            ddsdde = None
+
+        if ddsdde is None:
             # material models without an analytic jacobian send the Jacobian
             # back as None so that it is found numerically here. Likewise, we
             # find the numerical jacobian for visco materials - otherwise we

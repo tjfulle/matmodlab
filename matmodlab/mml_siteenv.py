@@ -18,6 +18,7 @@ class Environment(object):
     sqa = False
     debug = False
     sqa_stiff = False
+    num_stiff = False
 
     # --- Performance
     nprocs = 1
