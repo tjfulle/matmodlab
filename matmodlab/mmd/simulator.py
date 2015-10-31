@@ -225,13 +225,13 @@ Material: {5}
            self.material.num_sdv)
         logging.getLogger('matmodlab.mmd.simulator').info(summary)
 
-    def run(self, termination_time=None, target=None):
-        '''Run the problem
+    def arm(self, termination_time=None, target=None):
+        '''initialize everything for running the steps
 
         '''
         logger = logging.getLogger('matmodlab.mmd.simulator')
 
-        start = tt()
+        self.start_time = tt()
 
 	# register variables
         self._time = 0.
@@ -256,27 +256,34 @@ Material: {5}
         if self.material.sdv_keys:
             self.records.add('SDV', SDV, keys=self.material.sdv_keys)
 
-        num_frames = sum([len(s.frames) for s in self.steps.values()])
         self.records.init()
 
         self.write_summary()
 
         logger.info('Starting calculations...')
 
+
+    def run(self, termination_time=None, target=None):
+        '''Run the problem
+
+        '''
+
+        self.arm(termination_time=termination_time, target=target)
+
         try:
-            start = tt()
             self.run_steps(termination_time=termination_time, target=target)
-            dt = tt() - start
-            logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
-            self.ran = True
         except StopSteps:
-            dt = tt() - start
-            logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
-            self.ran = True
+            pass
         finally:
             self.finish()
 
     def finish(self):
+        logger = logging.getLogger('matmodlab.mmd.simulator')
+
+        dt = tt() - self.start_time
+        logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
+        self.ran = True
+
         self.records.finalize()
         if not environ.notebook:
             self.dump()
