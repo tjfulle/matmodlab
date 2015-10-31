@@ -257,7 +257,7 @@ Material: {5}
             self.records.add('SDV', SDV, keys=self.material.sdv_keys)
 
         num_frames = sum([len(s.frames) for s in self.steps.values()])
-        self.records.init(num_frames)
+        self.records.init()
 
         self.write_summary()
 
@@ -447,6 +447,9 @@ Material: {5}
         num_frame = len(step.frames)
         lsn = len(str(num_frame))
         message = '{0}, Frame {{0:{1}d}}'.format(step.name, lsn)
+
+        # Make room in the database for this step
+        self.records.extend(num_frame)
 
         kappa, proportional = step.kappa, step.proportional
 
@@ -1479,9 +1482,11 @@ class Records(OrderedDict):
         elif not expand:
             return super(Records, self).keys()
         return [key for f in self.values() for key in f.keys]
-    def init(self, n):
+    def init(self):
         dtype = [(r.name, r.dtype, r.shape) for r in self.values()]
-        self.data = np.empty((n,), dtype=dtype)
+        self.data = np.empty((0,), dtype=dtype)
+    def extend(self, n):
+        self.data = np.append(self.data, np.empty((n,), dtype=self.data.dtype))
     def update(self, **kw):
         def totuple(a):
             try: return tuple(a)
