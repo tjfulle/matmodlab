@@ -231,7 +231,7 @@ Material: {5}
         '''
         logger = logging.getLogger('matmodlab.mmd.simulator')
 
-        self.start_time = tt()
+        self.start_tt = tt()
 
 	# register variables
         self._time = 0.
@@ -262,6 +262,23 @@ Material: {5}
 
         logger.info('Starting calculations...')
 
+        step = self.steps.values()[0]
+        frame = step.frames[0]
+        S0 = self.initial_stress
+        sdv = self.material.initial_sdv
+
+        self.state_db = {
+          "F": np.array([I9, I9]),
+          "time": np.array([frame.time, frame.value, frame.time]),
+          "temp": np.array([step.temperature] * 3),
+          "stress": np.array([S0, S0, S0]),
+          "strain": np.array([Z6, Z6, Z6]),
+          "efield": np.array([step.elec_field] * 3),
+          "statev": np.array([sdv, sdv]),
+                        }
+
+        self.completed_step_idx = -1
+
 
     def run(self, termination_time=None, target=None):
         '''Run the problem
@@ -271,7 +288,7 @@ Material: {5}
         self.arm(termination_time=termination_time, target=target)
 
         try:
-            self.run_steps(termination_time=termination_time, target=target)
+            self.run_uncompleted_steps(termination_time=termination_time, target=target)
         except StopSteps:
             pass
         finally:
@@ -280,7 +297,7 @@ Material: {5}
     def finish(self):
         logger = logging.getLogger('matmodlab.mmd.simulator')
 
-        dt = tt() - self.start_time
+        dt = tt() - self.start_tt
         logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
         self.ran = True
 
@@ -288,41 +305,16 @@ Material: {5}
         if not environ.notebook:
             self.dump()
 
-    def run_steps(self, termination_time=None, target=None):
-
-        time_0 = tt()
-        step = self.steps.values()[0]
-        frame = step.frames[0]
-        t = np.array([frame.time, frame.value, frame.time])
-        temp = np.array([step.temperature] * 3)
-
-        F = np.array([I9, I9])
-        strain = np.array([Z6, Z6, Z6])
-        S0 = self.initial_stress
-        stress = np.array([S0, S0, S0])
-        sdv = self.material.initial_sdv
-        statev = np.array([sdv, sdv])
-        efield = np.array([step.elec_field] * 3)
-
-        # target strains
-        eet = ept = None
-        if target is not None:
-            eet, ept = np.array(Z6), np.array(Z6)
+    def run_uncompleted_steps(self, termination_time=None, target=None):
 
         steps = self.steps.values()
         for (i, step) in enumerate(steps):
+            if i <= self.completed_step_idx:
+                continue
             step.num = i
-            self.run_step(step, t, strain, F, stress, statev,
-                          temp, efield, time_0, eet, ept, target=target,
+            self.run_step(step, target=target,
                           termination_time=termination_time)
-
-            F[0] = F[1]
-            t[0] = t[2]
-            temp[0] = temp[2]
-            stress[0] = stress[2]
-            strain[0] = strain[2]
-            efield[0] = efield[2]
-            statev[0] = statev[1]
+            self.completed_step_idx = i
 
         return
 
@@ -443,9 +435,22 @@ Material: {5}
                 plt.legend(loc='best')
             plt.show()
 
-    def run_step(self, step, time, strain, F, stress, statev, temp,
-                efield, time_0, eet, ept, target=None, termination_time=None):
+    def run_step(self, step, target=None, termination_time=None):
         '''Process this step '''
+
+        # Unpack the state
+        F = self.state_db["F"]
+        time = self.state_db["time"]
+        temp = self.state_db["temp"]
+        stress = self.state_db["stress"]
+        strain = self.state_db["strain"]
+        efield = self.state_db["efield"]
+        statev = self.state_db["statev"]
+
+        # target strains
+        eet = ept = None
+        if target is not None:
+            eet, ept = np.array(Z6), np.array(Z6)
 
         # @tjfulle
         logger = logging.getLogger('matmodlab.mmd.simulator')
@@ -601,13 +606,22 @@ Material: {5}
 
             if termination_time is not None and time[2] >= termination_time:
                 logger.info('\r' + message.format(iframe+1) +
-                            ' ({0:.4f}s)'.format(tt()-time_0))
+                            ' ({0:.4f}s)'.format(tt()-self.start_tt))
                 raise StopSteps
 
             continue  # continue to next frame
 
+        # Save the state for next steps
+        self.state_db["F"][0] = F[1]
+        self.state_db["time"][0] = time[2]
+        self.state_db["temp"][0] = temp[2]
+        self.state_db["stress"][0] = stress[2]
+        self.state_db["strain"][0] = strain[2]
+        self.state_db["efield"][0] = efield[2]
+        self.state_db["statev"][0] = statev[1]
+
         logger.info('\r' + message.format(iframe+1) +
-                    ' ({0:.4f}s)'.format(tt()-time_0))
+                    ' ({0:.4f}s)'.format(tt()-self.start_tt))
 
         return 0
 
