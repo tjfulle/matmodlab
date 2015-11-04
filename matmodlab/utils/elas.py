@@ -393,6 +393,9 @@ class ElasticConstants(object):
                 # use default name
                 inp.insert(0, args[0])
 
+            if optional and inp[1] is None:
+                return
+
             try:
                 name, val = inp[0], float(inp[1])
             except ValueError:
