@@ -19,6 +19,9 @@ build/
 *.difflog
 *mod
 *~
+*.dSYM
+*.gz
+*.txt
 
 *-f2pywrappers2.f90
 
