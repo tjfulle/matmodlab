@@ -18,6 +18,8 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         job = 'test_random_j2_1_{0}'.format(realization)
         mps = MaterialPointSimulator(job, verbosity=0, d=this_directory)
         NU, E, K, G, LAM, Y_SHEAR = gen_rand_params()
+        parameters = {'K': K, 'G': G, 'A1': Y_SHEAR}
+        mps.Material('pyplastic', parameters)
         analytic = gen_rand_analytical_resp_1(LAM, G, Y_SHEAR)
         for (i, row) in enumerate(analytic[1:], start=1):
             incr = analytic[i, 0] - analytic[i-1, 0]
@@ -26,8 +28,6 @@ class TestJ2Plasticity(StandardMatmodlabTest):
             fh.write(''.join(['{0:>20s}'.format(_) for _ in myvars]) + '\n')
             for row in analytic:
                 fh.write(''.join(['{0:20.10e}'.format(_) for _ in row]) + '\n')
-        parameters = {'K': K, 'G': G, 'A1': Y_SHEAR}
-        mps.Material('pyplastic', parameters)
         mps.run()
         kw = {'disp': -1}
         simulation = mps.get(*myvars, **kw)
@@ -57,6 +57,10 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         E = 9.0 * K * G / (3.0 * K + G)
         NU = (3.0 * K - 2.0 * G) / (6.0 * K + 2.0 * G)
 
+        # set up the material
+        parameters = {'K': K, 'G': G, 'Y0': Y0, 'H': 0., 'BETA': 0.}
+        mps.Material('vonmises', parameters)
+
         # get the path and analytical solution
         pathtable, analytic = gen_rand_analytic_resp_2(NU, E, K, G, LAM, Y0)
 
@@ -68,10 +72,6 @@ class TestJ2Plasticity(StandardMatmodlabTest):
 
         for row in pathtable:
             mps.StrainStep(components=row, increment=1., frames=100)
-
-        # set up the material
-        parameters = {'K': K, 'G': G, 'Y0': Y0, 'H': 0., 'BETA': 0.}
-        mps.Material('vonmises', parameters)
 
         # run the model
         mps.run()
@@ -90,11 +90,11 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         mps = MaterialPointSimulator(job, verbosity=0, d=this_directory)
         NU, E, K, G, LAM, Y = copper_params()
         YF, H, BETA = Y, 0, 0
+        parameters = {'K': K, 'G': G, 'Y0': YF, 'H': H, 'BETA': 0}
+        mps.Material('vonmises', parameters)
         path = gen_uniax_strain_path(Y, YF, G, LAM)
         for row in path:
             mps.StrainStep(components=row, increment=1.0, frames=25)
-        parameters = {'K': K, 'G': G, 'Y0': YF, 'H': H, 'BETA': 0}
-        mps.Material('vonmises', parameters)
         mps.run()
         status = self.compare_with_baseline(mps, interp=1)
         assert status == 0
@@ -108,11 +108,11 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         HFAC = 1.0 / 10.0
         H = 3.0 * HFAC / (1.0 - HFAC) * G
         YF, BETA = Y * (1.0 + HFAC), 0
+        parameters = {'K': K, 'G': G, 'Y0': Y, 'H': H, 'BETA': BETA}
+        mps.Material('vonmises', parameters)
         path = gen_uniax_strain_path(Y, YF, G, LAM)
         for row in path:
             mps.StrainStep(components=row, increment=1.0, frames=25)
-        parameters = {'K': K, 'G': G, 'Y0': Y, 'H': H, 'BETA': BETA}
-        mps.Material('vonmises', parameters)
         mps.run()
         status = self.compare_with_baseline(mps, interp=1)
         assert status == 0
@@ -127,11 +127,11 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         H = 3.0 * HFAC / (1.0 - HFAC) * G
         YF = Y * (1.0 + HFAC)
         BETA = 1.0
+        parameters = {'K': K, 'G': G, 'Y0': Y, 'H': H, 'BETA': BETA}
+        mps.Material('vonmises', parameters)
         path = gen_uniax_strain_path(Y, YF, G, LAM)
         for row in path:
             mps.StrainStep(components=row, increment=1.0, frames=25)
-        parameters = {'K': K, 'G': G, 'Y0': Y, 'H': H, 'BETA': BETA}
-        mps.Material('vonmises', parameters)
         mps.run()
         status = self.compare_with_baseline(mps, interp=1)
         assert status == 0
@@ -145,11 +145,11 @@ class TestJ2Plasticity(StandardMatmodlabTest):
         HFAC = 1.0 / 10.0
         H = 3.0 * HFAC / (1.0 - HFAC) * G
         YF, BETA = Y * (1.0 + HFAC), .5
+        parameters = {'K': K, 'G': G, 'Y0': Y, 'H': H, 'BETA': BETA}
+        mps.Material('vonmises', parameters)
         path = gen_uniax_strain_path(Y, YF, G, LAM)
         for row in path:
             mps.StrainStep(components=row, increment=1.0, frames=25)
-        parameters = {'K': K, 'G': G, 'Y0': Y, 'H': H, 'BETA': BETA}
-        mps.Material('vonmises', parameters)
         mps.run()
         status = self.compare_with_baseline(mps, interp=1)
         assert status == 0

@@ -26,11 +26,15 @@ __all__ = ['MaterialPointSimulator', 'StrainStep', 'StressStep', 'MixedStep',
 
 class MaterialPointSimulator(object):
     def __init__(self, job, verbosity=None, d=None,
-                 initial_temperature=DEFAULT_TEMP, output_format=None):
+                 initial_temperature=DEFAULT_TEMP, termination_time=None,
+                 output_format=None):
         '''Initialize the MaterialPointSimulator object
 
         '''
         self.job = job
+        self.material = None
+        self.initialized = False
+        self.termination_time = termination_time
 
         self.output_format = output_format or environ.output_format
 
@@ -42,7 +46,7 @@ class MaterialPointSimulator(object):
         environ.simulation_dir = d
         self.directory = environ.simulation_dir
         self.filename = None
-        self.ran = None
+        self.ran = False
 
         # basic logger
         if verbosity > 2:
@@ -60,24 +64,28 @@ class MaterialPointSimulator(object):
         logger.info('Setting up simulator for job {0!r}'.format(job))
 
     def __getattr__(self, key):
-        return self._get_var_time(key)
         try:
             return self._get_var_time(key)
         except:
             raise AttributeError('{0!r} object has no attribute '
                                  '{1!r}'.format(self.__class__, key))
 
-    def copy(self, job):
-        model = MaterialPointSimulator(job, verbosity=self.verbosity,
-                   d=self.directory, initial_temperature=self.initial_temperature,
-                   output_format=self.output_format)
-        for s in self.steps.values()[1:]:
+    def copy_steps(self, other):
+        n = 1
+        for s in other.steps.values()[1:]:
             step = AnalysisStep(s.kind, s.name, s.previous, s.increment,
                                 len(s.frames), s.components, s.descriptors,
                                 s.kappa, s.temperature, s.elec_field,
                                 s.num_dumps, s.start)
-            model.steps[s.name] = step
-        return model
+            step.number = n
+            self.steps[s.name] = step
+            try:
+                self._run_step(self.steps[s.name])
+            except StopSteps:
+                self.finish()
+                return
+            n += 1
+        return
 
     def Material(self, model, parameters, **kwargs):
         '''Method that delays the instantiation of the material model
@@ -149,8 +157,7 @@ class MaterialPointSimulator(object):
         '''Factory method for the steps.DataSteps class'''
         previous = self.steps.values()[-1]
         steps = DataSteps(filename, previous, tc=tc, **kwargs)
-        for step in steps:
-            self.steps[step.name] = step
+        self.add_and_run_step(steps)
 
     def GenSteps(self, step_class, steps=1, components=None,
                  amplitude=None, increment=1., temperature=None, **kwargs):
@@ -167,8 +174,19 @@ class MaterialPointSimulator(object):
         previous = self.steps.values()[-1]
         steps = GenSteps(step_class, name, previous, components, amplitude,
                          increment, steps, temperature, **kwargs)
+        self.add_and_run_step(steps)
+
+    def add_and_run_step(self, steps):
+        n = len(self.steps)
         for step in steps:
+            step.number = n
             self.steps[step.name] = step
+            try:
+                self._run_step(self.steps[step.name])
+            except StopSteps:
+                self.finish()
+                return 0
+            n += 1
 
     def create_step(self, step_class, **kwargs):
         name = kwargs.pop('name', None)
@@ -177,7 +195,14 @@ class MaterialPointSimulator(object):
         elif name in self.steps:
             raise MatModLabError('duplicate step name {0}'.format(name))
         previous = self.steps.values()[-1]
-        self.steps[name] = step_class(name, previous, **kwargs)
+        step = step_class(name, previous, **kwargs)
+        step.number = len(self.steps)
+        self.steps[name] = step
+        try:
+            self._run_step(self.steps[name])
+        except StopSteps:
+            self.finish()
+            return
 
     def write_summary(self):
 
@@ -225,15 +250,18 @@ Material: {5}
            self.material.num_sdv)
         logging.getLogger('matmodlab.mmd.simulator').info(summary)
 
-    def arm(self, termination_time=None, target=None):
+    def initialize_simulation(self):
         '''initialize everything for running the steps
 
         '''
         logger = logging.getLogger('matmodlab.mmd.simulator')
+        logger.info('Setting up calculations...')
 
-        self.start_tt = tt()
+        if self.material is None:
+            raise MatModLabError('The material must be set before '
+                                 'any analysis steps are created')
 
-	# register variables
+        # register variables
         self._time = 0.
         self.records = Records()
         self.records.add('Step', SCALAR, dtype='i4')
@@ -248,19 +276,11 @@ Material: {5}
         self.records.add('EF', VECTOR)
         self.records.add('T', SCALAR)
 
-        if target is not None:
-            self.records.add('EET', TENSOR_3D)
-            self.records.add('EPT', TENSOR_3D)
-
         # Adding SDVs **MUST** be last
         if self.material.sdv_keys:
             self.records.add('SDV', SDV, keys=self.material.sdv_keys)
 
-        self.records.init()
-
         self.write_summary()
-
-        logger.info('Starting calculations...')
 
         step = self.steps.values()[0]
         frame = step.frames[0]
@@ -274,52 +294,29 @@ Material: {5}
           "stress": np.array([S0, S0, S0]),
           "strain": np.array([Z6, Z6, Z6]),
           "efield": np.array([step.elec_field] * 3),
-          "statev": np.array([sdv, sdv]),
-                        }
+          "statev": np.array([sdv, sdv]), }
 
-        self.completed_step_idx = -1
+        self.records.init(Step=step.number, Frame=frame.number,
+                 Time=frame.value, DTime=frame.increment,
+                 E=Z6, F=I9, D=Z6, DS=Z6, S=S0,
+                 SDV=sdv, T=step.temperature, EF=step.elec_field)
 
+        self.initialized = True
 
-    def run(self, termination_time=None, target=None):
-        '''Run the problem
-
-        '''
-
-        self.arm(termination_time=termination_time, target=target)
-
-        try:
-            self.run_uncompleted_steps(termination_time=termination_time, target=target)
-        except StopSteps:
-            pass
-        finally:
-            self.finish()
+    def run(self):
+        # at this point, all steps have run (they are run when created),
+        # now finish the simulation up
+        self.finish()
 
     def finish(self):
-        logger = logging.getLogger('matmodlab.mmd.simulator')
-
-        dt = tt() - self.start_tt
-        logger.info('\n...calculations completed ({0:.4f}s)\n'.format(dt))
-        self.ran = True
-
-        self.records.finalize()
         if not environ.notebook:
             self.dump()
-
-    def run_uncompleted_steps(self, termination_time=None, target=None):
-
-        steps = self.steps.values()
-        for (i, step) in enumerate(steps):
-            if i <= self.completed_step_idx:
-                continue
-            step.num = i
-            self.run_step(step, target=target,
-                          termination_time=termination_time)
-            self.completed_step_idx = i
-
-        return
+        self.ran = True
 
     def dump(self, format=None, ffmt='%.18e'):
         """Dump the results of the simulation to a file"""
+        logger = logging.getLogger('matmodlab.mmd.simulator')
+        logger.info('\n...calculations completed ({0:.4f}s)\n'.format(self._time))
         output_format = format
         if output_format is None:
             output_format = self.output_format
@@ -435,8 +432,13 @@ Material: {5}
                 plt.legend(loc='best')
             plt.show()
 
-    def run_step(self, step, target=None, termination_time=None):
+    def _run_step(self, step):
         '''Process this step '''
+
+        if not self.initialized:
+            self.initialize_simulation()
+
+        step_start_time = tt()
 
         # Unpack the state
         F = self.state_db["F"]
@@ -446,22 +448,13 @@ Material: {5}
         strain = self.state_db["strain"]
         efield = self.state_db["efield"]
         statev = self.state_db["statev"]
+        termination_time = self.termination_time
 
-        # target strains
-        eet = ept = None
-        if target is not None:
-            eet, ept = np.array(Z6), np.array(Z6)
-
-        # @tjfulle
         logger = logging.getLogger('matmodlab.mmd.simulator')
-        ti = tt()
         warned = False
         num_frame = len(step.frames)
         lsn = len(str(num_frame))
         message = '{0}, Frame {{0:{1}d}}'.format(step.name, lsn)
-
-        # Make room in the database for this step
-        self.records.extend(num_frame)
 
         kappa, proportional = step.kappa, step.proportional
 
@@ -561,16 +554,6 @@ Material: {5}
                     logger.info('sqa: error computing strain '
                                 '(step={0})'.format(step.name))
 
-            if target is not None:
-                # target stress was requested
-                st = target(time=time[2], dtime=dtime, kappa=kappa,
-                            strain=strain[2], F=F[1], stress=stress[2], d=d)
-                dee = simplex(self.material, time[2], dtime, temp[2], dtemp,
-                              kappa, F[0], F[1], strain[2], d, stress[2],
-                              statev[0], efield[2], range(6), st, False)
-                eet += dee * dtime
-                ept += (d - dee) * dtime
-
             # update material state
             s = np.array(stress[2])
             stress[2], statev[1] = self.material.compute_updated_state(
@@ -584,10 +567,10 @@ Material: {5}
             statev[0] = statev[1]
 
             # --- update the state
-            self.records.update(Step=step.num, Frame=frame.num,
+            self.records.append(Step=step.number, Frame=frame.number,
                  Time=frame.value, DTime=frame.increment,
                  E=strain[2]/VOIGT, F=F[1], D=d/VOIGT, DS=dstress, S=stress[2],
-                 SDV=statev[1], T=temp[2], EF=efield[2], EPT=ept, EET=eet)
+                 SDV=statev[1], T=temp[2], EF=efield[2])
 
             if iframe > 1 and nv and not warned:
                 sigmag = np.sqrt(np.sum(stress[2,v] ** 2))
@@ -605,8 +588,10 @@ Material: {5}
                                                sigerr/sigmag*100.0))
 
             if termination_time is not None and time[2] >= termination_time:
+                step_duration = tt() - step_start_time
+                self._time += step_duration
                 logger.info('\r' + message.format(iframe+1) +
-                            ' ({0:.4f}s)'.format(tt()-self.start_tt))
+                            ' ({0:.4f}s)'.format(self._time))
                 raise StopSteps
 
             continue  # continue to next frame
@@ -620,8 +605,12 @@ Material: {5}
         self.state_db["efield"][0] = efield[2]
         self.state_db["statev"][0] = statev[1]
 
+        step_duration = tt() - step_start_time
+        self._time += step_duration
+
         logger.info('\r' + message.format(iframe+1) +
-                    ' ({0:.4f}s)'.format(tt()-self.start_tt))
+                    ' ({0:.4f}s)'.format(self._time))
+
 
         return 0
 
@@ -919,8 +908,8 @@ class Step(object):
         return self.frames[-1]
 
 class Frame:
-    def __init__(self, num, time, increment):
-        self.num = num
+    def __init__(self, number, time, increment):
+        self.number = number
         self.time = time
         self.increment = increment
         self.value = time + increment
@@ -1008,9 +997,11 @@ def InitialStep(name, kappa=0., temperature=None):
     components = np.zeros(TENSOR_3D, dtype=np.float64)
     descriptors = np.array([2] * TENSOR_3D, dtype=np.int)
 
-    return AnalysisStep('InitialStep', name, previous, increment, frames,
+    step = AnalysisStep('InitialStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature,
                         elec_field, num_dumps, start=0.)
+    step.number = 0
+    return step
 
 def StrainStep(name, previous, components=None, frames=None, scale=1.,
                  increment=1., kappa=None, temperature=None, elec_field=None,
@@ -1503,12 +1494,12 @@ class Records(OrderedDict):
         elif not expand:
             return super(Records, self).keys()
         return [key for f in self.values() for key in f.keys]
-    def init(self):
+    def init(self, **kwargs):
         dtype = [(r.name, r.dtype, r.shape) for r in self.values()]
         self.data = np.empty((0,), dtype=dtype)
-    def extend(self, n):
-        self.data = np.append(self.data, np.empty((n,), dtype=self.data.dtype))
-    def update(self, **kw):
+        self.append(**kwargs)
+    def append(self, **kw):
+        data = np.empty((1,), dtype=self.data.dtype)
         def totuple(a):
             try: return tuple(a)
             except TypeError: return a
@@ -1516,7 +1507,5 @@ class Records(OrderedDict):
         row = [totuple(kw[key]) for key in self.keys(expand=-1)]
         if sdv is not None:
             row.extend(sdv)
-        self.data[self._i] = tuple(row)
-        self._i += 1
-    def finalize(self):
-        self.data = np.array(self.data[:self._i])
+        data[0] = tuple(row)
+        self.data = np.append(self.data, data)

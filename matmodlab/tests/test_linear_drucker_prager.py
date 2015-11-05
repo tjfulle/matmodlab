@@ -25,6 +25,9 @@ class TestLinearDruckerPrager(StandardMatmodlabTest):
         FAC = 1.0e6
         RINT = 1.0 * FAC
         ZINT = sqrt(2.0) * FAC
+        parameters = {'K': K, 'G': MU,
+                      'A1': RINT/sqrt(2.0), 'A4': RINT/sqrt(6.0)/ZINT}
+        mps.Material('pyplastic', parameters)
         # set up the driver
         head, data = gen_spherical_everything(K, MU, RINT, ZINT)
         i = head.index('E.XX')
@@ -33,9 +36,6 @@ class TestLinearDruckerPrager(StandardMatmodlabTest):
         for (k, row) in enumerate(data[1:], start=1):
             dt = data[k][t] - data[k-1][t]
             mps.StrainStep(components=row[i:j], increment=dt, frames=1)
-        parameters = {'K': K, 'G': MU,
-                      'A1': RINT/sqrt(2.0), 'A4': RINT/sqrt(6.0)/ZINT}
-        mps.Material('pyplastic', parameters)
         mps.run()
         status = self.compare_with_baseline(mps, interp=1)
         assert status == 0

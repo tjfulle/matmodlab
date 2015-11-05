@@ -11,4 +11,4 @@ parameters = {"C10": 72, "C01": 7.56, "NU": .49}
 mps.Material("mooney_rivlin", parameters)
 mps.GenSteps(MixedStep, components=(1, 0, 0), descriptors="ESS",
 frames=1, steps=N, amplitude=(f,))
-mps.run()
+mps.dump()

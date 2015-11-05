@@ -18,9 +18,7 @@ def fun1():
     # steps is increment/steps.
     mps.GenSteps(StrainStep, components=(1, 0, 0), increment=2*pi,
                  steps=200, frames=1, scale=.1, amplitude=(fun,))
-
-    # run the model
-    mps.run()
+    mps.dump()
 
 def fun2():
 
@@ -42,9 +40,7 @@ def fun2():
     mps.GenSteps(MixedStep, components=(1, 0, 0), increment=tf/2.,
                  steps=steps/2, amplitude=(f1,), temperature=temperature,
                  descriptors="ESS")
-
-    # run the model
-    mps.run()
+    mps.dump()
 
 if __name__ == '__main__':
     fun2()

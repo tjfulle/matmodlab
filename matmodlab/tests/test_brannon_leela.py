@@ -64,16 +64,16 @@ class TestBrannonLeelavanichkul(StandardMatmodlabTest):
         path = '\n'.join(path)
         analytic_response = np.array(analytic_response)
 
+        # set up the material
+        parameters = {'K': K, 'G': G, 'Y0': Y}
+        mps.Material('vonmises', parameters)
+
         # set up the driver
         for idx, leg in enumerate(analytic_response):
             if idx == 0:
                 continue
             incr = analytic_response[idx,0] - analytic_response[idx-1,0]
             mps.StrainStep(increment=incr, frames=1, components=leg[1:4])
-
-        # set up the material
-        parameters = {'K': K, 'G': G, 'Y0': Y}
-        mps.Material('vonmises', parameters)
 
         # run the model
         mps.run()

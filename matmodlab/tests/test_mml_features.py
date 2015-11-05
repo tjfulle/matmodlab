@@ -51,12 +51,13 @@ class TestStepFactories(StandardMatmodlabTest):
 
     def test_gen_steps(self):
         '''Test the GenSteps factory method'''
-        mps = MaterialPointSimulator('gen_steps', verbosity=0, d=this_directory)
+        mps = MaterialPointSimulator('gen_steps', verbosity=0, d=this_directory,
+                                     termination_time=1.8*pi)
         parameters = {'K': 10.0E+09, 'G': 3.75E+09}
         mps.Material('elastic', parameters)
         mps.GenSteps(StrainStep, components=(1,0,0), increment=2*pi,
                      steps=200, frames=1, scale=.1, amplitude=(np.sin,))
-        mps.run(termination_time=1.8*pi)
+        mps.run()
         status = self.compare_with_baseline(mps, adjust_n=1)
         assert status == 0
         self.completed_jobs.append(mps.job)

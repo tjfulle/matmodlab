@@ -31,13 +31,13 @@ table ="""\
 
 mps = MaterialPointSimulator("data_steps")
 
-# Read in the data and create steps, tc is the column where time is found
-mps.DataSteps(StringIO(table), tc=0, frames=10, descriptors='EEE',
-              columns=(1,2,3))
-
 # set up the material
 parameters = {"K": 1.35e11, "G": 5.3e10}
 mps.Material("elastic", parameters)
+
+# Read in the data and create steps, tc is the column where time is found
+mps.DataSteps(StringIO(table), tc=0, frames=10, descriptors='EEE',
+              columns=(1,2,3))
 
 # run the simulation
 mps.run()

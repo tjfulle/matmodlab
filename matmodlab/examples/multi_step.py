@@ -24,6 +24,4 @@ mps.StressRateStep(increment=1., components=(s11, s22, s33), frames=N)
 mps.StressRateStep(increment=1., components=(s11, s22, s33), frames=N, scale=-1)
 mps.DefGradStep(increment=1., components=(f1,0.,0.,0.,1.,0.,0.,0.,1.), frames=N)
 mps.DefGradStep(increment=1., components=(1.,0.,0.,0.,1.,0.,0.,0.,1.), frames=N)
-
-# Run the simulation
-mps.run()
+mps.dump()

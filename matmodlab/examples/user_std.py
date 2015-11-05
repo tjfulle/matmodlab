@@ -10,6 +10,10 @@ Nu = .45
 
 mps = MaterialPointSimulator('user-elastic')
 
+# Instantiate the user's own elastic model
+parameters = [E, Nu]
+mps.Material('uelastic', parameters)
+
 f = np.sin
 t = 0.
 n = 200
@@ -18,9 +22,5 @@ for i in range(n):
     t += dt
     mps.StrainStep(components=(f(t), 0, 0), increment=dt, frames=1, scale=.1)
 
-# Instantiate the user's own elastic model
-parameters = [E, Nu]
-mps.Material('uelastic', parameters)
-
-# set up and run the model
-mps.run()
+# write the output
+mps.dump()

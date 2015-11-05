@@ -85,6 +85,8 @@ class TestElasticMaterial(StandardMatmodlabTest):
         job = 'rand_linear_elastic_{0}'.format(realization)
         mps = MaterialPointSimulator(job, verbosity=0, d=this_directory)
         NU, E, K, G, LAM = gen_rand_elast_params()
+        parameters = {'K': K, 'G': G}
+        mps.Material('pyelastic', parameters)
         analytic = gen_analytical_response(LAM, G)
         for (i, row) in enumerate(analytic[1:], start=1):
             incr = analytic[i, 0] - analytic[i-1, 0]
@@ -93,8 +95,6 @@ class TestElasticMaterial(StandardMatmodlabTest):
             fh.write(''.join(['{0:>20s}'.format(_) for _ in myvars]) + '\n')
             for row in analytic:
                 fh.write(''.join(['{0:20.10e}'.format(_) for _ in row]) + '\n')
-        parameters = {'K': K, 'G': G}
-        mps.Material('pyelastic', parameters)
         mps.run()
         simulation = mps.get(*myvars, **KW)
         fh = open(join(this_directory, mps.job + '.difflog'), 'w')
@@ -185,13 +185,14 @@ class TestElasticMaterial(StandardMatmodlabTest):
         N = 25
         solfile = join(this_directory, mps.job + '.dat')
         path, LAM, G, tablepath = generate_solution(solfile, N)
-        for row in tablepath:
-            mps.StrainStep(components=row, increment=1.0, frames=N)
 
         # set up the material
         K = LAM + 2.0 * G / 3.0
         params = {'K': K, 'G': G}
         mps.Material('pyelastic', params)
+
+        for row in tablepath:
+            mps.StrainStep(components=row, increment=1.0, frames=N)
 
         # set up and run the model
         mps.run()

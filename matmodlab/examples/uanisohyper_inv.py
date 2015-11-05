@@ -12,4 +12,4 @@ mps.Material(UANISOHYPER_INV, parameters, fiber_dirs=a,
              libname='uanisohyper_inv_t', rebuild=1)
 mps.GenSteps(StrainStep, components=(1,0,0), increment=2*pi,
              steps=200, frames=1, scale=.1, amplitude=(np.sin,))
-mps.run(termination_time=1.8*pi)
+mps.dump()

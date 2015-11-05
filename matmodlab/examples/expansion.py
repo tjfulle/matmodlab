@@ -11,4 +11,4 @@ mat.Expansion(ISOTROPIC, [1.E-5])
 mps.MixedStep(components=(.1,0,0), descriptors='ESS',
               temperature=75., frames=10)
 mps.StrainRateStep(components=(0,0,0), temperature=300., frames=10)
-mps.run()
+mps.dump()

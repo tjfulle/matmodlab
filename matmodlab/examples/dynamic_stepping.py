@@ -22,12 +22,8 @@ mps.Material("pyelastic", {"K": 1.0e10, "G": 1.0e9})
 EXX_incr = 0.01
 SXX_target = 1.0e9
 
-# Prep the simulator
-mps.arm()
-
 # Run the first step
 mps.StrainStep(components=(EXX_incr, 0., 0.), frames=50)
-mps.run_uncompleted_steps()
 
 # Track the output stress and compute the stress increment over the step
 SXX = [0.0, mps.get("S.XX")[-1]]
@@ -35,17 +31,15 @@ DSXX = SXX[-1] - SXX[-2]
 
 # Keep incrementing the strain until we get 'close' to the target stress
 while SXX[-1] + 1.5 * DSXX < 1.0e9:
-    
+
     EXX = mps.get("E.XX")[-1]
     mps.StrainStep(components=(EXX + EXX_incr, 0., 0.), frames=50)
-    mps.run_uncompleted_steps()
 
     SXX.append(mps.get("S.XX")[-1])
     DSXX = SXX[-1] - SXX[-2]
 
 # Finish with a stress-controlled step
 mps.MixedStep(components=(SXX_target, 0., 0.), descriptors='SEE', frames=50)
-mps.run_uncompleted_steps()
 
 # Write to disk
-mps.finish()
+mps.dump()

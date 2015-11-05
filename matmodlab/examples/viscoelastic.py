@@ -22,5 +22,3 @@ mps.MixedStep(components=(.1, 0., 0.), descriptors='ESS', increment=1.,
               temperature=75., frames=100)
 mps.StrainRateStep(components=(0., 0., 0.), increment=50.,
                    temperature=95., frames=50)
-
-mps.run()

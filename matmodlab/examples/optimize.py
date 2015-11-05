@@ -40,8 +40,7 @@ def func(x=[], xnames=[], evald='', job='', *args):
     # file anew for each run
     mps.DataSteps(filename, steps=30, sheetname='MML',
                   columns=('E.XX',), descriptors='ESS')
-
-    mps.run()
+    mps.dump()
     if not mps.ran:
         return 1.0e9
 
