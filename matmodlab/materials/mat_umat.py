@@ -6,7 +6,7 @@ from matmodlab.product import PKG_D
 import matmodlab.utils.mmlabpack as mmlabpack
 from matmodlab.mmd.material import MaterialModel
 from matmodlab.materials.product import ABA_UMAT_PYF, ABA_UTL, UMAT
-from matmodlab.utils.errors import StopFortran
+from matmodlab.utils.errors import StopFortran, CutbackSteps
 
 class UMat(MaterialModel):
     '''Constitutive model class for the umat model'''
@@ -94,4 +94,6 @@ class UMat(MaterialModel):
             StopFortran)
         stress = stress[self.ordering]
         ddsdde = ddsdde[self.ordering, [[i] for i in self.ordering]]
+        if abs(pnewdt) > 1e-12:
+            raise CutbackSteps(pnewdt=pnewdt)
         return stress, statev, ddsdde

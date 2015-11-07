@@ -20,3 +20,8 @@ class MatModLabError(Exception):
 
 def StopFortran(message):
     raise MatModLabError(message)
+
+class CutbackSteps(Exception):
+    def __init__(self, pnewdt=None):
+        self.pnewdt = pnewdt
+        super(CutbackSteps, self).__init__()

@@ -13,7 +13,7 @@ from numpy.linalg import LinAlgError as LinAlgError
 from ..constants import *
 from ..mml_siteenv import environ
 from ..utils import mmlabpack as mml
-from ..utils.errors import MatModLabError
+from ..utils.errors import MatModLabError, CutbackSteps
 from ..utils.fileio import loadfile, savefile
 from ..utils.logio import setup_logger
 from ..utils.plotting import create_figure
@@ -27,14 +27,13 @@ __all__ = ['MaterialPointSimulator', 'StrainStep', 'StressStep', 'MixedStep',
 class MaterialPointSimulator(object):
     def __init__(self, job, verbosity=None, d=None,
                  initial_temperature=DEFAULT_TEMP, termination_time=None,
-                 output_format=None):
-        '''Initialize the MaterialPointSimulator object
-
-        '''
+                 output_format=None, no_cutback=False):
+        """Initialize the MaterialPointSimulator object"""
         self.job = job
         self.material = None
         self.initialized = False
         self.termination_time = termination_time
+        self.no_cutback = environ.no_cutback or no_cutback
 
         self.output_format = output_format or environ.output_format
 
@@ -79,11 +78,7 @@ class MaterialPointSimulator(object):
                                 s.num_dumps, s.start)
             step.number = n
             self.steps[s.name] = step
-            try:
-                self._run_step(self.steps[s.name])
-            except StopSteps:
-                self.finish()
-                return
+            self.run_step(self.steps[s.name])
             n += 1
         return
 
@@ -181,11 +176,7 @@ class MaterialPointSimulator(object):
         for step in steps:
             step.number = n
             self.steps[step.name] = step
-            try:
-                self._run_step(self.steps[step.name])
-            except StopSteps:
-                self.finish()
-                return 0
+            self.run_step(self.steps[step.name])
             n += 1
 
     def create_step(self, step_class, **kwargs):
@@ -197,12 +188,8 @@ class MaterialPointSimulator(object):
         previous = self.steps.values()[-1]
         step = step_class(name, previous, **kwargs)
         step.number = len(self.steps)
-        self.steps[name] = step
-        try:
-            self._run_step(self.steps[name])
-        except StopSteps:
-            self.finish()
-            return
+        self.steps[step.name] = step
+        self.run_step(self.steps[step.name])
 
     def write_summary(self):
 
@@ -306,6 +293,9 @@ Material: {5}
     def run(self):
         # at this point, all steps have run (they are run when created),
         # now finish the simulation up
+        import warnings
+        warnings.warn('Steps are run at time of their creation, '
+                      'the run method will be deprecated')
         self.finish()
 
     def finish(self):
@@ -432,13 +422,20 @@ Material: {5}
                 plt.legend(loc='best')
             plt.show()
 
-    def _run_step(self, step):
-        '''Process this step '''
+    def run_step(self, step):
+
+        logger = logging.getLogger('matmodlab.mmd.simulator')
+        if self.ran:
+            logger.warn('simulation {0!r} has already '
+                        'run to completion'.format(self.job))
+            return
 
         if not self.initialized:
             self.initialize_simulation()
 
-        step_start_time = tt()
+        if step.num_cutbacks >= 4:
+            raise MatModLabError('number of cutbacks for step {0} exceeds '
+                                 'the maximum allowable'.format(step.number))
 
         # Unpack the state
         F = self.state_db["F"]
@@ -448,6 +445,48 @@ Material: {5}
         strain = self.state_db["strain"]
         efield = self.state_db["efield"]
         statev = self.state_db["statev"]
+
+        try:
+            while step.num_cutbacks < 4:
+                try:
+                    self._run_step(step, time, temp, F, strain, stress,
+                                   statev, efield, no_cutback=self.no_cutback)
+                    break
+                except CutbackSteps as e:
+                    pass
+                # the strain increment was too large, cut it
+                if e.pnewdt is not None:
+                    # a suggested time step size was given
+                    step.cutback(pnewdt=e.pnewdt)
+                else:
+                    logger.warn('increasing frames on step {0}'.format(step.number))
+                    step.cutback()
+            else:
+                # we didn't break out of the for loop. call one more time with
+                # out cutting back and accept whatever comes out
+                self._run_step(step, time, temp, F, strain, stress, statev, efield,
+                               no_cutback=True)
+
+            # Save the state for next steps
+            self.state_db["F"][0] = F[1]
+            self.state_db["time"][0] = time[2]
+            self.state_db["temp"][0] = temp[2]
+            self.state_db["stress"][0] = stress[2]
+            self.state_db["strain"][0] = strain[2]
+            self.state_db["efield"][0] = efield[2]
+            self.state_db["statev"][0] = statev[1]
+
+        except StopSteps:
+            self.finish()
+
+        return
+
+    def _run_step(self, step, time, temp, F, strain, stress, statev, efield,
+                  no_cutback=False):
+        '''Process this step '''
+
+        step_start_time = tt()
+
         termination_time = self.termination_time
 
         logger = logging.getLogger('matmodlab.mmd.simulator')
@@ -543,7 +582,7 @@ Material: {5}
                 d = sig2d(self.material, time[2], dtime, temp[2], dtemp,
                           kappa, F[0], F[1], strain[2], dedt, stress[2],
                           statev[0], efield[2], v, pstress[v],
-                          proportional)
+                          proportional, no_cutback)
 
             # compute the current deformation gradient and strain from
             # previous values and the deformation rate
@@ -596,15 +635,6 @@ Material: {5}
 
             continue  # continue to next frame
 
-        # Save the state for next steps
-        self.state_db["F"][0] = F[1]
-        self.state_db["time"][0] = time[2]
-        self.state_db["temp"][0] = temp[2]
-        self.state_db["stress"][0] = stress[2]
-        self.state_db["strain"][0] = strain[2]
-        self.state_db["efield"][0] = efield[2]
-        self.state_db["statev"][0] = statev[1]
-
         step_duration = tt() - step_start_time
         self._time += step_duration
 
@@ -623,7 +653,7 @@ Material: {5}
 
 
 def sig2d(material, t, dt, temp, dtemp, kappa, f0, f, stran, d, sig, statev,
-          efield, v, sigspec, proportional):
+          efield, v, sigspec, proportional, no_cutback):
     '''Determine the symmetric part of the velocity gradient given stress
 
     Parameters
@@ -667,6 +697,9 @@ def sig2d(material, t, dt, temp, dtemp, kappa, f0, f, stran, d, sig, statev,
                    sig, statev, efield, v, sigspec, proportional)
         if d is not None:
             return d
+
+        if not no_cutback:
+            raise CutbackSteps
 
     # --- Still didn't converge. Try downhill simplex method and accept
     #     whatever answer it returns:
@@ -900,12 +933,28 @@ class StepRepository(OrderedDict):
 
 class Step(object):
     def __init__(self, name):
+        self.num_cutbacks = 0
         self.name = name
         self.frames = []
 
     def Frame(self, time, increment):
         self.frames.append(Frame(len(self.frames)+1, time, increment))
         return self.frames[-1]
+
+    def cutback(self, cutfac=None, pnewdt=None):
+        nframe = len(self.frames)
+        start = self.frames[0].time
+        end = self.frames[-1].value
+        dtime = end - start
+        self.num_cutbacks += 1
+        if pnewdt is not None:
+            nframe = int(1. / pnewdt)
+        elif cutfac is None:
+            nframe *= self.num_cutbacks * 4
+        else:
+            nframe *= cutfac
+        inc = (end - start) / float(nframe)
+        self.frames = [Frame(i+1, start+i*inc, inc) for i in range(nframe)]
 
 class Frame:
     def __init__(self, number, time, increment):

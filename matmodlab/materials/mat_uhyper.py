@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 import matmodlab.utils.mmlabpack as mmlabpack
-from matmodlab.utils.errors import StopFortran
+from matmodlab.utils.errors import StopFortran, CutbackSteps
 from matmodlab.mmd.material import MaterialModel
 from matmodlab.materials.product import (DGPADM_F, TENSALG_F90, UHYPER,
                                ABA_UHYPER_PYF, ABA_UHYPER_JAC_F90, ABA_UTL)
@@ -93,4 +93,6 @@ class UHyper(MaterialModel):
             StopFortran)
         stress = stress[self.ordering]
         ddsdde = ddsdde[self.ordering, [[i] for i in self.ordering]]
+        if abs(pnewdt) > 1e-12:
+            raise CutbackSteps(pnewdt=pnewdt)
         return stress, statev, ddsdde

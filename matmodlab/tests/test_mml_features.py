@@ -74,7 +74,7 @@ class TestPermutation(StandardMatmodlabTest):
                   2 2 0 0 0 0 0
                   3 1 0 0 0 0 0
                   4 0 0 0 0 0 0'''
-        mps = MaterialPointSimulator(job, verbosity=0, d=d)
+        mps = MaterialPointSimulator(job, verbosity=0, d=d, no_cutback=True)
         parameters = dict(zip(xnames, x))
         mps.Material('elastic', parameters)
         mps.DataSteps(StringIO(path), scale=-.5, frames=5, descriptors='E'*6)
@@ -120,7 +120,7 @@ class TestOptimization(StandardMatmodlabTest):
     xact = np.array([135e9, 53e9])
     @staticmethod
     def func(x, xnames, evald, job, *args):
-        mps = MaterialPointSimulator(job, verbosity=0, d=evald)
+        mps = MaterialPointSimulator(job, verbosity=0, d=evald, no_cutback=True)
         parameters = dict(zip(xnames, x))
         mps.Material("elastic", parameters)
         mps.DataSteps(TestOptimization.path_file, tc=0,
