@@ -1,8 +1,9 @@
 import logging
 import numpy as np
 import matmodlab.utils.mmlabpack as mmlabpack
+from matmodlab.mmd.simulator import CB
 from matmodlab.mmd.material import MaterialModel
-from matmodlab.utils.errors import StopFortran, CutbackSteps
+from matmodlab.utils.errors import StopFortran
 from matmodlab.materials.product import (DGPADM_F, TENSALG_F90,
     UANISOHYPER_INV, ABA_UANISOHYPER_PYF, ABA_UANISOHYPER_JAC_F90, ABA_UTL)
 
@@ -99,5 +100,5 @@ class UAnisoHyperInv(MaterialModel):
         stress = stress[self.ordering]
         ddsdde = ddsdde[self.ordering, [[i] for i in self.ordering]]
         if abs(pnewdt) > 1e-12:
-            raise CutbackSteps(pnewdt=pnewdt)
+            CB.request_cutback(pnewdt=pnewdt)
         return stress, statev, ddsdde

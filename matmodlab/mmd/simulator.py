@@ -13,7 +13,7 @@ from numpy.linalg import LinAlgError as LinAlgError
 from ..constants import *
 from ..mml_siteenv import environ
 from ..utils import mmlabpack as mml
-from ..utils.errors import MatModLabError, CutbackSteps
+from ..utils.errors import MatModLabError
 from ..utils.fileio import loadfile, savefile
 from ..utils.logio import setup_logger
 from ..utils.plotting import create_figure
@@ -274,14 +274,8 @@ Material: {5}
         S0 = self.initial_stress
         sdv = self.material.initial_sdv
 
-        self.state_db = {
-          "F": np.array([I9, I9]),
-          "time": np.array([frame.time, frame.value, frame.time]),
-          "temp": np.array([step.temperature] * 3),
-          "stress": np.array([S0, S0, S0]),
-          "strain": np.array([Z6, Z6, Z6]),
-          "efield": np.array([step.elec_field] * 3),
-          "statev": np.array([sdv, sdv]), }
+        self.state_db = StateDB(F=I9, temp=step.temperature, stress=S0,
+                                strain=Z6, efield=step.elec_field, statev=sdv)
 
         self.records.init(Step=step.number, Frame=frame.number,
                  Time=frame.value, DTime=frame.increment,
@@ -437,56 +431,55 @@ Material: {5}
             raise MatModLabError('number of cutbacks for step {0} exceeds '
                                  'the maximum allowable'.format(step.number))
 
-        # Unpack the state
-        F = self.state_db["F"]
-        time = self.state_db["time"]
-        temp = self.state_db["temp"]
-        stress = self.state_db["stress"]
-        strain = self.state_db["strain"]
-        efield = self.state_db["efield"]
-        statev = self.state_db["statev"]
-
         try:
-            while step.num_cutbacks < 4:
-                try:
-                    self._run_step(step, time, temp, F, strain, stress,
-                                   statev, efield, no_cutback=self.no_cutback)
+            while 1:
+                state = self._run_step(step)
+                if not CB:
+                    # no cutbacks requested
                     break
-                except CutbackSteps as e:
-                    pass
+
+                if step.num_cutbacks > 3:
+                    # accept whatever is calculated
+                    break
+
                 # the strain increment was too large, cut it
-                if e.pnewdt is not None:
+                if CB.pnewdt is not None:
                     # a suggested time step size was given
-                    step.cutback(pnewdt=e.pnewdt)
-                else:
+                    step.cutback(pnewdt=CB.pnewdt)
+
+                elif CB.cutfac:
                     logger.warn('increasing frames on step {0}'.format(step.number))
-                    step.cutback()
-            else:
-                # we didn't break out of the for loop. call one more time with
-                # out cutting back and accept whatever comes out
-                self._run_step(step, time, temp, F, strain, stress, statev, efield,
-                               no_cutback=True)
+                    step.cutback(cutfac=CB.cutfac)
+
+                else:
+                    raise ValueError('unrecognized cutback parameter')
+
+                CB.clear()
+                self.records.clear_cache()
 
             # Save the state for next steps
-            self.state_db["F"][0] = F[1]
-            self.state_db["time"][0] = time[2]
-            self.state_db["temp"][0] = temp[2]
-            self.state_db["stress"][0] = stress[2]
-            self.state_db["strain"][0] = strain[2]
-            self.state_db["efield"][0] = efield[2]
-            self.state_db["statev"][0] = statev[1]
+            time, temp, F, strain, stress, efield, statev = state
+            self.records.advance()
+            self.state_db.advance(F=F, time=time, temp=temp, stress=stress,
+                                  strain=strain, efield=efield, statev=statev)
 
         except StopSteps:
             self.finish()
 
         return
 
-    def _run_step(self, step, time, temp, F, strain, stress, statev, efield,
-                  no_cutback=False):
+    def _run_step(self, step, no_cutback=False):
         '''Process this step '''
 
-        step_start_time = tt()
+        # Unpack the state
+        F = self.state_db.get("F")
+        stress = self.state_db.get("stress")
+        strain = self.state_db.get("strain")
+        statev = self.state_db.get("statev")
+        temp = self.state_db.get("temp")
+        efield = self.state_db.get("efield")
 
+        step_start_time = tt()
         termination_time = self.termination_time
 
         logger = logging.getLogger('matmodlab.mmd.simulator')
@@ -498,11 +491,17 @@ Material: {5}
         kappa, proportional = step.kappa, step.proportional
 
         # the following variables have values at [begining, end, current] of step
-        time[0] = step.frames[0].time
-        time[1] = step.frames[-1].value
-        time[2] = step.frames[0].time
-        temp[1] = step.temperature
-        efield[1] = step.elec_field
+        time = np.array([step.frames[0].time,
+                         step.frames[-1].value, step.frames[0].time])
+        temp = np.array((temp, step.temperature, temp))
+        efield = np.array((efield, step.elec_field, efield))
+        strain = np.vstack((strain, strain, strain))
+        stress = np.vstack((stress, stress, stress))
+
+
+        # the following variables have values at [begining, current] of step
+        statev = np.vstack((statev, statev))
+        F = np.vstack((F, F))
 
         # compute the initial jacobian
         J0 = self.material.J0
@@ -606,7 +605,7 @@ Material: {5}
             statev[0] = statev[1]
 
             # --- update the state
-            self.records.append(Step=step.number, Frame=frame.number,
+            self.records.cache(Step=step.number, Frame=frame.number,
                  Time=frame.value, DTime=frame.increment,
                  E=strain[2]/VOIGT, F=F[1], D=d/VOIGT, DS=dstress, S=stress[2],
                  SDV=statev[1], T=temp[2], EF=efield[2])
@@ -641,8 +640,7 @@ Material: {5}
         logger.info('\r' + message.format(iframe+1) +
                     ' ({0:.4f}s)'.format(self._time))
 
-
-        return 0
+        return time[2], temp[2], F[1], strain[2], stress[2], efield[2], statev[1]
 
     def visualize_results(self, overlay=None):
         from .startup import launch_viewer
@@ -698,8 +696,7 @@ def sig2d(material, t, dt, temp, dtemp, kappa, f0, f, stran, d, sig, statev,
         if d is not None:
             return d
 
-        if not no_cutback:
-            raise CutbackSteps
+        CB.request_cutback(cutfac=-1)
 
     # --- Still didn't converge. Try downhill simplex method and accept
     #     whatever answer it returns:
@@ -942,17 +939,27 @@ class Step(object):
         return self.frames[-1]
 
     def cutback(self, cutfac=None, pnewdt=None):
+        if cutfac is None and pnewdt is None:
+            raise MatModLabError('cutback requires cutfac or pnewdt')
+
         nframe = len(self.frames)
         start = self.frames[0].time
         end = self.frames[-1].value
         dtime = end - start
         self.num_cutbacks += 1
+
         if pnewdt is not None:
             nframe = int(1. / pnewdt)
-        elif cutfac is None:
+
+        elif cutfac == -1:
             nframe *= self.num_cutbacks * 4
+
         else:
             nframe *= cutfac
+
+        # 5000 frames is probably excessive
+        nframe = min(nframe, 5000)
+
         inc = (end - start) / float(nframe)
         self.frames = [Frame(i+1, start+i*inc, inc) for i in range(nframe)]
 
@@ -1533,6 +1540,7 @@ class Records(OrderedDict):
     @property
     def num_rec(self):
         return len(super(Records, self).keys())
+
     def add(self, name, rtype, **kw):
         if rtype == SDV:
             keys = kw['keys']
@@ -1541,6 +1549,7 @@ class Records(OrderedDict):
         else:
             fo = Record(name, rtype, **kw)
             self[name] = fo
+
     def keys(self, expand=0):
         if expand < 0:
             return [x for x in super(Records, self).keys()
@@ -1548,18 +1557,71 @@ class Records(OrderedDict):
         elif not expand:
             return super(Records, self).keys()
         return [key for f in self.values() for key in f.keys]
-    def init(self, **kwargs):
+
+    @staticmethod
+    def totuple(a):
+        try:
+            return tuple(a)
+        except TypeError:
+            return a
+
+    def init(self, **kw):
         dtype = [(r.name, r.dtype, r.shape) for r in self.values()]
-        self.data = np.empty((0,), dtype=dtype)
-        self.append(**kwargs)
-    def append(self, **kw):
-        data = np.empty((1,), dtype=self.data.dtype)
-        def totuple(a):
-            try: return tuple(a)
-            except TypeError: return a
+        self.data = np.empty((1,), dtype=dtype)
         sdv = kw.pop('SDV', None)
-        row = [totuple(kw[key]) for key in self.keys(expand=-1)]
+        row = [self.totuple(kw[key]) for key in self.keys(expand=-1)]
+        if sdv is not None:
+            row.extend(sdv)
+        self.data[0] = tuple(row)
+        self._cache = None
+
+    def cache(self, **kw):
+        data = np.empty((1,), dtype=self.data.dtype)
+        sdv = kw.pop('SDV', None)
+        row = [self.totuple(kw[key]) for key in self.keys(expand=-1)]
         if sdv is not None:
             row.extend(sdv)
         data[0] = tuple(row)
-        self.data = np.append(self.data, data)
+        if self._cache is None:
+            self._cache = data
+        else:
+            self._cache = np.append(self._cache, data)
+
+    def advance(self):
+        self.data = np.append(self.data, self._cache, axis=0)
+        self.clear_cache()
+
+    def clear_cache(self):
+        self._cache = None
+
+class StateDB:
+    def __init__(self, **kwds):
+        self.db = {}
+        for (kw, x) in kwds.items():
+            self.db[kw] = np.array(x)
+    def get(self, key):
+        return self.db[key].copy()
+    def advance(self, **kwds):
+        for (kw, x) in kwds.items():
+            self.db[kw] = x.copy()
+
+class CutbackManager:
+    def __init__(self):
+        self.db = {}
+
+    def __nonzero__(self):
+        return bool(self.db)
+
+    def __bool__(self):
+        return self.__nonzero__()
+
+    def __getattr__(self, key):
+        return self.db.get(key)
+
+    def request_cutback(self, **kwargs):
+        self.db.update(kwargs)
+
+    def clear(self):
+        self.db = {}
+
+CB = CutbackManager()

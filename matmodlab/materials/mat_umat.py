@@ -4,9 +4,10 @@ import logging
 import numpy as np
 from matmodlab.product import PKG_D
 import matmodlab.utils.mmlabpack as mmlabpack
+from matmodlab.mmd.simulator import CB
 from matmodlab.mmd.material import MaterialModel
 from matmodlab.materials.product import ABA_UMAT_PYF, ABA_UTL, UMAT
-from matmodlab.utils.errors import StopFortran, CutbackSteps
+from matmodlab.utils.errors import StopFortran
 
 class UMat(MaterialModel):
     '''Constitutive model class for the umat model'''
@@ -95,5 +96,5 @@ class UMat(MaterialModel):
         stress = stress[self.ordering]
         ddsdde = ddsdde[self.ordering, [[i] for i in self.ordering]]
         if abs(pnewdt) > 1e-12:
-            raise CutbackSteps(pnewdt=pnewdt)
+            CB.request_cutback(pnewdt=pnewdt)
         return stress, statev, ddsdde
