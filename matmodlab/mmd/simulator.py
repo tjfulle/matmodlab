@@ -970,6 +970,7 @@ class AnalysisStep(Step):
                  temperature, elec_field, num_dumps, start=None):
 
         super(AnalysisStep, self).__init__(name)
+        logger = logging.getLogger('matmodlab.mmd.simulator')
 
         self.keywords = dict(increment=increment, frames=frames,
                              components=components, descriptors=descriptors,
@@ -981,6 +982,10 @@ class AnalysisStep(Step):
         assert len(descriptors) == TENSOR_3D
         assert not([x for x in descriptors if x not in (1, 2, 3, 4)])
         self.descriptors = descriptors
+
+        if any([x in (3,4) for x in self.descriptors]) and frames in (1, None):
+            logger.warn('Number of frames may be inapopriate for '
+                        'stress driven steps')
 
         def set_default(key, value, default, dtype):
             if value is None:
