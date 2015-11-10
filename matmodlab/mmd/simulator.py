@@ -942,14 +942,6 @@ class Step(object):
         if cutfac is None and pnewdt is None:
             raise MatModLabError('cutback requires cutfac or pnewdt')
 
-        if any([x in (3,4) for x in self.descriptors]) and frames in (1, None):
-            # number of frames not specified
-            if frames == 1:
-                logger.warn('Number of frames may be inapopriate for '
-                            'stress driven steps')
-            else:
-                frames = 100
-
         nframe = len(self.frames)
         start = self.frames[0].time
         end = self.frames[-1].value
