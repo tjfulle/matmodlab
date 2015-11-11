@@ -438,6 +438,9 @@ Material: {5}
                     # no cutbacks requested
                     break
 
+                if self.no_cutback:
+                    break
+
                 if step.num_cutbacks > 3:
                     # accept whatever is calculated
                     break
@@ -468,7 +471,7 @@ Material: {5}
 
         return
 
-    def _run_step(self, step, no_cutback=False):
+    def _run_step(self, step):
         '''Process this step '''
 
         # Unpack the state
@@ -581,7 +584,7 @@ Material: {5}
                 d = sig2d(self.material, time[2], dtime, temp[2], dtemp,
                           kappa, F[0], F[1], strain[2], dedt, stress[2],
                           statev[0], efield[2], v, pstress[v],
-                          proportional, no_cutback)
+                          proportional)
 
             # compute the current deformation gradient and strain from
             # previous values and the deformation rate
@@ -651,7 +654,7 @@ Material: {5}
 
 
 def sig2d(material, t, dt, temp, dtemp, kappa, f0, f, stran, d, sig, statev,
-          efield, v, sigspec, proportional, no_cutback):
+          efield, v, sigspec, proportional):
     '''Determine the symmetric part of the velocity gradient given stress
 
     Parameters
