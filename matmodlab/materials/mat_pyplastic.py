@@ -1,7 +1,6 @@
 import logging
 import numpy as np
 from matmodlab.mmd.material import MaterialModel
-from matmodlab.utils.parameters import Parameters
 from matmodlab.constants import ROOT2, ROOT3, TOOR2, TOOR3, I6, VOIGT
 
 

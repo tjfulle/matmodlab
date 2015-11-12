@@ -119,6 +119,7 @@ def load_interactive_material(std_material=None, user_material=None, **kwds):
         d['filename'] = user_material
         d['model'] = kwds.get('model', UMAT)
         d['response'] = kwds.get('response', MECHANICAL)
+        d['libname'] = kwds.get('libname', name)
         environ.interactive_usr_materials[name] = d
 
         root = os.path.splitext(os.path.basename(user_material))[0]

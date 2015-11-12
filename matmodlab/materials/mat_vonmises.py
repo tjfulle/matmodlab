@@ -3,7 +3,6 @@ import numpy as np
 
 from matmodlab.mmd.material import MaterialModel
 from matmodlab.constants import ROOT2, ROOT23, VOIGT
-from matmodlab.utils.parameters import Parameters
 
 class VonMises(MaterialModel):
     name = 'vonmises'

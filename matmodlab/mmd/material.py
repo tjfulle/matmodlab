@@ -10,7 +10,6 @@ from matmodlab.product import PKG_D, BIN_D, ROOT_D
 from ..mml_siteenv import environ
 from ..utils.errors import MatModLabError
 from ..utils import mmlabpack
-from ..utils.parameters import Parameters
 from ..utils.misc import remove
 from ..mmd.loader import MaterialLoader
 
@@ -130,8 +129,8 @@ class MaterialModel(object):
         self.initial_temp = kwargs.get('initial_temp', DEFAULT_TEMP)
 
         # parameter arrays
-        self.iparams = Parameters(self.parameter_names, self.iparray, self.name)
-        self.params = Parameters(self.parameter_names, self.iparray, self.name)
+        self.iparams = keyarray(self.parameter_names, self.iparray)
+        self.params = keyarray(self.parameter_names, self.iparray)
 
         # import the material library
         self._import_lib(libname=kwargs.get('libname'))
@@ -488,6 +487,7 @@ def Material(model, parameters, switch=None, response=None,
         source_files = [m['filename']]
         model = m['model']
         response = m['response']
+        libname = m['libname']
 
     if model.lower() in environ.interactive_std_materials:
         # check if the model is in the interactive materials
@@ -644,3 +644,44 @@ def build_material(model, verbosity=1):
     env['PYTHONPATH'] = p
     proc = subprocess.Popen(command.split(), env=env)
     proc.wait()
+
+class keyarray(np.ndarray):
+    """Array like object with members accessible by either index or key. i.e.
+    param[0] or param[key], assuming 'key' is in the array
+
+    """
+    def __new__(cls, names, values):
+        if len(names) != len(values):
+            raise ValueError('mismatch key,val pairs')
+        obj = np.asarray(values).view(cls)
+        obj._map = dict(zip([s.upper() for s in names], range(len(names))))
+        return obj
+
+    def __str__(self):
+        s = ', '.join('{0}={1:.2f}'.format(n, self[i]) for (i, n) in
+                           enumerate(self.names))
+        return '{{{0}}}'.format(string)
+
+    @property
+    def names(self):
+        return sorted(self._map.keys(), key=lambda x: self._map[x])
+
+    def index(self, key):
+        try:
+            # check if key is a string and in the array
+            return self._map[key.upper()]
+        except AttributeError:
+            # key could have been an integer
+            return key
+        except KeyError:
+            # key was a string, but not in the array
+            raise KeyError('{0!r} is not in keyarray'.format(key))
+
+    def __getitem__(self, key):
+        return super(keyarray, self).__getitem__(self.index(key))
+
+    def __setitem__(self, key, value):
+        super(keyarray, self).__setitem__(self.index(key), value)
+
+    def __array_finalize__(self, obj):
+        self._map = getattr(obj, '_map', None)
