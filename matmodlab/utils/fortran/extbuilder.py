@@ -136,9 +136,6 @@ class FortranExtBuilder(object):
         cwd = os.getcwd()
         os.chdir(PKG_D)
 
-        # change sys.argv for distutils
-        hold = [x for x in sys.argv]
-
         fexec = "--f77exec={0} --f90exec={0}".format(self.fc)
         argv = "./setup.py config_fc {0}".format(fexec).split()
         fflags = ["-Wno-unused-dummy-argument"]
@@ -154,27 +151,26 @@ class FortranExtBuilder(object):
             'building extension module[s]... ', extra={'continued':1})
         failed = 0
 
-        if environ.notebook:
-            from IPython.utils import io
-            try:
+        # change sys.argv for distutils
+        hold = [x for x in sys.argv]
+        sys.argv = [x for x in argv]
+        try:
+            if environ.notebook:
+                from IPython.utils import io
                 with io.capture_output() as captured:
                     setup(**config.todict())
-            except:
-                logging.getLogger('matmodlab.mmd.builder').error('failed')
-                failed = 1
-        else:
-            sys.argv = [x for x in argv]
-            f = join(PKG_D, "build.log") if not chatty else sys.stdout
-            try:
+                logging.getLogger('matmodlab.mmd.builder').info('done')
+            else:
+                f = join(PKG_D, "build.log") if not chatty else sys.stdout
                 with stdout_redirected(to=f), merged_stderr_stdout():
                     setup(**config.todict())
                 logging.getLogger('matmodlab.mmd.builder').info('done')
-            except:
-                logging.getLogger('matmodlab.mmd.builder').error('failed')
-                failed = 1
-            finally:
-                sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-                sys.argv = [x for x in hold]
+        except:
+            logging.getLogger('matmodlab.mmd.builder').error('failed')
+            failed = 1
+        finally:
+            sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+            sys.argv = [x for x in hold]
 
         # move files
         d = config.package_dir[config.name]

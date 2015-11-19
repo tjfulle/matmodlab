@@ -567,7 +567,6 @@ def Material(model, parameters, switch=None, response=None,
             logging.getLogger('matmodlab.mmd.simulator').info(
                 '{0}: rebuilding material library'.format(libname))
             from ..mmd import builder as bb
-            #@tjfulle: verbosity
             bb.Builder.build_material(libname, source_files,
                                       lapack=TheMaterial.lapack,
                                       verbosity=environ.verbosity)

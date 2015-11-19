@@ -96,27 +96,47 @@ def init_from_matmodlab_magic(p):
         pass
 
 def load_interactive_material(std_material=None, user_material=None, **kwds):
+    import re
+    if std_material and user_material:
+        raise ValueError('can only load 1 material')
+    elif std_material is None and user_material is None:
+        raise TypeError('expected material to load')
 
-    def isstr(s):
+    the_material = std_material or user_material
+
+    def is_string_like(s):
         try:
             s + ''
             return True
         except TypeError:
             return False
 
-    if user_material is not None:
+    if is_string_like(the_material):
+
         name = kwds.get('name')
         if name is None:
             raise ValueError("interactive material is missing the 'name' keyword")
-        if not os.path.isfile(user_material):
-            raise IOError('{0:!r}: no such file'.format(user_material))
-        exts = ('.f', 'F', '.f90', '.for', '.F90', '.FOR')
-        if not user_material.endswith(exts):
-            exts = ', '.join(exts)
-            raise ValueError('expected extension to be one of {0}'.format(exts))
+
+        if os.path.isfile(the_material):
+            # source is a file
+            the_material = os.path.realpath(the_material)
+            if not re.search('(?i).*\.f(90|or|)$', the_material):
+                raise ValueError('expected valid fortran file extension')
+        else:
+            # source is a string/stream
+            if not re.search('(?i)subroutine\s+umat', the_material):
+                raise ValueError('expected fortran source with umat procedure')
+            ext = '.f' if kwds.pop('fixed_form', False) else '.f90'
+            f = os.path.join(os.getcwd(), 'user_material-{0}.{1}'.format(name, ext))
+            with open(f) as fh:
+                fh.write(the_material)
+            the_material = f
+
+        if not os.path.isfile(the_material):
+            raise IOError('{0:!r}: no such file'.format(the_material))
 
         d = {}
-        d['filename'] = user_material
+        d['filename'] = the_material
         d['model'] = kwds.get('model', UMAT)
         d['response'] = kwds.get('response', MECHANICAL)
         d['libname'] = kwds.get('libname', name)
