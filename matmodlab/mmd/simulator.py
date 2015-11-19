@@ -75,7 +75,7 @@ class MaterialPointSimulator(object):
             step = AnalysisStep(s.kind, s.name, s.previous, s.increment,
                                 len(s.frames), s.components, s.descriptors,
                                 s.kappa, s.temperature, s.elec_field,
-                                s.num_dumps, s.start)
+                                s.num_dumps, s.start, s.sqa_stiff, s.mat_stiff)
             step.number = n
             self.steps[s.name] = step
             self.run_step(self.steps[s.name])
@@ -186,6 +186,7 @@ class MaterialPointSimulator(object):
         elif name in self.steps:
             raise MatModLabError('duplicate step name {0}'.format(name))
         previous = self.steps.values()[-1]
+        kwargs['mat_stiff'] = self.material.completions['E']
         step = step_class(name, previous, **kwargs)
         step.number = len(self.steps)
         self.steps[step.name] = step
@@ -301,10 +302,7 @@ Material: {5}
         """Dump the results of the simulation to a file"""
         logger = logging.getLogger('matmodlab.mmd.simulator')
         logger.info('\n...calculations completed ({0:.4f}s)\n'.format(self._time))
-        output_format = format
-        if output_format is None:
-            output_format = self.output_format
-
+        output_format = format or self.output_format
         ext = '.' + output_format
         self.filename = os.path.join(self.directory, self.job + ext)
         if output_format == REC:
@@ -599,7 +597,8 @@ Material: {5}
             s = np.array(stress[2])
             stress[2], statev[1] = self.material.compute_updated_state(
                 time[2], dtime, temp[2], dtemp, kappa, F[0], F[1], strain[2], d,
-                efield[2], stress[2], statev[0], last=True, disp=1)
+                efield[2], stress[2], statev[0], last=True,
+                sqa_stiff=step.sqa_stiff, disp=1)
             dstress = (stress[2] - s) / dtime
 
             F[0] = F[1]
@@ -975,9 +974,9 @@ class Frame:
 
 class AnalysisStep(Step):
 
-    def __init__(self, kind, name, previous, increment,
-                 frames, components, descriptors, kappa,
-                 temperature, elec_field, num_dumps, start=None):
+    def __init__(self, kind, name, previous, increment, frames, components,
+                 descriptors, kappa, temperature, elec_field, num_dumps,
+                 sqa_stiff, mat_stiff, start=None):
 
         super(AnalysisStep, self).__init__(name)
         logger = logging.getLogger('matmodlab.mmd.simulator')
@@ -985,21 +984,14 @@ class AnalysisStep(Step):
         self.keywords = dict(increment=increment, frames=frames,
                              components=components, descriptors=descriptors,
                              kappa=kappa, temperature=temperature,
-                             elec_field=elec_field, num_dumps=num_dumps)
+                             elec_field=elec_field, num_dumps=num_dumps,
+                             sqa_stiff=sqa_stiff, mat_stiff=mat_stiff)
         self.kind = kind
         self.previous = previous
         self.components = components
         assert len(descriptors) == TENSOR_3D
         assert not([x for x in descriptors if x not in (1, 2, 3, 4)])
         self.descriptors = descriptors
-
-        if any([x in (3,4) for x in self.descriptors]) and frames in (1, None):
-            # number of frames not specified
-            if frames == 1:
-                logger.warn('Number of frames may be inapopriate for '
-                            'stress driven steps')
-            else:
-                frames = 100
 
         def set_default(key, value, default, dtype):
             if value is None:
@@ -1011,13 +1003,44 @@ class AnalysisStep(Step):
         set_default('temperature', temperature, DEFAULT_TEMP, float)
         set_default('elec_field', elec_field, [0.,0.,0.], np.array)
         set_default('num_dumps', num_dumps, 100000000, int)
+        set_default('sqa_stiff', sqa_stiff, False, bool)
+        set_default('mat_stiff', mat_stiff, 1, float)
 
         if increment is None:
             increment = 1.
         self.increment = increment
 
         # set up analysis frames
-        if frames is None:
+        if any([x in (3,4) for x in self.descriptors]) and frames in (1, None):
+            # set default frames for mixed steps
+            if frames == 1:
+                logger.warn('Number of frames may be inapopriate for '
+                            'stress driven steps')
+            else:
+                # number of frames not specified
+                # limit the amount of strain
+                de_max = -1e60
+                if 1 in descriptors:
+                    x = max([abs(x) for (i,x) in enumerate(components)
+                             if descriptors[i] == 1])
+                    de_max = max(de_max, x * increment)
+                if 2 in descriptors:
+                    x = max([abs(x) for (i,x) in enumerate(components)
+                             if descriptors[i] == 2])
+                    de_max = max(de_max, x)
+                if 3 in descriptors:
+                    x = max([abs(x) for (i,x) in enumerate(components)
+                             if descriptors[i] == 3])
+                    de_max = max(de_max, x * increment / self.mat_stiff)
+                if 4 in descriptors:
+                    x = max([abs(x) for (i,x) in enumerate(components)
+                             if descriptors[i] == 4])
+                    de_max = max(de_max, x / self.mat_stiff)
+
+                # de_max defaults to .1%
+                frames = max(int(de_max / .001), 1)
+
+        elif frames is None:
             frames = 1
         frames = int(frames)
         frame_increment = increment / float(frames)
@@ -1067,13 +1090,13 @@ def InitialStep(name, kappa=0., temperature=None):
 
     step = AnalysisStep('InitialStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature,
-                        elec_field, num_dumps, start=0.)
+                        elec_field, num_dumps, False, 1, start=0.)
     step.number = 0
     return step
 
 def StrainStep(name, previous, components=None, frames=None, scale=1.,
                  increment=1., kappa=None, temperature=None, elec_field=None,
-                 num_dumps=None):
+                 num_dumps=None, sqa_stiff=False, mat_stiff=1):
 
     if components is None:
         components = np.zeros(TENSOR_3D)
@@ -1111,11 +1134,11 @@ def StrainStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StrainStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, sqa_stiff, mat_stiff)
 
 def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
                    increment=1., kappa=None, temperature=None, elec_field=None,
-                   num_dumps=None):
+                   num_dumps=None, sqa_stiff=False, mat_stiff=1):
 
     if components is None:
         components = np.zeros(TENSOR_3D)
@@ -1147,11 +1170,11 @@ def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StrainRateStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, sqa_stiff, mat_stiff)
 
 def StressStep(name, previous, components=None, frames=None, scale=1.,
                increment=1., temperature=None, elec_field=None,
-               num_dumps=None):
+               num_dumps=None, sqa_stiff=False, mat_stiff=1):
 
     kappa = 0.
 
@@ -1173,11 +1196,11 @@ def StressStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StressStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, sqa_stiff, mat_stiff)
 
 def StressRateStep(name, previous, components=None, frames=None, scale=1.,
                    increment=1., temperature=None, elec_field=None,
-                   num_dumps=None):
+                   num_dumps=None, sqa_stiff=False, mat_stiff=1):
 
     kappa = 0.
     if components is None:
@@ -1199,11 +1222,11 @@ def StressRateStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('StressRateStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, sqa_stiff, mat_stiff)
 
 def DisplacementStep(name, previous, components=None, frames=None, scale=1.,
                      increment=1., kappa=None, temperature=None, elec_field=None,
-                     num_dumps=None):
+                     num_dumps=None, sqa_stiff=False, mat_stiff=1):
 
     if components is None:
         components = np.zeros(3)
@@ -1224,11 +1247,11 @@ def DisplacementStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('DisplacementStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, sqa_stiff, mat_stiff)
 
 def DefGradStep(name, previous, components=None, frames=None, scale=1.,
                 increment=1., kappa=None, temperature=None, elec_field=None,
-                num_dumps=None):
+                num_dumps=None, sqa_stiff=False, mat_stiff=1):
 
     if kappa is None:
         kappa = previous.kappa
@@ -1258,11 +1281,11 @@ def DefGradStep(name, previous, components=None, frames=None, scale=1.,
 
     return AnalysisStep('DefGradStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, sqa_stiff, mat_stiff)
 
 def MixedStep(name, previous, components=None, descriptors=None,
               frames=None, scale=1., increment=1., temperature=None,
-              elec_field=None, num_dumps=None):
+              elec_field=None, num_dumps=None, sqa_stiff=False, mat_stiff=1):
 
     if components is None:
         components = np.zeros(TENSOR_3D)
@@ -1316,7 +1339,7 @@ def MixedStep(name, previous, components=None, descriptors=None,
 
     return AnalysisStep('MixedStep', name, previous, increment, frames,
                         components, descriptors, kappa, temperature, elec_field,
-                        num_dumps)
+                        num_dumps, sqa_stiff, mat_stiff)
 
 def DataSteps(filename, previous, tc=0, descriptors=None, time_format='total',
               scale=1., frames=None, steps=None, **kw):

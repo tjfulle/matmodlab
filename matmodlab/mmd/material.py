@@ -329,7 +329,8 @@ class MaterialModel(object):
         return string.format(p, obj, self.name)
 
     def compute_updated_state(self, time, dtime, temp, dtemp, kappa, F0, F,
-            stran, d, elec_field, stress, statev, disp=0, v=None, last=False):
+            stran, d, elec_field, stress, statev, disp=0, v=None, last=False,
+            sqa_stiff=False):
         '''Update the material state
 
         '''
@@ -390,7 +391,8 @@ class MaterialModel(object):
             # sub-Jacobian
             ddsdde = ddsdde[[[i] for i in v], v]
 
-        if last and self.sqa_stiff:
+        sqa_stiff = self.sqa_stiff or sqa_stiff
+        if last and sqa_stiff:
             # check how close stiffness returned from material is to the numeric
             c = self.numerical_jacobian(time, dtime, temp, dtemp, kappa, F0,
                         Fm, Em, dm, elec_field, stress, sdv, V)

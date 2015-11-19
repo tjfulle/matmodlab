@@ -142,18 +142,15 @@ def load_interactive_material(std_material=None, user_material=None, **kwds):
         d['libname'] = kwds.get('libname', name)
         environ.interactive_usr_materials[name] = d
 
-        root = os.path.splitext(os.path.basename(user_material))[0]
+        root = os.path.splitext(os.path.basename(the_material))[0]
         so_file = os.path.join(LIB_D, root + '.so')
         if os.path.isfile(so_file):
             os.remove(so_file)
 
-    elif std_material is not None:
+    else:
         try:
-            environ.interactive_std_materials[std_material.name] = std_material
+            environ.interactive_std_materials[the_material.name] = the_material
         except AttributeError:
             raise AttributeError("interactive material is missing attribute 'name'")
-
-    else:
-        raise ValueError('expected one of std_material or user_material')
 
 load_material = load_interactive_material
