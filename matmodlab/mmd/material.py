@@ -139,9 +139,21 @@ class MaterialModel(object):
 
         # --- setup and initialize the model
         try:
-            sdv_keys, sdv_vals = self.setup(**kwargs)
-        except (TypeError, ValueError):
+            item = self.setup(**kwargs)
+        except Exception as e:
+            s = 'failed to setup material model with the following exception:'
+            s += '\n' + ' '.join(e.args)
+            raise MatModLabError(s)
+
+        if item is None:
             sdv_keys, sdv_vals = [], []
+        else:
+            try:
+                sdv_keys, sdv_vals = item
+            except ValueError:
+                raise MatModLabError('Expected the material setup to return '
+                                     'only the sdv keys and values')
+
         self.num_sdv = len(sdv_keys)
         if len(sdv_vals) != len(sdv_keys):
             raise MatModLabError('len(sdv_values) != len(sdv_keys)')
