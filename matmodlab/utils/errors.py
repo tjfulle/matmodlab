@@ -2,7 +2,7 @@ import logging
 from .misc import who_is_calling
 from ..mml_siteenv import environ
 
-class MatModLabError(Exception):
+class MatmodlabError(Exception):
     def __init__(self, message):
         who = who_is_calling()
         message = ' '.join(message.split()).strip()
@@ -15,9 +15,12 @@ class MatModLabError(Exception):
             key = 'matmodlab.mmd.simulator'
         logging.getLogger(key).error(message)
         if environ.raise_e or environ.notebook:
-            super(MatModLabError, self).__init__(message)
+            super(MatmodlabError, self).__init__(message)
         else:
             raise SystemExit('*** Error: ' + message)
 
+MatModLabError = MatmodlabError
+
 def StopFortran(message):
-    raise MatModLabError(message)
+    message = ' '.join(message.split()).strip()
+    raise MatmodlabError(message)

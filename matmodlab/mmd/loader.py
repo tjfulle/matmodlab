@@ -4,7 +4,7 @@ import logging
 from ..materials.product import *
 from ..utils import xpyclbr
 from ..mml_siteenv import environ
-from ..utils.errors import MatModLabError
+from ..utils.errors import MatmodlabError
 from ..utils.misc import load_file, rand_id
 
 class MaterialLoader:
@@ -80,7 +80,7 @@ class MaterialLoader:
                     module = load_file(libs[lib].file)
                     mat_class = getattr(module, libs[lib].class_name, None)
                     if mat_class.name is None:
-                        raise MatModLabError('{0}: material name attribute '
+                        raise MatmodlabError('{0}: material name attribute '
                                              'not defined'.format(lib))
                     libs[lib].mat_class = mat_class
                     std_libs.update({mat_class.name: libs[lib]})
@@ -94,13 +94,13 @@ class MaterialLoader:
 
             source_files = info.get('source_files')
             if not source_files:
-                raise MatModLabError('{0}: requires source_files'.format(name))
+                raise MatmodlabError('{0}: requires source_files'.format(name))
 
             model = info.get('model', USER)
             response = info.get('response')
             user_i = get_user_interface(model, response=response)
             if user_i is None:
-                raise MatModLabError('non-user material in materials dict')
+                raise MatmodlabError('non-user material in materials dict')
             ordering = get_default_ordering(model)
 
             mat = UserMaterial(std_libs[user_i],
@@ -111,7 +111,7 @@ class MaterialLoader:
             user_libs[name] = mat
 
         if errors:
-            raise MatModLabError('duplicate extension modules: '
+            raise MatmodlabError('duplicate extension modules: '
                                  '{0}'.format(', '.join(errors)))
 
         return cls(std_libs, user_libs)

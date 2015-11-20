@@ -8,7 +8,7 @@ import logging
 from matmodlab.product import PKG_D, BIN_D, ROOT_D
 
 from ..mml_siteenv import environ
-from ..utils.errors import MatModLabError
+from ..utils.errors import MatmodlabError
 from ..utils import mmlabpack
 from ..utils.misc import remove
 from ..mmd.loader import MaterialLoader
@@ -37,7 +37,7 @@ def Eye(n):
         return np.array([1, 1, 1, 0, 0, 0], dtype=np.float64)
     if n == 9:
         return np.array([1, 0, 0, 0, 1, 0, 0, 0, 1], dtype=np.float64)
-    raise MatModLabError('incorrect n')
+    raise MatmodlabError('incorrect n')
 
 class MaterialModel(object):
     '''The base material class
@@ -79,7 +79,7 @@ class MaterialModel(object):
 
         '''
         if self.name is None:
-            raise MatModLabError('material did not define name attribute')
+            raise MatmodlabError('material did not define name attribute')
 
         logging.getLogger('matmodlab.mmd.simulator').info(
             'setting up {0} material'.format(self.name))
@@ -94,7 +94,7 @@ class MaterialModel(object):
         param_names = [s.upper() for s in param_names]
         if not isinstance(parameters, (dict,)):
             if len(parameters) != len(param_names):
-                raise MatModLabError('parameters and param_names have '
+                raise MatmodlabError('parameters and param_names have '
                                      'inconsistent lengths')
             parameters = dict(zip(param_names, parameters))
 
@@ -116,7 +116,7 @@ class MaterialModel(object):
                 logging.error('parameter {0} must be a float'.format(key))
 
         if errors:
-            raise MatModLabError('stopping due to previous errors')
+            raise MatmodlabError('stopping due to previous errors')
 
         self.parameter_names = [s.upper() for s in param_names]
         self.iparray = np.array(params)
@@ -143,7 +143,7 @@ class MaterialModel(object):
         except Exception as e:
             s = 'failed to setup material model with the following exception:'
             s += '\n' + ' '.join(e.args)
-            raise MatModLabError(s)
+            raise MatmodlabError(s)
 
         if item is None:
             sdv_keys, sdv_vals = [], []
@@ -151,12 +151,12 @@ class MaterialModel(object):
             try:
                 sdv_keys, sdv_vals = item
             except ValueError:
-                raise MatModLabError('Expected the material setup to return '
+                raise MatmodlabError('Expected the material setup to return '
                                      'only the sdv keys and values')
 
         self.num_sdv = len(sdv_keys)
         if len(sdv_vals) != len(sdv_keys):
-            raise MatModLabError('len(sdv_values) != len(sdv_keys)')
+            raise MatmodlabError('len(sdv_values) != len(sdv_keys)')
         self.sdv_keys = [s for s in sdv_keys]
         self.initial_sdv = np.array(sdv_vals, dtype=np.float64)
 
@@ -175,7 +175,7 @@ class MaterialModel(object):
         try:
             cholesky(ddsdde)
         except LinAlgError:
-            raise MatModLabError('initial elastic stiffness not positive definite')
+            raise MatmodlabError('initial elastic stiffness not positive definite')
 
         # property completions
         b = self.completions_map()
@@ -217,19 +217,19 @@ class MaterialModel(object):
 
     def Viscoelastic(self, type, data):
         if self.visco_model is not None:
-            raise MatModLabError('Material supports only one Viscoelastic model')
+            raise MatmodlabError('Material supports only one Viscoelastic model')
         self.visco_model = Viscoelastic(type, data)
         vk, vd = self.visco_model.setup(trs_model=self.trs_model)
         self.visco_slice = self.augment_sdv(vk, vd)
 
     def TRS(self, definition, data):
         if self.trs_model is not None:
-            raise MatModLabError('Material supports only one TRS model')
+            raise MatmodlabError('Material supports only one TRS model')
         self.trs_model = TRS(definition, data)
 
     def Expansion(self, type, data):
         if self.xpan is not None:
-            raise MatModLabError('Material supports only one Expansion model')
+            raise MatmodlabError('Material supports only one Expansion model')
         self.xpan = Expansion(type, data)
         ek, ed = self.xpan.setup()
         self.xpan_slice = self.augment_sdv(ek, ed)
@@ -247,7 +247,7 @@ class MaterialModel(object):
         self.sdv_keys.extend(keys)
         N = len(self.sdv_keys)
         if len(values) != len(keys):
-            raise MatModLabError('len(values) != len(keys)')
+            raise MatmodlabError('len(values) != len(keys)')
         self.initial_sdv = np.append(self.initial_sdv, np.array(values))
         return slice(M, N)
 
@@ -348,7 +348,14 @@ class MaterialModel(object):
         s += '*Parameter\n{PARAMS}\n'
         s += '*Material, name={NAME}\n'
         s += '*Depvar\n {DEPVAR}\n'
-        s += '*User Material, constants={N}, type=MECHANICAL\n'
+        if 'uhyper' in self.name.lower():
+            s += '*Hyperelastic, properties={N}, '
+            s += 'moduli=INSTANTANEOUS, type=COMPRESSIBLE\n'
+        elif 'uaniso' in self.name.lower():
+            s += '*Anisotropic Hyperelastic, formulation=INVARIANT, properties={N}, '
+            s += 'moduli=INSTANTANEOUS, type=COMPRESSIBLE\n'
+        else:
+            s += '*User Material, constants={N}, type=MECHANICAL\n'
         s += ' {NAMES}'
 
         # create the parameters
@@ -545,7 +552,7 @@ def Material(model, parameters, switch=None, response=None,
     elif user_model:
         # requested model is a user model
         if not source_files:
-            raise MatModLabError('{0}: requires source_files'.format(model))
+            raise MatmodlabError('{0}: requires source_files'.format(model))
         for (i, f) in enumerate(source_files):
             filename = os.path.realpath(f)
             if not os.path.isfile(filename):
@@ -565,12 +572,12 @@ def Material(model, parameters, switch=None, response=None,
         # check if material has been loaded
         mat_info = all_mats.get(model, response)
         if mat_info is None:
-            raise MatModLabError('model {0} not found'.format(model))
+            raise MatmodlabError('model {0} not found'.format(model))
         TheMaterial = mat_info.mat_class
         source_files = TheMaterial.source_files()
 
     if errors:
-        raise MatModLabError('stopping due to previous errors')
+        raise MatmodlabError('stopping due to previous errors')
 
     # Check if model is already built (if applicable)
     if source_files:
@@ -581,7 +588,7 @@ def Material(model, parameters, switch=None, response=None,
                     signature = f
                     break
             else:
-                raise MatModLabError('signature file not found')
+                raise MatmodlabError('signature file not found')
             lines = open(signature, 'r').read()
             new_signature = os.path.join(PKG_D, libname + '.pyf')
             libname_ = getattr(TheMaterial, 'libname', TheMaterial.name)
@@ -608,7 +615,7 @@ def Material(model, parameters, switch=None, response=None,
                                       verbosity=environ.verbosity)
 
         if not os.path.isfile(so_lib):
-            raise MatModLabError('model library for {0} '
+            raise MatmodlabError('model library for {0} '
                                  'not found'.format(libname))
 
     if user_model:
@@ -638,11 +645,11 @@ def switch_materials(model_1, model_2, parameters):
     # retrieve meta info for each material model
     mat_info_1 = all_mats.get(model_1)
     if mat_info_1 is None:
-        raise MatModLabError('model {0} not found'.format(model))
+        raise MatmodlabError('model {0} not found'.format(model))
 
     mat_info_2 = all_mats.get(model_2)
     if mat_info_2 is None:
-        raise MatModLabError('model {0} not found'.format(model_2))
+        raise MatmodlabError('model {0} not found'.format(model_2))
 
     # get each material's class
     TheMaterial_1 = mat_info_1.mat_class
@@ -652,7 +659,7 @@ def switch_materials(model_1, model_2, parameters):
     try:
         material_1 = TheMaterial_1(parameters)
     except ImportError:
-        raise MatModLabError('failed to import {0}.  Material switching '
+        raise MatmodlabError('failed to import {0}.  Material switching '
                              'requires that both materials be '
                              'built.'.format(material_1.name))
 
@@ -662,7 +669,7 @@ def switch_materials(model_1, model_2, parameters):
     try:
         material_2 = TheMaterial_2.from_other(material_1)
     except ImportError:
-        raise MatModLabError('failed to import {0}.  Material switching '
+        raise MatmodlabError('failed to import {0}.  Material switching '
                              'requires that both materials be '
                              'built.'.format(material_1.name))
 

@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from matmodlab.utils.errors import MatModLabError, StopFortran
+from matmodlab.utils.errors import MatmodlabError, StopFortran
 from matmodlab.materials.product import PRONY
 
 visco = None
@@ -13,14 +13,14 @@ class Viscoelastic(object):
         if self.time == PRONY:
             # check data
             if data.shape[1] != 2:
-                raise MatModLabError("expected Prony series data to be 2 columns")
+                raise MatmodlabError("expected Prony series data to be 2 columns")
             self._data = data
         else:
-            raise MatModLabError("{0}: unkown time type".format(time))
+            raise MatmodlabError("{0}: unkown time type".format(time))
 
         self.Goo = 1. - np.sum(self._data[:, 0])
         if self.Goo < 0.:
-            raise MatModLabError("expected sum of shear Prony coefficients, "
+            raise MatmodlabError("expected sum of shear Prony coefficients, "
                                  "including infinity term to be one")
 
     def setup(self, trs_model=None):
@@ -28,7 +28,7 @@ class Viscoelastic(object):
         try:
             from matmodlab.lib.visco import visco as visco
         except ImportError:
-            raise MatModLabError("attempting visco analysis but "
+            raise MatmodlabError("attempting visco analysis but "
                                  "lib/visco.so not imported")
 
         # setup viscoelastic params

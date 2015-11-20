@@ -18,7 +18,7 @@ from ..product import SPLASH
 from ..utils.misc import backup
 from ..mml_siteenv import environ
 from ..utils.logio import setup_logger
-from ..utils.errors import MatModLabError
+from ..utils.errors import MatmodlabError
 from ..utils.mmltab import MMLTabularWriter, correlations, plot_correlations
 
 RAND = np.random.RandomState()
@@ -80,7 +80,7 @@ class Permutator(object):
 
         # check method
         if method not in (ZIP, COMBINATION):
-            raise MatModLabError('unkown permutation method')
+            raise MatmodlabError('unkown permutation method')
         self.method = method
 
         # check xinit
@@ -91,7 +91,7 @@ class Permutator(object):
                 self.names.append(x.name)
                 idata.append(x.data)
             except AttributeError:
-                raise MatModLabError("each xinit must be PermutateVariable")
+                raise MatmodlabError("each xinit must be PermutateVariable")
 
         # set up the jobs
         if self.shotgun:
@@ -105,7 +105,7 @@ class Permutator(object):
                 msg = ("Number of permutations must be the same for all "
                        "permutated parameters when using method: {0}".format(
                            self.method))
-                raise MatModLabError(msg)
+                raise MatmodlabError(msg)
             self.data = zip(*idata)
 
         else:
@@ -250,7 +250,7 @@ def PermutateVariable(name, init, b=None, N=10, method=LIST):
     try:
         func = funcs[method]
     except KeyError:
-        raise MatModLabError('unkown PermutateVariable method')
+        raise MatmodlabError('unkown PermutateVariable method')
 
     if method == LIST:
         fun_args = [x for x in init]
@@ -261,7 +261,7 @@ def PermutateVariable(name, init, b=None, N=10, method=LIST):
             init = float(init)
             b = float(b)
         except TypeError:
-            raise MatModLabError('b keyword required for PermutateVariable method')
+            raise MatmodlabError('b keyword required for PermutateVariable method')
         fun_args = [init, b, int(N)]
         srep = "{0}({1}, {2}, {3})".format(method, init, b, N)
 

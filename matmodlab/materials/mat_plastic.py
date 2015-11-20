@@ -5,7 +5,7 @@ from numpy import zeros, ones, eye, array, reshape
 from matmodlab.product import MAT_D
 from matmodlab.materials.product import ABA_UTL
 from matmodlab.mmd.material import MaterialModel
-from matmodlab.utils.errors import MatModLabError, StopFortran
+from matmodlab.utils.errors import MatmodlabError, StopFortran
 import matmodlab.utils.mmlabpack as mmlabpack
 
 class Plastic(MaterialModel):
@@ -30,7 +30,7 @@ class Plastic(MaterialModel):
         try:
             import matmodlab.lib.plastic as mat
         except ImportError:
-            raise MatModLabError('model plastic not imported')
+            raise MatmodlabError('model plastic not imported')
         self.lib = mat
 
     def setup(self, **kwargs):
@@ -38,9 +38,9 @@ class Plastic(MaterialModel):
 
         """
         if self.parameters['E'] <= 0.:
-            raise MatModLabError("Negative Young's modulus")
+            raise MatmodlabError("Negative Young's modulus")
         if -1 > self.parameters['Nu'] >= .5:
-            raise MatModLabError("Invalid Poisson's ratio")
+            raise MatmodlabError("Invalid Poisson's ratio")
         self.ordering = [0, 1, 2, 3, 5, 4]
         components = ['XX', 'YY', 'ZZ', 'XY', 'XZ', 'YZ']
         sdv_keys = ['Pres', 'Mises']

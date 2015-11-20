@@ -13,7 +13,7 @@ from numpy.linalg import LinAlgError as LinAlgError
 from ..constants import *
 from ..mml_siteenv import environ
 from ..utils import mmlabpack as mml
-from ..utils.errors import MatModLabError
+from ..utils.errors import MatmodlabError
 from ..utils.fileio import loadfile, savefile
 from ..utils.logio import setup_logger
 from ..utils.plotting import create_figure
@@ -103,7 +103,7 @@ class MaterialPointSimulator(object):
     def InitialStress(self, components, scale=1.):
         try:
             if len(components) > TENSOR_3D:
-                raise MatModLabError('expected stress to have at most {0}'
+                raise MatmodlabError('expected stress to have at most {0}'
                                      ' components '.format(TENSOR_3D))
         except TypeError:
             # scalar -> pressure
@@ -184,7 +184,7 @@ class MaterialPointSimulator(object):
         if name is None:
             name = 'Step-{0}'.format(len(self.steps))
         elif name in self.steps:
-            raise MatModLabError('duplicate step name {0}'.format(name))
+            raise MatmodlabError('duplicate step name {0}'.format(name))
         previous = self.steps.values()[-1]
         kwargs['mat_stiff'] = self.material.completions['E']
         step = step_class(name, previous, **kwargs)
@@ -246,7 +246,7 @@ Material: {5}
         logger.info('Setting up calculations...')
 
         if self.material is None:
-            raise MatModLabError('The material must be set before '
+            raise MatmodlabError('The material must be set before '
                                  'any analysis steps are created')
 
         # register variables
@@ -430,7 +430,7 @@ Material: {5}
             self.initialize_simulation()
 
         if step.num_cutbacks >= 4:
-            raise MatModLabError('number of cutbacks for step {0} exceeds '
+            raise MatmodlabError('number of cutbacks for step {0} exceeds '
                                  'the maximum allowable'.format(step.number))
 
         try:
@@ -511,7 +511,7 @@ Material: {5}
         # compute the initial jacobian
         J0 = self.material.J0
         if J0 is None:
-            raise MatModLabError('J0 has not been initialized')
+            raise MatmodlabError('J0 has not been initialized')
 
         # v array is an array of integers that contains the rows and columns of
         # the slice needed in the jacobian subroutine.
@@ -801,7 +801,7 @@ def newton(material, t, dt, temp, dtemp, kappa, f0, farg, stran, darg,
             try:
                 evals = np.linalg.eigvalsh(Jsub)
             except LinAlgError:
-                raise MatModLabError('failed to determine elastic '
+                raise MatmodlabError('failed to determine elastic '
                                      'stiffness eigenvalues')
             else:
                 if np.any(evals < 0.):
@@ -946,7 +946,7 @@ class Step(object):
 
     def cutback(self, cutfac=None, pnewdt=None):
         if cutfac is None and pnewdt is None:
-            raise MatModLabError('cutback requires cutfac or pnewdt')
+            raise MatmodlabError('cutback requires cutfac or pnewdt')
 
         nframe = len(self.frames)
         start = self.frames[0].time
@@ -1106,7 +1106,7 @@ def StrainStep(name, previous, components=None, frames=None, scale=1.,
         components = np.zeros(TENSOR_3D)
 
     if len(components) > TENSOR_3D:
-        raise MatModLabError('expected strain to have at most {0} '
+        raise MatmodlabError('expected strain to have at most {0} '
                              'components on Step {1}'.format(TENSOR_3D, name))
     components = np.array(components) * scale
     if kappa is None:
@@ -1116,7 +1116,7 @@ def StrainStep(name, previous, components=None, frames=None, scale=1.,
         # only one strain value given -> volumetric strain
         ev = components[0]
         if kappa * ev + 1. < 0.:
-            raise MatModLabError('1 + kappa * ev must be positive')
+            raise MatmodlabError('1 + kappa * ev must be positive')
 
         if abs(kappa) < 1.e-16:
             eij = ev / 3.
@@ -1132,7 +1132,7 @@ def StrainStep(name, previous, components=None, frames=None, scale=1.,
     bad = np.where(kappa * components + 1. < 0.)
     if np.any(bad):
         idx = str(bad[0])
-        raise MatModLabError('1 + kappa*E[{0}] must be positive'.format(idx))
+        raise MatmodlabError('1 + kappa*E[{0}] must be positive'.format(idx))
 
     descriptors = np.array([2] * TENSOR_3D, dtype=np.int)
 
@@ -1148,7 +1148,7 @@ def StrainRateStep(name, previous, components=None, frames=None, scale=1.,
         components = np.zeros(TENSOR_3D)
 
     if len(components) > TENSOR_3D:
-        raise MatModLabError('expected strain rate to have at most {0} '
+        raise MatmodlabError('expected strain rate to have at most {0} '
                              'components on Step {1}'.format(TENSOR_3D, name))
     components = np.array(components) * scale
 
@@ -1185,7 +1185,7 @@ def StressStep(name, previous, components=None, frames=None, scale=1.,
     if components is None:
         components = np.zeros(TENSOR_3D)
     if len(components) > TENSOR_3D:
-        raise MatModLabError('expected stress to have at most {0} '
+        raise MatmodlabError('expected stress to have at most {0} '
                              'components on Step {1}'.format(TENSOR_3D, name))
 
     components = np.array(components) * scale
@@ -1210,7 +1210,7 @@ def StressRateStep(name, previous, components=None, frames=None, scale=1.,
     if components is None:
         components = np.zeros(TENSOR_3D)
     if len(components) > TENSOR_3D:
-        raise MatModLabError('expected stress to have at most {0} '
+        raise MatmodlabError('expected stress to have at most {0} '
                              'components on Step {1}'.format(TENSOR_3D, name))
 
     components = np.array(components) * scale
@@ -1236,7 +1236,7 @@ def DisplacementStep(name, previous, components=None, frames=None, scale=1.,
         components = np.zeros(3)
 
     if len(components) > 3:
-        raise MatModLabError('expected displacement to have at most 3 '
+        raise MatmodlabError('expected displacement to have at most 3 '
                              'components on Step {0}'.format(name))
 
     components = np.array(components) * scale
@@ -1263,12 +1263,12 @@ def DefGradStep(name, previous, components=None, frames=None, scale=1.,
     try:
         defgrad = np.reshape(components, (3, 3)) * scale
     except ValueError:
-        raise MatModLabError('expected 9 deformation gradient '
+        raise MatmodlabError('expected 9 deformation gradient '
                              'components for step {0}'.format(name))
 
     jac = np.linalg.det(defgrad)
     if jac <= 0:
-        raise MatModLabError('negative Jacobian on step '
+        raise MatmodlabError('negative Jacobian on step '
                              '{0} ({1:f})'.format(name, jac))
     components = np.reshape(defgrad, (9,))
 
@@ -1276,7 +1276,7 @@ def DefGradStep(name, previous, components=None, frames=None, scale=1.,
     # rotation given by axis of rotation x and angle of rotation theta
     Rij, Vij = np.linalg.qr(defgrad)
     if np.max(np.abs(Rij - np.eye(3))) > np.finfo(np.float).eps:
-        raise MatModLabError('QR decomposition of deformation gradient '
+        raise MatmodlabError('QR decomposition of deformation gradient '
                              'gave unexpected rotations (rotations are '
                              'not yet supported)')
     Uij = np.dot(Rij.T, np.dot(Vij, Rij))
@@ -1295,7 +1295,7 @@ def MixedStep(name, previous, components=None, descriptors=None,
         components = np.zeros(TENSOR_3D)
 
     if len(components) > TENSOR_3D:
-        raise MatModLabError('expected stress to have at most {0} '
+        raise MatmodlabError('expected stress to have at most {0} '
                              'components on Step {1}'.format(TENSOR_3D, name))
 
     if descriptors is None:
@@ -1315,10 +1315,10 @@ def MixedStep(name, previous, components=None, descriptors=None,
         descriptors[i] = x
     if bad:
         idx = ','.join(str(x) for x in bad)
-        raise MatModLabError('unexpected descriptors {0}'.format(idx))
+        raise MatmodlabError('unexpected descriptors {0}'.format(idx))
 
     if len(descriptors) != len(components):
-        raise MatModLabError('expected len(components)=len(descriptors) '
+        raise MatmodlabError('expected len(components)=len(descriptors) '
                              'on step {0}'.format(name))
 
     kappa = 0.
@@ -1336,7 +1336,7 @@ def MixedStep(name, previous, components=None, descriptors=None,
     bad = np.where(kappa*components[np.where(descriptors==2)]+1.<0.)
     if np.any(bad):
         idx = str(bad[0])
-        raise MatModLabError('1 + kappa*E[{0}] must be positive'.format(idx))
+        raise MatmodlabError('1 + kappa*E[{0}] must be positive'.format(idx))
 
     components = np.array(components)
     descriptors = descriptors
@@ -1351,7 +1351,7 @@ def DataSteps(filename, previous, tc=0, descriptors=None, time_format='total',
     d = {'D': 1, 'E': 2, 'R': 3, 'S': 4, 'P': 6, 'T': 7, 'X': 9}
     bad = []
     if descriptors is None:
-        raise MatModLabError('required keyword descriptors missing')
+        raise MatmodlabError('required keyword descriptors missing')
 
     descriptors = [x for x in descriptors]
     for (i, x) in enumerate(descriptors):
@@ -1365,20 +1365,20 @@ def DataSteps(filename, previous, tc=0, descriptors=None, time_format='total',
         descriptors[i] = x
     if bad:
         idx = ','.join(str(x) for x in bad)
-        raise MatModLabError('unexpected descriptors {0}'.format(idx))
+        raise MatmodlabError('unexpected descriptors {0}'.format(idx))
     descriptors = np.array(descriptors)
 
     if len(descriptors[np.where(descriptors==7)]) > 1:
-        raise MatModLabError('expected at most one temperature column')
+        raise MatmodlabError('expected at most one temperature column')
 
     if len(descriptors[np.where(descriptors==6)]) > 3:
-        raise MatModLabError('expected at most three electric field columns')
+        raise MatmodlabError('expected at most three electric field columns')
 
     fill = None
     columns = kw.get('columns')
     if columns is not None:
         if len(columns) > len(descriptors):
-            raise MatModLabError('expected len(components)<=len(descriptors)')
+            raise MatmodlabError('expected len(components)<=len(descriptors)')
         fill = len(descriptors) - len(columns)
         columns = [tc] + [x for x in columns]
 
@@ -1472,7 +1472,7 @@ def GenSteps(step_class, name, previous, components, amplitude, increment,
         ampl = [x for x in ampl]
         if n != nc:
             message = 'expected len(amplitude) to be at most len(components)'
-            raise MatModLabError(message)
+            raise MatmodlabError(message)
 
         # at this point, we need to make sure that each amplitude is callable
         for (i, f) in enumerate(ampl):
@@ -1490,7 +1490,7 @@ def GenSteps(step_class, name, previous, components, amplitude, increment,
                 ampl[i] = lambda t, a=a: a
             except AttributeError:
                 message = 'amplitude must be a float or callable'
-                raise MatModLabError(message)
+                raise MatmodlabError(message)
         return lambda t: np.array([x(t) for x in ampl])
     amplitude = set_amplitude(amplitude)
 

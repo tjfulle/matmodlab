@@ -1,5 +1,5 @@
 import numpy as np
-from matmodlab.utils.errors import MatModLabError
+from matmodlab.utils.errors import MatmodlabError
 from matmodlab.materials.product import WLF
 
 class TRS(object):
@@ -9,7 +9,7 @@ class TRS(object):
         if self.defn == WLF:
             # check data
             if data.shape[0] != 3:
-                raise MatModLabError("expected 3 WLF parameters")
+                raise MatmodlabError("expected 3 WLF parameters")
             self._data = np.array(data)
 
     @property

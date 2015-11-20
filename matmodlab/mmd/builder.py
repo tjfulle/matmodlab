@@ -12,7 +12,7 @@ from ..constants import *
 from ..materials.product import *
 from ..utils.misc import load_file, remove
 from ..product import ROOT_D, PKG_D
-from ..utils.errors import MatModLabError
+from ..utils.errors import MatmodlabError
 from ..utils.fortran.extbuilder import FortranExtBuilder
 from ..utils.fortran.product import *
 from ..utils.logio import setup_logger
@@ -74,7 +74,7 @@ class Builder(object):
 
                 for name in libs:
                     if name in fort_libs:
-                        raise MatModLabError('duplicate extension '
+                        raise MatmodlabError('duplicate extension '
                                              'module {0}'.format(name))
                     if (os.path.isfile(os.path.join(PKG_D, name + '.so'))
                         and not force):
@@ -88,7 +88,7 @@ class Builder(object):
             # find materials and filter out those to build
             for (name, info) in all_mats.std_libs.items():
                 if name in fort_libs:
-                    raise MatModLabError('duplicate extension '
+                    raise MatmodlabError('duplicate extension '
                                          'module {0}'.format(name))
                 if mats_to_fetch != 'all' and name not in mats_to_fetch:
                     continue
@@ -125,7 +125,7 @@ class Builder(object):
                         signature = f
                         break
                 else:
-                    raise MatModLabError('signature file not found')
+                    raise MatmodlabError('signature file not found')
                 lines = open(signature, 'r').read()
                 new_signature = os.path.join(PKG_D, libname + '.pyf')
                 libname_ = getattr(mat.mat_class, 'libname', mat.mat_class.name)
@@ -144,7 +144,7 @@ class Builder(object):
 
             for f in mat.source_files:
                 if not os.path.isfile(f):
-                    raise MatModLabError('{0!r}: no such file'.format(f))
+                    raise MatmodlabError('{0!r}: no such file'.format(f))
 
             fort_libs.update({libname: {'source_files': mat.source_files,
                                         'lapack': 'lite',

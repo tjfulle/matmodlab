@@ -5,7 +5,7 @@ from numpy import zeros, ones, eye, array, reshape
 from matmodlab.product import MAT_D
 from matmodlab.materials.product import ABA_UTL
 from matmodlab.mmd.material import MaterialModel
-from matmodlab.utils.errors import MatModLabError, StopFortran
+from matmodlab.utils.errors import MatmodlabError, StopFortran
 import matmodlab.utils.mmlabpack as mmlabpack
 
 class Elastic(MaterialModel):
@@ -32,7 +32,7 @@ class Elastic(MaterialModel):
         try:
             import matmodlab.lib.elastic as mat
         except ImportError:
-            raise MatModLabError('elastic model not imported')
+            raise MatmodlabError('elastic model not imported')
         self.lib = mat
 
     @classmethod

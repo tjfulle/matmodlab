@@ -12,7 +12,7 @@ from ..constants import *
 from ..product import SPLASH
 from ..mml_siteenv import environ
 from ..utils.logio import setup_logger
-from ..utils.errors import MatModLabError
+from ..utils.errors import MatmodlabError
 from ..utils.mmltab import MMLTabularWriter
 
 IOPT = 0
