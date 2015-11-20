@@ -10,6 +10,7 @@ import matmodlab.utils.mmlabpack as mmlabpack
 
 class Plastic(MaterialModel):
     name = 'plastic'
+    libname = 'plastic'
 
     @classmethod
     def param_names(cls, n):

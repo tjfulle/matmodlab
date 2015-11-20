@@ -5,7 +5,8 @@ from ..mml_siteenv import environ
 class MatModLabError(Exception):
     def __init__(self, message):
         who = who_is_calling()
-        message = "{0}: ({1})".format(message, who).lstrip()
+        message = ' '.join(message.split()).strip()
+        message = "{0} (called by: {1})".format(message, who).lstrip()
         if 'matmodlab.mmd.optimizer' in logging.Logger.manager.loggerDict:
             key = 'matmodlab.mmd.optimizer'
         elif 'matmodlab.mmd.permutator' in logging.Logger.manager.loggerDict:

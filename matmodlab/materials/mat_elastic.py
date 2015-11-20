@@ -10,6 +10,7 @@ import matmodlab.utils.mmlabpack as mmlabpack
 
 class Elastic(MaterialModel):
     name = 'elastic'
+    libname = 'elastic'
 
     @classmethod
     def source_files(cls):
@@ -24,7 +25,7 @@ class Elastic(MaterialModel):
     def completions_map():
         return {'K': 0, 'G': 1}
 
-    def import_lib(self, libname):
+    def import_lib(self, libname=None):
         """Set up the Elastic material
 
         """

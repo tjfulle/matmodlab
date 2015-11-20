@@ -14,7 +14,7 @@ from ..utils.misc import load_file, remove
 from ..product import ROOT_D, PKG_D
 from ..utils.errors import MatModLabError
 from ..utils.fortran.extbuilder import FortranExtBuilder
-from ..utils.fortran.product import IO_F90
+from ..utils.fortran.product import *
 from ..utils.logio import setup_logger
 
 logger = setup_logger('matmodlab.mmd.builder')
@@ -101,7 +101,8 @@ class Builder(object):
                 d = os.path.dirname(info.file)
                 source_files = [x for x in material.source_files()]
                 source_files.append(IO_F90)
-                I = getattr(material, 'include_dirs', [d])
+                I = getattr(material, 'include_dirs', [])
+                I.extend([d, FORT_INC])
                 fort_libs.update({name: {'source_files': source_files,
                                          'lapack': material.lapack,
                                          'include_dirs': I}})

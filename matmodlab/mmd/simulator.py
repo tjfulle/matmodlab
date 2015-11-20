@@ -294,14 +294,18 @@ Material: {5}
         self.finish()
 
     def finish(self):
+        logger = logging.getLogger('matmodlab.mmd.simulator')
+        logger.info('\n...calculations completed ({0:.4f}s)\n'.format(self._time))
         if not environ.notebook:
             self.dump()
         self.ran = True
 
-    def dump(self, format=None, ffmt='%.18e'):
+    def dump(self, format=None, ffmt='%.18e', abaqus_kwds=0):
         """Dump the results of the simulation to a file"""
-        logger = logging.getLogger('matmodlab.mmd.simulator')
-        logger.info('\n...calculations completed ({0:.4f}s)\n'.format(self._time))
+        if abaqus_kwds:
+            self.material.dump_aba_kwds()
+            return
+
         output_format = format or self.output_format
         ext = '.' + output_format
         self.filename = os.path.join(self.directory, self.job + ext)

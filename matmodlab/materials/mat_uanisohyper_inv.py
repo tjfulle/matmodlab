@@ -23,8 +23,8 @@ class UAnisoHyperInv(MaterialModel):
         return ['Prop{0:02}'.format(i+1) for i in range(n)]
 
     def import_lib(self, libname=None):
-        libname = libname or 'uanisohyper_inv'
-        string = 'import matmodlab.lib.{0} as mat'.format(libname)
+        self.libname = libname or self.libname
+        string = 'import matmodlab.lib.{0} as mat'.format(self.libname)
         code = compile(string, '<string>', 'exec')
         exec code in globals()
         self.lib = mat

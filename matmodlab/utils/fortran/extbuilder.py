@@ -16,11 +16,10 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 from numpy.distutils.core import setup
 
-from .product import LAPACK, LAPACK_OBJ, MMLABPACK
+from .product import LAPACK, LAPACK_OBJ, MMLABPACK, ABA_UTL, FORT_INC
 from ..misc import remove, stdout_redirected, merged_stderr_stdout
 from ...mml_siteenv import environ
 from ...product import PKG_D, PYEXE
-from ...materials.product import ABA_UTL
 
 FORT_COMPILER = environ.fc
 
@@ -89,9 +88,8 @@ class FortranExtBuilder(object):
                     return -1
                 options.update(lapack)
 
-        idirs = kwargs.get("include_dirs")
-        if idirs:
-            options["include_dirs"] = idirs
+        options.setdefault('include_dirs',
+                           kwargs.get('include_dirs', [])).append(FORT_INC)
 
         # Explicitly add this python distributions lib directory. This
         # shouldn't be necessary, but on some RHEL systems I have found that

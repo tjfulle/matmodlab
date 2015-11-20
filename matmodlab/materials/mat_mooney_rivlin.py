@@ -17,6 +17,7 @@ class MooneyRivlin(MaterialModel):
 
     """
     name = "mooney_rivlin"
+    libname = 'mooney_rivlin'
     lapack = "lite"
 
     @classmethod

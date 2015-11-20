@@ -2,13 +2,10 @@ import os
 import logging
 from os.path import join
 from matmodlab.constants import *
-from matmodlab.utils.fortran.product import DGPADM_F, IO_F90
+from matmodlab.utils.fortran.product import (DGPADM_F, IO_F90, TENSALG_F90,
+                                             ABA_UTL, SDVINI)
 from matmodlab.product import MAT_D
 D = join(MAT_D, 'src')
-
-# Auxiliary files
-TENSALG_F90 = join(D, 'tensalg.f90')
-SDVINI = join(D, 'sdvini.f90')
 
 ABA_UANISOHYPER_JAC_F90 = join(D, 'uanisohyper_inv_jac.f90')
 ABA_UHYPER_JAC_F90 = join(D, 'uhyper_jac.f90')
@@ -17,9 +14,6 @@ ABA_UHYPER_JAC_F90 = join(D, 'uhyper_jac.f90')
 ABA_UANISOHYPER_PYF = join(D, 'uanisohyper_inv.pyf')
 ABA_UHYPER_PYF = join(D, 'uhyper.pyf')
 ABA_UMAT_PYF = join(D, 'umat.pyf')
-
-# standar abaqus include
-ABA_UTL = join(D, 'abaqus.f90')
 
 class UserMaterial:
     def __init__(self, mat_info, libname, source_files, param_names,

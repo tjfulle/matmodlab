@@ -12,5 +12,13 @@ IO_F90 = os.path.join(_D, 'mml_io.f90')
 
 MMLABPACK = [MMLABPACK_F90, DGPADM_F]
 
+# Auxiliary files
+TENSALG_F90 = os.path.join(_D, 'tensalg.f90')
+SDVINI = os.path.join(_D, 'sdvini.f90')
+
+# standard abaqus include
+ABA_UTL = os.path.join(_D, 'abaqus.f90')
+FORT_INC = _D
+
 def fortran_libraries():
     return {"mmlabpack": {"source_files": MMLABPACK, "lapack": "lite"}}
