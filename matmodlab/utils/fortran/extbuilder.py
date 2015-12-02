@@ -129,6 +129,9 @@ class FortranExtBuilder(object):
         config = Configuration(self.name, parent_package="", top_path="",
                                package_path=PKG_D)
         for (name, sources, options) in self.exts_to_build:
+            if any(' ' in x for x in sources):
+                logging.getLogger('matmodlab.mmd.builder').warn(
+                    'File paths with spaces are known to fail to build')
             config.add_extension(name, sources=sources, **options)
 
         cwd = os.getcwd()
@@ -170,6 +173,7 @@ class FortranExtBuilder(object):
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
             sys.argv = [x for x in hold]
 
+        os.chdir(cwd)
         # move files
         d = config.package_dir[config.name]
         for mod in glob.glob(d + "/*.so"):
@@ -188,7 +192,7 @@ class FortranExtBuilder(object):
                     ", ".join(self.exts_failed)))
         else:
             logging.getLogger('matmodlab.mmd.builder').info('done')
-        os.chdir(cwd)
+
         return
 
     @staticmethod

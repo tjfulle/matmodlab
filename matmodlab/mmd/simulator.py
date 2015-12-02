@@ -46,6 +46,7 @@ class MaterialPointSimulator(object):
         self.directory = environ.simulation_dir
         self.filename = None
         self.ran = False
+        self.failed = False
 
         # basic logger
         if verbosity > 2:
@@ -78,7 +79,11 @@ class MaterialPointSimulator(object):
                                 s.num_dumps, s.start, s.sqa_stiff, s.mat_stiff)
             step.number = n
             self.steps[s.name] = step
-            self.run_step(self.steps[s.name])
+            try:
+                self.run_step(self.steps[s.name])
+            except:
+                self.failed = True
+                raise
             n += 1
         return
 
@@ -176,7 +181,11 @@ class MaterialPointSimulator(object):
         for step in steps:
             step.number = n
             self.steps[step.name] = step
-            self.run_step(self.steps[step.name])
+            try:
+                self.run_step(self.steps[step.name])
+            except:
+                self.failed = True
+                raise
             n += 1
 
     def create_step(self, step_class, **kwargs):
@@ -190,7 +199,11 @@ class MaterialPointSimulator(object):
         step = step_class(name, previous, **kwargs)
         step.number = len(self.steps)
         self.steps[step.name] = step
-        self.run_step(self.steps[step.name])
+        try:
+            self.run_step(self.steps[step.name])
+        except:
+            self.failed = True
+            raise
 
     def write_summary(self):
 
@@ -430,6 +443,7 @@ Material: {5}
             self.initialize_simulation()
 
         if step.num_cutbacks >= 4:
+            self.failed = True
             raise MatmodlabError('number of cutbacks for step {0} exceeds '
                                  'the maximum allowable'.format(step.number))
 

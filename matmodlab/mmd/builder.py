@@ -47,11 +47,13 @@ class Builder(object):
           The name of the material to build
 
         '''
+        cwd = os.getcwd()
         fb = FortranExtBuilder(name, verbosity=verbosity)
         logger.info('building {0}'.format(name))
         source_files.append(IO_F90)
         fb.add_extension(name, source_files, lapack=lapack)
         fb.build_extension_modules(verbosity=verbosity)
+        os.chdir(cwd)
         return
 
     def fetch_fort_libs_to_build(self, mats_to_fetch='all', user_env=0, force=0):

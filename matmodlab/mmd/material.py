@@ -680,12 +680,13 @@ def build_material(model, verbosity=1):
     x = os.path.join(BIN_D, 'mml')
     assert os.path.isfile(x)
     command = '{0} build -m {1}'.format(x, model)
-    fh = open('foo', 'w')
     env = dict(os.environ)
     p = ':'.join([os.path.dirname(ROOT_D), env.get('PYTHONPATH', '')])
     env['PYTHONPATH'] = p
     proc = subprocess.Popen(command.split(), env=env)
     proc.wait()
+    if proc.returncode != 0:
+        raise RuntimeError('material failed to build')
 
 class keyarray(np.ndarray):
     """Array like object with members accessible by either index or key. i.e.

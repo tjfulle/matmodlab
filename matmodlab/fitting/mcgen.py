@@ -271,12 +271,14 @@ class MasterCurve(object):
             self._cf[1] = item
 
     def fit(self, wlf_coeffs=None, skip_temps=None, ref_temp=None, optimize=None,
-            curve_fitter=None):
+            fitter=None, **kwargs):
 
         skip_temps = aslist(skip_temps)
         skip_temps.extend(self.skip_temps)
 
-        self.cf = curve_fitter
+        if fitter is not None:
+            fitter = CurveFitter(fitter)(**kwargs)
+        self.cf = fitter
 
         # make skip temps a list, if not already
         df = self.df.copy()
@@ -475,7 +477,10 @@ class MasterCurve(object):
         if bp is None:
             raise ImportError('bokeh')
 
-        x_label = 'Log[{0}/aT] ({1})'.format(self.xvar, self.xunits)
+        if raw:
+            x_label = 'Log[{0}] ({1})'.format(self.xvar, self.xunits)
+        else:
+            x_label = 'Log[{0}/aT] ({1})'.format(self.xvar, self.xunits)
         y_label = '{0} ({1})'.format(self.yvar, self.yunits)
         plot = bp.figure(x_axis_label=x_label, y_axis_label=y_label)
         if raw:
@@ -512,7 +517,10 @@ class MasterCurve(object):
         plt.cla()
         xl, xu = self.xvar, self.xunits
         yl, yu = self.yvar, self.yunits
-        plt.xlabel(r'$\log\left(\frac{%s}{aT}\right)$ (%s)' % (xl, xu))
+        if raw:
+            plt.xlabel(r'$\log\left(%s\right)$ (%s)' % (xl, xu))
+        else:
+            plt.xlabel(r'$\log\left(\frac{%s}{aT}\right)$ (%s)' % (xl, xu))
         ylabel = r'$%s$ (%s)' % (yl, yu)
         plt.ylabel(ylabel)
 
@@ -645,6 +653,29 @@ class MasterCurve(object):
         elif ext.lower() == '.xlsx':
             return self.to_excel(filename)
         raise TypeError('Unexpected file extension {0!r}'.format(ext))
+
+    @property
+    def description(self):
+        if not self._fit:
+            self.fit()
+
+        fh = sys.stdout
+        fh.write('mcgen Version 1.2\n')
+        fh.write('Curve Fitter: {0}\n'.format(self.cf.name))
+        fh.write('Curve Fitting Information\n')
+
+        # write out the fit info
+        line = self.cf.dump_info(self.mc_fit, delimiter=',')
+        fh.write(line)
+        try:
+            fh.write('Fit Error\n{0:.18f}\n'.format(self.fiterr))
+        except ValueError:
+            pass
+        fh.write(joinn(['WLF C1', 'WLF C2'], sep=','))
+        fh.write(joinn([self.wlf_opt[0], self.wlf_opt[1]], sep=',', num=True))
+
+        #fh.write('Data\n')
+        #self.dfm.to_csv(fh, float_format='%.18f', index=False)
 
 class _CurveFitter(object):
     """CurveFitter base class"""
@@ -876,14 +907,15 @@ class PolyFit(_CurveFitter):
         pass
     @property
     def plot_label(self):
+        f = r'\log{\left(\frac{t}{a_T}\right)}'
         if self.p is None:
-            return r'$c_0 + c_1 x + ... + c_n x^n$'
+            return r'$c_0 + c_1 %(f)s + ... + c_n %(f)s^n$' % {'f': f}
         np = self.p.shape[0]
         l = ['c_0']
         if np > 1:
-            l.append('c_1 x')
+            l.append('c_1 %(f)s' % {'f':f})
         if np > 2:
-            l.extend([r'\cdots', 'c_{0} x^{0}'.format(np-1)])
+            l.extend([r'\cdots', r'c_%(n)d %(f)s^%(n)d' % {'f':f, 'n':np-1}])
         return r'${0}$'.format(' + '.join(l))
     def fit_points(self, xp, yp):
         """Retuns the best fits for a polynomial curve

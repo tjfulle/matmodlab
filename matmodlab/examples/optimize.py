@@ -41,7 +41,7 @@ def func(x=[], xnames=[], evald='', job='', *args):
     mps.DataSteps(filename, steps=30, sheetname='MML',
                   columns=('E.XX',), descriptors='ESS')
     mps.dump()
-    if not mps.ran:
+    if mps.failed:
         return 1.0e9
 
     exx, sxx = mps.get('E.XX', 'S.XX')
