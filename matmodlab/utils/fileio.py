@@ -49,6 +49,15 @@ def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
         # Matmodlab record array pickle
         names, data = loadrec(filename, upcase=upcase, disp=1, at_step=at_step)
 
+    elif filename.endswith(('.xls', '.xlsx', '.XLS', '.XLSX')):
+        try:
+            from pandas import read_excel
+        except ImportError:
+            raise ValueError('pandas required to load excel files')
+        df = read_excel(filename, sheetname=sheetname)
+        data = np.asarray(df.as_matrix(), dtype=float)
+        names = df.columns.values.tolist()
+
     else:
         # ??? -> let tabfileio deal with this extension
         try:
