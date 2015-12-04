@@ -38,7 +38,7 @@ def func(x=[], xnames=[], evald='', job='', *args):
     # The missing columns are filled with zeros -> giving uniaxial stress in
     # this case. Declaring the steps this way does require loading the excel
     # file anew for each run
-    mps.DataSteps(filename, steps=30, sheetname='MML',
+    mps.DataSteps(filename, steps=30, frames=1, sheetname='MML',
                   columns=('E.XX',), descriptors='ESS')
     mps.dump()
     if mps.failed:
@@ -46,6 +46,7 @@ def func(x=[], xnames=[], evald='', job='', *args):
 
     exx, sxx = mps.get('E.XX', 'S.XX')
     error = unnm.calculate_bounded_area(exp_data[:,0], exp_data[:,1], exx, sxx)
+
     return error
 
 def runjob(method, v=1):

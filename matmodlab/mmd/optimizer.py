@@ -27,6 +27,7 @@ class Optimizer(object):
                  funcargs=[], Ns=10, dryrun=0, keep_intermediate=True,
                  halt_on_err=False):
         environ.raise_e = True
+        environ.no_cutback = True
         global IOPT
         IOPT = 0
         self.job = job

@@ -432,7 +432,6 @@ Material: {5}
             plt.show()
 
     def run_step(self, step):
-
         logger = logging.getLogger('matmodlab.mmd.simulator')
         if self.ran:
             logger.warn('simulation {0!r} has already '
@@ -457,6 +456,7 @@ Material: {5}
                 if self.no_cutback:
                     break
 
+                raise SystemExit('trying to cut back')
                 if step.num_cutbacks > 3:
                     # accept whatever is calculated
                     break
@@ -1029,35 +1029,10 @@ class AnalysisStep(Step):
         self.increment = increment
 
         # set up analysis frames
-        if any([x in (3,4) for x in self.descriptors]) and frames in (1, None):
+        if any([x in (3,4) for x in self.descriptors]) and frames is None:
             # set default frames for mixed steps
-            if frames == 1:
-                logger.warn('Number of frames may be inapopriate for '
-                            'stress driven steps')
-            else:
-                # number of frames not specified
-                # limit the amount of strain
-                de_max = -1e60
-                if 1 in descriptors:
-                    x = max([abs(x) for (i,x) in enumerate(components)
-                             if descriptors[i] == 1])
-                    de_max = max(de_max, x * increment)
-                if 2 in descriptors:
-                    x = max([abs(x) for (i,x) in enumerate(components)
-                             if descriptors[i] == 2])
-                    de_max = max(de_max, x)
-                if 3 in descriptors:
-                    x = max([abs(x) for (i,x) in enumerate(components)
-                             if descriptors[i] == 3])
-                    de_max = max(de_max, x * increment / self.mat_stiff)
-                if 4 in descriptors:
-                    x = max([abs(x) for (i,x) in enumerate(components)
-                             if descriptors[i] == 4])
-                    de_max = max(de_max, x / self.mat_stiff)
-
-                # de_max defaults to .1%
-                frames = max(int(de_max / .001), 1)
-
+            logger.warn('Setting default frames=10 for stress driven step')
+            frames = 10
         elif frames is None:
             frames = 1
         frames = int(frames)
