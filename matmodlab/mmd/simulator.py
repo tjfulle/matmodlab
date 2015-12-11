@@ -1335,7 +1335,7 @@ def MixedStep(name, previous, components=None, descriptors=None,
                         num_dumps, sqa_stiff, mat_stiff)
 
 def DataSteps(filename, previous, tc=0, descriptors=None, time_format='total',
-              scale=1., frames=None, steps=None, **kw):
+              scale=1., frames=None, steps=None, time_scale=1., **kw):
 
     d = {'D': 1, 'E': 2, 'R': 3, 'S': 4, 'P': 6, 'T': 7, 'X': 9}
     bad = []
@@ -1390,17 +1390,24 @@ def DataSteps(filename, previous, tc=0, descriptors=None, time_format='total',
 
     # Create each step
     if steps is None:
-        steps = X.shape[0]
+        timespace = X[:,0]
+    else:
+        timespace = np.linspace(X[0,0], X[-1,0], steps)
     step = 1
     start = previous.frames[-1].value
     data_steps = []
     columns = range(X.shape[1])
-    for time in np.linspace(X[0,0], X[-1,0], steps):
-        increment = time - start
+    for (it, time) in enumerate(timespace):
+        increment = time * time_scale - start
         if abs(increment) < 1.e-16:
             continue
 
-        components = np.asarray([interp(time, X[:,col]) for col in columns[1:]])
+        if steps is None:
+            components = np.asarray(X[it][columns[1:]])
+        else:
+            # interpolate the data
+            components = np.asarray([interp(time, X[:,col]) for col in columns[1:]])
+
         if fill is not None:
             components = np.append(components, np.zeros(fill))
 
