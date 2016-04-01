@@ -9,13 +9,10 @@ from os.path import isfile, splitext, basename, join
 
 from .numerix import *
 from ..constants import *
+from ..tpl import tabfileio
 
 def savefile(filename, names, data):
     """Save the file using tabfileio"""
-    try:
-        import tabfileio
-    except ImportError:
-        raise ValueError('external tabfileio package required to load file type')
     tabfileio.write_file(filename, names, data)
 
 def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
@@ -60,12 +57,6 @@ def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
 
     else:
         # ??? -> let tabfileio deal with this extension
-        try:
-            import tabfileio
-        except ImportError:
-            raise ValueError('external tabfileio package '
-                             'required to load file type')
-
         names, data = tabfileio.read_file(filename, disp=1, sheetname=sheetname)
 
     if columns:

@@ -90,6 +90,10 @@ import os
 import re
 import argparse
 from math import sqrt
+try:
+   import readline
+except ImportError:
+   pass
 
 LAME, G, E, NU, K, H = 'Lame', 'G', 'E', 'Nu', 'K', 'H'
 C10, D1 = 'C10', 'D1'

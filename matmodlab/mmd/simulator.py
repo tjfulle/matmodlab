@@ -663,8 +663,10 @@ Material: {5}
         return time[2], temp[2], F[1], strain[2], stress[2], efield[2], statev[1]
 
     def visualize_results(self, overlay=None):
-        from .startup import launch_viewer
-        launch_viewer([self.filename])
+        from ..tpl import tsviewer
+        if self.filename is None:
+            self.dump()
+        tsviewer.launch([self.filename])
 
     def view(self):
         self.visualize_results()
