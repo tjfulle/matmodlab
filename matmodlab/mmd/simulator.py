@@ -456,7 +456,7 @@ Material: {5}
                 if self.no_cutback:
                     break
 
-                raise SystemExit('trying to cut back')
+                #raise SystemExit('trying to cut back')
                 if step.num_cutbacks > 3:
                     # accept whatever is calculated
                     break
@@ -1653,7 +1653,8 @@ class CutbackManager:
         return self.db.get(key)
 
     def request_cutback(self, **kwargs):
-        self.db.update(kwargs)
+        #self.db.update(kwargs)
+        pass
 
     def clear(self):
         self.db = {}
