@@ -1249,6 +1249,10 @@ def DefGradStep(name, previous, components=None, frames=None, scale=1.,
     if kappa is None:
         kappa = previous.kappa
 
+    if components is None:
+        raise MatmodlabError('expected 9 deformation gradient '
+                             'components for step {0}'.format(name))
+    components = np.asarray(components, dtype=float)
     try:
         defgrad = np.reshape(components, (3, 3)) * scale
     except ValueError:

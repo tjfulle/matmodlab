@@ -83,10 +83,10 @@ class HyperelasticOptimizer:
         err = sqrt(mean((yp - ydata) ** 2)) / abs(average(ydata))
 
         # check if Drucker's stability criterion is satisfied
-        dy = yp.diff()
-        dx = xp.diff()
-        if np.any(dy * dx < -1e-12):
-            raise OptimizeError('Drucker stability criterion violated')
+        #dy = diff(yp)
+        #dx = diff(xdata)
+        #if any(dy * dx < -1e-12):
+        #    raise OptimizeError('Drucker stability criterion violated')
 
         return popt, pcov, infodict, errmsg, err
 
