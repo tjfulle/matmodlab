@@ -55,7 +55,7 @@ class MaterialLoader:
                 d = item
                 files = [f for f in os.listdir(item) if rx.search(f)]
             else:
-                logging.warn('{0} no such directory or file, skipping'.format(d))
+                logging.warn('{0} no such directory or file, skipping'.format(item))
                 continue
             files = [f for f in files if f.endswith('.py')]
 
