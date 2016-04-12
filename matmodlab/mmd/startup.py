@@ -345,7 +345,7 @@ positional arguments:
             tempd = None
 
 def launch_viewer(argv):
-    from ..tpl import tsviewer
+    from ..tpl.tsviewer import __main__ as tsviewer
     tsviewer.main()
 
 if __name__ == '__main__':
