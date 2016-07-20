@@ -575,6 +575,7 @@ def Material(model, parameters, switch=None, response=None,
             raise MatmodlabError('model {0} not found'.format(model))
         TheMaterial = mat_info.mat_class
         source_files = TheMaterial.source_files()
+        libname = TheMaterial.libname or TheMaterial.name
 
     if errors:
         raise MatmodlabError('stopping due to previous errors')
