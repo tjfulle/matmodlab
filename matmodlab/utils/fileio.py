@@ -22,12 +22,7 @@ def loadfile(filename, disp=1, skiprows=0, sheetname="MML", columns=None,
         raise ValueError('columns and variables keywords are exclusive')
     columns = columns if columns is not None else variables
 
-    if not is_string_like(filename):
-        # assume filename is a stream
-        names, data = loadstream(filename, upcase=upcase, disp=1,
-                                 comments=comments, skiprows=skiprows)
-
-    elif filename.endswith(tuple('.%s'%ext for ext in (CSV, TXT))):
+    if filename.endswith(tuple('.%s'%ext for ext in (CSV, TXT))):
         # standard Matmodlab formats
         names, data = loadtxt(filename, upcase=upcase, disp=1,
                               comments=comments, skiprows=skiprows)
@@ -116,76 +111,25 @@ def loadrec(filename, upcase=0, disp=1, at_step=0):
 
     return data
 
-def loadstream(stream, comments='#', skiprows=0, upcase=False, disp=1,
-               delimiter=' '):
-    """Load data contained in the stream"""
-
-    for i in range(skiprows):
-        next(stream)
-
-    names = None
-    if disp:
-        # find the header
-        names = find_header(stream, comments=comments, upcase=upcase, 
-                            delimiter=delimiter)
-        if names is None:
-            warnings.warn('loadstream: could not find header')
-
-    data = np.loadtxt(stream, delimiter=delimiter)
-    if disp:
-        return names, data
-    return data
-
 def loadtxt(filename, comments='#', skiprows=0, upcase=False,
             delimiter=' ', disp=1):
 
     if filename.endswith('.csv'):
         delimiter = ','
 
-    # open the stream and load the data
-    stream = open(filename, 'r')
-    names, data = loadstream(stream, comments=comments, delimiter=delimiter,
-                             disp=1, skiprows=skiprows, upcase=upcase)
-    stream.close()
+    names = None
+    lines = [x.strip() for x in open(filename).readlines()[skiprows:]]
+    if lines[0][0] == comments:
+        header = lines[0].lstrip(comments)
+        names = [x.strip() for x in header.split(delimiter)]
+        lines = lines[1:]
+
+    data = np.array([[float(x) for x in line.split(delimiter)] 
+                      for line in lines])
 
     if disp:
         return names, data
     return data
-
-def find_header(stream, comments='#', delimiter=' ', upcase=False):
-    """Find the header in the first line of the stream"""
-
-    comments = asbytes(comments)
-    terminator = asbytes('\r\n')
-    pos = stream.tell()
-
-    def _split(line):
-        """Look for a header in the line"""
-        try:
-            pre, post = [s.strip(terminator)
-                         for s in asbytes(line).split(comments, 1)]
-        except ValueError:
-            return None
-        if pre.split():
-            # Line of form: a b c # e f g
-            # -> not a header
-            return None
-        post = [x.strip() for x in post.split(delimiter)] or None
-        return post
-
-    names = None
-    try:
-        while not names:
-            first_line = next(stream)
-            names = _split(first_line)
-    except StopIteration:
-        names = None
-
-    if names is None:
-        # no header found, rewind
-        stream.seek(pos)
-
-    return names
 
 def flatten(a):
     flat = []
