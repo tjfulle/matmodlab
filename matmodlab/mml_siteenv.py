@@ -65,7 +65,7 @@ class Environment(object):
 
     # Fortran compiling
     fflags = [x for x in os.getenv('FFLAGS', '').split() if x.split()]
-    fc = which(os.getenv('FC', 'gfortran'))
+    fc = os.getenv('FC', which('gfortran'))
 
     # --- Test search directories
     test_dirs = [TEST_D]

@@ -1033,7 +1033,7 @@ class AnalysisStep(Step):
         # set up analysis frames
         if any([x in (3,4) for x in self.descriptors]) and frames is None:
             # set default frames for mixed steps
-            logger.warn('Setting default frames=10 for stress driven step')
+            #logger.warn('Setting default frames=10 for stress driven step')
             frames = 10
         elif frames is None:
             frames = 1

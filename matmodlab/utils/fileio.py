@@ -116,7 +116,8 @@ def loadrec(filename, upcase=0, disp=1, at_step=0):
 
     return data
 
-def loadstream(stream, comments='#', skiprows=0, upcase=False, disp=1):
+def loadstream(stream, comments='#', skiprows=0, upcase=False, disp=1,
+               delimiter=' '):
     """Load data contained in the stream"""
 
     for i in range(skiprows):
@@ -125,11 +126,12 @@ def loadstream(stream, comments='#', skiprows=0, upcase=False, disp=1):
     names = None
     if disp:
         # find the header
-        names = find_header(stream, comments=comments, upcase=upcase)
+        names = find_header(stream, comments=comments, upcase=upcase, 
+                            delimiter=delimiter)
         if names is None:
             warnings.warn('loadstream: could not find header')
 
-    data = np.loadtxt(stream)
+    data = np.loadtxt(stream, delimiter=delimiter)
     if disp:
         return names, data
     return data
