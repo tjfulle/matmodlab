@@ -32,7 +32,7 @@ def main(argv=None):
     env = dict(os.environ)
     env['JUPYTER_CONFIG_DIR'] = IPY_D
     env['IPYTHONDIR'] = IPY_D
-    command = 'ipython notebook'
+    command = 'jupyter notebook'
     if args.examples:
         command += ' --notebook-dir={0}'.format(EXMPL_D)
     elif args.tutorial:
