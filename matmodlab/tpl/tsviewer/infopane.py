@@ -12,7 +12,8 @@ from tabfileio import read_file
 
 def loadfile(filename):
     """Load the data file"""
-    if filename.endswith(('.csv', '.rpk', '.base_rpk', '.base_dat', '.out')):
+    if filename.endswith(('.csv', '.rpk', '.base_rpk', '.base_dat', '.out',
+                          '.exo', '.base_exo')):
         # Matmodlab files
         try:
             from matmodlab.utils.fileio import loadfile as lf
