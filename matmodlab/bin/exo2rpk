@@ -1,0 +1,220 @@
+#!/usr/bin/env python
+
+import os
+import glob
+import logging
+import numpy as np
+from argparse import ArgumentParser
+
+from matmodlab.utils import fileio
+from matmodlab.mmd.simulator import Records
+from matmodlab.constants import *
+
+from scipy.io.netcdf import NetCDFFile
+
+logger = logging.getLogger()
+logger.level = logging.DEBUG
+
+
+def groupby_names_and_cols(names):
+
+    # Mappings from component name to number
+    stc = dict(zip(('XX', 'YY', 'ZZ', 'XY', 'YZ', 'XZ'), range(6)))
+    tc = dict(zip(('XX','XY','XZ','YX','YY','YZ','ZX','ZY','ZZ'), range(9)))
+    vc = dict(zip(('X', 'Y', 'Z'), range(3)))
+
+    # Mapping from old names to new
+    name_map = {'STEP_NUM': 'Step',
+                'LEG_NUM': 'Frame',
+                'LEG_NUM0.0': 'Frame',
+                'TIME': 'Time',
+                'TIME_STEP': 'DTime',
+                'STRESS': 'S',
+                'STRAIN': 'E',
+                'DEFGRAD': 'F',
+                'SYMM_L': 'D',
+                'DSTRESS': 'DS',
+                'EFIELD': 'EF',
+                'TEMP': 'T',
+                'ELNUM': 'Element'}
+
+    new_names_and_components = {}
+    for (i, name) in enumerate(names):
+        component = None
+        if name in ('PRESSURE', 'EQSTRAIN', 'VSTRAIN', 'ELNUM'):
+            continue
+        if name not in ('TIME_STEP', 'STEP_NUM', 'LEG_NUM', 'LEG_NUM0.0'):
+            try:
+                name, x = name.rsplit('_', 1)
+                try:
+                    if name in ('DEFGRAD',):
+                        component = tc[x]
+                    else:
+                        component = stc[x]
+                except KeyError:
+                    component = vc[x]
+            except ValueError:
+                pass
+        new_name = name_map.get(name, 'SDV_{0}'.format(name))
+        new_names_and_components.setdefault(new_name, []).append((component, i))
+
+    sdv_keys = {}
+    for (name, items) in new_names_and_components.items():
+        if name.startswith('SDV_'):
+            sdv_keys[name[4:]] = items[0][1]
+            continue
+        if len(items) == 1:
+            if items[0][0] is None:
+                new_names_and_components[name] = items[0][1]
+            else:
+                raise Exception('Huh?')
+        else:
+            columns = [x[1] for x in sorted(items, key=lambda y: y[0])]
+            new_names_and_components[name] = columns
+    sdv_cols = sorted(sdv_keys.values())
+    sdv_keys = sorted(sdv_keys, key=lambda x: sdv_keys[x])
+    new_names_and_components['SDV_KEYS'] = sdv_keys
+    new_names_and_components['SDV_COLS'] = sdv_cols
+    return new_names_and_components
+
+def stringify(a):
+    try:
+        return ''.join(a).strip()
+    except TypeError:
+        return [''.join(row).strip() for row in a]
+
+def read_exodus_legacy(filename):
+    '''Read the specified variables from the exodus file in filepath '''
+    disp = 1
+    blk_num = 1
+    elem_num = 1
+    if not os.path.isfile(filename):
+        raise IOError('{0}: no such file'.format(filename))
+
+    fh = NetCDFFile(filename, 'r')
+
+    # global/element vars and mapping
+    num_glo_var = fh.dimensions.get('num_glo_var', 0)
+    if num_glo_var:
+        name_glo_var = stringify(fh.variables['name_glo_var'].data)
+        gmap = dict(zip(name_glo_var, range(len(name_glo_var))))
+
+    name_elem_var = stringify(fh.variables['name_elem_var'].data)
+    emap = dict(zip(name_elem_var, range(len(name_elem_var))))
+
+    # retrieve the data from the database
+    head = ['TIME']
+    if num_glo_var:
+        head.extend([H.upper() for H in name_glo_var])
+    head.extend([H.upper() for H in name_elem_var])
+
+    data = []
+    times = fh.variables['time_whole'].data.flatten()
+    for (i, time) in enumerate(times):
+        row = [time]
+        if num_glo_var:
+            vals_glo_var = fh.variables['vals_glo_var'].data[i]
+            for var in name_glo_var:
+                var_num = gmap[var]
+                try: row.append(vals_glo_var[var_num])
+                except KeyError: continue
+        for var in name_elem_var:
+            var_num = emap[var]+1
+            name = 'vals_elem_var{0}eb{1}'.format(var_num, blk_num)
+            row.append(fh.variables[name].data[i, elem_num-1])
+        data.append(row)
+    fh.close()
+    data = np.asarray(data)
+    if len(head) != data.shape[1]:
+        raise ValueError('inconsistent data')
+
+    data = np.array(data)
+
+    fh.close()
+    if disp:
+        return head, data
+
+    return data
+
+def main():
+
+    p = ArgumentParser()
+    p.add_argument('files', nargs='*')
+    p.add_argument('--dest-dir', default=None)
+    args = p.parse_args()
+
+    if not args.files:
+        files = glob.glob('*exo')
+    else:
+        files = []
+        for item in args.files:
+            if os.path.isdir(item):
+                files.extend(glob.glob(os.path.join(item, '*exo')))
+            elif os.path.isfile(item):
+                files.extend(item)
+            else:
+                logger.warn('{0!r} does not exists'.format(item))
+
+    if not files:
+        raise SystemExit('Nothing to do')
+
+    for filename in files:
+        assert os.path.isfile(filename)
+        logger.info('converting {0!r} to rpk format'.format(filename))
+        convert_exo_to_rpk(filename, dest_dir=args.dest_dir)
+
+def convert_exo_to_rpk(filename, dest_dir=None):
+
+    names, data = read_exodus_legacy(filename)
+    nc = groupby_names_and_cols(names)
+
+    records = Records()
+    records.add('Step', SCALAR, dtype='i4')
+    records.add('Frame', SCALAR, dtype='i4')
+    records.add('Time', SCALAR)
+    records.add('DTime', SCALAR)
+    records.add('S', TENSOR_3D)
+    records.add('E', TENSOR_3D)
+    records.add('F', TENSOR_3D_FULL)
+    records.add('D', TENSOR_3D)
+    records.add('DS', TENSOR_3D)
+    records.add('EF', VECTOR)
+    records.add('T', SCALAR)
+
+    sdv_keys = nc['SDV_KEYS'] or []
+    records.add('SDV', SDV, keys=sdv_keys)
+
+    for (irow, row) in enumerate(data):
+        step = irow+1 if 'Step' not in nc else row[nc['Step']]
+        frame = 1 if 'Frame' not in nc else row[nc['Frame']]
+        time = row[nc['Time']]
+        dtime = row[nc['DTime']]
+        s = row[nc['S']]
+        e = row[nc['E']]
+        f = row[nc['F']]
+        d = row[nc['D']]
+        ds = row[nc['DS']]
+        ef = row[nc['EF']]
+        T = 298. if 'T' not in nc else row[nc['T']]
+        statev = np.array([]) if not sdv_keys else row[nc['SDV_COLS']]
+
+        if irow == 0:
+            records.init(Step=step, Frame=frame,
+                         Time=time, DTime=dtime,
+                         E=e, F=f, D=d, DS=ds, S=s,
+                         SDV=statev, T=T, EF=ef)
+        else:
+            records.cache(Step=step, Frame=frame,
+                          Time=time, DTime=dtime,
+                          E=e/VOIGT, F=f, D=d/VOIGT, DS=ds, S=s,
+                          SDV=statev, T=T, EF=ef)
+            records.advance()
+
+    dirname, basename = os.path.split(filename)
+    root, ext = os.path.splitext(basename)
+    new_dir = dest_dir or dirname
+    dest = os.path.join(new_dir, root + ext.replace('exo', 'rpk'))
+    records.data.dump(dest)
+
+if __name__ == '__main__':
+    main()
