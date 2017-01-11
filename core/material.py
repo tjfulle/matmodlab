@@ -66,6 +66,8 @@ class MaterialModel(object):
         parameters = args[0]
         self._param_name_map = {}
 
+        self.given_params = dict(parameters)
+
         if self.name is None:
             raise MatModLabError("material did not define name attribute")
 

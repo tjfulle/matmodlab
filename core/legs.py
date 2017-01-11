@@ -34,6 +34,10 @@ class Leg:
         self.temp = temp
         self.user_field = user_field
 
+        imap = dict([(v,k) for (k,v) in CONTROL_FLAGS.items()])
+        imap[1] = 'DE'
+        imap[3] = 'DS'
+        self.descriptors = [imap[x] for x in self.control]
 
 class LegRepository(OrderedDict):
 

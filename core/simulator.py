@@ -27,7 +27,7 @@ class MaterialPointSimulator(object):
 
         # setup IO
         opts.simulation_dir = d or os.getcwd()
-	self.title = "matmodlab single element simulation"
+        self.title = "matmodlab single element simulation"
         if logger is None:
             logfile = os.path.join(opts.simulation_dir, self.runid + ".log")
             logger = Logger(runid, filename=logfile, verbosity=verbosity)
@@ -185,9 +185,16 @@ Material: {3}
         """Run the problem
 
         """
+        try:
+            import convert_to_mml2
+            convert_to_mml2.convert(self)
+            return 0
+        except ImportError:
+            pass
         self._setup()
         self.check_break_points()
         self.logger.write("Starting calculations...")
+
         retcode = self.driver.run(self.glob_data, self.elem_data,
                                   self.material, self.exo_db, self.bp,
                                   termination_time=self.termination_time)
