@@ -1,5 +1,10 @@
 # The Material Model Laboratory
 
+## New Version Notice
+
+Matmodlab has been superceded by [Matmodlab2](https://github.com/tjfulle/matmodlab2).  Please use this updated version.
+Matmodlab will not be mainted/developed any further.
+
 ## What is it?
 
 The material model laboratory (*matmodlab*) is a material point simulator developed as a tool for developing and analyzing material models for use in larger finite element codes.
